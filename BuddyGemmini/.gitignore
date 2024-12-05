@@ -1,0 +1,7 @@
+*.data
+__pycache__
+*.pyc
+/build
+forward.mlir
+subgraph0.mlir
+*.o
