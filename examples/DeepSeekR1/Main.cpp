@@ -110,23 +110,15 @@ int findMaxIndex(const float *start, const float *end) {
 // DeepSeekR1 Inference Main Entry
 // -----------------------------------------------------------------------------
 
-int main() {
+int main(int argc, char* argv[]) {
   /// Print the title of this example.
   const std::string title = "DeepSeekR1 Inference Powered by Buddy Compiler";
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   /// Change here according to where arg0.data and vocab.txt is located.
-  /// TODO: Remove this hard code.
-  // Running on x86
-  // const std::string vocabDir =
-  // "/home/zhouxulin/intern/buddy-examples/build/bin/vocab-deepseek-r1.txt";
-  // const std::string paramsDir =
-  // "/home/zhouxulin/intern/buddy-examples/build/bin/arg0-deepseek-r1.data";
-  // Running on RISC-V
-  const std::string vocabDir =
-      "/home/user/buddy-examples/bin/vocab-deepseek-r1.txt";
-  const std::string paramsDir =
-      "/home/user/buddy-examples/bin/arg0-deepseek-r1.data";
+  std::filesystem::path execPath = std::filesystem::canonical(argv[0]).parent_path();
+  std::string vocabDir = (execPath / "vocab-deepseek-r1.txt").string();
+  std::string paramsDir = (execPath / "arg0-deepseek-r1.data").string();
 
   /// Get user message.
   std::string inputStr;
