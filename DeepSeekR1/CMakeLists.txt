@@ -8,21 +8,33 @@ add_custom_command(
       --output-dir ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Generating forward.mlir, subgraph0.mlir and arg0.data..."
 )
+
+set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/../bin)
 add_custom_command(
   OUTPUT 
-    ${CMAKE_CURRENT_BINARY_DIR}/../../bin/arg0-deepseek-r1.data
-    ${CMAKE_CURRENT_BINARY_DIR}/../../bin/vocab-deepseek-r1.txt
-  COMMAND ${CMAKE_COMMAND} -E mv
+    ${BIN_DIR}/arg0-deepseek-r1.data
+    ${BIN_DIR}/vocab-deepseek-r1.txt
+  COMMAND ${CMAKE_COMMAND} -E rename
     ${CMAKE_CURRENT_BINARY_DIR}/arg0-deepseek-r1.data
-    ${CMAKE_CURRENT_BINARY_DIR}/../../bin/
+    ${BIN_DIR}/arg0-deepseek-r1.data
   COMMAND ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_SOURCE_DIR}/vocab-deepseek-r1.txt
-    ${CMAKE_CURRENT_BINARY_DIR}/../../bin/
-  COMMENT "Preparing arg0.data and vocab.txt..."
+    ${BIN_DIR}/
+  DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/vocab-deepseek-r1.txt
+  COMMENT "Preparing arg0-deepseek-r1.data and vocab-deepseek-r1.txt..."
+)
+add_custom_target(deepseek_data
+  DEPENDS 
+    ${BIN_DIR}/arg0-deepseek-r1.data
+    ${BIN_DIR}/vocab-deepseek-r1.txt
 )
 
 add_executable(deepseek-r1
   Main.cpp
+)
+add_dependencies(deepseek-r1
+  deepseek_data
 )
 target_link_libraries(deepseek-r1
   GoogleBenchmark

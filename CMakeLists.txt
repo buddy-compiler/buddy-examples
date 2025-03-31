@@ -97,4 +97,4 @@ target_link_libraries(GoogleBenchmark INTERFACE Threads::Threads)
 # -------------------------------------------------------------------------------
 # Subdirectory
 # -------------------------------------------------------------------------------
-add_subdirectory(examples)
+add_subdirectory(DeepSeekR1)
