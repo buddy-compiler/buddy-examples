@@ -4,17 +4,16 @@ This repository provides examples of using the Buddy Compiler to run inference o
 
 ## Available Examples
 
-The table below lists the supported large models:
+The table below lists the supported models:
 
 | Name  | Build Target |
 | -------------- | ------------- |
 | DeepSeekR1 | `ninja deepseek-r1` |
 
 
-## How to Build
+## How to Build on x86
 
 1. Set the `buddy-mlir` toolchain and PYTHONPATH environment variable:
-Make sure that the PYTHONPATH variable includes the directory of LLVM/MLIR python bindings and the directory of Buddy MLIR python packages.
 
 ```bash
 $ cd buddy-mlir/build
@@ -36,18 +35,25 @@ $ cmake -G Ninja .. \
     -DCMAKE_C_COMPILER=${LLVM_MLIR_BUILD_DIR}/bin/clang \
     -DCMAKE_CXX_FLAGS=-march=native \
     -DCMAKE_C_FLAGS=-march=native
-$ ninja <target>
-// For example: 
-$ ninja deepseek-r1
-$ ./bin/<target>
+$ ninja <target> # For example: `ninja deepseek-r1`
+$ ./bin/<target> # Directly run the target
 ```
 
-### Cross Compile to Target Platform
+## Cross Compile to RVV Platform
 
-**RISC-V Vector Extension**
+### Environmental Setup
 
-Follow the [Environment Setup Guide for MLIR and RVV Testing and Experiments](https://github.com/buddy-compiler/buddy-mlir/blob/main/docs/RVVEnvironment.md) to prepare the RVV environment. Furthermore, To enable the openmp feature on RISC-V, you also need to refer to [Prepare RISC-V OpenMP ToolChain](https://github.com/buddy-compiler/buddy-benchmark/blob/main/docs/PrepareRVOpenMP.md).
+1. Follow the [Environment Setup Guide for MLIR and RVV Testing and Experiments](https://github.com/buddy-compiler/buddy-mlir/blob/main/docs/RVVEnvironment.md) to prepare the RVV environment. 
 
+2. Since the repository depends on OpenMP shared libraries, follow the steps below to set up the OpenMP dependency:
+
+```bash
+$ cd ${LLVM_MLIR_BUILD_DIR}/../
+$ wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1XEsAhOcMioN9gdufuyO9OrHIdR0UtHh2' -O build-omp-shared-rv.tar.gz
+$ mkdir build-omp-shared-rv && tar -xzf build-omp-shared-rv.tar.gz -C build-omp-shared-rv && rm build-omp-shared-rv.tar.gz
+```
+
+### How to Build
 1. Set variables for the toolchain:
 
 ```bash
@@ -81,10 +87,7 @@ $ cmake -G Ninja .. \
     -DBUDDY_MLIR_BUILD_DIR=${BUDDY_MLIR_BUILD_DIR} \
     -DBUDDY_MLIR_BUILD_CROSS_DIR=${BUDDY_MLIR_BUILD_CROSS_DIR} \
     -DBUDDY_MLIR_CROSS_LIB_DIR=${BUDDY_MLIR_BUILD_CROSS_DIR}/lib
-
-$ ninja <target>
-// For example: 
-$ ninja deepseek-r1
+$ ninja <target> # For example: `ninja deepseek-r1`
 ```
 
-3. Transfer the compiled file in `build/bin/` to your target platform and run it.
+3. Transfer `build/bin/` directory to your RVV platform, then run `build/bin/<target>`.
