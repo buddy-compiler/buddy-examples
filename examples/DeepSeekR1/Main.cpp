@@ -115,7 +115,6 @@ int main(int argc, char* argv[]) {
   const std::string title = "DeepSeekR1 Inference Powered by Buddy Compiler";
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
-  /// Change here according to where arg0.data and vocab.txt is located.
   std::filesystem::path execPath = std::filesystem::canonical(argv[0]).parent_path();
   std::string vocabDir = (execPath / "vocab-deepseek-r1.txt").string();
   std::string paramsDir = (execPath / "arg0-deepseek-r1.data").string();
