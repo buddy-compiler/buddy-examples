@@ -22,6 +22,7 @@ add_custom_command(
     ${BIN_DIR}/
   DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/vocab-deepseek-r1.txt
+    ${CMAKE_CURRENT_BINARY_DIR}/arg0-deepseek-r1.data
   COMMENT "Preparing arg0-deepseek-r1.data and vocab-deepseek-r1.txt..."
 )
 add_custom_target(deepseek_data
