@@ -1,6 +1,8 @@
-set(MODEL_DIR ${MODELTEST_WORKLOAD_DIR}/models)
-set(ARCH_DIR ${MODELTEST_WORKLOAD_DIR}/archs)
-set(MODELTEST_LIB_DIR ${MODELTEST_WORKLOAD_DIR}/lib)
+set(WORKLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/models)
+set(ARCH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/archs)
+set(MODELTEST_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 # ============================================================================
 # Parse ARCH variable: ARCH="gemmini,other_arch,..."

@@ -33,7 +33,7 @@ usage() {
 SKIP_LIST=()
 VERBOSE_FLAG=""
 ADMIN_MODE=false
-CONDA_ENV_NAME="buddy-mlir"
+CONDA_ENV_NAME="buddy"
 
 while [ "$1" != "" ];
 do
