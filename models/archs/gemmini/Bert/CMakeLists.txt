@@ -97,11 +97,6 @@ add_dependencies(GemminiBERT bert-model-build)
 add_executable(buddy-gemmini-bert-run ${MODEL_BERT_DIR}/bert-main.cpp)
 add_dependencies(buddy-gemmini-bert-run GemminiBERT)
 
-target_compile_definitions(buddy-gemmini-bert-run PRIVATE
-  BERT_EXAMPLE_PATH="${MODEL_BERT_DIR}"
-  BERT_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-)
-
 target_include_directories(buddy-gemmini-bert-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 set(BUDDY_BERT_LIBS GemminiBERT ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-gemmini-bert-run ${BUDDY_BERT_LIBS})

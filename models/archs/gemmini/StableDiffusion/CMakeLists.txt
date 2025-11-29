@@ -275,11 +275,6 @@ add_dependencies(GemminiVAE stablediffusion-model-build)
 
 add_executable(buddy-gemmini-stablediffusion-run ${MODEL_STABLEDIFFUSION_DIR}/buddy-stable-diffusion-main.cpp)
 
-target_compile_definitions(buddy-gemmini-stablediffusion-run PRIVATE
-  STABLE_DIFFUSION_EXAMPLE_PATH="${MODEL_STABLEDIFFUSION_DIR}"
-  STABLE_DIFFUSION_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-)
-
 target_include_directories(buddy-gemmini-stablediffusion-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 
 

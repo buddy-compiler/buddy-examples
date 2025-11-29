@@ -133,10 +133,6 @@ add_executable(buddy-gemmini-deepseekr1-run ${MODEL_DEEPSEEKR1_DIR}/deepseek-r1-
 add_dependencies(buddy-gemmini-deepseekr1-run GemminiDEEPSEEKR1)
 
 target_include_directories(buddy-gemmini-deepseekr1-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
-target_compile_definitions(buddy-gemmini-deepseekr1-run PRIVATE
-  DEEPSEEKR1_EXAMPLE_PATH="${MODEL_DEEPSEEKR1_DIR}"
-  DEEPSEEKR1_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-)
 
 if(BUDDY_MLIR_USE_MIMALLOC)
   list(APPEND GEMMINI_DEEPSEEKR1_LIBS mimalloc)

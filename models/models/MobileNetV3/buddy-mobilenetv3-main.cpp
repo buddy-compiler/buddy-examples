@@ -92,7 +92,7 @@ void softmax(float *input, size_t size) {
 }
 
 std::string getLabel(int idx) {
-  std::string mobilenetDir = MOBILENETV3_EXAMPLE_PATH;
+  std::string mobilenetDir = getenv("MOBILENETV3_DIR");
   std::ifstream in(mobilenetDir + "/Labels.txt");
   assert(in.is_open() && "Could not read the label file.");
   std::string label;
@@ -112,8 +112,7 @@ int main() {
   intptr_t sizesOutput[2] = {1, 1000};
 
   // Create input and output containers for the image and model output.
-  std::string mobilenetDir = MOBILENETV3_EXAMPLE_PATH;
-  std::string mobilenetBuildDir = MOBILENETV3_EXAMPLE_BUILD_PATH;
+  std::string mobilenetDir = getenv("MOBILENETV3_DIR");
   std::string imgPath = mobilenetDir + "/images/" + ImgName;
   dip::Image<float, 4> input(imgPath, dip::DIP_RGB, true /* norm */);
   MemRef<float, 4> inputResize = dip::Resize4D_NCHW(
@@ -123,7 +122,7 @@ int main() {
   MemRef<float, 2> output(sizesOutput);
 
   // Load model parameters from the specified file.
-  std::string paramsDir = mobilenetBuildDir + "/arg0.data";
+  std::string paramsDir = mobilenetDir + "/arg0.data";
   MemRef<float, 1> paramsContainer({ParamsSize});
   loadParameters(paramsDir, paramsContainer);
   // Call the forward function of the model.

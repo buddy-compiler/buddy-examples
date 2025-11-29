@@ -298,15 +298,14 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   // Define directories of vacabulary and parameter file.
-  std::string stableDiffusionDir = STABLE_DIFFUSION_EXAMPLE_PATH;
-  std::string stableDiffusionBuildDir = STABLE_DIFFUSION_EXAMPLE_BUILD_PATH;
+  std::string stableDiffusionDir = getenv("STABLE_DIFFUSION_DIR");
   const std::string vocabDir = stableDiffusionDir + "/vocab.txt";
   const std::string TextEncoderParamsDir1 =
-      stableDiffusionBuildDir + "/arg0_text_encoder.data";
+      stableDiffusionDir + "/arg0_text_encoder.data";
   const std::string TextEncoderParamsDir2 =
-      stableDiffusionBuildDir + "/arg1_text_encoder.data";
-  const std::string UnetParamsDir = stableDiffusionBuildDir + "/arg0_unet.data";
-  const std::string VaeParamsDir = stableDiffusionBuildDir + "/arg0_vae.data";
+      stableDiffusionDir + "/arg1_text_encoder.data";
+  const std::string UnetParamsDir = stableDiffusionDir + "/arg0_unet.data";
+  const std::string VaeParamsDir = stableDiffusionDir + "/arg0_vae.data";
 
   // Get user message.
   std::string inputStr;
@@ -476,7 +475,7 @@ int main() {
   Image<float, 4> img(resultVae.getData(), sizes);
 
   const std::string Imgfilename =
-      stableDiffusionBuildDir + "/" + image_name + ".bmp";
+      stableDiffusionDir + "/" + image_name + ".bmp";
   // Call the imageWrite function
   imageWrite(Imgfilename, img);
 

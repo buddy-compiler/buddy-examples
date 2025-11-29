@@ -113,11 +113,6 @@ add_dependencies(GemminiRESNET18 resnet-model-build)
 add_executable(buddy-gemmini-resnet-run ${MODEL_RESNET18_DIR}/buddy-resnet-main.cpp)
 add_dependencies(buddy-gemmini-resnet-run GemminiRESNET18)
 
-target_compile_definitions(buddy-gemmini-resnet-run PRIVATE
-  RESNET_EXAMPLE_PATH="${MODEL_RESNET18_DIR}"
-  RESNET_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-)
-
 target_include_directories(buddy-gemmini-resnet-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 set(BUDDY_RESNET18_LIBS GemminiRESNET18 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-gemmini-resnet-run ${BUDDY_RESNET18_LIBS})

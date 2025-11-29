@@ -67,11 +67,10 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   /// Load weights to MemRef container.
-  std::string bertDir = BERT_EXAMPLE_PATH;
-  std::string bertBuildDir = BERT_EXAMPLE_BUILD_PATH;
+  std::string bertDir = getenv("BERT_DIR");
   MemRef<float, 1> arg0({109486854});
   MemRef<long long, 1> arg1({512});
-  loadParameters(bertBuildDir + "/arg0.data", bertBuildDir + "/arg1.data", arg0,
+  loadParameters(bertDir + "/arg0.data", bertDir + "/arg1.data", arg0,
                  arg1);
 
   /// Get user message and build Text container.

@@ -72,11 +72,6 @@ add_dependencies(GemminiLLAMA2 llama2-model-build)
 add_executable(buddy-gemmini-llama2-run ${MODEL_LLAMA2_DIR}/llama-main.cpp)
 add_dependencies(buddy-gemmini-llama2-run GemminiLLAMA2)
 
-target_compile_definitions(buddy-gemmini-llama2-run PRIVATE
-  LLAMA_EXAMPLE_PATH="${MODEL_LLAMA2_DIR}"
-  LLAMA_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-)
-
 target_include_directories(buddy-gemmini-llama2-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 
 set(BUDDY_LLAMA_LIBS GemminiLLAMA2 ModelTestCRunnerUtils)

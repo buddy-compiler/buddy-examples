@@ -114,10 +114,9 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   /// Define directories of vacabulary and parameter file.
-  std::string llamaDir = LLAMA_EXAMPLE_PATH;
-  std::string llamaBuildDir = LLAMA_EXAMPLE_BUILD_PATH;
+  std::string llamaDir = getenv("LLAMA_DIR");
   const std::string vocabDir = llamaDir + "/vocab.txt";
-  const std::string paramsDir = llamaBuildDir + "/arg0.data";
+  const std::string paramsDir = llamaDir + "/arg0.data";
 
   /// Get user message.
   std::string inputStr;

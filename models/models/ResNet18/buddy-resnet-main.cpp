@@ -28,7 +28,7 @@
 #include <vector>
 
 constexpr size_t ParamsSize = 11699112;
-const std::string ImgName = "dog-224*224.png";
+const std::string ImgName = "ice-cream-24bit-224x224.bmp";
 
 // Declare the resnet C interface.
 extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
@@ -92,7 +92,7 @@ void softmax(float *input, size_t size) {
 }
 
 std::string getLabel(int idx) {
-  std::string resnetDir = RESNET_EXAMPLE_PATH;
+  std::string resnetDir = getenv("RESNET_DIR");
   std::ifstream in(resnetDir + "/Labels.txt");
   assert(in.is_open() && "Could not read the label file.");
   std::string label;
@@ -112,8 +112,7 @@ int main() {
   intptr_t sizesOutput[2] = {1, 1000};
 
   // Create input and output containers for the image and model output.
-  std::string resnetDir = RESNET_EXAMPLE_PATH;
-  std::string resnetBuildDir = RESNET_EXAMPLE_BUILD_PATH;
+  std::string resnetDir = getenv("RESNET_DIR");
   std::string imgPath = resnetDir + "/images/" + ImgName;
   dip::Image<float, 4> input(imgPath, dip::DIP_RGB, true /* norm */);
   MemRef<float, 4> inputResize = dip::Resize4D_NCHW(
@@ -123,7 +122,7 @@ int main() {
   MemRef<float, 2> output(sizesOutput);
 
   // Load model parameters from the specified file.
-  std::string paramsDir = resnetBuildDir + "/arg0.data";
+  std::string paramsDir = resnetDir + "/arg0.data";
   MemRef<float, 1> paramsContainer({ParamsSize});
   loadParameters(paramsDir, paramsContainer);
 

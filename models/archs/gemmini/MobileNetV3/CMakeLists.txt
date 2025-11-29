@@ -114,11 +114,6 @@ add_dependencies(GemminiMOBILENETV3 mobilenetv3-model-build)
 add_executable(buddy-gemmini-mobilenetv3-run ${MODEL_MOBILENETV3_DIR}/buddy-mobilenetv3-main.cpp)
 add_dependencies(buddy-gemmini-mobilenetv3-run GemminiMOBILENETV3)
 
-target_compile_definitions(buddy-gemmini-mobilenetv3-run PRIVATE
-  MOBILENETV3_EXAMPLE_PATH="${MODEL_MOBILENETV3_DIR}"
-  MOBILENETV3_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-)
-
 target_include_directories(buddy-gemmini-mobilenetv3-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 set(BUDDY_MOBILENETV3_LIBS GemminiMOBILENETV3 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-gemmini-mobilenetv3-run ${BUDDY_MOBILENETV3_LIBS})
