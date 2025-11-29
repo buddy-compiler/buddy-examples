@@ -19,11 +19,21 @@ cd buddy-examples
 ./scripts/init.sh
 ```
 
-3. Activate buddy-examples' environment
+3. Activate environment
 
 ```bash
+# buddy environment
 cd buddy-examples
 source ./env.sh
+
+# firesim environment
+cd buddy-examples/thirdparty/chipyard/sims/firesim
+source ./env.sh
+source ./sourceme-manager.sh --skip-ssh-setup
+cd ~/.ssh
+ssh-agent -s > AGENT_VARS
+source AGENT_VARS
+ssh-add firesim.pem
 ``` 
 
 4. Build hardware in FireSim
@@ -60,21 +70,25 @@ This example uses the LeNet model with the MNIST dataset. Note that the build pr
 1. Build Workloads
 
 ```bash
-cd models
-mkdir -p build && cd build
-cmake -G Ninja .. \
-    -DMODEL="lenet" \
-    -DARCH="gemmini"
-ninja buddy-gemmini-lenet-run
+cd buddy-examples
+./sims/marshal/build-image.sh lenet-gemmini
 ```
 
-2.
+2. Simulation in firesim
+
+```bash
+cd buddy-examples
+./sims/firesim/run-firesim.sh
+```
+
+3. Monitor simulation process in a new terminal
+
+```bash
+ssh localhost
+screen -r fsim0 
+```
+
 
 ### ResNet18
 ```bash
-mkdir build && cd build
-cmake -G Ninja .. \
-    -DMODEL="lenet,resnet18,mobilenetv3,bert,stablediffusion,llama2,deepseekr1" \
-    -DARCH="gemmini"
-ninja
 ```

@@ -6,14 +6,15 @@
 # this script may be called multiple times.
 
 ROOT=$(git rev-parse --show-toplevel)
+MARSHAL_DIR=$ROOT/sims/marshal
 
 cd $ROOT && source env.sh
 
-echo "Building marshal workload"
-cd $ROOT/models/build
-make 
+# echo "Building marshal workload"
+# cd $ROOT/models/build
+# make 
 
-cd $ROOT/models/output
-rm -rf ./marshal/overlay/root/
-mkdir -p ./marshal/overlay/root/
-cp -r ./models/* ./marshal/overlay/root/
+cd $ROOT/models/bin
+rm -r $MARSHAL_DIR/overlay/root/* 2>/dev/null || true
+mkdir -p $MARSHAL_DIR/overlay/root/
+cp -r ./* $MARSHAL_DIR/overlay/root/
