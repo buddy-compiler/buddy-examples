@@ -120,7 +120,9 @@ int main() {
   auto out = output.getData();
   softmax(out, 10);
   // gemmini profiling
+  printLogLabel();
   std::cout << "Inference Cycles taken: " << end - start << std::endl;
+  std::cout << std::endl;
 
   // Find the classification and print the result.
   float maxVal = 0;

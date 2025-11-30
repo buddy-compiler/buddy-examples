@@ -196,9 +196,13 @@ $ ./buddy-gemmini-mobilenetv3-run
 
 If all steps go well, you will see the output below. Good luck.
 
+![demo](docs/example3-mobilenetv3-gemmini/demo.png)
 
 
 ### Example 4: BERT-Gemmini
+
+**Notes** The current sequence length limit is set to 5 tokens for test, which can be increased appropriately (the model's maximum limit is 512).
+
 1. Build Workloads
 
 ```bash

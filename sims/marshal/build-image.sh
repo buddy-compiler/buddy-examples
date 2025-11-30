@@ -106,6 +106,7 @@ elif [ $WORKLOAD == "mobilenetv3-gemmini" ]; then
   cp $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ./
   cp $ROOT/models/models/MobileNetV3/arg0.data ./
   cp -r $ROOT/models/models/MobileNetV3/images ./
+  cp $ROOT/models/models/MobileNetV3/Labels.txt ./
 elif [ $WORKLOAD == "bert-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
@@ -116,6 +117,7 @@ elif [ $WORKLOAD == "bert-gemmini" ]; then
   cp $ROOT/models/build/archs/gemmini/Bert/buddy-gemmini-bert-run ./
   cp $ROOT/models/models/Bert/arg0.data ./
   cp $ROOT/models/models/Bert/arg1.data ./
+  cp $ROOT/models/models/Bert/vocab.txt ./
 elif [ $WORKLOAD == "stablediffusion-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
