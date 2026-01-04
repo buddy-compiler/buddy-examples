@@ -33,11 +33,19 @@ add_custom_command(
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
+            -convert-elementwise-to-linalg
+            -eliminate-empty-tensors
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+          > subgraph0_linalg.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
-            -convert-linalg-to-gemmini
+            # -convert-linalg-to-gemmini
           > subgraph0_gemmini.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
@@ -46,12 +54,12 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
-            -convert-linalg-to-gemmini
+            # -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
             -llvm-request-c-wrappers
-            -lower-gemmini
+            # -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
@@ -70,12 +78,12 @@ add_custom_command(
           -convert-elementwise-to-linalg
           -convert-tensor-to-linalg
           -one-shot-bufferize="bufferize-function-boundaries"
-          -convert-linalg-to-gemmini
+          # -convert-linalg-to-gemmini
           -expand-strided-metadata
           -convert-linalg-to-loops
           -convert-scf-to-cf
           -llvm-request-c-wrappers
-          -lower-gemmini
+          # -lower-gemmini
           -ownership-based-buffer-deallocation
           -buffer-deallocation-simplification
           -bufferization-lower-deallocations
