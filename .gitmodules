@@ -4,3 +4,6 @@
 [submodule "thirdparty/chipyard"]
 	path = thirdparty/chipyard
 	url = https://github.com/ucb-bar/chipyard.git
+[submodule "thirdparty/bebop"]
+	path = thirdparty/bebop
+	url = https://github.com/DangoSys/bebop.git
