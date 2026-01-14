@@ -298,7 +298,8 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   // Define directories of vacabulary and parameter file.
-  std::string stableDiffusionDir = getenv("STABLE_DIFFUSION_DIR");
+  // std::string stableDiffusionDir = getenv("STABLE_DIFFUSION_DIR");
+  std::string stableDiffusionDir = "./";
   const std::string vocabDir = stableDiffusionDir + "/vocab.txt";
   const std::string TextEncoderParamsDir1 =
       stableDiffusionDir + "/arg0_text_encoder.data";

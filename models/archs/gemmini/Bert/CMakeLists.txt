@@ -45,8 +45,9 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
-            # -convert-linalg-to-gemmini
-          > subgraph0_gemmini.mlir
+            -convert-linalg-to-gemmini
+            -batchmatmul-optimize
+            > subgraph0_loops.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -54,12 +55,22 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
-            # -convert-linalg-to-gemmini
+            -convert-linalg-to-gemmini
+            -lower-gemmini
+            > subgraph0_gemmini.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${BUDDY_BINARY_DIR}/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
             -llvm-request-c-wrappers
-            # -lower-gemmini
+            -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
@@ -68,22 +79,22 @@ add_custom_command(
             -convert-arith-to-llvm
             -convert-func-to-llvm
             -finalize-memref-to-llvm
-            -reconcile-unrealized-casts  |
-        ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir
+            -reconcile-unrealized-casts |
+          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir
           > subgraph0.ll
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
           -eliminate-empty-tensors
           -convert-elementwise-to-linalg
           -convert-tensor-to-linalg
           -one-shot-bufferize="bufferize-function-boundaries"
-          # -convert-linalg-to-gemmini
+          -convert-linalg-to-gemmini
           -expand-strided-metadata
           -convert-linalg-to-loops
           -convert-scf-to-cf
           -llvm-request-c-wrappers
-          # -lower-gemmini
+          -lower-gemmini
           -ownership-based-buffer-deallocation
           -buffer-deallocation-simplification
           -bufferization-lower-deallocations
@@ -92,8 +103,8 @@ add_custom_command(
           -convert-arith-to-llvm
           -convert-func-to-llvm
           -finalize-memref-to-llvm
-          -reconcile-unrealized-casts  |
-        ${BUDDY_BINARY_DIR}/buddy-translate -buddy-to-llvmir |
+          -reconcile-unrealized-casts |
+        ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
         ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_BERT_DIR}/subgraph0.mlir
   COMMENT "Building subgraph.o "

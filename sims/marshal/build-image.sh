@@ -133,12 +133,12 @@ elif [ $WORKLOAD == "stablediffusion-gemmini" ]; then
 elif [ $WORKLOAD == "llama2-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/Llama2/buddy-gemmini-llama2-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/llama2/buddy-gemmini-llama2-run ]; then
     echo "Error: buddy-gemmini-llama2-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/Llama2/buddy-gemmini-llama2-run ./
-  cp $ROOT/models/models/Llama2/arg0.data ./
+  cp $ROOT/models/build/archs/gemmini/llama2/buddy-gemmini-llama2-run ./
+  cp $ROOT/models/models/llama2/arg0.data ./
   cp $ROOT/models/models/llama2/vocab.txt ./
 elif [ $WORKLOAD == "deepseekr1-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin

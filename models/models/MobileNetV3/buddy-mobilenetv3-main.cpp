@@ -92,7 +92,8 @@ void softmax(float *input, size_t size) {
 }
 
 std::string getLabel(int idx) {
-  std::string mobilenetDir = getenv("MOBILENETV3_DIR");
+  // std::string mobilenetDir = getenv("MOBILENETV3_DIR");
+  std::string mobilenetDir = "./";
   std::ifstream in(mobilenetDir + "/Labels.txt");
   assert(in.is_open() && "Could not read the label file.");
   std::string label;
@@ -112,7 +113,8 @@ int main() {
   intptr_t sizesOutput[2] = {1, 1000};
 
   // Create input and output containers for the image and model output.
-  std::string mobilenetDir = getenv("MOBILENETV3_DIR");
+  // std::string mobilenetDir = getenv("MOBILENETV3_DIR");
+  std::string mobilenetDir = "./";
   std::string imgPath = mobilenetDir + "/images/" + ImgName;
   dip::Image<float, 4> input(imgPath, dip::DIP_RGB, true /* norm */);
   MemRef<float, 4> inputResize = dip::Resize4D_NCHW(

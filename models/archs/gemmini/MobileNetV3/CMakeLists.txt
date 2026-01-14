@@ -24,7 +24,7 @@ add_custom_command(
             -convert-func-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=+buddyext,+D -float-abi=hard -o forward.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o forward.o
           DEPENDS ${MODEL_MOBILENETV3_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)
@@ -52,7 +52,7 @@ add_custom_command(
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-gemmini
-            # -lower-gemmini
+            -lower-gemmini
             > subgraph0_gemmini.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |

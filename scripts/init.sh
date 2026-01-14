@@ -111,7 +111,7 @@ fi
 
 if run_step "4"; then
   begin_step "4" "install bebop"
-  cd ${ROOT}
   source ${ROOT}/env.sh
-  ./thirdparty/bebop/scripts/install.sh
+  cd ${ROOT}/thirdparty/bebop
+  ./scripts/install.sh
 fi

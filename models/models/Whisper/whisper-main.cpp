@@ -115,10 +115,9 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   /// Define directories of vacabulary and parameter file.
-  std::string whisperDir = WHISPER_EXAMPLE_PATH;
-  std::string whisperBuildDir = WHISPER_EXAMPLE_BUILD_PATH;
+  std::string whisperDir = "./";
   const std::string vocabDir = whisperDir + "/vocab.txt";
-  const std::string paramsDir = whisperBuildDir + "/arg0.data";
+  const std::string paramsDir = whisperDir + "/arg0.data";
 
   /// Initialize data containers
   //  - Result container

@@ -101,7 +101,7 @@ int main() {
   intptr_t sizesOutput[2] = {1, 10};
 
   // Create input and output containers for the image and model output.
-  std::string lenetDir = getenv("LENET_DIR");
+  std::string lenetDir = "./";
   std::string imgPath = lenetDir + "/images/" + ImgName;
   dip::Image<float, 4> input(imgPath, dip::DIP_GRAYSCALE, true /* norm */);
   MemRef<float, 2> output(sizesOutput);

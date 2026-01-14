@@ -50,7 +50,7 @@ add_custom_command(
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-gemmini
-            # -lower-gemmini
+            -lower-gemmini
             > subgraph0_gemmini.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |

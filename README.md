@@ -102,7 +102,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export LENET_DIR=$PWD
 $ ./buddy-gemmini-lenet-run
 ```
 
@@ -147,7 +146,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export RESNET_DIR=$PWD
 $ ./buddy-gemmini-resnet-run
 ```
 
@@ -190,7 +188,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export MOBILENETV3_DIR=$PWD
 $ ./buddy-gemmini-mobilenetv3-run
 ```
 
@@ -238,7 +235,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export BERT_DIR=$PWD
 $ ./buddy-gemmini-bert-run
 ```
 
@@ -285,7 +281,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export STABLE_DIFFUSION_DIR=$PWD
 $ ./buddy-gemmini-stablediffusion-run
 ```
 
@@ -332,7 +327,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export LLAMA2_DIR=$PWD
 $ ./buddy-gemmini-llama2-run
 ```
 
@@ -381,7 +375,6 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ export DEEPSEEKR1_DIR=$PWD
 $ ./buddy-gemmini-deepseekr1-run
 ```
 

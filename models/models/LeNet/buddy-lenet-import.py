@@ -34,7 +34,7 @@ from buddy.compiler.ops import tosa
 from model import LeNet
 
 # Retrieve the LeNet model path from environment variables.
-model_path = os.environ.get("LENET_DIR")
+model_path = os.environ.get("LENET_MODEL_PATH")
 if model_path is None:
     raise EnvironmentError(
         "The environment variable 'LENET_MODEL_PATH' is not set or is invalid."

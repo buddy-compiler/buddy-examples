@@ -67,7 +67,8 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   /// Load weights to MemRef container.
-  std::string bertDir = getenv("BERT_DIR");
+  // std::string bertDir = getenv("BERT_DIR");
+  std::string bertDir = "./";
   MemRef<float, 1> arg0({109486854});
   MemRef<long long, 1> arg1({512});
   loadParameters(bertDir + "/arg0.data", bertDir + "/arg1.data", arg0,

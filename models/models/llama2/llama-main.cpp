@@ -114,7 +114,8 @@ int main() {
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
   /// Define directories of vacabulary and parameter file.
-  std::string llamaDir = getenv("LLAMA_DIR");
+  // std::string llamaDir = getenv("LLAMA_DIR");
+  std::string llamaDir = "./";
   const std::string vocabDir = llamaDir + "/vocab.txt";
   const std::string paramsDir = llamaDir + "/arg0.data";
 
