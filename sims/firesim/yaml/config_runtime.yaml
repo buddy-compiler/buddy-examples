@@ -14,7 +14,7 @@ run_farm:
     default_platform: XilinxAlveoU280InstanceDeployManager
 
     # REQUIRED: default directory where simulations are run out of on the run farm hosts
-    default_simulation_dir: /home/mio/Code/buddy-examples/thirdparty/chipyard/sims/firesim/deploy/FIRESIM_RUNS_DIR
+    default_simulation_dir: replace with your own path
 
     # REQUIRED: default fpga db file that enumerates what fpgas are available on the machine (used by XilinxU* Deploy Managers)
     default_fpga_db: /opt/firesim-db.json

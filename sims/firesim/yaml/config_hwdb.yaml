@@ -23,6 +23,6 @@ midasexamples_gcd:
 # DOCREF END: Example HWDB Entry
 
 alveo_u280_firesim_GemminiU280Config_no_nic:
-    bitstream_tar: file:///home/mio/Code/buddy-examples/thirdparty/chipyard/sims/firesim/deploy/results-build/2025-11-28--19-06-31-alveo_u280_firesim_GemminiU280Config_no_nic/cl_xilinx_alveo_u280-firesim-FireSim-platform.FireSimGemminiU280Config-BaseXilinxAlveoU280Config/firesim.tar.gz
+    bitstream_tar: replace with your own path
     deploy_quintuplet_override: null
     custom_runtime_config: null
