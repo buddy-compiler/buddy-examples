@@ -151,6 +151,7 @@ $ ./buddy-gemmini-resnet-run
 
 If all steps go well, you will see the output below. Good luck.
 
+![demo](docs/example2-resnet-gemmini/demo.png)
 
 ### Example 3: MobileNetv3-Gemmini
 1. Build Workloads
@@ -238,10 +239,6 @@ Now, you can login to the system! The username is root and there is no password.
 $ ./buddy-gemmini-bert-run
 ```
 
-If all steps go well, you will see the output below. Good luck.
-
-
-
 ### Example 5: StableDiffusion-Gemmini
 
 **Notes** This model needs to download weights from Hugging Face. Please make sure your environment variables are configured correctly so that Hugging Face can be accessed normally.
@@ -283,10 +280,6 @@ Now, you can login to the system! The username is root and there is no password.
 ```bash
 $ ./buddy-gemmini-stablediffusion-run
 ```
-
-If all steps go well, you will see the output below. Good luck.
-
-
 
 ### Example 6: Llama2-Gemmini
 
@@ -330,11 +323,6 @@ Now, you can login to the system! The username is root and there is no password.
 $ ./buddy-gemmini-llama2-run
 ```
 
-If all steps go well, you will see the output below. Good luck.
-
-
-
-
 ### Example 7: DeepSeekr1-Gemmini
 
 **Notes** This model needs to download weights from Hugging Face. Please make sure your environment variables are configured correctly so that Hugging Face can be accessed normally.
@@ -377,5 +365,3 @@ Now, you can login to the system! The username is root and there is no password.
 ```bash
 $ ./buddy-gemmini-deepseekr1-run
 ```
-
-If all steps go well, you will see the output below. Good luck.

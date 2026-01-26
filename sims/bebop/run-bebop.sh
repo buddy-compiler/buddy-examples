@@ -32,7 +32,7 @@ cargo build --release --bin bebop
 
 cd ${ROOT}/models/bin
 ${ROOT}/thirdparty/bebop/bebop/target/release/bebop \
-  --step \
+  --quiet \
   --host gem5 \
   --gem5-mode se \
   --arch gemmini \

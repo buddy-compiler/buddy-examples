@@ -14,6 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "include/testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
@@ -128,13 +129,10 @@ int main() {
   MemRef<float, 1> paramsContainer({ParamsSize});
   loadParameters(paramsDir, paramsContainer);
 
-  const auto inferStart = std::chrono::high_resolution_clock::now();
-  // Call the forward function of the model.
-  _mlir_ciface_forward(&output, &paramsContainer, &inputResize);
-  const auto inferEnd = std::chrono::high_resolution_clock::now();
-
-  const std::chrono::duration<double, std::milli> inferTime =
-      inferEnd - inferStart;
+  unsigned long start = read_cycles();
+  _mlir_ciface_forward(&output, &paramsContainer, &inputResize);  
+  unsigned long end = read_cycles();
+  std::cout << "Cycle count: " << end - start << std::endl;
 
   auto out = output.getData();
   softmax(out, 1000);
@@ -150,9 +148,6 @@ int main() {
   std::cout << "Classification Index: " << maxIdx << std::endl;
   std::cout << "Classification: " << getLabel(maxIdx) << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
-
-  printLogLabel();
-  std::cout << "Inference time: " << inferTime.count() / 1000 << std::endl;
 
   return 0;
 }

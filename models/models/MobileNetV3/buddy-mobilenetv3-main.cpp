@@ -14,6 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "include/testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
@@ -127,8 +128,12 @@ int main() {
   std::string paramsDir = mobilenetDir + "/arg0.data";
   MemRef<float, 1> paramsContainer({ParamsSize});
   loadParameters(paramsDir, paramsContainer);
+  
+  unsigned long start = read_cycles();
   // Call the forward function of the model.
   _mlir_ciface_forward(&output, &paramsContainer, &inputResize);
+  unsigned long end = read_cycles();
+  std::cout << "Cycle count: " << end - start << std::endl;
 
   auto out = output.getData();
   softmax(out, 1000);

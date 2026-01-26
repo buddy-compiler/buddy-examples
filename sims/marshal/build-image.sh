@@ -96,6 +96,7 @@ elif [ $WORKLOAD == "resnet-gemmini" ]; then
   cp $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ./
   cp $ROOT/models/models/ResNet18/arg0.data ./
   cp -r $ROOT/models/models/ResNet18/images ./
+  cp $ROOT/models/models/ResNet18/Labels.txt ./
 elif [ $WORKLOAD == "mobilenetv3-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
