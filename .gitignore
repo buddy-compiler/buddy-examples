@@ -1,0 +1,7 @@
+.metals/
+.vscode/
+.scala-build/
+
+build/
+
+env.sh

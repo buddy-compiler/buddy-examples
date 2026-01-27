@@ -1,0 +1,9 @@
+[submodule "thirdparty/buddy-mlir"]
+	path = thirdparty/buddy-mlir
+	url = https://github.com/buddy-compiler/buddy-mlir.git
+[submodule "thirdparty/chipyard"]
+	path = thirdparty/chipyard
+	url = https://github.com/ucb-bar/chipyard.git
+[submodule "thirdparty/bebop"]
+	path = thirdparty/bebop
+	url = https://github.com/DangoSys/bebop.git

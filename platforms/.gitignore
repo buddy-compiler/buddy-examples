@@ -1,0 +1,5 @@
+target/
+project/project
+
+.bloop/
+gemmini_params.h
