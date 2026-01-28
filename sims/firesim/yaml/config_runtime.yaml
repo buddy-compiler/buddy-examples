@@ -11,7 +11,7 @@ run_farm:
   recipe_arg_overrides:
     # REQUIRED: default platform used for run farm hosts. this is a class specifying
     # how to run simulations on a run farm host.
-    default_platform: XilinxAlveoU280InstanceDeployManager
+    default_platform: XilinxVCU118InstanceDeployManager
 
     # REQUIRED: default directory where simulations are run out of on the run farm hosts
     default_simulation_dir: replace with your own path
@@ -54,7 +54,7 @@ target_config:
     # or from config_build_recipes.yaml for metasimulation
     # In homogeneous configurations, use this to set the hardware config deployed
     # for all simulators
-    default_hw_config: alveo_u280_firesim_GemminiU280Config_no_nic
+    default_hw_config: vcu118_firesim_GemminiVCU118Config_no_nic
 
     # Advanced: Specify any extra plusargs you would like to provide when
     # booting the simulator (in both FPGA-sim and metasim modes). This is

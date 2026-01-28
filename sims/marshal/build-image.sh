@@ -7,7 +7,8 @@ if [ -z "$1" ]; then
   echo "Error: workload name is required"
   echo "Usage: $0 <workload-name>"
   echo "Valid workload-names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
-       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini"
+       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
+       cnn-gemmini"
   exit 1
 fi
 
@@ -17,6 +18,9 @@ ROOT=$(git rev-parse --show-toplevel)
 MARSHAL_DIR=$ROOT/sims/marshal
 
 source $ROOT/env.sh
+
+# Preload conda libstdc++ for MLIR Python (GLIBCXX_3.4.29). Scoped to this script only; FireSim deploy unaffected.
+export LD_PRELOAD=$(conda info --base)/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}
 
 # step 1: build workload 
 if [ $WORKLOAD == "lenet-gemmini" ]; then
@@ -68,10 +72,18 @@ elif [ $WORKLOAD == "deepseekr1-gemmini" ]; then
     -DMODEL="deepseekr1" \
     -DARCH="gemmini"
   ninja buddy-gemmini-deepseekr1-run
+elif [ $WORKLOAD == "cnn-gemmini" ]; then
+  cd $ROOT/models
+  mkdir -p build && cd build
+  cmake -G Ninja .. \
+    -DMODEL="lenet,resnet18,mobilenetv3" \
+    -DARCH="gemmini"
+  ninja buddy-gemmini-lenet-run buddy-gemmini-resnet-run buddy-gemmini-mobilenetv3-run
 else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
-       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini"
+       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
+       cnn-gemmini"
   exit 1
 fi
 
@@ -151,13 +163,43 @@ elif [ $WORKLOAD == "deepseekr1-gemmini" ]; then
   cp $ROOT/models/build/archs/gemmini/DeepSeekR1/buddy-gemmini-deepseekr1-run ./
   cp $ROOT/models/models/DeepSeekR1/arg0.data ./
   cp $ROOT/models/models/DeepSeekR1/vocab.txt ./
+elif [ $WORKLOAD == "cnn-gemmini" ]; then
+  rm -r $ROOT/models/bin/* 2>/dev/null || true
+  mkdir -p $ROOT/models/bin/lenet && cd $ROOT/models/bin/lenet
+  if [ ! -f $ROOT/models/build/archs/gemmini/LeNet/buddy-gemmini-lenet-run ]; then
+    echo "Error: buddy-gemmini-lenet-run not found"
+    exit 1
+  fi
+  cp $ROOT/models/build/archs/gemmini/LeNet/buddy-gemmini-lenet-run ./
+  cp $ROOT/models/models/LeNet/arg0.data ./
+  cp -r $ROOT/models/models/LeNet/images ./
+
+  mkdir -p $ROOT/models/bin/resnet18 && cd $ROOT/models/bin/resnet18
+  if [ ! -f $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ]; then
+    echo "Error: buddy-gemmini-resnet-run not found"
+    exit 1
+  fi
+  cp $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ./
+  cp $ROOT/models/models/ResNet18/arg0.data ./
+  cp -r $ROOT/models/models/ResNet18/images ./
+  cp $ROOT/models/models/ResNet18/Labels.txt ./
+  
+  mkdir -p $ROOT/models/bin/mobilenetv3 && cd $ROOT/models/bin/mobilenetv3
+  if [ ! -f $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ]; then
+    echo "Error: buddy-gemmini-mobilenetv3-run not found"
+    exit 1
+  fi
+  cp $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ./
+  cp $ROOT/models/models/MobileNetV3/arg0.data ./
+  cp -r $ROOT/models/models/MobileNetV3/images ./
+  cp $ROOT/models/models/MobileNetV3/Labels.txt ./
 else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
-       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini"
+       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
+       cnn-gemmini"
   exit 1
 fi
-
 
 # step 3: build the image
 cd $MARSHAL_DIR

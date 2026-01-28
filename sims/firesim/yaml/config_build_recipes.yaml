@@ -33,7 +33,7 @@
 #    #bit_builder_arg_overrides:
 #    #  <ARG>: <OVERRIDE>
 
-alveo_u280_firesim_GemminiVCU118Config_no_nic:
+vcu118_firesim_GemminiVCU118Config_no_nic:
     PLATFORM: xilinx_vcu118
     TARGET_PROJECT: firesim
     TARGET_PROJECT_MAKEFRAG: ../makefrag/firesim
