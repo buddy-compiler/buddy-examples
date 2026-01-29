@@ -21,11 +21,6 @@
 import os
 import argparse
 from pathlib import Path
-
-# Disable matmul fusion for Gemmini backend
-# This prevents generation of batch_matmul_transpose_b which Gemmini doesn't support
-os.environ["BUDDY_DISABLE_MATMUL_FUSION"] = "1"
-
 import numpy as np
 import torch
 from buddy.compiler.frontend import DynamoCompiler
