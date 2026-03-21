@@ -34,10 +34,10 @@ class GemminiConfig extends Config(
   new chipyard.config.AbstractConfig)
 
 class FireSimGemminiVCU118Config extends Config(
+  new freechips.rocketchip.subsystem.WithExtMemSize((1 << 30) * 4L) ++
   new WithBootROM ++
   new firechip.chip.WithDefaultFireSimBridges ++
   new firechip.chip.WithFireSimConfigTweaks ++
-  new freechips.rocketchip.subsystem.WithExtMemSize((1 << 30) * 4L) ++
   new GemminiConfig)
   
 class FireSimGemminiU280Config extends Config(

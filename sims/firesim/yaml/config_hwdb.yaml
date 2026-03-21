@@ -22,7 +22,7 @@ midasexamples_gcd:
     custom_runtime_config: null
 # DOCREF END: Example HWDB Entry
 
-alveo_u280_firesim_GemminiU280Config_no_nic:
+vcu118_firesim_GemminiVCU118Config_no_nic:
     bitstream_tar: replace with your own path
     deploy_quintuplet_override: null
     custom_runtime_config: null
