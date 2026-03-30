@@ -6,6 +6,9 @@ set(GEMMINI_STABLEDIFFUSION_DIR ${GEMMINI_DIR}/StableDiffusion)
 set(GEMMINI_WHISPER_DIR ${GEMMINI_DIR}/Whisper)
 set(GEMMINI_LLAMA2_DIR ${GEMMINI_DIR}/Llama2)
 set(GEMMINI_DEEPSEEKR1_DIR ${GEMMINI_DIR}/DeepSeekR1)
+set(GEMMINI_QWEN3_DIR ${GEMMINI_DIR}/Qwen3)
+set(GEMMINI_YOLO26_DIR ${GEMMINI_DIR}/YOLO26)
+set(GEMMINI_BUDDYNEXT_DIR ${GEMMINI_DIR}/BuddyNext)
 
 add_subdirectory(LeNet)
 add_subdirectory(ResNet18)
@@ -14,6 +17,9 @@ add_subdirectory(Bert)
 add_subdirectory(StableDiffusion)
 add_subdirectory(llama2)
 add_subdirectory(DeepSeekR1)
+add_subdirectory(Qwen3)
+add_subdirectory(YOLO26)
+add_subdirectory(BuddyNext)
 
 # add_custom_target(gemmini-model-build DEPENDS
 #   GemminiLENET

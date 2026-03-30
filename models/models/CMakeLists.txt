@@ -6,6 +6,9 @@ set(MODEL_MOBILENETV3_DIR ${MODEL_DIR}/MobileNetV3)
 set(MODEL_WHISPER_DIR ${MODEL_DIR}/Whisper)
 set(MODEL_STABLEDIFFUSION_DIR ${MODEL_DIR}/StableDiffusion)
 set(MODEL_LLAMA2_DIR ${MODEL_DIR}/llama2)
+set(MODEL_QWEN3_DIR ${MODEL_DIR}/Qwen3)
+set(MODEL_YOLO26_DIR ${MODEL_DIR}/YOLO26)
+set(MODEL_BUDDYNEXT_DIR ${MODEL_DIR}/BuddyNext)
 
 # Conditionally add model subdirectories based on MODEL_* flags
 if (MODEL_LENET)
@@ -38,4 +41,16 @@ endif()
 
 if (MODEL_LLAMA2)
   add_subdirectory(llama2)
+endif()
+
+if (MODEL_QWEN3)
+  add_subdirectory(Qwen3)
+endif()
+
+if (MODEL_YOLO26)
+  add_subdirectory(YOLO26)
+endif()
+
+if (MODEL_BUDDYNEXT)
+  add_subdirectory(BuddyNext)
 endif()
