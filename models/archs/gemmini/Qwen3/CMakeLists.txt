@@ -7,8 +7,7 @@ set(TOSA_PIPELINE "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa
 add_custom_command(
   OUTPUT forward_prefill_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/forward_prefill_0_6b.mlir
-            -simplify-tosa-reshape |
-          ${LLVM_TOOLS_BINARY_DIR}/mlir-opt
+            -simplify-tosa-reshape
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -36,13 +35,13 @@ add_custom_command(
 add_custom_command(
   OUTPUT subgraph_prefill_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/subgraph0_prefill_0_6b.mlir
-            -simplify-tosa-reshape |
-          ${LLVM_TOOLS_BINARY_DIR}/mlir-opt
+            -simplify-tosa-reshape
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
             -empty-tensor-to-alloc-tensor
             -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-gemmini
             -expand-strided-metadata
@@ -68,8 +67,7 @@ add_custom_command(
 add_custom_command(
   OUTPUT forward_decode_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/forward_decode_0_6b.mlir
-            -simplify-tosa-reshape |
-          ${LLVM_TOOLS_BINARY_DIR}/mlir-opt
+            -simplify-tosa-reshape
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -98,13 +96,13 @@ add_custom_command(
   OUTPUT subgraph_decode_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/subgraph0_decode_0_6b.mlir
             -simplify-tosa-reshape
-            -simplify-tosa-matmul-scalar |
-          ${LLVM_TOOLS_BINARY_DIR}/mlir-opt
+            -simplify-tosa-matmul-scalar
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
             -empty-tensor-to-alloc-tensor
             -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-gemmini
             -expand-strided-metadata
@@ -140,8 +138,8 @@ add_executable(buddy-gemmini-qwen3-run ${MODEL_QWEN3_DIR}/buddy-qwen3-0.6b-main.
 add_dependencies(buddy-gemmini-qwen3-run GemminiQWEN3_0_6B)
 
 target_compile_definitions(buddy-gemmini-qwen3-run PRIVATE
-  QWEN3_0_6B_EXAMPLE_PATH="./"
-  QWEN3_0_6B_EXAMPLE_BUILD_PATH="./"
+  QWEN3_0_6B_EXAMPLE_PATH="${MODEL_QWEN3_DIR}/"
+  QWEN3_0_6B_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/"
 )
 target_include_directories(buddy-gemmini-qwen3-run PRIVATE ${INTERFACE_DIR})
 set(BUDDY_QWEN3_LIBS GemminiQWEN3_0_6B ModelTestCRunnerUtils)

@@ -214,7 +214,7 @@ void tokenizeInput(const std::string &vocabFile,
   std::cout << "Vocab file: " << std::filesystem::canonical(vocabFile)
             << std::endl;
   const auto buddyTokenizeStart = std::chrono::high_resolution_clock::now();
-  inputContainer.tokenizeQwen3(vocabFile, MaxTokenLength);
+  inputContainer.tokenizeDeepSeekR1(vocabFile, MaxTokenLength);
   const auto buddyTokenizeEnd = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double, std::milli> buddyTokenizeTime =
       buddyTokenizeEnd - buddyTokenizeStart;
@@ -504,7 +504,7 @@ int main() {
   std::cout << "\033[33;1m[Decoding]\033[0m " << decodeTokensPerSec
             << " tokens/s" << std::endl;
   std::cout << "\033[33;1m[Input]\033[0m " << inputStr << std::endl;
-  std::cout << "\033[33;1m[Output]\033[0m " << outputContainer.revertQwen3()
+  std::cout << "\033[33;1m[Output]\033[0m " << outputContainer.revertDeepSeekR1()
             << std::endl;
 
   return 0;

@@ -68,6 +68,10 @@ add_dependencies(GemminiYOLO26 yolo26-model-build)
 add_executable(buddy-gemmini-yolo26-run ${MODEL_YOLO26_DIR}/buddy-yolo26n-main.cpp)
 add_dependencies(buddy-gemmini-yolo26-run GemminiYOLO26)
 
+target_compile_definitions(buddy-gemmini-yolo26-run PRIVATE
+  YOLO26_EXAMPLE_PATH="${MODEL_YOLO26_DIR}/"
+  YOLO26_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/"
+)
 target_include_directories(buddy-gemmini-yolo26-run PRIVATE ${INTERFACE_DIR})
 set(BUDDY_YOLO26_LIBS GemminiYOLO26 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-gemmini-yolo26-run ${BUDDY_YOLO26_LIBS})

@@ -21,9 +21,7 @@
 
 import os
 import argparse
-import time
 import torch
-import torch._dynamo as dynamo
 from transformers import (
     AutoModelForCausalLM,
     StaticCache,
@@ -36,14 +34,8 @@ from buddy.compiler.ops import tosa
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import (
     simply_fuse,
-    apply_classic_fusion,
-    eliminate_transpose,
-    eliminate_matmul_transpose_reshape,
-    flash_attention_prefill,
-    gqa_attention_fusion,
 )
 from buddy.compiler.graph.type import DeviceType
-from buddy.compiler.graph.operation import *
 
 # Add argument parser to allow custom output directory.
 parser = argparse.ArgumentParser(description="Qwen3-0.6B Model AOT Importer")
@@ -138,22 +130,11 @@ graph_prefill = graphs_prefill[0]
 graph_decode = graphs_decode[0]
 
 params = dynamo_compiler_prefill.imported_params[graph_prefill]
-# Enable verbose mode for debugging eliminate_matmul_transpose_reshape
-graphs_prefill[0].perform(
-    [eliminate_transpose, eliminate_matmul_transpose_reshape]
-)
-graphs_decode[0].perform(
-    [eliminate_transpose, eliminate_matmul_transpose_reshape]
-)
 pattern_list_prefill = [
     simply_fuse,
-    apply_classic_fusion,
-    flash_attention_prefill,
 ]
 pattern_list_decode = [
     simply_fuse,
-    apply_classic_fusion,
-    gqa_attention_fusion,
 ]
 
 graphs_prefill[0].fuse_ops(pattern_list_prefill)
