@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
   echo "Usage: $0 <workload-name>"
   echo "Valid workload-names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
        bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
-       qwen3-gemmini, yolo26-gemmini, cnn-gemmini"
+       qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
   exit 1
 fi
 
@@ -86,6 +86,13 @@ elif [ $WORKLOAD == "yolo26-gemmini" ]; then
     -DMODEL="yolo26" \
     -DARCH="gemmini"
   ninja buddy-gemmini-yolo26-run
+elif [ $WORKLOAD == "buddynext-gemmini" ]; then
+  cd $ROOT/models
+  mkdir -p build && cd build
+  cmake -G Ninja .. \
+    -DMODEL="buddynext" \
+    -DARCH="gemmini"
+  ninja buddy-gemmini-buddynext-all-run
 elif [ $WORKLOAD == "cnn-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
@@ -97,7 +104,7 @@ else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
        bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
-       qwen3-gemmini, yolo26-gemmini, cnn-gemmini"
+       qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
   exit 1
 fi
 
@@ -198,6 +205,27 @@ elif [ $WORKLOAD == "yolo26-gemmini" ]; then
   cp $ROOT/models/models/YOLO26/arg0.data ./
   cp $ROOT/models/models/YOLO26/labels.txt ./
   cp -r $ROOT/models/models/YOLO26/images ./
+elif [ $WORKLOAD == "buddynext-gemmini" ]; then
+  rm -r $ROOT/models/bin/* 2>/dev/null || true
+  BUDDYNEXT_BUILD=$ROOT/models/build/archs/gemmini/BuddyNext
+  for kernel in next-embedding next-mhsa-qkv next-mhsa-core next-mhsa-context next-output; do
+    binary="buddy-gemmini-buddynext-prefill-${kernel}-run"
+    if [ ! -f $BUDDYNEXT_BUILD/$binary ]; then
+      echo "Error: $binary not found"
+      exit 1
+    fi
+    mkdir -p $ROOT/models/bin/prefill/$kernel
+    cp $BUDDYNEXT_BUILD/$binary $ROOT/models/bin/prefill/$kernel/
+  done
+  for kernel in next-ffn next-norm next-rope next-gqa-attention next-gqa-attention-fusion next-linalg-matmul next-tosa-matmul; do
+    binary="buddy-gemmini-buddynext-decode-${kernel}-run"
+    if [ ! -f $BUDDYNEXT_BUILD/$binary ]; then
+      echo "Error: $binary not found"
+      exit 1
+    fi
+    mkdir -p $ROOT/models/bin/decode/$kernel
+    cp $BUDDYNEXT_BUILD/$binary $ROOT/models/bin/decode/$kernel/
+  done
 elif [ $WORKLOAD == "cnn-gemmini" ]; then
   rm -r $ROOT/models/bin/* 2>/dev/null || true
   mkdir -p $ROOT/models/bin/lenet && cd $ROOT/models/bin/lenet
@@ -232,7 +260,7 @@ else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
        bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
-       qwen3-gemmini, yolo26-gemmini, cnn-gemmini"
+       qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
   exit 1
 fi
 

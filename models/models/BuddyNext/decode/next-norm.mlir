@@ -39,7 +39,6 @@
 // RUN: | FileCheck %s
 
 func.func private @rtclock() -> f64
-func.func private @printMemrefF32(%ptr : tensor<*xf32>)
 
 #map = affine_map<(d0, d1, d2) -> (d0, d1, d2)>
 

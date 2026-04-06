@@ -39,7 +39,6 @@
 // RUN: | FileCheck %s
 
 func.func private @rtclock() -> f64
-func.func private @printMemrefF32(%ptr : tensor<*xf32>)
 
 func.func @kernel(%arg0: tensor<1x1024x1536xf32>, %arg1: tensor<1536xf32>, %arg2 : tensor<256xf32>, %arg3: tensor<1536x1536xf32>, %arg4: tensor<256x1536xf32>, %arg5: tensor<1x1024x128xf32>) -> (tensor<1x12x1024x128xf32>, tensor<1x12x1024x128xf32>, tensor<1x12x1024x128xf32>) {
   %t_start = call @rtclock() : () -> f64

@@ -38,7 +38,6 @@
 // RUN:     -shared-libs=%mlir_runner_utils_dir/libomp%shlibext \
 // RUN: | FileCheck %s
 
-func.func private @printMemrefF32(%ptr : tensor<*xf32>)
 
 func.func @kernel(%arg0: tensor<1x1x1024x1024xf32>, %arg1: tensor<1x1x1024x1024xf32>, %arg2: tensor<1x1x1024x1024xf32>, %arg3: tensor<1x12x1024x128xf32>, %arg4: tensor<1x12x1024x128xf32>) -> tensor<1x1024x1536xf32> {
   %a_zp = "tosa.const"() <{values = dense<0.0> : tensor<1xf32>}> : () -> tensor<1xf32>

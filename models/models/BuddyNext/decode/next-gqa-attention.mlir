@@ -32,7 +32,6 @@
 
 
 #map1 = affine_map<(d0, d1, d2, d3) -> (d0, d1, d2, d3)>
-func.func private @printMemrefF32(%ptr : tensor<*xf32>)
 func.func private @rtclock() -> f64
 func.func @kernel(%q : tensor<1x12x1x128xf32>, %k_cache : tensor<1x2x1024x128xf32>, %v_cache : tensor<1x2x1024x128xf32>, %mask : tensor<1x1x1x1024xf32>) -> tensor<1x12x1x128xf32> {
 

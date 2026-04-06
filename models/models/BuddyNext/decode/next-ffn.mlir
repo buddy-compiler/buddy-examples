@@ -38,7 +38,6 @@
 // RUN:     -shared-libs=%mlir_runner_utils_dir/libomp%shlibext \
 // RUN: | FileCheck %s
 
-func.func private @printMemrefF32(%ptr : tensor<*xf32>)
 
 #map = affine_map<(d0, d1, d2) -> (d1)>
 #map1 = affine_map<(d0, d1, d2) -> (d0, d2)>

@@ -149,9 +149,9 @@ func.func @kernel(%arg0 : tensor<1x40x4096xf32>, %arg1 : tensor<1x40x4096xf32>, 
   // CHECK-SAME: [15{{(, 15)*}}],
 
   // Print results.
-  call @printMemrefF32(%tensor_unranked) : (tensor<*xf32>) -> ()
-  call @printMemrefF32(%tensor_unranked_1) : (tensor<*xf32>) -> ()
-  call @printMemrefF32(%tensor_unranked_2) : (tensor<*xf32>) -> ()
+  // call @printMemrefF32(%tensor_unranked) : (tensor<*xf32>) -> ()
+  // call @printMemrefF32(%tensor_unranked_1) : (tensor<*xf32>) -> ()
+  // call @printMemrefF32(%tensor_unranked_2) : (tensor<*xf32>) -> ()
   // Print timings.
   vector.print %time : f64
 
@@ -171,4 +171,3 @@ func.func @main() {
 
   return
 }
-func.func private @printMemrefF32(%ptr : tensor<*xf32>)
