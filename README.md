@@ -365,3 +365,124 @@ Now, you can login to the system! The username is root and there is no password.
 ```bash
 $ ./buddy-gemmini-deepseekr1-run
 ```
+
+### Example 8: Qwen3-Gemmini
+
+1. Build Workloads
+
+```bash
+cd buddy-examples
+source ./env.sh
+./sims/marshal/build-image.sh qwen3-gemmini
+```
+
+2. Simulation in firesim
+
+```bash
+# activate firesim environment
+cd buddy-examples/thirdparty/chipyard/sims/firesim
+source ./env.sh
+source ./sourceme-manager.sh --skip-ssh-setup
+cd ~/.ssh
+ssh-agent -s > AGENT_VARS
+source AGENT_VARS
+ssh-add firesim.pem
+
+cd buddy-examples
+./sims/firesim/run-firesim.sh
+```
+
+3. Monitor simulation process in a new terminal
+
+```bash
+ssh localhost
+screen -r fsim0
+```
+
+4. Final step!
+Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
+
+```bash
+$ ./buddy-gemmini-qwen3-run
+```
+
+### Example 9: YOLO26-Gemmini
+
+1. Build Workloads
+
+```bash
+cd buddy-examples
+source ./env.sh
+./sims/marshal/build-image.sh yolo26-gemmini
+```
+
+2. Simulation in firesim
+
+```bash
+# activate firesim environment
+cd buddy-examples/thirdparty/chipyard/sims/firesim
+source ./env.sh
+source ./sourceme-manager.sh --skip-ssh-setup
+cd ~/.ssh
+ssh-agent -s > AGENT_VARS
+source AGENT_VARS
+ssh-add firesim.pem
+
+cd buddy-examples
+./sims/firesim/run-firesim.sh
+```
+
+3. Monitor simulation process in a new terminal
+
+```bash
+ssh localhost
+screen -r fsim0
+```
+
+4. Final step!
+Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
+
+```bash
+$ ./buddy-gemmini-yolo26-run /path/to/input.bmp
+```
+
+### Example 10: BuddyNext-Gemmini
+
+1. Build Workloads
+
+```bash
+cd buddy-examples
+source ./env.sh
+./sims/marshal/build-image.sh buddynext-gemmini
+```
+
+2. Simulation in firesim
+
+```bash
+# activate firesim environment
+cd buddy-examples/thirdparty/chipyard/sims/firesim
+source ./env.sh
+source ./sourceme-manager.sh --skip-ssh-setup
+cd ~/.ssh
+ssh-agent -s > AGENT_VARS
+source AGENT_VARS
+ssh-add firesim.pem
+
+cd buddy-examples
+./sims/firesim/run-firesim.sh
+```
+
+3. Monitor simulation process in a new terminal
+
+```bash
+ssh localhost
+screen -r fsim0
+```
+
+4. Final step!
+Now, you can login to the system! The username is root and there is no password.
+
+```bash
+chmod +x ./run-buddynext.sh
+./run-buddynext.sh
+```

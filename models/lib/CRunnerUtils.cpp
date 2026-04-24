@@ -69,3 +69,7 @@ extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
     }
   }
 }
+
+extern "C" void printF64(double d) { fprintf(stdout, "%lg", d); }
+
+extern "C" void printNewline() { fputc('\n', stdout); }

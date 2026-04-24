@@ -108,10 +108,3 @@ if run_step "3"; then
   source ${ROOT}/env.sh
   ./scripts/install-buddy-compiler.sh
 fi
-
-if run_step "4"; then
-  begin_step "4" "install bebop"
-  source ${ROOT}/env.sh
-  cd ${ROOT}/thirdparty/bebop
-  ./scripts/install.sh
-fi
