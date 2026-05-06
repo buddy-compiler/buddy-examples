@@ -1,5 +1,17 @@
 {
   "nodes": {
+    "bebop": {
+      "flake": false,
+      "locked": {
+        "path": "./thirdparty/bebop",
+        "type": "path"
+      },
+      "original": {
+        "path": "./thirdparty/bebop",
+        "type": "path"
+      },
+      "parent": []
+    },
     "buddy-mlir": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -76,6 +88,7 @@
     },
     "root": {
       "inputs": {
+        "bebop": "bebop",
         "buddy-mlir": "buddy-mlir",
         "flake-utils": "flake-utils_2",
         "nixpkgs": "nixpkgs"

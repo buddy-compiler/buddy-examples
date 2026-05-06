@@ -1,0 +1,2 @@
+{ buddyPkgs }:
+buddyPkgs.buddy-mlir
