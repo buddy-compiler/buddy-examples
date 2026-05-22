@@ -10,28 +10,30 @@ add_custom_command(
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             > forward_text_encoder_gemmini.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/forward_text_encoder.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
@@ -55,14 +57,15 @@ add_custom_command(
               -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
@@ -86,28 +89,30 @@ add_custom_command(
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             > forward_unet_gemmini.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/forward_unet.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
@@ -131,28 +136,30 @@ add_custom_command(
               -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             > subgraph0_unet_gemmini.mlir
     COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_unet.mlir
               -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
@@ -176,6 +183,7 @@ add_custom_command(
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
@@ -183,16 +191,17 @@ add_custom_command(
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             > forward_vae_gemmini.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/forward_vae.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
@@ -221,28 +230,30 @@ add_custom_command(
               -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
               -eliminate-empty-tensors
+              -eliminate-large-zero-constants
               -convert-elementwise-to-linalg
               -convert-tensor-to-linalg
               -one-shot-bufferize="bufferize-function-boundaries"
+              -llvm-request-c-wrappers
               -convert-linalg-to-gemmini
               -expand-strided-metadata
               -convert-linalg-to-loops
               -convert-scf-to-cf
-              -llvm-request-c-wrappers
               -lower-gemmini
               > subgraph0_vae_gemmini.mlir
     COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_vae.mlir
               -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
+            -eliminate-large-zero-constants
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -llvm-request-c-wrappers
             -convert-linalg-to-gemmini
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -lower-gemmini
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
@@ -290,4 +301,4 @@ set(BUDDY_STABLE_DIFFUSION_LIBS
   ModelTestDIP_riscv
 )
 
-target_link_libraries(buddy-gemmini-stablediffusion-run ${BUDDY_STABLE_DIFFUSION_LIBS})
+target_link_libraries(buddy-gemmini-stablediffusion-run -static ${BUDDY_STABLE_DIFFUSION_LIBS})

@@ -115,4 +115,4 @@ add_dependencies(buddy-gemmini-resnet-run GemminiRESNET18)
 
 target_include_directories(buddy-gemmini-resnet-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 set(BUDDY_RESNET18_LIBS GemminiRESNET18 ModelTestCRunnerUtils ModelTestDIP_riscv)
-target_link_libraries(buddy-gemmini-resnet-run ${BUDDY_RESNET18_LIBS})
+target_link_libraries(buddy-gemmini-resnet-run -static ${BUDDY_RESNET18_LIBS})

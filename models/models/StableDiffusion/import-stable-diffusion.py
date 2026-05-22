@@ -49,7 +49,7 @@ output_dir = args.output_dir
 os.makedirs(output_dir, exist_ok=True)
 
 device = torch.device("cpu")
-model_id = "stabilityai/stable-diffusion-2-1-base"
+model_id = "borno1/stable_diffusion_2_base"
 
 pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float32)
 pipe = pipe.to(device)

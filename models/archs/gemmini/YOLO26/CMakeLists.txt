@@ -74,4 +74,4 @@ target_compile_definitions(buddy-gemmini-yolo26-run PRIVATE
 )
 target_include_directories(buddy-gemmini-yolo26-run PRIVATE ${INTERFACE_DIR})
 set(BUDDY_YOLO26_LIBS GemminiYOLO26 ModelTestCRunnerUtils ModelTestDIP_riscv)
-target_link_libraries(buddy-gemmini-yolo26-run ${BUDDY_YOLO26_LIBS})
+target_link_libraries(buddy-gemmini-yolo26-run -static ${BUDDY_YOLO26_LIBS})

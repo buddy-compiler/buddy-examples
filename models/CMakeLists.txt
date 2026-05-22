@@ -1,7 +1,22 @@
-set(BUDDY_MLIR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/buddy-mlir)
-set(BUDDY_BINARY_DIR ${BUDDY_MLIR_DIR}/build/bin)
+# Use the buddy-mlir built by the main Buckyball repo, exposed via
+# BUDDY_MLIR_BUILD_DIR (set by sourceme.sh in `nix develop`).
+if(NOT DEFINED ENV{BUDDY_MLIR_BUILD_DIR})
+  message(FATAL_ERROR
+    "BUDDY_MLIR_BUILD_DIR is not set. Enter the nix develop shell so "
+    "sourceme.sh is loaded, then re-run cmake.")
+endif()
+set(BUDDY_MLIR_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/..)
+set(BUDDY_BINARY_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/bin)
 set(RISCV_GNU_TOOLCHAIN $ENV{RISCV})
-set(Python3_EXECUTABLE python3)
+
+execute_process(
+  COMMAND which python3
+  OUTPUT_VARIABLE PYTHON3_ABS
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  COMMAND_ERROR_IS_FATAL ANY
+)
+set(Python3_EXECUTABLE ${PYTHON3_ABS})
+message(STATUS "Using Python3: ${Python3_EXECUTABLE}")
 
 set(WORKLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/models)

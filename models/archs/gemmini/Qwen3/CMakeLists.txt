@@ -7,7 +7,8 @@ set(TOSA_PIPELINE "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa
 add_custom_command(
   OUTPUT forward_prefill_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/forward_prefill_0_6b.mlir
-            -simplify-tosa-reshape
+            -simplify-tosa-reshape |
+          ${BUDDY_BINARY_DIR}/buddy-opt
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -35,7 +36,8 @@ add_custom_command(
 add_custom_command(
   OUTPUT subgraph_prefill_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/subgraph0_prefill_0_6b.mlir
-            -simplify-tosa-reshape
+            -simplify-tosa-reshape |
+          ${BUDDY_BINARY_DIR}/buddy-opt
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -67,7 +69,8 @@ add_custom_command(
 add_custom_command(
   OUTPUT forward_decode_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/forward_decode_0_6b.mlir
-            -simplify-tosa-reshape
+            -simplify-tosa-reshape |
+          ${BUDDY_BINARY_DIR}/buddy-opt
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -95,8 +98,10 @@ add_custom_command(
 add_custom_command(
   OUTPUT subgraph_decode_0_6b.o
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_QWEN3_DIR}/subgraph0_decode_0_6b.mlir
-            -simplify-tosa-reshape
-            -simplify-tosa-matmul-scalar
+            -simplify-tosa-reshape |
+          ${BUDDY_BINARY_DIR}/buddy-opt
+            -simplify-tosa-matmul-scalar |
+          ${BUDDY_BINARY_DIR}/buddy-opt
             -pass-pipeline ${TOSA_PIPELINE} |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -143,4 +148,4 @@ target_compile_definitions(buddy-gemmini-qwen3-run PRIVATE
 )
 target_include_directories(buddy-gemmini-qwen3-run PRIVATE ${INTERFACE_DIR})
 set(BUDDY_QWEN3_LIBS GemminiQWEN3_0_6B ModelTestCRunnerUtils)
-target_link_libraries(buddy-gemmini-qwen3-run ${BUDDY_QWEN3_LIBS})
+target_link_libraries(buddy-gemmini-qwen3-run -static ${BUDDY_QWEN3_LIBS})
