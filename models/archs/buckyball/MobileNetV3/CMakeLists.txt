@@ -130,3 +130,36 @@ add_dependencies(buddy-buckyball-mobilenetv3-run BuckyballMOBILENETV3)
 target_include_directories(buddy-buckyball-mobilenetv3-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 set(BUDDY_MOBILENETV3_LIBS BuckyballMOBILENETV3 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-buckyball-mobilenetv3-run -static ${BUDDY_MOBILENETV3_LIBS})
+
+# Define output directory path (mirrors the build directory structure)
+set(MOBILENETV3_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/MobileNetV3)
+
+add_custom_command(TARGET buddy-buckyball-mobilenetv3-run POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_FILE:buddy-buckyball-mobilenetv3-run>
+          ${MOBILENETV3_OUTPUT_DIR}/buddy-buckyball-mobilenetv3-run
+  COMMENT "Copying Buckyball MobileNetV3 executable to output directory"
+  VERBATIM
+)
+
+# Sync runtime deps (images/, arg0.data, Labels.txt) directly to OUTPUT directory
+add_custom_target(sync-buckyball-mobilenetv3-deps
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${MODEL_MOBILENETV3_DIR}/images
+          ${MOBILENETV3_OUTPUT_DIR}/images
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_MOBILENETV3_DIR}/arg0.data
+          ${MOBILENETV3_OUTPUT_DIR}/arg0.data
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_MOBILENETV3_DIR}/Labels.txt
+          ${MOBILENETV3_OUTPUT_DIR}/Labels.txt
+  DEPENDS
+          ${MODEL_MOBILENETV3_DIR}/arg0.data
+          ${MODEL_MOBILENETV3_DIR}/Labels.txt
+  COMMENT "Syncing MobileNetV3 runtime deps to output directory"
+  VERBATIM
+)
+
+add_dependencies(buddy-buckyball-mobilenetv3-run sync-buckyball-mobilenetv3-deps)

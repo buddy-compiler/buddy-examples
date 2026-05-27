@@ -79,3 +79,36 @@ target_compile_definitions(buddy-buckyball-yolo26-run PRIVATE
 target_include_directories(buddy-buckyball-yolo26-run PRIVATE ${INTERFACE_DIR})
 set(BUDDY_YOLO26_LIBS BuckyballYOLO26 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-buckyball-yolo26-run -static ${BUDDY_YOLO26_LIBS})
+
+# Define output directory path (mirrors the build directory structure)
+set(YOLO26_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/YOLO26)
+
+add_custom_command(TARGET buddy-buckyball-yolo26-run POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_FILE:buddy-buckyball-yolo26-run>
+          ${YOLO26_OUTPUT_DIR}/buddy-buckyball-yolo26-run
+  COMMENT "Copying Buckyball YOLO26 executable to output directory"
+  VERBATIM
+)
+
+# Sync runtime deps (images/, arg0.data, labels.txt) directly to OUTPUT directory
+add_custom_target(sync-buckyball-yolo26-deps
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${MODEL_YOLO26_DIR}/images
+          ${YOLO26_OUTPUT_DIR}/images
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_YOLO26_DIR}/arg0.data
+          ${YOLO26_OUTPUT_DIR}/arg0.data
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_YOLO26_DIR}/labels.txt
+          ${YOLO26_OUTPUT_DIR}/labels.txt
+  DEPENDS
+          ${MODEL_YOLO26_DIR}/arg0.data
+          ${MODEL_YOLO26_DIR}/labels.txt
+  COMMENT "Syncing YOLO26 runtime deps to output directory"
+  VERBATIM
+)
+
+add_dependencies(buddy-buckyball-yolo26-run sync-buckyball-yolo26-deps)

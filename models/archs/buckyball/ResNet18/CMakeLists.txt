@@ -129,3 +129,36 @@ add_dependencies(buddy-buckyball-resnet-run BuckyballRESNET18)
 target_include_directories(buddy-buckyball-resnet-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 set(BUDDY_RESNET18_LIBS BuckyballRESNET18 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-buckyball-resnet-run -static ${BUDDY_RESNET18_LIBS})
+
+# Define output directory path (mirrors the build directory structure)
+set(RESNET18_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/ResNet18)
+
+add_custom_command(TARGET buddy-buckyball-resnet-run POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${RESNET18_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_FILE:buddy-buckyball-resnet-run>
+          ${RESNET18_OUTPUT_DIR}/buddy-buckyball-resnet-run
+  COMMENT "Copying Buckyball ResNet18 executable to output directory"
+  VERBATIM
+)
+
+# Sync runtime deps (images/, arg0.data, Labels.txt) directly to OUTPUT directory
+add_custom_target(sync-buckyball-resnet-deps
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${RESNET18_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${MODEL_RESNET18_DIR}/images
+          ${RESNET18_OUTPUT_DIR}/images
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_RESNET18_DIR}/arg0.data
+          ${RESNET18_OUTPUT_DIR}/arg0.data
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_RESNET18_DIR}/Labels.txt
+          ${RESNET18_OUTPUT_DIR}/Labels.txt
+  DEPENDS
+          ${MODEL_RESNET18_DIR}/arg0.data
+          ${MODEL_RESNET18_DIR}/Labels.txt
+  COMMENT "Syncing ResNet18 runtime deps to output directory"
+  VERBATIM
+)
+
+add_dependencies(buddy-buckyball-resnet-run sync-buckyball-resnet-deps)
