@@ -122,6 +122,15 @@ target_link_libraries(buddy-buckyball-lenet-run -static BuckyballLENET ${MODELTE
 # Define output directory path (mirrors the build directory structure)
 set(LENET_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/LeNet)
 
+add_custom_command(TARGET buddy-buckyball-lenet-run POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_FILE:buddy-buckyball-lenet-run>
+          ${LENET_OUTPUT_DIR}/buddy-buckyball-lenet-run
+  COMMENT "Copying Buckyball LeNet executable to output directory"
+  VERBATIM
+)
+
 # Sync runtime deps (images/, arg0.data) directly to OUTPUT directory
 add_custom_target(sync-buckyball-lenet-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
