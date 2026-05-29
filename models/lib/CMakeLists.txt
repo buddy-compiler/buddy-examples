@@ -30,6 +30,26 @@ target_include_directories(ModelTestHostCRunnerUtils
 )
 
 # ==============================================================================
+# Trace runtime library
+# ==============================================================================
+
+set(TRACE_UTILS_SRC ${MODELTEST_LIB_DIR}/BuddyTraceUtils.cpp)
+
+add_library(ModelTestTraceUtils STATIC ${TRACE_UTILS_SRC})
+target_include_directories(ModelTestTraceUtils
+  PUBLIC
+  ${LLVM_MLIR_EXECUTION_ENGINE_DIR}
+  ${MODELTEST_LIB_DIR}
+)
+
+add_library(ModelTestHostTraceUtils OBJECT ${TRACE_UTILS_SRC})
+target_include_directories(ModelTestHostTraceUtils
+  PUBLIC
+  ${LLVM_MLIR_EXECUTION_ENGINE_DIR}
+  ${MODELTEST_LIB_DIR}
+)
+
+# ==============================================================================
 # DIP Library for RISC-V - provides resize and other DIP operations
 # ==============================================================================
 
@@ -97,5 +117,7 @@ set_target_properties(ModelTestDAP_riscv PROPERTIES LINKER_LANGUAGE CXX)
 
 set(MODELTEST_CRUNNER_UTILS_LIB ModelTestCRunnerUtils PARENT_SCOPE)
 set(MODELTEST_HOST_CRUNNER_UTILS_OBJ ModelTestHostCRunnerUtils PARENT_SCOPE)
+set(MODELTEST_TRACE_UTILS_LIB ModelTestTraceUtils PARENT_SCOPE)
+set(MODELTEST_HOST_TRACE_UTILS_OBJ ModelTestHostTraceUtils PARENT_SCOPE)
 set(MODELTEST_DIP_RISCV_LIB ModelTestDIP_riscv PARENT_SCOPE)
 set(MODELTEST_DAP_RISCV_LIB ModelTestDAP_riscv PARENT_SCOPE)

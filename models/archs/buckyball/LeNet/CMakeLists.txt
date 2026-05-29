@@ -153,10 +153,16 @@ add_dependencies(buddy-buckyball-lenet-run BuckyballLENET)
 target_include_directories(buddy-buckyball-lenet-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 target_link_libraries(buddy-buckyball-lenet-run -static BuckyballLENET ${MODELTEST_CRUNNER_UTILS_LIB})
 
-add_executable(buddy-buckyball-lenet-trace-run ${MODEL_LENET_DIR}/buddy-lenet-trace-main.cpp)
+add_executable(buddy-buckyball-lenet-trace-run ${MODEL_LENET_DIR}/traces/buddy-lenet-trace-main.cpp)
 add_dependencies(buddy-buckyball-lenet-trace-run BuckyballLENETTrace)
 target_include_directories(buddy-buckyball-lenet-trace-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
-target_link_libraries(buddy-buckyball-lenet-trace-run -static BuckyballLENETTrace ${MODELTEST_CRUNNER_UTILS_LIB})
+target_link_libraries(buddy-buckyball-lenet-trace-run
+  -static
+  BuckyballLENETTrace
+  ${MODELTEST_CRUNNER_UTILS_LIB}
+  ${MODELTEST_TRACE_UTILS_LIB}
+  ${MODELTEST_LENET_TRACE_CFG_LIB}
+)
 
 # Define output directory path (mirrors the build directory structure)
 set(LENET_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/LeNet)
@@ -206,7 +212,6 @@ set(HOST_TRACE_DIR ${CMAKE_BINARY_DIR}/host-tools/lenet)
 set(HOST_TRACE_SUBGRAPH_LL ${HOST_TRACE_DIR}/subgraph0_trace_host.ll)
 set(HOST_TRACE_SUBGRAPH_O ${HOST_TRACE_DIR}/subgraph0_trace_host.o)
 set(HOST_TRACE_RUNNER ${HOST_TRACE_DIR}/buddy-lenet-host-trace-run)
-set(HOST_CRUNNER_OBJ ${CMAKE_BINARY_DIR}/workloads/src/ModelTest/e2e/models/lib/CMakeFiles/ModelTestHostCRunnerUtils.dir/CRunnerUtils.cpp.o)
 
 add_custom_command(
   OUTPUT ${HOST_TRACE_SUBGRAPH_LL}
@@ -255,14 +260,19 @@ add_custom_command(
           -O0
           -I${BUDDY_MLIR_DIR}/frontend/Interfaces
           -I${BUDDY_MLIR_DIR}/llvm/mlir/include/mlir/ExecutionEngine
-          ${MODEL_LENET_DIR}/lenet-host-trace-runner.cpp
+          -I${MODELTEST_LIB_DIR}
+          ${MODEL_LENET_DIR}/traces/lenet-host-trace-runner.cpp
           ${HOST_TRACE_SUBGRAPH_O}
-          ${HOST_CRUNNER_OBJ}
+          $<TARGET_OBJECTS:ModelTestHostCRunnerUtils>
+          $<TARGET_OBJECTS:ModelTestHostTraceUtils>
+          $<TARGET_OBJECTS:ModelTestHostLeNetTraceConfig>
           -lm
           -o ${HOST_TRACE_RUNNER}
-  DEPENDS ${MODEL_LENET_DIR}/lenet-host-trace-runner.cpp
+  DEPENDS ${MODEL_LENET_DIR}/traces/lenet-host-trace-runner.cpp
           ${HOST_TRACE_SUBGRAPH_O}
           ModelTestHostCRunnerUtils
+          ModelTestHostTraceUtils
+          ModelTestHostLeNetTraceConfig
   COMMENT "Linking host traced LeNet runner"
   VERBATIM
 )

@@ -9,7 +9,12 @@ This directory provides common libraries shared across different ModelTest archi
 - **Source**: `${MODELTEST_LIB_DIR}/CRunnerUtils.cpp`
 - **Target**: Cross-platform (compiled for target architecture)
 
-### 2. ModelTestDIP_riscv
+### 2. ModelTestTraceUtils
+- **Purpose**: Provides shared trace runtime (`buddyTraceTensorF32`, `_mlir_ciface_buddyTraceTensorF32`)
+- **Source**: `${MODELTEST_LIB_DIR}/BuddyTraceUtils.cpp`
+- **Model config**: Each model provides its own metadata under `<model>/traces/`
+
+### 3. ModelTestDIP_riscv
 - **Purpose**: Provides **Digital Image Processing** operations compiled for RISC-V
 - **Source**: `${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DIP.mlir`
 - **Target**: RISC-V (riscv64 with +buddyext,+D)
@@ -20,7 +25,7 @@ This directory provides common libraries shared across different ModelTest archi
   - `_mlir_ciface_rotate_4d_nchw`
   - And other DIP operations (corr_2d, morphology, etc.)
 
-### 3. ModelTestDAP_riscv
+### 4. ModelTestDAP_riscv
 - **Purpose**: Provides **Digital Audio Processing** operations compiled for RISC-V
 - **Source**: `${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DAP.mlir`
 - **Target**: RISC-V (riscv64 with +buddyext,+D)
