@@ -1,4 +1,4 @@
-//===- buddy-lenet-main.cpp -----------------------------------------------===//
+//===- buddy-lenet-trace-main.cpp -----------------------------------------===//
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,25 +25,22 @@
 #include <iostream>
 #include <limits>
 #include <string>
-#include <utility>
-#include <vector>
 
 constexpr size_t ParamsSize = 44426;
 const std::string ImgName = "8.bmp";
 
-/// Declare LeNet forward function.
 extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
                                      MemRef<float, 1> *arg0,
                                      dip::Image<float, 4> *input);
+extern "C" void buddyTraceTensorF32(const char *tag, const char *layout,
+                                    int64_t rank, const int64_t *shape,
+                                    const float *data, int64_t elemCount);
 
-/// Print [Log] label in bold blue format.
-void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }
+static void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }
 
-/// Load parameters into data container.
-void loadParameters(const std::string &paramFilePath,
-                    MemRef<float, 1> &params) {
+static void loadParameters(const std::string &paramFilePath,
+                           MemRef<float, 1> &params) {
   const auto loadStart = std::chrono::high_resolution_clock::now();
-  // Open the parameter file in binary mode.
   std::ifstream paramFile(paramFilePath, std::ios::in | std::ios::binary);
   if (!paramFile.is_open()) {
     throw std::runtime_error("[Error] Failed to open params file!");
@@ -51,10 +48,8 @@ void loadParameters(const std::string &paramFilePath,
   printLogLabel();
   std::cout << "Loading params..." << std::endl;
   printLogLabel();
-  // Print the canonical path of the parameter file.
   std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
             << std::endl;
-  // Read the parameter data into the provided memory reference.
   paramFile.read(reinterpret_cast<char *>(params.getData()),
                  sizeof(float) * (params.getSize()));
   if (paramFile.fail()) {
@@ -70,26 +65,26 @@ void loadParameters(const std::string &paramFilePath,
             << std::endl;
 }
 
-/// Softmax function to convert logits to probabilities.
-void softmax(float *input, size_t size) {
+static void softmax(float *input, size_t size) {
   size_t i;
-  float max_value = -INFINITY;
+  float maxValue = -INFINITY;
   double sum = 0.0;
-  // Find the maximum value in the input array for numerical stability.
   for (i = 0; i < size; ++i) {
-    if (max_value < input[i]) {
-      max_value = input[i];
+    if (maxValue < input[i]) {
+      maxValue = input[i];
     }
   }
-  // Calculate the sum of the exponentials of the input elements, normalized by
-  // the max value.
   for (i = 0; i < size; ++i) {
-    sum += exp(input[i] - max_value);
+    sum += exp(input[i] - maxValue);
   }
-  // Normalize the input array with the softmax calculation.
   for (i = 0; i < size; ++i) {
-    input[i] = exp(input[i] - max_value) / sum;
+    input[i] = exp(input[i] - maxValue) / sum;
   }
+}
+
+static void traceInput(dip::Image<float, 4> &input) {
+  int64_t shape[4] = {1, 1, 28, 28};
+  buddyTraceTensorF32("input_nchw", "nchw", 4, shape, input.getData(), 784);
 }
 
 static void normalizeLeNetInput(dip::Image<float, 4> &input) {
@@ -101,39 +96,32 @@ static void normalizeLeNetInput(dip::Image<float, 4> &input) {
 }
 
 int main() {
-  // Print the title of this example.
   const std::string title = "LeNet Inference Powered by Buddy Compiler";
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
 
-  // Define the sizes of the output tensors.
   intptr_t sizesOutput[2] = {1, 10};
-
-  // Create input and output containers for the image and model output.
   std::string lenetDir = "./";
   std::string imgPath = lenetDir + "/images/" + ImgName;
   dip::Image<float, 4> input(imgPath, dip::DIP_GRAYSCALE, true /* norm */);
   normalizeLeNetInput(input);
+  traceInput(input);
+
   MemRef<float, 2> output(sizesOutput);
 
-  // Load model parameters from the specified file.
   std::string paramsDir = lenetDir + "/arg0.data";
   MemRef<float, 1> paramsContainer({ParamsSize});
   loadParameters(paramsDir, paramsContainer);
 
   unsigned long start = read_cycles();
-  // Call the forward function of the model.
   _mlir_ciface_forward(&output, &paramsContainer, &input);
   unsigned long end = read_cycles();
 
-  // Apply softmax to the output logits to get probabilities.
   auto out = output.getData();
   softmax(out, 10);
-  // gemmini profiling
   printLogLabel();
   std::cout << "Inference Cycles taken: " << end - start << std::endl;
   std::cout << std::endl;
 
-  // Find the classification and print the result.
   float maxVal = 0;
   float maxIdx = 0;
   for (int i = 0; i < 10; ++i) {
@@ -146,6 +134,5 @@ int main() {
   std::cout << "Results: " << std::endl;
   std::cout << "Classification: " << maxIdx << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
-
   return 0;
 }

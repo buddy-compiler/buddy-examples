@@ -8,10 +8,14 @@
 #include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
+#include <iomanip>
 #include <malloc.h>
 #include <random>
+#include <sstream>
+#include <string>
 #include <string.h>
 #include <sys/time.h>
+#include <vector>
 
 extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
                            UnrankedMemRefType<char> *dstArg) {
@@ -73,3 +77,121 @@ extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
 extern "C" void printF64(double d) { fprintf(stdout, "%lg", d); }
 
 extern "C" void printNewline() { fputc('\n', stdout); }
+
+namespace {
+struct TraceMeta {
+  const char *tag;
+  const char *layout;
+  std::vector<int64_t> shape;
+};
+
+const TraceMeta kTraceMeta[] = {
+    {"input_nchw", "nchw", {1, 1, 28, 28}},
+    {"conv1_out_nchw", "nchw", {1, 6, 24, 24}},
+    {"relu1_out_nchw", "nchw", {1, 6, 24, 24}},
+    {"pool1_out_nchw", "nchw", {1, 6, 12, 12}},
+    {"conv2_out_nchw", "nchw", {1, 16, 8, 8}},
+    {"relu2_out_nchw", "nchw", {1, 16, 8, 8}},
+    {"pool2_out_nchw", "nchw", {1, 16, 4, 4}},
+    {"flatten_out", "nc", {1, 256}},
+    {"fc1_out", "nc", {1, 120}},
+    {"relu3_out", "nc", {1, 120}},
+    {"fc2_out", "nc", {1, 84}},
+    {"relu4_out", "nc", {1, 84}},
+    {"fc3_out", "nc", {1, 10}},
+};
+
+std::string escapeJson(const char *text) {
+  std::ostringstream os;
+  for (const char *p = text; p && *p; ++p) {
+    switch (*p) {
+    case '\\':
+      os << "\\\\";
+      break;
+    case '"':
+      os << "\\\"";
+      break;
+    case '\n':
+      os << "\\n";
+      break;
+    case '\r':
+      os << "\\r";
+      break;
+    case '\t':
+      os << "\\t";
+      break;
+    default:
+      os << *p;
+      break;
+    }
+  }
+  return os.str();
+}
+
+FILE *traceStream() {
+  static FILE *stream = nullptr;
+  static bool initialized = false;
+  if (!initialized) {
+    initialized = true;
+    if (const char *path = std::getenv("BB_LAYER_TRACE_PATH"); path && *path) {
+      stream = fopen(path, "w");
+    } else {
+      stream = fopen("layer-trace.ndjson", "w");
+    }
+  }
+  return stream;
+}
+
+bool traceEnabled() { return traceStream() != nullptr; }
+} // namespace
+
+extern "C" void _mlir_ciface_buddyTraceTensorF32(
+    int64_t tagId, StridedMemRefType<float, 1> *arg) {
+  if (!traceEnabled())
+    return;
+  if (tagId < 0 || static_cast<size_t>(tagId) >= std::size(kTraceMeta))
+    return;
+
+  const TraceMeta &meta = kTraceMeta[tagId];
+
+  FILE *stream = traceStream();
+  fprintf(stream, "{\"tag\":\"%s\",\"layout\":\"%s\",\"shape\":[",
+          escapeJson(meta.tag).c_str(), escapeJson(meta.layout).c_str());
+  for (size_t i = 0; i < meta.shape.size(); ++i) {
+    if (i != 0)
+      fputc(',', stream);
+    fprintf(stream, "%" PRId64, meta.shape[i]);
+  }
+  fputs("],\"values\":[", stream);
+  for (int64_t i = 0; i < arg->sizes[0]; ++i) {
+    if (i != 0)
+      fputc(',', stream);
+    fprintf(stream, "%.9g", arg->data[arg->offset + i * arg->strides[0]]);
+  }
+  fputs("]}\n", stream);
+  fflush(stream);
+}
+
+extern "C" void buddyTraceTensorF32(const char *tag, const char *layout,
+                                    int64_t rank, const int64_t *shape,
+                                    const float *data, int64_t elemCount) {
+  if (!traceEnabled())
+    return;
+
+  FILE *stream = traceStream();
+  fprintf(stream, "{\"tag\":\"%s\",\"layout\":\"%s\",\"shape\":[",
+          escapeJson(tag).c_str(), escapeJson(layout).c_str());
+  for (int64_t i = 0; i < rank; ++i) {
+    if (i != 0)
+      fputc(',', stream);
+    fprintf(stream, "%" PRId64, shape[i]);
+  }
+  fputs("],\"values\":[", stream);
+  for (int64_t i = 0; i < elemCount; ++i) {
+    if (i != 0)
+      fputc(',', stream);
+    fprintf(stream, "%.9g", data[i]);
+  }
+  fputs("]}\n", stream);
+  fflush(stream);
+}

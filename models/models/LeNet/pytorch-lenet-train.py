@@ -18,6 +18,13 @@
 #
 # ===---------------------------------------------------------------------------
 
+from pathlib import Path
+
+model_path = Path("lenet-model.pth")
+if model_path.exists():
+    print(f"{model_path} already exists, skipping training.")
+    raise SystemExit(0)
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -55,5 +62,5 @@ for epoch in range(epochs):
     print(f"Epoch {epoch+1}/{epochs} - Loss: {running_loss/len(train_loader)}")
 
 # Save the complete model
-torch.save(model, "lenet-model.pth")
+torch.save(model, model_path)
 print("Model saved successfully.")

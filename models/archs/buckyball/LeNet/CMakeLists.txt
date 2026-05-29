@@ -109,15 +109,54 @@ add_custom_command(
   COMMENT "Building subgraph0.o"
   VERBATIM)
 
+add_custom_command(
+  OUTPUT  subgraph0_trace.o
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.trace.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${BUDDY_BINARY_DIR}/buddy-opt
+            -eliminate-empty-tensors
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-tile
+            -convert-tile-to-buckyball
+            -lower-buckyball-to-bank-ssa
+            -assign-physical-banks
+            -llvm-request-c-wrappers
+            -lower-bank-ssa-to-intrinsics
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -convert-scf-to-cf
+            -lower-buckyball
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-arith-to-llvm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts |
+          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph0_trace.o
+  DEPENDS ${MODEL_LENET_DIR}/subgraph0.trace.mlir
+  COMMENT "Building subgraph0_trace.o"
+  VERBATIM)
+
 
 add_library(BuckyballLENET STATIC subgraph0.o forward.o)
 set_target_properties(BuckyballLENET PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(BuckyballLENET lenet-model-build)
 
+add_library(BuckyballLENETTrace STATIC subgraph0_trace.o forward.o)
+set_target_properties(BuckyballLENETTrace PROPERTIES LINKER_LANGUAGE CXX)
+add_dependencies(BuckyballLENETTrace lenet-model-build)
+
 add_executable(buddy-buckyball-lenet-run ${MODEL_LENET_DIR}/buddy-lenet-main.cpp)
 add_dependencies(buddy-buckyball-lenet-run BuckyballLENET)
 target_include_directories(buddy-buckyball-lenet-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 target_link_libraries(buddy-buckyball-lenet-run -static BuckyballLENET ${MODELTEST_CRUNNER_UTILS_LIB})
+
+add_executable(buddy-buckyball-lenet-trace-run ${MODEL_LENET_DIR}/buddy-lenet-trace-main.cpp)
+add_dependencies(buddy-buckyball-lenet-trace-run BuckyballLENETTrace)
+target_include_directories(buddy-buckyball-lenet-trace-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
+target_link_libraries(buddy-buckyball-lenet-trace-run -static BuckyballLENETTrace ${MODELTEST_CRUNNER_UTILS_LIB})
 
 # Define output directory path (mirrors the build directory structure)
 set(LENET_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/LeNet)
@@ -129,6 +168,21 @@ add_custom_command(TARGET buddy-buckyball-lenet-run POST_BUILD
           ${LENET_OUTPUT_DIR}/buddy-buckyball-lenet-run
   COMMENT "Copying Buckyball LeNet executable to output directory"
   VERBATIM
+)
+
+add_custom_command(TARGET buddy-buckyball-lenet-trace-run POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          $<TARGET_FILE:buddy-buckyball-lenet-trace-run>
+          ${LENET_OUTPUT_DIR}/buddy-buckyball-lenet-trace-run
+  COMMENT "Copying traced Buckyball LeNet executable to output directory"
+  VERBATIM
+)
+
+add_custom_target(buddy-buckyball-lenet-all-run
+  DEPENDS
+    buddy-buckyball-lenet-run
+    buddy-buckyball-lenet-trace-run
 )
 
 # Sync runtime deps (images/, arg0.data) directly to OUTPUT directory
@@ -146,3 +200,71 @@ add_custom_target(sync-buckyball-lenet-deps
 )
 
 add_dependencies(buddy-buckyball-lenet-run sync-buckyball-lenet-deps)
+add_dependencies(buddy-buckyball-lenet-trace-run sync-buckyball-lenet-deps)
+
+set(HOST_TRACE_DIR ${CMAKE_BINARY_DIR}/host-tools/lenet)
+set(HOST_TRACE_SUBGRAPH_LL ${HOST_TRACE_DIR}/subgraph0_trace_host.ll)
+set(HOST_TRACE_SUBGRAPH_O ${HOST_TRACE_DIR}/subgraph0_trace_host.o)
+set(HOST_TRACE_RUNNER ${HOST_TRACE_DIR}/buddy-lenet-host-trace-run)
+set(HOST_CRUNNER_OBJ ${CMAKE_BINARY_DIR}/workloads/src/ModelTest/e2e/models/lib/CMakeFiles/ModelTestHostCRunnerUtils.dir/CRunnerUtils.cpp.o)
+
+add_custom_command(
+  OUTPUT ${HOST_TRACE_SUBGRAPH_LL}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${HOST_TRACE_DIR}
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.trace.mlir
+          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${BUDDY_BINARY_DIR}/buddy-opt
+            -eliminate-empty-tensors
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -batchmatmul-optimize
+            -convert-linalg-to-affine-loops
+            -convert-vector-to-scf
+            -expand-strided-metadata
+            -lower-affine
+            -convert-vector-to-llvm
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -llvm-request-c-wrappers
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts |
+          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir > ${HOST_TRACE_SUBGRAPH_LL}
+  DEPENDS ${MODEL_LENET_DIR}/subgraph0.trace.mlir
+  COMMENT "Building host LLVM IR for traced LeNet subgraph"
+  VERBATIM
+)
+
+add_custom_command(
+  OUTPUT ${HOST_TRACE_SUBGRAPH_O}
+  COMMAND /usr/bin/clang++ -c -O0 -fPIC -o ${HOST_TRACE_SUBGRAPH_O} ${HOST_TRACE_SUBGRAPH_LL}
+  DEPENDS ${HOST_TRACE_SUBGRAPH_LL}
+  COMMENT "Compiling host object for traced LeNet subgraph"
+  VERBATIM
+)
+
+add_custom_command(
+  OUTPUT ${HOST_TRACE_RUNNER}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${HOST_TRACE_DIR}
+  COMMAND /usr/bin/clang++
+          -std=c++17
+          -O0
+          -I${BUDDY_MLIR_DIR}/frontend/Interfaces
+          -I${BUDDY_MLIR_DIR}/llvm/mlir/include/mlir/ExecutionEngine
+          ${MODEL_LENET_DIR}/lenet-host-trace-runner.cpp
+          ${HOST_TRACE_SUBGRAPH_O}
+          ${HOST_CRUNNER_OBJ}
+          -lm
+          -o ${HOST_TRACE_RUNNER}
+  DEPENDS ${MODEL_LENET_DIR}/lenet-host-trace-runner.cpp
+          ${HOST_TRACE_SUBGRAPH_O}
+          ModelTestHostCRunnerUtils
+  COMMENT "Linking host traced LeNet runner"
+  VERBATIM
+)
+
+add_custom_target(buddy-lenet-host-trace-run ALL DEPENDS ${HOST_TRACE_RUNNER})
