@@ -20,6 +20,10 @@
 
 import os
 from pathlib import Path
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 import torch._inductor.lowering
 
@@ -39,15 +43,54 @@ if model_path is None:
     raise EnvironmentError(
         "The environment variable 'LENET_MODEL_PATH' is not set or is invalid."
     )
+model_dir = Path(model_path)
+
+
+def load_trace_config(path: Path) -> dict:
+    if not path.exists():
+        raise FileNotFoundError(f"trace config not found: {path}")
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    items = data.get("trace")
+    if not isinstance(items, list):
+        raise ValueError("trace config must contain [[trace]] entries")
+
+    result = {}
+    ids = set()
+    for item in items:
+        node = item.get("node")
+        trace_id = item.get("id")
+        tag = item.get("tag")
+        layout = item.get("layout")
+        if not isinstance(node, str) or not node:
+            raise ValueError("trace.node must be a non-empty string")
+        if not isinstance(trace_id, int):
+            raise ValueError(f"trace id for {node} must be an integer")
+        if not isinstance(tag, str) or not tag:
+            raise ValueError(f"trace tag for {node} must be a non-empty string")
+        if not isinstance(layout, str) or not layout:
+            raise ValueError(f"trace layout for {node} must be a non-empty string")
+        if node in result:
+            raise ValueError(f"duplicate trace node: {node}")
+        if trace_id in ids:
+            raise ValueError(f"duplicate trace id: {trace_id}")
+        ids.add(trace_id)
+        result[node] = {"id": trace_id, "tag": tag, "layout": layout}
+    return result
 
 model = LeNet()
-model = torch.load(model_path + "/lenet-model.pth", weights_only=False)
+trace_dir = model_dir / "trace"
+output_dir = model_dir / "output"
+
+model = torch.load(model_dir / "lenet-model.pth", weights_only=False)
 model = model.eval()
+trace_config = load_trace_config(trace_dir / "trace.toml")
 
 # Initialize Dynamo Compiler with specific configurations as an importer.
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
+    trace_config=trace_config,
+    trace_dump_dir=output_dir,
 )
 
 data = torch.randn([1, 1, 28, 28])

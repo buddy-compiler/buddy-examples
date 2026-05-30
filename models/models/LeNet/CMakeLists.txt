@@ -1,4 +1,6 @@
 set(IMG_PATH ${MODEL_LENET_DIR}/images)
+
+
 add_custom_command(
   OUTPUT ${MODEL_LENET_DIR}/lenet-model.pth
   COMMAND export LENET_MODEL_PATH=${MODEL_LENET_DIR} &&
@@ -14,39 +16,12 @@ add_custom_command(
   COMMAND export LENET_MODEL_PATH=${MODEL_LENET_DIR} &&
           ${Python3_EXECUTABLE} ${MODEL_LENET_DIR}/buddy-lenet-import.py
   DEPENDS buddy-lenet-import.py model.py ${MODEL_LENET_DIR}/lenet-model.pth
+          ${MODEL_LENET_DIR}/trace/trace.toml
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
-)
-
-add_custom_command(
-  OUTPUT ${MODEL_LENET_DIR}/subgraph0.trace.mlir
-  COMMAND ${Python3_EXECUTABLE} ${MODEL_LENET_DIR}/traces/generate_lenet_trace_mlir.py
-          --input ${MODEL_LENET_DIR}/subgraph0.mlir
-          --output ${MODEL_LENET_DIR}/subgraph0.trace.mlir
-  DEPENDS ${MODEL_LENET_DIR}/subgraph0.mlir
-          ${MODEL_LENET_DIR}/traces/generate_lenet_trace_mlir.py
-  COMMENT "Generating traced subgraph0.trace.mlir"
 )
 
 add_custom_target(lenet-model-build DEPENDS
   ${MODEL_LENET_DIR}/forward.mlir
   ${MODEL_LENET_DIR}/subgraph0.mlir
   ${MODEL_LENET_DIR}/arg0.data
-  ${MODEL_LENET_DIR}/subgraph0.trace.mlir
 )
-
-set(LENET_TRACE_META_SRC ${MODEL_LENET_DIR}/traces/TraceMeta.cpp)
-
-add_library(ModelTestLeNetTraceConfig STATIC ${LENET_TRACE_META_SRC})
-target_include_directories(ModelTestLeNetTraceConfig
-  PUBLIC
-  ${MODELTEST_LIB_DIR}
-)
-
-add_library(ModelTestHostLeNetTraceConfig OBJECT ${LENET_TRACE_META_SRC})
-target_include_directories(ModelTestHostLeNetTraceConfig
-  PUBLIC
-  ${MODELTEST_LIB_DIR}
-)
-
-set(MODELTEST_LENET_TRACE_CFG_LIB ModelTestLeNetTraceConfig PARENT_SCOPE)
-set(MODELTEST_HOST_LENET_TRACE_CFG_OBJ ModelTestHostLeNetTraceConfig PARENT_SCOPE)
