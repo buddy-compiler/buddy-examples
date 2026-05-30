@@ -9,6 +9,7 @@ set(MODEL_LLAMA2_DIR ${MODEL_DIR}/llama2)
 set(MODEL_QWEN3_DIR ${MODEL_DIR}/Qwen3)
 set(MODEL_YOLO26_DIR ${MODEL_DIR}/YOLO26)
 set(MODEL_BUDDYNEXT_DIR ${MODEL_DIR}/BuddyNext)
+set(MODEL_GEMMA4_DIR ${MODEL_DIR}/Gemma4)
 
 # Conditionally add model subdirectories based on MODEL_* flags
 if (MODEL_LENET)
@@ -53,4 +54,8 @@ endif()
 
 if (MODEL_BUDDYNEXT)
   add_subdirectory(BuddyNext)
+endif()
+
+if (MODEL_GEMMA4)
+  add_subdirectory(Gemma4)
 endif()
