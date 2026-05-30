@@ -5,13 +5,9 @@
 #include <Msan.h>
 #include <algorithm>
 #include <alloca.h>
-#include <cinttypes>
 #include <cstdio>
-#include <cstdlib>
 #include <malloc.h>
-#include <random>
 #include <string.h>
-#include <sys/time.h>
 
 extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
                            UnrankedMemRefType<char> *dstArg) {

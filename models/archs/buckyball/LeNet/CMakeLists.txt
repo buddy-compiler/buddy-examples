@@ -109,7 +109,6 @@ add_custom_command(
   COMMENT "Building subgraph0.o"
   VERBATIM)
 
-
 add_library(BuckyballLENET STATIC subgraph0.o forward.o)
 set_target_properties(BuckyballLENET PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(BuckyballLENET lenet-model-build)
@@ -129,6 +128,11 @@ add_custom_command(TARGET buddy-buckyball-lenet-run POST_BUILD
           ${LENET_OUTPUT_DIR}/buddy-buckyball-lenet-run
   COMMENT "Copying Buckyball LeNet executable to output directory"
   VERBATIM
+)
+
+add_custom_target(buddy-buckyball-lenet-all-run
+  DEPENDS
+    buddy-buckyball-lenet-run
 )
 
 # Sync runtime deps (images/, arg0.data) directly to OUTPUT directory

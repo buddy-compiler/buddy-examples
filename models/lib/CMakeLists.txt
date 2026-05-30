@@ -23,6 +23,12 @@ target_include_directories(ModelTestCRunnerUtils
   ${LLVM_MLIR_EXECUTION_ENGINE_DIR}
 )
 
+add_library(ModelTestHostCRunnerUtils OBJECT ${CRUNNER_UTILS_SRC})
+target_include_directories(ModelTestHostCRunnerUtils
+  PUBLIC
+  ${LLVM_MLIR_EXECUTION_ENGINE_DIR}
+)
+
 # ==============================================================================
 # DIP Library for RISC-V - provides resize and other DIP operations
 # ==============================================================================
@@ -90,5 +96,6 @@ set_target_properties(ModelTestDAP_riscv PROPERTIES LINKER_LANGUAGE CXX)
 # ==============================================================================
 
 set(MODELTEST_CRUNNER_UTILS_LIB ModelTestCRunnerUtils PARENT_SCOPE)
+set(MODELTEST_HOST_CRUNNER_UTILS_OBJ ModelTestHostCRunnerUtils PARENT_SCOPE)
 set(MODELTEST_DIP_RISCV_LIB ModelTestDIP_riscv PARENT_SCOPE)
 set(MODELTEST_DAP_RISCV_LIB ModelTestDAP_riscv PARENT_SCOPE)

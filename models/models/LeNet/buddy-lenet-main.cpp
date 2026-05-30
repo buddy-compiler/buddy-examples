@@ -92,6 +92,14 @@ void softmax(float *input, size_t size) {
   }
 }
 
+static void normalizeLeNetInput(dip::Image<float, 4> &input) {
+  float *data = input.getData();
+  const size_t elemCount = input.getSize();
+  for (size_t i = 0; i < elemCount; ++i) {
+    data[i] = data[i] * 2.0f - 1.0f;
+  }
+}
+
 int main() {
   // Print the title of this example.
   const std::string title = "LeNet Inference Powered by Buddy Compiler";
@@ -104,6 +112,7 @@ int main() {
   std::string lenetDir = "./";
   std::string imgPath = lenetDir + "/images/" + ImgName;
   dip::Image<float, 4> input(imgPath, dip::DIP_GRAYSCALE, true /* norm */);
+  normalizeLeNetInput(input);
   MemRef<float, 2> output(sizesOutput);
 
   // Load model parameters from the specified file.
