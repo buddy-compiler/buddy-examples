@@ -1,7 +1,7 @@
 .metals/
 .vscode/
 .scala-build/
-
+.codex
 build/
 
 env.sh
