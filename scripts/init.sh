@@ -13,10 +13,8 @@ usage() {
   echo ""
   echo "Helper script to fully initialize repository that wraps other scripts."
   echo "By default it initializes/installs things in the following order:"
-  echo "   0. init env.sh"
   echo "   1. init submodules"
-  echo "   2. Chipyard environment setup"
-  echo "   3. Buddy-mlir pre-compile sources"
+  echo "   2. setup nix environment"
   echo ""
   echo "**See below for options to skip parts of the setup. Skipping parts of the setup is not guaranteed to be tested/working.**"
   echo ""
@@ -81,30 +79,14 @@ function begin_step
   echo -e "${NC}"
 }
 
-if run_step "0"; then
-  begin_step "0" "init env.sh"
-  replace_content ${ROOT}/env.sh base-conda-setup "source $(conda info --base)/etc/profile.d/conda.sh"
-fi
 
 if run_step "1"; then
   begin_step "1" "submodules init"
   git submodule update --init 
-  replace_content ${ROOT}/thirdparty/chipyard/env.sh base-conda-setup "source $(conda info --base)/etc/profile.d/conda.sh"
 fi
 
-# setup and install chipyard environment
 if run_step "2"; then
-  begin_step "2" "Chipyard environment setup"
-  cd ${ROOT}/thirdparty/chipyard && ./build-setup.sh --conda-env-name ${CONDA_ENV_NAME}
-  cp ${ROOT}/thirdparty/chipyard/env.sh ${ROOT}/env.sh
-  replace_content ${ROOT}/env.sh build-setup-conda "conda activate ${CONDA_ENV_NAME}
-source ${ROOT}/thirdparty/chipyard/scripts/fix-open-files.sh"
-  replace_content ${ROOT}/env.sh bb-dir-helper "ROOT=${ROOT}"
-fi
-
-if run_step "3"; then
-  begin_step "3" "Compiler (buddy-mlir) pre-compile sources"
+  begin_step "2" "Nix environment setup"
   cd ${ROOT}
-  source ${ROOT}/env.sh
-  ./scripts/install-buddy-compiler.sh
+  nix build
 fi

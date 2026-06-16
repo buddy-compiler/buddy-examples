@@ -8,3 +8,6 @@
 	path = thirdparty/bebop
 	url = https://github.com/DangoSys/bebop
 	branch = next
+[submodule "thirdparty/firesim"]
+	path = thirdparty/firesim
+	url = https://github.com/firesim/firesim.git
