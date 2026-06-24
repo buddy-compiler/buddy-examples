@@ -67,6 +67,7 @@ add_custom_command(
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
@@ -92,6 +93,7 @@ add_custom_command(
           -assign-physical-banks
           -llvm-request-c-wrappers
           -lower-bank-ssa-to-intrinsics
+          -convert-trace-to-llvm="cycle-trace"
           -expand-strided-metadata
           -convert-linalg-to-loops
           -convert-scf-to-cf
@@ -138,6 +140,8 @@ add_custom_target(buddy-buckyball-lenet-all-run
 # Sync runtime deps (images/, arg0.data) directly to OUTPUT directory
 add_custom_target(sync-buckyball-lenet-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}/trace/tensor
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_LENET_DIR}/images
           ${LENET_OUTPUT_DIR}/images
