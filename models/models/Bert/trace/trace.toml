@@ -1,3424 +1,3424 @@
-[[trace]]
+[[trace.node]]
 node = "slice_1"
 id = 0
 tag = "slice_1"
 
-[[trace]]
+[[trace.node]]
 node = "embedding"
 id = 1
 tag = "embedding"
 
-[[trace]]
+[[trace.node]]
 node = "embedding_1"
 id = 2
 tag = "embedding_1"
 
-[[trace]]
+[[trace.node]]
 node = "add"
 id = 3
 tag = "add"
 
-[[trace]]
+[[trace.node]]
 node = "embedding_2"
 id = 4
 tag = "embedding_2"
 
-[[trace]]
+[[trace.node]]
 node = "add_1"
 id = 5
 tag = "add_1"
 
-[[trace]]
+[[trace.node]]
 node = "add_2"
 id = 6
 tag = "add_2"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt"
 id = 7
 tag = "rsqrt"
 
-[[trace]]
+[[trace.node]]
 node = "sub"
 id = 8
 tag = "sub"
 
-[[trace]]
+[[trace.node]]
 node = "mul"
 id = 9
 tag = "mul"
 
-[[trace]]
+[[trace.node]]
 node = "mul_1"
 id = 10
 tag = "mul_1"
 
-[[trace]]
+[[trace.node]]
 node = "add_3"
 id = 11
 tag = "add_3"
 
-[[trace]]
+[[trace.node]]
 node = "clone"
 id = 12
 tag = "clone"
 
-[[trace]]
+[[trace.node]]
 node = "convert_element_type"
 id = 13
 tag = "convert_element_type"
 
-[[trace]]
+[[trace.node]]
 node = "add_4"
 id = 14
 tag = "add_4"
 
-[[trace]]
+[[trace.node]]
 node = "add_5"
 id = 15
 tag = "add_5"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze"
 id = 16
 tag = "unsqueeze"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_1"
 id = 17
 tag = "unsqueeze_1"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_2"
 id = 18
 tag = "unsqueeze_2"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_3"
 id = 19
 tag = "unsqueeze_3"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_4"
 id = 20
 tag = "unsqueeze_4"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_5"
 id = 21
 tag = "unsqueeze_5"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_6"
 id = 22
 tag = "unsqueeze_6"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_7"
 id = 23
 tag = "unsqueeze_7"
 
-[[trace]]
+[[trace.node]]
 node = "unsqueeze_8"
 id = 24
 tag = "unsqueeze_8"
 
-[[trace]]
+[[trace.node]]
 node = "ge"
 id = 25
 tag = "ge"
 
-[[trace]]
+[[trace.node]]
 node = "bitwise_and"
 id = 26
 tag = "bitwise_and"
 
-[[trace]]
+[[trace.node]]
 node = "index"
 id = 27
 tag = "index"
 
-[[trace]]
+[[trace.node]]
 node = "bitwise_and_1"
 id = 28
 tag = "bitwise_and_1"
 
-[[trace]]
+[[trace.node]]
 node = "expand"
 id = 29
 tag = "expand"
 
-[[trace]]
+[[trace.node]]
 node = "view"
 id = 30
 tag = "view"
 
-[[trace]]
+[[trace.node]]
 node = "permute"
 id = 31
 tag = "permute"
 
-[[trace]]
+[[trace.node]]
 node = "addmm"
 id = 32
 tag = "addmm"
 
-[[trace]]
+[[trace.node]]
 node = "view_1"
 id = 33
 tag = "view_1"
 
-[[trace]]
+[[trace.node]]
 node = "view_2"
 id = 34
 tag = "view_2"
 
-[[trace]]
+[[trace.node]]
 node = "permute_1"
 id = 35
 tag = "permute_1"
 
-[[trace]]
+[[trace.node]]
 node = "view_3"
 id = 36
 tag = "view_3"
 
-[[trace]]
+[[trace.node]]
 node = "permute_2"
 id = 37
 tag = "permute_2"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_1"
 id = 38
 tag = "addmm_1"
 
-[[trace]]
+[[trace.node]]
 node = "view_4"
 id = 39
 tag = "view_4"
 
-[[trace]]
+[[trace.node]]
 node = "view_5"
 id = 40
 tag = "view_5"
 
-[[trace]]
+[[trace.node]]
 node = "permute_3"
 id = 41
 tag = "permute_3"
 
-[[trace]]
+[[trace.node]]
 node = "view_6"
 id = 42
 tag = "view_6"
 
-[[trace]]
+[[trace.node]]
 node = "permute_4"
 id = 43
 tag = "permute_4"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_2"
 id = 44
 tag = "addmm_2"
 
-[[trace]]
+[[trace.node]]
 node = "view_7"
 id = 45
 tag = "view_7"
 
-[[trace]]
+[[trace.node]]
 node = "view_8"
 id = 46
 tag = "view_8"
 
-[[trace]]
+[[trace.node]]
 node = "permute_5"
 id = 47
 tag = "permute_5"
 
-[[trace]]
+[[trace.node]]
 node = "where"
 id = 48
 tag = "where"
 
-[[trace]]
+[[trace.node]]
 node = "permute_6"
 id = 49
 tag = "permute_6"
 
-[[trace]]
+[[trace.node]]
 node = "view_9"
 id = 50
 tag = "view_9"
 
-[[trace]]
+[[trace.node]]
 node = "view_10"
 id = 51
 tag = "view_10"
 
-[[trace]]
+[[trace.node]]
 node = "permute_7"
 id = 52
 tag = "permute_7"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_3"
 id = 53
 tag = "addmm_3"
 
-[[trace]]
+[[trace.node]]
 node = "view_11"
 id = 54
 tag = "view_11"
 
-[[trace]]
+[[trace.node]]
 node = "clone_1"
 id = 55
 tag = "clone_1"
 
-[[trace]]
+[[trace.node]]
 node = "add_6"
 id = 56
 tag = "add_6"
 
-[[trace]]
+[[trace.node]]
 node = "add_7"
 id = 57
 tag = "add_7"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_1"
 id = 58
 tag = "rsqrt_1"
 
-[[trace]]
+[[trace.node]]
 node = "sub_1"
 id = 59
 tag = "sub_1"
 
-[[trace]]
+[[trace.node]]
 node = "mul_2"
 id = 60
 tag = "mul_2"
 
-[[trace]]
+[[trace.node]]
 node = "mul_3"
 id = 61
 tag = "mul_3"
 
-[[trace]]
+[[trace.node]]
 node = "add_8"
 id = 62
 tag = "add_8"
 
-[[trace]]
+[[trace.node]]
 node = "view_12"
 id = 63
 tag = "view_12"
 
-[[trace]]
+[[trace.node]]
 node = "permute_8"
 id = 64
 tag = "permute_8"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_4"
 id = 65
 tag = "addmm_4"
 
-[[trace]]
+[[trace.node]]
 node = "view_13"
 id = 66
 tag = "view_13"
 
-[[trace]]
+[[trace.node]]
 node = "mul_4"
 id = 67
 tag = "mul_4"
 
-[[trace]]
+[[trace.node]]
 node = "mul_5"
 id = 68
 tag = "mul_5"
 
-[[trace]]
+[[trace.node]]
 node = "erf"
 id = 69
 tag = "erf"
 
-[[trace]]
+[[trace.node]]
 node = "add_9"
 id = 70
 tag = "add_9"
 
-[[trace]]
+[[trace.node]]
 node = "mul_6"
 id = 71
 tag = "mul_6"
 
-[[trace]]
+[[trace.node]]
 node = "view_14"
 id = 72
 tag = "view_14"
 
-[[trace]]
+[[trace.node]]
 node = "permute_9"
 id = 73
 tag = "permute_9"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_5"
 id = 74
 tag = "addmm_5"
 
-[[trace]]
+[[trace.node]]
 node = "view_15"
 id = 75
 tag = "view_15"
 
-[[trace]]
+[[trace.node]]
 node = "clone_2"
 id = 76
 tag = "clone_2"
 
-[[trace]]
+[[trace.node]]
 node = "add_10"
 id = 77
 tag = "add_10"
 
-[[trace]]
+[[trace.node]]
 node = "add_11"
 id = 78
 tag = "add_11"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_2"
 id = 79
 tag = "rsqrt_2"
 
-[[trace]]
+[[trace.node]]
 node = "sub_2"
 id = 80
 tag = "sub_2"
 
-[[trace]]
+[[trace.node]]
 node = "mul_7"
 id = 81
 tag = "mul_7"
 
-[[trace]]
+[[trace.node]]
 node = "mul_8"
 id = 82
 tag = "mul_8"
 
-[[trace]]
+[[trace.node]]
 node = "add_12"
 id = 83
 tag = "add_12"
 
-[[trace]]
+[[trace.node]]
 node = "view_16"
 id = 84
 tag = "view_16"
 
-[[trace]]
+[[trace.node]]
 node = "permute_10"
 id = 85
 tag = "permute_10"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_6"
 id = 86
 tag = "addmm_6"
 
-[[trace]]
+[[trace.node]]
 node = "view_17"
 id = 87
 tag = "view_17"
 
-[[trace]]
+[[trace.node]]
 node = "view_18"
 id = 88
 tag = "view_18"
 
-[[trace]]
+[[trace.node]]
 node = "permute_11"
 id = 89
 tag = "permute_11"
 
-[[trace]]
+[[trace.node]]
 node = "view_19"
 id = 90
 tag = "view_19"
 
-[[trace]]
+[[trace.node]]
 node = "permute_12"
 id = 91
 tag = "permute_12"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_7"
 id = 92
 tag = "addmm_7"
 
-[[trace]]
+[[trace.node]]
 node = "view_20"
 id = 93
 tag = "view_20"
 
-[[trace]]
+[[trace.node]]
 node = "view_21"
 id = 94
 tag = "view_21"
 
-[[trace]]
+[[trace.node]]
 node = "permute_13"
 id = 95
 tag = "permute_13"
 
-[[trace]]
+[[trace.node]]
 node = "view_22"
 id = 96
 tag = "view_22"
 
-[[trace]]
+[[trace.node]]
 node = "permute_14"
 id = 97
 tag = "permute_14"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_8"
 id = 98
 tag = "addmm_8"
 
-[[trace]]
+[[trace.node]]
 node = "view_23"
 id = 99
 tag = "view_23"
 
-[[trace]]
+[[trace.node]]
 node = "view_24"
 id = 100
 tag = "view_24"
 
-[[trace]]
+[[trace.node]]
 node = "permute_15"
 id = 101
 tag = "permute_15"
 
-[[trace]]
+[[trace.node]]
 node = "where_1"
 id = 102
 tag = "where_1"
 
-[[trace]]
+[[trace.node]]
 node = "permute_16"
 id = 103
 tag = "permute_16"
 
-[[trace]]
+[[trace.node]]
 node = "view_25"
 id = 104
 tag = "view_25"
 
-[[trace]]
+[[trace.node]]
 node = "view_26"
 id = 105
 tag = "view_26"
 
-[[trace]]
+[[trace.node]]
 node = "permute_17"
 id = 106
 tag = "permute_17"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_9"
 id = 107
 tag = "addmm_9"
 
-[[trace]]
+[[trace.node]]
 node = "view_27"
 id = 108
 tag = "view_27"
 
-[[trace]]
+[[trace.node]]
 node = "clone_3"
 id = 109
 tag = "clone_3"
 
-[[trace]]
+[[trace.node]]
 node = "add_13"
 id = 110
 tag = "add_13"
 
-[[trace]]
+[[trace.node]]
 node = "add_14"
 id = 111
 tag = "add_14"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_3"
 id = 112
 tag = "rsqrt_3"
 
-[[trace]]
+[[trace.node]]
 node = "sub_3"
 id = 113
 tag = "sub_3"
 
-[[trace]]
+[[trace.node]]
 node = "mul_9"
 id = 114
 tag = "mul_9"
 
-[[trace]]
+[[trace.node]]
 node = "mul_10"
 id = 115
 tag = "mul_10"
 
-[[trace]]
+[[trace.node]]
 node = "add_15"
 id = 116
 tag = "add_15"
 
-[[trace]]
+[[trace.node]]
 node = "view_28"
 id = 117
 tag = "view_28"
 
-[[trace]]
+[[trace.node]]
 node = "permute_18"
 id = 118
 tag = "permute_18"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_10"
 id = 119
 tag = "addmm_10"
 
-[[trace]]
+[[trace.node]]
 node = "view_29"
 id = 120
 tag = "view_29"
 
-[[trace]]
+[[trace.node]]
 node = "mul_11"
 id = 121
 tag = "mul_11"
 
-[[trace]]
+[[trace.node]]
 node = "mul_12"
 id = 122
 tag = "mul_12"
 
-[[trace]]
+[[trace.node]]
 node = "erf_1"
 id = 123
 tag = "erf_1"
 
-[[trace]]
+[[trace.node]]
 node = "add_16"
 id = 124
 tag = "add_16"
 
-[[trace]]
+[[trace.node]]
 node = "mul_13"
 id = 125
 tag = "mul_13"
 
-[[trace]]
+[[trace.node]]
 node = "view_30"
 id = 126
 tag = "view_30"
 
-[[trace]]
+[[trace.node]]
 node = "permute_19"
 id = 127
 tag = "permute_19"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_11"
 id = 128
 tag = "addmm_11"
 
-[[trace]]
+[[trace.node]]
 node = "view_31"
 id = 129
 tag = "view_31"
 
-[[trace]]
+[[trace.node]]
 node = "clone_4"
 id = 130
 tag = "clone_4"
 
-[[trace]]
+[[trace.node]]
 node = "add_17"
 id = 131
 tag = "add_17"
 
-[[trace]]
+[[trace.node]]
 node = "add_18"
 id = 132
 tag = "add_18"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_4"
 id = 133
 tag = "rsqrt_4"
 
-[[trace]]
+[[trace.node]]
 node = "sub_4"
 id = 134
 tag = "sub_4"
 
-[[trace]]
+[[trace.node]]
 node = "mul_14"
 id = 135
 tag = "mul_14"
 
-[[trace]]
+[[trace.node]]
 node = "mul_15"
 id = 136
 tag = "mul_15"
 
-[[trace]]
+[[trace.node]]
 node = "add_19"
 id = 137
 tag = "add_19"
 
-[[trace]]
+[[trace.node]]
 node = "view_32"
 id = 138
 tag = "view_32"
 
-[[trace]]
+[[trace.node]]
 node = "permute_20"
 id = 139
 tag = "permute_20"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_12"
 id = 140
 tag = "addmm_12"
 
-[[trace]]
+[[trace.node]]
 node = "view_33"
 id = 141
 tag = "view_33"
 
-[[trace]]
+[[trace.node]]
 node = "view_34"
 id = 142
 tag = "view_34"
 
-[[trace]]
+[[trace.node]]
 node = "permute_21"
 id = 143
 tag = "permute_21"
 
-[[trace]]
+[[trace.node]]
 node = "view_35"
 id = 144
 tag = "view_35"
 
-[[trace]]
+[[trace.node]]
 node = "permute_22"
 id = 145
 tag = "permute_22"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_13"
 id = 146
 tag = "addmm_13"
 
-[[trace]]
+[[trace.node]]
 node = "view_36"
 id = 147
 tag = "view_36"
 
-[[trace]]
+[[trace.node]]
 node = "view_37"
 id = 148
 tag = "view_37"
 
-[[trace]]
+[[trace.node]]
 node = "permute_23"
 id = 149
 tag = "permute_23"
 
-[[trace]]
+[[trace.node]]
 node = "view_38"
 id = 150
 tag = "view_38"
 
-[[trace]]
+[[trace.node]]
 node = "permute_24"
 id = 151
 tag = "permute_24"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_14"
 id = 152
 tag = "addmm_14"
 
-[[trace]]
+[[trace.node]]
 node = "view_39"
 id = 153
 tag = "view_39"
 
-[[trace]]
+[[trace.node]]
 node = "view_40"
 id = 154
 tag = "view_40"
 
-[[trace]]
+[[trace.node]]
 node = "permute_25"
 id = 155
 tag = "permute_25"
 
-[[trace]]
+[[trace.node]]
 node = "where_2"
 id = 156
 tag = "where_2"
 
-[[trace]]
+[[trace.node]]
 node = "permute_26"
 id = 157
 tag = "permute_26"
 
-[[trace]]
+[[trace.node]]
 node = "view_41"
 id = 158
 tag = "view_41"
 
-[[trace]]
+[[trace.node]]
 node = "view_42"
 id = 159
 tag = "view_42"
 
-[[trace]]
+[[trace.node]]
 node = "permute_27"
 id = 160
 tag = "permute_27"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_15"
 id = 161
 tag = "addmm_15"
 
-[[trace]]
+[[trace.node]]
 node = "view_43"
 id = 162
 tag = "view_43"
 
-[[trace]]
+[[trace.node]]
 node = "clone_5"
 id = 163
 tag = "clone_5"
 
-[[trace]]
+[[trace.node]]
 node = "add_20"
 id = 164
 tag = "add_20"
 
-[[trace]]
+[[trace.node]]
 node = "add_21"
 id = 165
 tag = "add_21"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_5"
 id = 166
 tag = "rsqrt_5"
 
-[[trace]]
+[[trace.node]]
 node = "sub_5"
 id = 167
 tag = "sub_5"
 
-[[trace]]
+[[trace.node]]
 node = "mul_16"
 id = 168
 tag = "mul_16"
 
-[[trace]]
+[[trace.node]]
 node = "mul_17"
 id = 169
 tag = "mul_17"
 
-[[trace]]
+[[trace.node]]
 node = "add_22"
 id = 170
 tag = "add_22"
 
-[[trace]]
+[[trace.node]]
 node = "view_44"
 id = 171
 tag = "view_44"
 
-[[trace]]
+[[trace.node]]
 node = "permute_28"
 id = 172
 tag = "permute_28"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_16"
 id = 173
 tag = "addmm_16"
 
-[[trace]]
+[[trace.node]]
 node = "view_45"
 id = 174
 tag = "view_45"
 
-[[trace]]
+[[trace.node]]
 node = "mul_18"
 id = 175
 tag = "mul_18"
 
-[[trace]]
+[[trace.node]]
 node = "mul_19"
 id = 176
 tag = "mul_19"
 
-[[trace]]
+[[trace.node]]
 node = "erf_2"
 id = 177
 tag = "erf_2"
 
-[[trace]]
+[[trace.node]]
 node = "add_23"
 id = 178
 tag = "add_23"
 
-[[trace]]
+[[trace.node]]
 node = "mul_20"
 id = 179
 tag = "mul_20"
 
-[[trace]]
+[[trace.node]]
 node = "view_46"
 id = 180
 tag = "view_46"
 
-[[trace]]
+[[trace.node]]
 node = "permute_29"
 id = 181
 tag = "permute_29"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_17"
 id = 182
 tag = "addmm_17"
 
-[[trace]]
+[[trace.node]]
 node = "view_47"
 id = 183
 tag = "view_47"
 
-[[trace]]
+[[trace.node]]
 node = "clone_6"
 id = 184
 tag = "clone_6"
 
-[[trace]]
+[[trace.node]]
 node = "add_24"
 id = 185
 tag = "add_24"
 
-[[trace]]
+[[trace.node]]
 node = "add_25"
 id = 186
 tag = "add_25"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_6"
 id = 187
 tag = "rsqrt_6"
 
-[[trace]]
+[[trace.node]]
 node = "sub_6"
 id = 188
 tag = "sub_6"
 
-[[trace]]
+[[trace.node]]
 node = "mul_21"
 id = 189
 tag = "mul_21"
 
-[[trace]]
+[[trace.node]]
 node = "mul_22"
 id = 190
 tag = "mul_22"
 
-[[trace]]
+[[trace.node]]
 node = "add_26"
 id = 191
 tag = "add_26"
 
-[[trace]]
+[[trace.node]]
 node = "view_48"
 id = 192
 tag = "view_48"
 
-[[trace]]
+[[trace.node]]
 node = "permute_30"
 id = 193
 tag = "permute_30"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_18"
 id = 194
 tag = "addmm_18"
 
-[[trace]]
+[[trace.node]]
 node = "view_49"
 id = 195
 tag = "view_49"
 
-[[trace]]
+[[trace.node]]
 node = "view_50"
 id = 196
 tag = "view_50"
 
-[[trace]]
+[[trace.node]]
 node = "permute_31"
 id = 197
 tag = "permute_31"
 
-[[trace]]
+[[trace.node]]
 node = "view_51"
 id = 198
 tag = "view_51"
 
-[[trace]]
+[[trace.node]]
 node = "permute_32"
 id = 199
 tag = "permute_32"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_19"
 id = 200
 tag = "addmm_19"
 
-[[trace]]
+[[trace.node]]
 node = "view_52"
 id = 201
 tag = "view_52"
 
-[[trace]]
+[[trace.node]]
 node = "view_53"
 id = 202
 tag = "view_53"
 
-[[trace]]
+[[trace.node]]
 node = "permute_33"
 id = 203
 tag = "permute_33"
 
-[[trace]]
+[[trace.node]]
 node = "view_54"
 id = 204
 tag = "view_54"
 
-[[trace]]
+[[trace.node]]
 node = "permute_34"
 id = 205
 tag = "permute_34"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_20"
 id = 206
 tag = "addmm_20"
 
-[[trace]]
+[[trace.node]]
 node = "view_55"
 id = 207
 tag = "view_55"
 
-[[trace]]
+[[trace.node]]
 node = "view_56"
 id = 208
 tag = "view_56"
 
-[[trace]]
+[[trace.node]]
 node = "permute_35"
 id = 209
 tag = "permute_35"
 
-[[trace]]
+[[trace.node]]
 node = "where_3"
 id = 210
 tag = "where_3"
 
-[[trace]]
+[[trace.node]]
 node = "permute_36"
 id = 211
 tag = "permute_36"
 
-[[trace]]
+[[trace.node]]
 node = "view_57"
 id = 212
 tag = "view_57"
 
-[[trace]]
+[[trace.node]]
 node = "view_58"
 id = 213
 tag = "view_58"
 
-[[trace]]
+[[trace.node]]
 node = "permute_37"
 id = 214
 tag = "permute_37"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_21"
 id = 215
 tag = "addmm_21"
 
-[[trace]]
+[[trace.node]]
 node = "view_59"
 id = 216
 tag = "view_59"
 
-[[trace]]
+[[trace.node]]
 node = "clone_7"
 id = 217
 tag = "clone_7"
 
-[[trace]]
+[[trace.node]]
 node = "add_27"
 id = 218
 tag = "add_27"
 
-[[trace]]
+[[trace.node]]
 node = "add_28"
 id = 219
 tag = "add_28"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_7"
 id = 220
 tag = "rsqrt_7"
 
-[[trace]]
+[[trace.node]]
 node = "sub_7"
 id = 221
 tag = "sub_7"
 
-[[trace]]
+[[trace.node]]
 node = "mul_23"
 id = 222
 tag = "mul_23"
 
-[[trace]]
+[[trace.node]]
 node = "mul_24"
 id = 223
 tag = "mul_24"
 
-[[trace]]
+[[trace.node]]
 node = "add_29"
 id = 224
 tag = "add_29"
 
-[[trace]]
+[[trace.node]]
 node = "view_60"
 id = 225
 tag = "view_60"
 
-[[trace]]
+[[trace.node]]
 node = "permute_38"
 id = 226
 tag = "permute_38"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_22"
 id = 227
 tag = "addmm_22"
 
-[[trace]]
+[[trace.node]]
 node = "view_61"
 id = 228
 tag = "view_61"
 
-[[trace]]
+[[trace.node]]
 node = "mul_25"
 id = 229
 tag = "mul_25"
 
-[[trace]]
+[[trace.node]]
 node = "mul_26"
 id = 230
 tag = "mul_26"
 
-[[trace]]
+[[trace.node]]
 node = "erf_3"
 id = 231
 tag = "erf_3"
 
-[[trace]]
+[[trace.node]]
 node = "add_30"
 id = 232
 tag = "add_30"
 
-[[trace]]
+[[trace.node]]
 node = "mul_27"
 id = 233
 tag = "mul_27"
 
-[[trace]]
+[[trace.node]]
 node = "view_62"
 id = 234
 tag = "view_62"
 
-[[trace]]
+[[trace.node]]
 node = "permute_39"
 id = 235
 tag = "permute_39"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_23"
 id = 236
 tag = "addmm_23"
 
-[[trace]]
+[[trace.node]]
 node = "view_63"
 id = 237
 tag = "view_63"
 
-[[trace]]
+[[trace.node]]
 node = "clone_8"
 id = 238
 tag = "clone_8"
 
-[[trace]]
+[[trace.node]]
 node = "add_31"
 id = 239
 tag = "add_31"
 
-[[trace]]
+[[trace.node]]
 node = "add_32"
 id = 240
 tag = "add_32"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_8"
 id = 241
 tag = "rsqrt_8"
 
-[[trace]]
+[[trace.node]]
 node = "sub_8"
 id = 242
 tag = "sub_8"
 
-[[trace]]
+[[trace.node]]
 node = "mul_28"
 id = 243
 tag = "mul_28"
 
-[[trace]]
+[[trace.node]]
 node = "mul_29"
 id = 244
 tag = "mul_29"
 
-[[trace]]
+[[trace.node]]
 node = "add_33"
 id = 245
 tag = "add_33"
 
-[[trace]]
+[[trace.node]]
 node = "view_64"
 id = 246
 tag = "view_64"
 
-[[trace]]
+[[trace.node]]
 node = "permute_40"
 id = 247
 tag = "permute_40"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_24"
 id = 248
 tag = "addmm_24"
 
-[[trace]]
+[[trace.node]]
 node = "view_65"
 id = 249
 tag = "view_65"
 
-[[trace]]
+[[trace.node]]
 node = "view_66"
 id = 250
 tag = "view_66"
 
-[[trace]]
+[[trace.node]]
 node = "permute_41"
 id = 251
 tag = "permute_41"
 
-[[trace]]
+[[trace.node]]
 node = "view_67"
 id = 252
 tag = "view_67"
 
-[[trace]]
+[[trace.node]]
 node = "permute_42"
 id = 253
 tag = "permute_42"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_25"
 id = 254
 tag = "addmm_25"
 
-[[trace]]
+[[trace.node]]
 node = "view_68"
 id = 255
 tag = "view_68"
 
-[[trace]]
+[[trace.node]]
 node = "view_69"
 id = 256
 tag = "view_69"
 
-[[trace]]
+[[trace.node]]
 node = "permute_43"
 id = 257
 tag = "permute_43"
 
-[[trace]]
+[[trace.node]]
 node = "view_70"
 id = 258
 tag = "view_70"
 
-[[trace]]
+[[trace.node]]
 node = "permute_44"
 id = 259
 tag = "permute_44"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_26"
 id = 260
 tag = "addmm_26"
 
-[[trace]]
+[[trace.node]]
 node = "view_71"
 id = 261
 tag = "view_71"
 
-[[trace]]
+[[trace.node]]
 node = "view_72"
 id = 262
 tag = "view_72"
 
-[[trace]]
+[[trace.node]]
 node = "permute_45"
 id = 263
 tag = "permute_45"
 
-[[trace]]
+[[trace.node]]
 node = "where_4"
 id = 264
 tag = "where_4"
 
-[[trace]]
+[[trace.node]]
 node = "permute_46"
 id = 265
 tag = "permute_46"
 
-[[trace]]
+[[trace.node]]
 node = "view_73"
 id = 266
 tag = "view_73"
 
-[[trace]]
+[[trace.node]]
 node = "view_74"
 id = 267
 tag = "view_74"
 
-[[trace]]
+[[trace.node]]
 node = "permute_47"
 id = 268
 tag = "permute_47"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_27"
 id = 269
 tag = "addmm_27"
 
-[[trace]]
+[[trace.node]]
 node = "view_75"
 id = 270
 tag = "view_75"
 
-[[trace]]
+[[trace.node]]
 node = "clone_9"
 id = 271
 tag = "clone_9"
 
-[[trace]]
+[[trace.node]]
 node = "add_34"
 id = 272
 tag = "add_34"
 
-[[trace]]
+[[trace.node]]
 node = "add_35"
 id = 273
 tag = "add_35"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_9"
 id = 274
 tag = "rsqrt_9"
 
-[[trace]]
+[[trace.node]]
 node = "sub_9"
 id = 275
 tag = "sub_9"
 
-[[trace]]
+[[trace.node]]
 node = "mul_30"
 id = 276
 tag = "mul_30"
 
-[[trace]]
+[[trace.node]]
 node = "mul_31"
 id = 277
 tag = "mul_31"
 
-[[trace]]
+[[trace.node]]
 node = "add_36"
 id = 278
 tag = "add_36"
 
-[[trace]]
+[[trace.node]]
 node = "view_76"
 id = 279
 tag = "view_76"
 
-[[trace]]
+[[trace.node]]
 node = "permute_48"
 id = 280
 tag = "permute_48"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_28"
 id = 281
 tag = "addmm_28"
 
-[[trace]]
+[[trace.node]]
 node = "view_77"
 id = 282
 tag = "view_77"
 
-[[trace]]
+[[trace.node]]
 node = "mul_32"
 id = 283
 tag = "mul_32"
 
-[[trace]]
+[[trace.node]]
 node = "mul_33"
 id = 284
 tag = "mul_33"
 
-[[trace]]
+[[trace.node]]
 node = "erf_4"
 id = 285
 tag = "erf_4"
 
-[[trace]]
+[[trace.node]]
 node = "add_37"
 id = 286
 tag = "add_37"
 
-[[trace]]
+[[trace.node]]
 node = "mul_34"
 id = 287
 tag = "mul_34"
 
-[[trace]]
+[[trace.node]]
 node = "view_78"
 id = 288
 tag = "view_78"
 
-[[trace]]
+[[trace.node]]
 node = "permute_49"
 id = 289
 tag = "permute_49"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_29"
 id = 290
 tag = "addmm_29"
 
-[[trace]]
+[[trace.node]]
 node = "view_79"
 id = 291
 tag = "view_79"
 
-[[trace]]
+[[trace.node]]
 node = "clone_10"
 id = 292
 tag = "clone_10"
 
-[[trace]]
+[[trace.node]]
 node = "add_38"
 id = 293
 tag = "add_38"
 
-[[trace]]
+[[trace.node]]
 node = "add_39"
 id = 294
 tag = "add_39"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_10"
 id = 295
 tag = "rsqrt_10"
 
-[[trace]]
+[[trace.node]]
 node = "sub_10"
 id = 296
 tag = "sub_10"
 
-[[trace]]
+[[trace.node]]
 node = "mul_35"
 id = 297
 tag = "mul_35"
 
-[[trace]]
+[[trace.node]]
 node = "mul_36"
 id = 298
 tag = "mul_36"
 
-[[trace]]
+[[trace.node]]
 node = "add_40"
 id = 299
 tag = "add_40"
 
-[[trace]]
+[[trace.node]]
 node = "view_80"
 id = 300
 tag = "view_80"
 
-[[trace]]
+[[trace.node]]
 node = "permute_50"
 id = 301
 tag = "permute_50"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_30"
 id = 302
 tag = "addmm_30"
 
-[[trace]]
+[[trace.node]]
 node = "view_81"
 id = 303
 tag = "view_81"
 
-[[trace]]
+[[trace.node]]
 node = "view_82"
 id = 304
 tag = "view_82"
 
-[[trace]]
+[[trace.node]]
 node = "permute_51"
 id = 305
 tag = "permute_51"
 
-[[trace]]
+[[trace.node]]
 node = "view_83"
 id = 306
 tag = "view_83"
 
-[[trace]]
+[[trace.node]]
 node = "permute_52"
 id = 307
 tag = "permute_52"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_31"
 id = 308
 tag = "addmm_31"
 
-[[trace]]
+[[trace.node]]
 node = "view_84"
 id = 309
 tag = "view_84"
 
-[[trace]]
+[[trace.node]]
 node = "view_85"
 id = 310
 tag = "view_85"
 
-[[trace]]
+[[trace.node]]
 node = "permute_53"
 id = 311
 tag = "permute_53"
 
-[[trace]]
+[[trace.node]]
 node = "view_86"
 id = 312
 tag = "view_86"
 
-[[trace]]
+[[trace.node]]
 node = "permute_54"
 id = 313
 tag = "permute_54"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_32"
 id = 314
 tag = "addmm_32"
 
-[[trace]]
+[[trace.node]]
 node = "view_87"
 id = 315
 tag = "view_87"
 
-[[trace]]
+[[trace.node]]
 node = "view_88"
 id = 316
 tag = "view_88"
 
-[[trace]]
+[[trace.node]]
 node = "permute_55"
 id = 317
 tag = "permute_55"
 
-[[trace]]
+[[trace.node]]
 node = "where_5"
 id = 318
 tag = "where_5"
 
-[[trace]]
+[[trace.node]]
 node = "permute_56"
 id = 319
 tag = "permute_56"
 
-[[trace]]
+[[trace.node]]
 node = "view_89"
 id = 320
 tag = "view_89"
 
-[[trace]]
+[[trace.node]]
 node = "view_90"
 id = 321
 tag = "view_90"
 
-[[trace]]
+[[trace.node]]
 node = "permute_57"
 id = 322
 tag = "permute_57"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_33"
 id = 323
 tag = "addmm_33"
 
-[[trace]]
+[[trace.node]]
 node = "view_91"
 id = 324
 tag = "view_91"
 
-[[trace]]
+[[trace.node]]
 node = "clone_11"
 id = 325
 tag = "clone_11"
 
-[[trace]]
+[[trace.node]]
 node = "add_41"
 id = 326
 tag = "add_41"
 
-[[trace]]
+[[trace.node]]
 node = "add_42"
 id = 327
 tag = "add_42"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_11"
 id = 328
 tag = "rsqrt_11"
 
-[[trace]]
+[[trace.node]]
 node = "sub_11"
 id = 329
 tag = "sub_11"
 
-[[trace]]
+[[trace.node]]
 node = "mul_37"
 id = 330
 tag = "mul_37"
 
-[[trace]]
+[[trace.node]]
 node = "mul_38"
 id = 331
 tag = "mul_38"
 
-[[trace]]
+[[trace.node]]
 node = "add_43"
 id = 332
 tag = "add_43"
 
-[[trace]]
+[[trace.node]]
 node = "view_92"
 id = 333
 tag = "view_92"
 
-[[trace]]
+[[trace.node]]
 node = "permute_58"
 id = 334
 tag = "permute_58"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_34"
 id = 335
 tag = "addmm_34"
 
-[[trace]]
+[[trace.node]]
 node = "view_93"
 id = 336
 tag = "view_93"
 
-[[trace]]
+[[trace.node]]
 node = "mul_39"
 id = 337
 tag = "mul_39"
 
-[[trace]]
+[[trace.node]]
 node = "mul_40"
 id = 338
 tag = "mul_40"
 
-[[trace]]
+[[trace.node]]
 node = "erf_5"
 id = 339
 tag = "erf_5"
 
-[[trace]]
+[[trace.node]]
 node = "add_44"
 id = 340
 tag = "add_44"
 
-[[trace]]
+[[trace.node]]
 node = "mul_41"
 id = 341
 tag = "mul_41"
 
-[[trace]]
+[[trace.node]]
 node = "view_94"
 id = 342
 tag = "view_94"
 
-[[trace]]
+[[trace.node]]
 node = "permute_59"
 id = 343
 tag = "permute_59"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_35"
 id = 344
 tag = "addmm_35"
 
-[[trace]]
+[[trace.node]]
 node = "view_95"
 id = 345
 tag = "view_95"
 
-[[trace]]
+[[trace.node]]
 node = "clone_12"
 id = 346
 tag = "clone_12"
 
-[[trace]]
+[[trace.node]]
 node = "add_45"
 id = 347
 tag = "add_45"
 
-[[trace]]
+[[trace.node]]
 node = "add_46"
 id = 348
 tag = "add_46"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_12"
 id = 349
 tag = "rsqrt_12"
 
-[[trace]]
+[[trace.node]]
 node = "sub_12"
 id = 350
 tag = "sub_12"
 
-[[trace]]
+[[trace.node]]
 node = "mul_42"
 id = 351
 tag = "mul_42"
 
-[[trace]]
+[[trace.node]]
 node = "mul_43"
 id = 352
 tag = "mul_43"
 
-[[trace]]
+[[trace.node]]
 node = "add_47"
 id = 353
 tag = "add_47"
 
-[[trace]]
+[[trace.node]]
 node = "view_96"
 id = 354
 tag = "view_96"
 
-[[trace]]
+[[trace.node]]
 node = "permute_60"
 id = 355
 tag = "permute_60"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_36"
 id = 356
 tag = "addmm_36"
 
-[[trace]]
+[[trace.node]]
 node = "view_97"
 id = 357
 tag = "view_97"
 
-[[trace]]
+[[trace.node]]
 node = "view_98"
 id = 358
 tag = "view_98"
 
-[[trace]]
+[[trace.node]]
 node = "permute_61"
 id = 359
 tag = "permute_61"
 
-[[trace]]
+[[trace.node]]
 node = "view_99"
 id = 360
 tag = "view_99"
 
-[[trace]]
+[[trace.node]]
 node = "permute_62"
 id = 361
 tag = "permute_62"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_37"
 id = 362
 tag = "addmm_37"
 
-[[trace]]
+[[trace.node]]
 node = "view_100"
 id = 363
 tag = "view_100"
 
-[[trace]]
+[[trace.node]]
 node = "view_101"
 id = 364
 tag = "view_101"
 
-[[trace]]
+[[trace.node]]
 node = "permute_63"
 id = 365
 tag = "permute_63"
 
-[[trace]]
+[[trace.node]]
 node = "view_102"
 id = 366
 tag = "view_102"
 
-[[trace]]
+[[trace.node]]
 node = "permute_64"
 id = 367
 tag = "permute_64"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_38"
 id = 368
 tag = "addmm_38"
 
-[[trace]]
+[[trace.node]]
 node = "view_103"
 id = 369
 tag = "view_103"
 
-[[trace]]
+[[trace.node]]
 node = "view_104"
 id = 370
 tag = "view_104"
 
-[[trace]]
+[[trace.node]]
 node = "permute_65"
 id = 371
 tag = "permute_65"
 
-[[trace]]
+[[trace.node]]
 node = "where_6"
 id = 372
 tag = "where_6"
 
-[[trace]]
+[[trace.node]]
 node = "permute_66"
 id = 373
 tag = "permute_66"
 
-[[trace]]
+[[trace.node]]
 node = "view_105"
 id = 374
 tag = "view_105"
 
-[[trace]]
+[[trace.node]]
 node = "view_106"
 id = 375
 tag = "view_106"
 
-[[trace]]
+[[trace.node]]
 node = "permute_67"
 id = 376
 tag = "permute_67"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_39"
 id = 377
 tag = "addmm_39"
 
-[[trace]]
+[[trace.node]]
 node = "view_107"
 id = 378
 tag = "view_107"
 
-[[trace]]
+[[trace.node]]
 node = "clone_13"
 id = 379
 tag = "clone_13"
 
-[[trace]]
+[[trace.node]]
 node = "add_48"
 id = 380
 tag = "add_48"
 
-[[trace]]
+[[trace.node]]
 node = "add_49"
 id = 381
 tag = "add_49"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_13"
 id = 382
 tag = "rsqrt_13"
 
-[[trace]]
+[[trace.node]]
 node = "sub_13"
 id = 383
 tag = "sub_13"
 
-[[trace]]
+[[trace.node]]
 node = "mul_44"
 id = 384
 tag = "mul_44"
 
-[[trace]]
+[[trace.node]]
 node = "mul_45"
 id = 385
 tag = "mul_45"
 
-[[trace]]
+[[trace.node]]
 node = "add_50"
 id = 386
 tag = "add_50"
 
-[[trace]]
+[[trace.node]]
 node = "view_108"
 id = 387
 tag = "view_108"
 
-[[trace]]
+[[trace.node]]
 node = "permute_68"
 id = 388
 tag = "permute_68"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_40"
 id = 389
 tag = "addmm_40"
 
-[[trace]]
+[[trace.node]]
 node = "view_109"
 id = 390
 tag = "view_109"
 
-[[trace]]
+[[trace.node]]
 node = "mul_46"
 id = 391
 tag = "mul_46"
 
-[[trace]]
+[[trace.node]]
 node = "mul_47"
 id = 392
 tag = "mul_47"
 
-[[trace]]
+[[trace.node]]
 node = "erf_6"
 id = 393
 tag = "erf_6"
 
-[[trace]]
+[[trace.node]]
 node = "add_51"
 id = 394
 tag = "add_51"
 
-[[trace]]
+[[trace.node]]
 node = "mul_48"
 id = 395
 tag = "mul_48"
 
-[[trace]]
+[[trace.node]]
 node = "view_110"
 id = 396
 tag = "view_110"
 
-[[trace]]
+[[trace.node]]
 node = "permute_69"
 id = 397
 tag = "permute_69"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_41"
 id = 398
 tag = "addmm_41"
 
-[[trace]]
+[[trace.node]]
 node = "view_111"
 id = 399
 tag = "view_111"
 
-[[trace]]
+[[trace.node]]
 node = "clone_14"
 id = 400
 tag = "clone_14"
 
-[[trace]]
+[[trace.node]]
 node = "add_52"
 id = 401
 tag = "add_52"
 
-[[trace]]
+[[trace.node]]
 node = "add_53"
 id = 402
 tag = "add_53"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_14"
 id = 403
 tag = "rsqrt_14"
 
-[[trace]]
+[[trace.node]]
 node = "sub_14"
 id = 404
 tag = "sub_14"
 
-[[trace]]
+[[trace.node]]
 node = "mul_49"
 id = 405
 tag = "mul_49"
 
-[[trace]]
+[[trace.node]]
 node = "mul_50"
 id = 406
 tag = "mul_50"
 
-[[trace]]
+[[trace.node]]
 node = "add_54"
 id = 407
 tag = "add_54"
 
-[[trace]]
+[[trace.node]]
 node = "view_112"
 id = 408
 tag = "view_112"
 
-[[trace]]
+[[trace.node]]
 node = "permute_70"
 id = 409
 tag = "permute_70"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_42"
 id = 410
 tag = "addmm_42"
 
-[[trace]]
+[[trace.node]]
 node = "view_113"
 id = 411
 tag = "view_113"
 
-[[trace]]
+[[trace.node]]
 node = "view_114"
 id = 412
 tag = "view_114"
 
-[[trace]]
+[[trace.node]]
 node = "permute_71"
 id = 413
 tag = "permute_71"
 
-[[trace]]
+[[trace.node]]
 node = "view_115"
 id = 414
 tag = "view_115"
 
-[[trace]]
+[[trace.node]]
 node = "permute_72"
 id = 415
 tag = "permute_72"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_43"
 id = 416
 tag = "addmm_43"
 
-[[trace]]
+[[trace.node]]
 node = "view_116"
 id = 417
 tag = "view_116"
 
-[[trace]]
+[[trace.node]]
 node = "view_117"
 id = 418
 tag = "view_117"
 
-[[trace]]
+[[trace.node]]
 node = "permute_73"
 id = 419
 tag = "permute_73"
 
-[[trace]]
+[[trace.node]]
 node = "view_118"
 id = 420
 tag = "view_118"
 
-[[trace]]
+[[trace.node]]
 node = "permute_74"
 id = 421
 tag = "permute_74"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_44"
 id = 422
 tag = "addmm_44"
 
-[[trace]]
+[[trace.node]]
 node = "view_119"
 id = 423
 tag = "view_119"
 
-[[trace]]
+[[trace.node]]
 node = "view_120"
 id = 424
 tag = "view_120"
 
-[[trace]]
+[[trace.node]]
 node = "permute_75"
 id = 425
 tag = "permute_75"
 
-[[trace]]
+[[trace.node]]
 node = "where_7"
 id = 426
 tag = "where_7"
 
-[[trace]]
+[[trace.node]]
 node = "permute_76"
 id = 427
 tag = "permute_76"
 
-[[trace]]
+[[trace.node]]
 node = "view_121"
 id = 428
 tag = "view_121"
 
-[[trace]]
+[[trace.node]]
 node = "view_122"
 id = 429
 tag = "view_122"
 
-[[trace]]
+[[trace.node]]
 node = "permute_77"
 id = 430
 tag = "permute_77"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_45"
 id = 431
 tag = "addmm_45"
 
-[[trace]]
+[[trace.node]]
 node = "view_123"
 id = 432
 tag = "view_123"
 
-[[trace]]
+[[trace.node]]
 node = "clone_15"
 id = 433
 tag = "clone_15"
 
-[[trace]]
+[[trace.node]]
 node = "add_55"
 id = 434
 tag = "add_55"
 
-[[trace]]
+[[trace.node]]
 node = "add_56"
 id = 435
 tag = "add_56"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_15"
 id = 436
 tag = "rsqrt_15"
 
-[[trace]]
+[[trace.node]]
 node = "sub_15"
 id = 437
 tag = "sub_15"
 
-[[trace]]
+[[trace.node]]
 node = "mul_51"
 id = 438
 tag = "mul_51"
 
-[[trace]]
+[[trace.node]]
 node = "mul_52"
 id = 439
 tag = "mul_52"
 
-[[trace]]
+[[trace.node]]
 node = "add_57"
 id = 440
 tag = "add_57"
 
-[[trace]]
+[[trace.node]]
 node = "view_124"
 id = 441
 tag = "view_124"
 
-[[trace]]
+[[trace.node]]
 node = "permute_78"
 id = 442
 tag = "permute_78"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_46"
 id = 443
 tag = "addmm_46"
 
-[[trace]]
+[[trace.node]]
 node = "view_125"
 id = 444
 tag = "view_125"
 
-[[trace]]
+[[trace.node]]
 node = "mul_53"
 id = 445
 tag = "mul_53"
 
-[[trace]]
+[[trace.node]]
 node = "mul_54"
 id = 446
 tag = "mul_54"
 
-[[trace]]
+[[trace.node]]
 node = "erf_7"
 id = 447
 tag = "erf_7"
 
-[[trace]]
+[[trace.node]]
 node = "add_58"
 id = 448
 tag = "add_58"
 
-[[trace]]
+[[trace.node]]
 node = "mul_55"
 id = 449
 tag = "mul_55"
 
-[[trace]]
+[[trace.node]]
 node = "view_126"
 id = 450
 tag = "view_126"
 
-[[trace]]
+[[trace.node]]
 node = "permute_79"
 id = 451
 tag = "permute_79"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_47"
 id = 452
 tag = "addmm_47"
 
-[[trace]]
+[[trace.node]]
 node = "view_127"
 id = 453
 tag = "view_127"
 
-[[trace]]
+[[trace.node]]
 node = "clone_16"
 id = 454
 tag = "clone_16"
 
-[[trace]]
+[[trace.node]]
 node = "add_59"
 id = 455
 tag = "add_59"
 
-[[trace]]
+[[trace.node]]
 node = "add_60"
 id = 456
 tag = "add_60"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_16"
 id = 457
 tag = "rsqrt_16"
 
-[[trace]]
+[[trace.node]]
 node = "sub_16"
 id = 458
 tag = "sub_16"
 
-[[trace]]
+[[trace.node]]
 node = "mul_56"
 id = 459
 tag = "mul_56"
 
-[[trace]]
+[[trace.node]]
 node = "mul_57"
 id = 460
 tag = "mul_57"
 
-[[trace]]
+[[trace.node]]
 node = "add_61"
 id = 461
 tag = "add_61"
 
-[[trace]]
+[[trace.node]]
 node = "view_128"
 id = 462
 tag = "view_128"
 
-[[trace]]
+[[trace.node]]
 node = "permute_80"
 id = 463
 tag = "permute_80"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_48"
 id = 464
 tag = "addmm_48"
 
-[[trace]]
+[[trace.node]]
 node = "view_129"
 id = 465
 tag = "view_129"
 
-[[trace]]
+[[trace.node]]
 node = "view_130"
 id = 466
 tag = "view_130"
 
-[[trace]]
+[[trace.node]]
 node = "permute_81"
 id = 467
 tag = "permute_81"
 
-[[trace]]
+[[trace.node]]
 node = "view_131"
 id = 468
 tag = "view_131"
 
-[[trace]]
+[[trace.node]]
 node = "permute_82"
 id = 469
 tag = "permute_82"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_49"
 id = 470
 tag = "addmm_49"
 
-[[trace]]
+[[trace.node]]
 node = "view_132"
 id = 471
 tag = "view_132"
 
-[[trace]]
+[[trace.node]]
 node = "view_133"
 id = 472
 tag = "view_133"
 
-[[trace]]
+[[trace.node]]
 node = "permute_83"
 id = 473
 tag = "permute_83"
 
-[[trace]]
+[[trace.node]]
 node = "view_134"
 id = 474
 tag = "view_134"
 
-[[trace]]
+[[trace.node]]
 node = "permute_84"
 id = 475
 tag = "permute_84"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_50"
 id = 476
 tag = "addmm_50"
 
-[[trace]]
+[[trace.node]]
 node = "view_135"
 id = 477
 tag = "view_135"
 
-[[trace]]
+[[trace.node]]
 node = "view_136"
 id = 478
 tag = "view_136"
 
-[[trace]]
+[[trace.node]]
 node = "permute_85"
 id = 479
 tag = "permute_85"
 
-[[trace]]
+[[trace.node]]
 node = "where_8"
 id = 480
 tag = "where_8"
 
-[[trace]]
+[[trace.node]]
 node = "permute_86"
 id = 481
 tag = "permute_86"
 
-[[trace]]
+[[trace.node]]
 node = "view_137"
 id = 482
 tag = "view_137"
 
-[[trace]]
+[[trace.node]]
 node = "view_138"
 id = 483
 tag = "view_138"
 
-[[trace]]
+[[trace.node]]
 node = "permute_87"
 id = 484
 tag = "permute_87"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_51"
 id = 485
 tag = "addmm_51"
 
-[[trace]]
+[[trace.node]]
 node = "view_139"
 id = 486
 tag = "view_139"
 
-[[trace]]
+[[trace.node]]
 node = "clone_17"
 id = 487
 tag = "clone_17"
 
-[[trace]]
+[[trace.node]]
 node = "add_62"
 id = 488
 tag = "add_62"
 
-[[trace]]
+[[trace.node]]
 node = "add_63"
 id = 489
 tag = "add_63"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_17"
 id = 490
 tag = "rsqrt_17"
 
-[[trace]]
+[[trace.node]]
 node = "sub_17"
 id = 491
 tag = "sub_17"
 
-[[trace]]
+[[trace.node]]
 node = "mul_58"
 id = 492
 tag = "mul_58"
 
-[[trace]]
+[[trace.node]]
 node = "mul_59"
 id = 493
 tag = "mul_59"
 
-[[trace]]
+[[trace.node]]
 node = "add_64"
 id = 494
 tag = "add_64"
 
-[[trace]]
+[[trace.node]]
 node = "view_140"
 id = 495
 tag = "view_140"
 
-[[trace]]
+[[trace.node]]
 node = "permute_88"
 id = 496
 tag = "permute_88"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_52"
 id = 497
 tag = "addmm_52"
 
-[[trace]]
+[[trace.node]]
 node = "view_141"
 id = 498
 tag = "view_141"
 
-[[trace]]
+[[trace.node]]
 node = "mul_60"
 id = 499
 tag = "mul_60"
 
-[[trace]]
+[[trace.node]]
 node = "mul_61"
 id = 500
 tag = "mul_61"
 
-[[trace]]
+[[trace.node]]
 node = "erf_8"
 id = 501
 tag = "erf_8"
 
-[[trace]]
+[[trace.node]]
 node = "add_65"
 id = 502
 tag = "add_65"
 
-[[trace]]
+[[trace.node]]
 node = "mul_62"
 id = 503
 tag = "mul_62"
 
-[[trace]]
+[[trace.node]]
 node = "view_142"
 id = 504
 tag = "view_142"
 
-[[trace]]
+[[trace.node]]
 node = "permute_89"
 id = 505
 tag = "permute_89"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_53"
 id = 506
 tag = "addmm_53"
 
-[[trace]]
+[[trace.node]]
 node = "view_143"
 id = 507
 tag = "view_143"
 
-[[trace]]
+[[trace.node]]
 node = "clone_18"
 id = 508
 tag = "clone_18"
 
-[[trace]]
+[[trace.node]]
 node = "add_66"
 id = 509
 tag = "add_66"
 
-[[trace]]
+[[trace.node]]
 node = "add_67"
 id = 510
 tag = "add_67"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_18"
 id = 511
 tag = "rsqrt_18"
 
-[[trace]]
+[[trace.node]]
 node = "sub_18"
 id = 512
 tag = "sub_18"
 
-[[trace]]
+[[trace.node]]
 node = "mul_63"
 id = 513
 tag = "mul_63"
 
-[[trace]]
+[[trace.node]]
 node = "mul_64"
 id = 514
 tag = "mul_64"
 
-[[trace]]
+[[trace.node]]
 node = "add_68"
 id = 515
 tag = "add_68"
 
-[[trace]]
+[[trace.node]]
 node = "view_144"
 id = 516
 tag = "view_144"
 
-[[trace]]
+[[trace.node]]
 node = "permute_90"
 id = 517
 tag = "permute_90"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_54"
 id = 518
 tag = "addmm_54"
 
-[[trace]]
+[[trace.node]]
 node = "view_145"
 id = 519
 tag = "view_145"
 
-[[trace]]
+[[trace.node]]
 node = "view_146"
 id = 520
 tag = "view_146"
 
-[[trace]]
+[[trace.node]]
 node = "permute_91"
 id = 521
 tag = "permute_91"
 
-[[trace]]
+[[trace.node]]
 node = "view_147"
 id = 522
 tag = "view_147"
 
-[[trace]]
+[[trace.node]]
 node = "permute_92"
 id = 523
 tag = "permute_92"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_55"
 id = 524
 tag = "addmm_55"
 
-[[trace]]
+[[trace.node]]
 node = "view_148"
 id = 525
 tag = "view_148"
 
-[[trace]]
+[[trace.node]]
 node = "view_149"
 id = 526
 tag = "view_149"
 
-[[trace]]
+[[trace.node]]
 node = "permute_93"
 id = 527
 tag = "permute_93"
 
-[[trace]]
+[[trace.node]]
 node = "view_150"
 id = 528
 tag = "view_150"
 
-[[trace]]
+[[trace.node]]
 node = "permute_94"
 id = 529
 tag = "permute_94"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_56"
 id = 530
 tag = "addmm_56"
 
-[[trace]]
+[[trace.node]]
 node = "view_151"
 id = 531
 tag = "view_151"
 
-[[trace]]
+[[trace.node]]
 node = "view_152"
 id = 532
 tag = "view_152"
 
-[[trace]]
+[[trace.node]]
 node = "permute_95"
 id = 533
 tag = "permute_95"
 
-[[trace]]
+[[trace.node]]
 node = "where_9"
 id = 534
 tag = "where_9"
 
-[[trace]]
+[[trace.node]]
 node = "permute_96"
 id = 535
 tag = "permute_96"
 
-[[trace]]
+[[trace.node]]
 node = "view_153"
 id = 536
 tag = "view_153"
 
-[[trace]]
+[[trace.node]]
 node = "view_154"
 id = 537
 tag = "view_154"
 
-[[trace]]
+[[trace.node]]
 node = "permute_97"
 id = 538
 tag = "permute_97"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_57"
 id = 539
 tag = "addmm_57"
 
-[[trace]]
+[[trace.node]]
 node = "view_155"
 id = 540
 tag = "view_155"
 
-[[trace]]
+[[trace.node]]
 node = "clone_19"
 id = 541
 tag = "clone_19"
 
-[[trace]]
+[[trace.node]]
 node = "add_69"
 id = 542
 tag = "add_69"
 
-[[trace]]
+[[trace.node]]
 node = "add_70"
 id = 543
 tag = "add_70"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_19"
 id = 544
 tag = "rsqrt_19"
 
-[[trace]]
+[[trace.node]]
 node = "sub_19"
 id = 545
 tag = "sub_19"
 
-[[trace]]
+[[trace.node]]
 node = "mul_65"
 id = 546
 tag = "mul_65"
 
-[[trace]]
+[[trace.node]]
 node = "mul_66"
 id = 547
 tag = "mul_66"
 
-[[trace]]
+[[trace.node]]
 node = "add_71"
 id = 548
 tag = "add_71"
 
-[[trace]]
+[[trace.node]]
 node = "view_156"
 id = 549
 tag = "view_156"
 
-[[trace]]
+[[trace.node]]
 node = "permute_98"
 id = 550
 tag = "permute_98"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_58"
 id = 551
 tag = "addmm_58"
 
-[[trace]]
+[[trace.node]]
 node = "view_157"
 id = 552
 tag = "view_157"
 
-[[trace]]
+[[trace.node]]
 node = "mul_67"
 id = 553
 tag = "mul_67"
 
-[[trace]]
+[[trace.node]]
 node = "mul_68"
 id = 554
 tag = "mul_68"
 
-[[trace]]
+[[trace.node]]
 node = "erf_9"
 id = 555
 tag = "erf_9"
 
-[[trace]]
+[[trace.node]]
 node = "add_72"
 id = 556
 tag = "add_72"
 
-[[trace]]
+[[trace.node]]
 node = "mul_69"
 id = 557
 tag = "mul_69"
 
-[[trace]]
+[[trace.node]]
 node = "view_158"
 id = 558
 tag = "view_158"
 
-[[trace]]
+[[trace.node]]
 node = "permute_99"
 id = 559
 tag = "permute_99"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_59"
 id = 560
 tag = "addmm_59"
 
-[[trace]]
+[[trace.node]]
 node = "view_159"
 id = 561
 tag = "view_159"
 
-[[trace]]
+[[trace.node]]
 node = "clone_20"
 id = 562
 tag = "clone_20"
 
-[[trace]]
+[[trace.node]]
 node = "add_73"
 id = 563
 tag = "add_73"
 
-[[trace]]
+[[trace.node]]
 node = "add_74"
 id = 564
 tag = "add_74"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_20"
 id = 565
 tag = "rsqrt_20"
 
-[[trace]]
+[[trace.node]]
 node = "sub_20"
 id = 566
 tag = "sub_20"
 
-[[trace]]
+[[trace.node]]
 node = "mul_70"
 id = 567
 tag = "mul_70"
 
-[[trace]]
+[[trace.node]]
 node = "mul_71"
 id = 568
 tag = "mul_71"
 
-[[trace]]
+[[trace.node]]
 node = "add_75"
 id = 569
 tag = "add_75"
 
-[[trace]]
+[[trace.node]]
 node = "view_160"
 id = 570
 tag = "view_160"
 
-[[trace]]
+[[trace.node]]
 node = "permute_100"
 id = 571
 tag = "permute_100"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_60"
 id = 572
 tag = "addmm_60"
 
-[[trace]]
+[[trace.node]]
 node = "view_161"
 id = 573
 tag = "view_161"
 
-[[trace]]
+[[trace.node]]
 node = "view_162"
 id = 574
 tag = "view_162"
 
-[[trace]]
+[[trace.node]]
 node = "permute_101"
 id = 575
 tag = "permute_101"
 
-[[trace]]
+[[trace.node]]
 node = "view_163"
 id = 576
 tag = "view_163"
 
-[[trace]]
+[[trace.node]]
 node = "permute_102"
 id = 577
 tag = "permute_102"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_61"
 id = 578
 tag = "addmm_61"
 
-[[trace]]
+[[trace.node]]
 node = "view_164"
 id = 579
 tag = "view_164"
 
-[[trace]]
+[[trace.node]]
 node = "view_165"
 id = 580
 tag = "view_165"
 
-[[trace]]
+[[trace.node]]
 node = "permute_103"
 id = 581
 tag = "permute_103"
 
-[[trace]]
+[[trace.node]]
 node = "view_166"
 id = 582
 tag = "view_166"
 
-[[trace]]
+[[trace.node]]
 node = "permute_104"
 id = 583
 tag = "permute_104"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_62"
 id = 584
 tag = "addmm_62"
 
-[[trace]]
+[[trace.node]]
 node = "view_167"
 id = 585
 tag = "view_167"
 
-[[trace]]
+[[trace.node]]
 node = "view_168"
 id = 586
 tag = "view_168"
 
-[[trace]]
+[[trace.node]]
 node = "permute_105"
 id = 587
 tag = "permute_105"
 
-[[trace]]
+[[trace.node]]
 node = "where_10"
 id = 588
 tag = "where_10"
 
-[[trace]]
+[[trace.node]]
 node = "permute_106"
 id = 589
 tag = "permute_106"
 
-[[trace]]
+[[trace.node]]
 node = "view_169"
 id = 590
 tag = "view_169"
 
-[[trace]]
+[[trace.node]]
 node = "view_170"
 id = 591
 tag = "view_170"
 
-[[trace]]
+[[trace.node]]
 node = "permute_107"
 id = 592
 tag = "permute_107"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_63"
 id = 593
 tag = "addmm_63"
 
-[[trace]]
+[[trace.node]]
 node = "view_171"
 id = 594
 tag = "view_171"
 
-[[trace]]
+[[trace.node]]
 node = "clone_21"
 id = 595
 tag = "clone_21"
 
-[[trace]]
+[[trace.node]]
 node = "add_76"
 id = 596
 tag = "add_76"
 
-[[trace]]
+[[trace.node]]
 node = "add_77"
 id = 597
 tag = "add_77"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_21"
 id = 598
 tag = "rsqrt_21"
 
-[[trace]]
+[[trace.node]]
 node = "sub_21"
 id = 599
 tag = "sub_21"
 
-[[trace]]
+[[trace.node]]
 node = "mul_72"
 id = 600
 tag = "mul_72"
 
-[[trace]]
+[[trace.node]]
 node = "mul_73"
 id = 601
 tag = "mul_73"
 
-[[trace]]
+[[trace.node]]
 node = "add_78"
 id = 602
 tag = "add_78"
 
-[[trace]]
+[[trace.node]]
 node = "view_172"
 id = 603
 tag = "view_172"
 
-[[trace]]
+[[trace.node]]
 node = "permute_108"
 id = 604
 tag = "permute_108"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_64"
 id = 605
 tag = "addmm_64"
 
-[[trace]]
+[[trace.node]]
 node = "view_173"
 id = 606
 tag = "view_173"
 
-[[trace]]
+[[trace.node]]
 node = "mul_74"
 id = 607
 tag = "mul_74"
 
-[[trace]]
+[[trace.node]]
 node = "mul_75"
 id = 608
 tag = "mul_75"
 
-[[trace]]
+[[trace.node]]
 node = "erf_10"
 id = 609
 tag = "erf_10"
 
-[[trace]]
+[[trace.node]]
 node = "add_79"
 id = 610
 tag = "add_79"
 
-[[trace]]
+[[trace.node]]
 node = "mul_76"
 id = 611
 tag = "mul_76"
 
-[[trace]]
+[[trace.node]]
 node = "view_174"
 id = 612
 tag = "view_174"
 
-[[trace]]
+[[trace.node]]
 node = "permute_109"
 id = 613
 tag = "permute_109"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_65"
 id = 614
 tag = "addmm_65"
 
-[[trace]]
+[[trace.node]]
 node = "view_175"
 id = 615
 tag = "view_175"
 
-[[trace]]
+[[trace.node]]
 node = "clone_22"
 id = 616
 tag = "clone_22"
 
-[[trace]]
+[[trace.node]]
 node = "add_80"
 id = 617
 tag = "add_80"
 
-[[trace]]
+[[trace.node]]
 node = "add_81"
 id = 618
 tag = "add_81"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_22"
 id = 619
 tag = "rsqrt_22"
 
-[[trace]]
+[[trace.node]]
 node = "sub_22"
 id = 620
 tag = "sub_22"
 
-[[trace]]
+[[trace.node]]
 node = "mul_77"
 id = 621
 tag = "mul_77"
 
-[[trace]]
+[[trace.node]]
 node = "mul_78"
 id = 622
 tag = "mul_78"
 
-[[trace]]
+[[trace.node]]
 node = "add_82"
 id = 623
 tag = "add_82"
 
-[[trace]]
+[[trace.node]]
 node = "view_176"
 id = 624
 tag = "view_176"
 
-[[trace]]
+[[trace.node]]
 node = "permute_110"
 id = 625
 tag = "permute_110"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_66"
 id = 626
 tag = "addmm_66"
 
-[[trace]]
+[[trace.node]]
 node = "view_177"
 id = 627
 tag = "view_177"
 
-[[trace]]
+[[trace.node]]
 node = "view_178"
 id = 628
 tag = "view_178"
 
-[[trace]]
+[[trace.node]]
 node = "permute_111"
 id = 629
 tag = "permute_111"
 
-[[trace]]
+[[trace.node]]
 node = "view_179"
 id = 630
 tag = "view_179"
 
-[[trace]]
+[[trace.node]]
 node = "permute_112"
 id = 631
 tag = "permute_112"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_67"
 id = 632
 tag = "addmm_67"
 
-[[trace]]
+[[trace.node]]
 node = "view_180"
 id = 633
 tag = "view_180"
 
-[[trace]]
+[[trace.node]]
 node = "view_181"
 id = 634
 tag = "view_181"
 
-[[trace]]
+[[trace.node]]
 node = "permute_113"
 id = 635
 tag = "permute_113"
 
-[[trace]]
+[[trace.node]]
 node = "view_182"
 id = 636
 tag = "view_182"
 
-[[trace]]
+[[trace.node]]
 node = "permute_114"
 id = 637
 tag = "permute_114"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_68"
 id = 638
 tag = "addmm_68"
 
-[[trace]]
+[[trace.node]]
 node = "view_183"
 id = 639
 tag = "view_183"
 
-[[trace]]
+[[trace.node]]
 node = "view_184"
 id = 640
 tag = "view_184"
 
-[[trace]]
+[[trace.node]]
 node = "permute_115"
 id = 641
 tag = "permute_115"
 
-[[trace]]
+[[trace.node]]
 node = "where_11"
 id = 642
 tag = "where_11"
 
-[[trace]]
+[[trace.node]]
 node = "permute_116"
 id = 643
 tag = "permute_116"
 
-[[trace]]
+[[trace.node]]
 node = "view_185"
 id = 644
 tag = "view_185"
 
-[[trace]]
+[[trace.node]]
 node = "view_186"
 id = 645
 tag = "view_186"
 
-[[trace]]
+[[trace.node]]
 node = "permute_117"
 id = 646
 tag = "permute_117"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_69"
 id = 647
 tag = "addmm_69"
 
-[[trace]]
+[[trace.node]]
 node = "view_187"
 id = 648
 tag = "view_187"
 
-[[trace]]
+[[trace.node]]
 node = "clone_23"
 id = 649
 tag = "clone_23"
 
-[[trace]]
+[[trace.node]]
 node = "add_83"
 id = 650
 tag = "add_83"
 
-[[trace]]
+[[trace.node]]
 node = "add_84"
 id = 651
 tag = "add_84"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_23"
 id = 652
 tag = "rsqrt_23"
 
-[[trace]]
+[[trace.node]]
 node = "sub_23"
 id = 653
 tag = "sub_23"
 
-[[trace]]
+[[trace.node]]
 node = "mul_79"
 id = 654
 tag = "mul_79"
 
-[[trace]]
+[[trace.node]]
 node = "mul_80"
 id = 655
 tag = "mul_80"
 
-[[trace]]
+[[trace.node]]
 node = "add_85"
 id = 656
 tag = "add_85"
 
-[[trace]]
+[[trace.node]]
 node = "view_188"
 id = 657
 tag = "view_188"
 
-[[trace]]
+[[trace.node]]
 node = "permute_118"
 id = 658
 tag = "permute_118"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_70"
 id = 659
 tag = "addmm_70"
 
-[[trace]]
+[[trace.node]]
 node = "view_189"
 id = 660
 tag = "view_189"
 
-[[trace]]
+[[trace.node]]
 node = "mul_81"
 id = 661
 tag = "mul_81"
 
-[[trace]]
+[[trace.node]]
 node = "mul_82"
 id = 662
 tag = "mul_82"
 
-[[trace]]
+[[trace.node]]
 node = "erf_11"
 id = 663
 tag = "erf_11"
 
-[[trace]]
+[[trace.node]]
 node = "add_86"
 id = 664
 tag = "add_86"
 
-[[trace]]
+[[trace.node]]
 node = "mul_83"
 id = 665
 tag = "mul_83"
 
-[[trace]]
+[[trace.node]]
 node = "view_190"
 id = 666
 tag = "view_190"
 
-[[trace]]
+[[trace.node]]
 node = "permute_119"
 id = 667
 tag = "permute_119"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_71"
 id = 668
 tag = "addmm_71"
 
-[[trace]]
+[[trace.node]]
 node = "view_191"
 id = 669
 tag = "view_191"
 
-[[trace]]
+[[trace.node]]
 node = "clone_24"
 id = 670
 tag = "clone_24"
 
-[[trace]]
+[[trace.node]]
 node = "add_87"
 id = 671
 tag = "add_87"
 
-[[trace]]
+[[trace.node]]
 node = "add_88"
 id = 672
 tag = "add_88"
 
-[[trace]]
+[[trace.node]]
 node = "rsqrt_24"
 id = 673
 tag = "rsqrt_24"
 
-[[trace]]
+[[trace.node]]
 node = "sub_24"
 id = 674
 tag = "sub_24"
 
-[[trace]]
+[[trace.node]]
 node = "mul_84"
 id = 675
 tag = "mul_84"
 
-[[trace]]
+[[trace.node]]
 node = "mul_85"
 id = 676
 tag = "mul_85"
 
-[[trace]]
+[[trace.node]]
 node = "add_89"
 id = 677
 tag = "add_89"
 
-[[trace]]
+[[trace.node]]
 node = "select"
 id = 678
 tag = "select"
 
-[[trace]]
+[[trace.node]]
 node = "permute_120"
 id = 679
 tag = "permute_120"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_72"
 id = 680
 tag = "addmm_72"
 
-[[trace]]
+[[trace.node]]
 node = "tanh"
 id = 681
 tag = "tanh"
 
-[[trace]]
+[[trace.node]]
 node = "clone_25"
 id = 682
 tag = "clone_25"
 
-[[trace]]
+[[trace.node]]
 node = "permute_121"
 id = 683
 tag = "permute_121"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_73"
 id = 684
 tag = "addmm_73"

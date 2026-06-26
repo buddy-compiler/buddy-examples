@@ -47,9 +47,10 @@ function(add_buddynext_buckyball_target target_name mlir_file object_name mlir_b
               -convert-trace-to-llvm="cycle-trace"
               -expand-strided-metadata
               -convert-linalg-to-loops
-              -convert-scf-to-cf
               -lower-buckyball
-              -ownership-based-buffer-deallocation
+              -lower-affine
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
               -convert-vector-to-llvm

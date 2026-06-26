@@ -16,7 +16,9 @@ add_custom_command(
             -llvm-request-c-wrappers
             -convert-math-to-llvm
             -convert-math-to-libm
+            -lower-affine
             -convert-scf-to-cf
+            -convert-cf-to-llvm
             -convert-arith-to-llvm
             -expand-strided-metadata
             -finalize-memref-to-llvm
@@ -81,9 +83,10 @@ add_custom_command(
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
             -lower-buckyball
-            -ownership-based-buffer-deallocation
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-math-to-llvm
@@ -111,9 +114,10 @@ add_custom_command(
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
             -lower-buckyball
-            -ownership-based-buffer-deallocation
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-math-to-llvm

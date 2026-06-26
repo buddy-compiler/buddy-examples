@@ -1,64 +1,64 @@
-[[trace]]
+[[trace.node]]
 node = "convolution"
 id = 0
 tag = "convolution"
 
-[[trace]]
+[[trace.node]]
 node = "relu"
 id = 1
 tag = "relu"
 
-[[trace]]
+[[trace.node]]
 node = "convolution_1"
 id = 2
 tag = "convolution_1"
 
-[[trace]]
+[[trace.node]]
 node = "relu_1"
 id = 3
 tag = "relu_1"
 
-[[trace]]
+[[trace.node]]
 node = "view"
 id = 4
 tag = "view"
 
-[[trace]]
+[[trace.node]]
 node = "permute"
 id = 5
 tag = "permute"
 
-[[trace]]
+[[trace.node]]
 node = "addmm"
 id = 6
 tag = "addmm"
 
-[[trace]]
+[[trace.node]]
 node = "relu_2"
 id = 7
 tag = "relu_2"
 
-[[trace]]
+[[trace.node]]
 node = "permute_1"
 id = 8
 tag = "permute_1"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_1"
 id = 9
 tag = "addmm_1"
 
-[[trace]]
+[[trace.node]]
 node = "relu_3"
 id = 10
 tag = "relu_3"
 
-[[trace]]
+[[trace.node]]
 node = "permute_2"
 id = 11
 tag = "permute_2"
 
-[[trace]]
+[[trace.node]]
 node = "addmm_2"
 id = 12
 tag = "addmm_2"

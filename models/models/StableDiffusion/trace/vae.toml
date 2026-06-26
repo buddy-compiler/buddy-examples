@@ -1,29 +1,29 @@
-[[trace]]
+[[trace.node]]
 node = "convolution"
 id = 200
 tag = "vae_convolution"
 
-[[trace]]
+[[trace.node]]
 node = "convolution_1"
 id = 201
 tag = "vae_convolution_1"
 
-[[trace]]
+[[trace.node]]
 node = "add"
 id = 202
 tag = "vae_add"
 
-[[trace]]
+[[trace.node]]
 node = "convolution_2"
 id = 203
 tag = "vae_convolution_2"
 
-[[trace]]
+[[trace.node]]
 node = "mm"
 id = 204
 tag = "vae_mm"
 
-[[trace]]
+[[trace.node]]
 node = "mm_1"
 id = 205
 tag = "vae_mm_1"

@@ -103,12 +103,20 @@ graphs[0].fuse_ops(pattern_list)
 driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 
+
+def tensor_to_numpy(param):
+  param = param.detach().cpu().contiguous()
+  if param.dtype == torch.bfloat16:
+    return param.view(torch.uint16).numpy().reshape([-1])
+  if param.dtype == torch.float32:
+    return param.numpy().reshape([-1])
+  raise TypeError(f"Unsupported DeepSeekR1 parameter dtype: {param.dtype}")
+
+
 # Save the generated files to the specified output directory.
 with open(output_dir / "subgraph0.mlir", "w") as module_file:
-    print(driver.subgraphs[0]._imported_module, file=module_file)
+  print(driver.subgraphs[0]._imported_module, file=module_file)
 with open(output_dir / "forward.mlir", "w") as module_file:
-    print(driver.construct_main_graph(True), file=module_file)
-all_param = numpy.concatenate(
-    [param.detach().numpy().reshape([-1]) for param in params]
-)
+  print(driver.construct_main_graph(True), file=module_file)
+all_param = numpy.concatenate([tensor_to_numpy(param) for param in params])
 all_param.tofile(output_dir / "arg0.data")

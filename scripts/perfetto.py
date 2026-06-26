@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 try:
@@ -10,29 +11,124 @@ except ModuleNotFoundError:
   import tomli as tomllib
 
 
+TRACE_FILE_RE = re.compile(r"^trace-(\d+(?:-\d+)*)\.txt$")
+ID_PATH_RE = re.compile(r"id_path = \[([0-9,\s]+)\]")
+TAG_RE = re.compile(r'tag = "([^"]+)"')
+TRACE_TYPE_RE = re.compile(r'trace_type = "([^"]+)"')
+LEVEL_RE = re.compile(r"level = ([0-9]+) : i64")
+PARENT_RE = re.compile(r"parent = ([0-9]+) : i64")
+
+
+def parse_id(value: object) -> tuple[int, list[int]]:
+  if isinstance(value, int) and value >= 0:
+    return value, [value]
+  if (
+      isinstance(value, list)
+      and value
+      and all(isinstance(item, int) and item >= 0 for item in value)
+  ):
+    return value[0], list(value)
+  raise ValueError("trace.node id must be a non-negative integer or integer list")
+
+
+def path_key(id_path: list[int]) -> str:
+  return "-".join(str(item) for item in id_path)
+
+
+def parse_int_list(text: str) -> list[int]:
+  result = []
+  for item in text.split(","):
+    value = item.strip()
+    if value:
+      result.append(int(value))
+  if not result:
+    raise ValueError("empty id_path")
+  return result
+
+
 def load_trace_config(path: Path) -> list[dict]:
   data = tomllib.loads(path.read_text(encoding="utf-8"))
-  traces = data.get("trace")
-  if not isinstance(traces, list) or not traces:
-    raise ValueError("trace config must contain [[trace]] entries")
+  trace_data = data.get("trace")
+  if not isinstance(trace_data, dict):
+    raise ValueError("trace config must contain [trace]")
 
-  used_ids: set[int] = set()
-  for trace in traces:
-    if not isinstance(trace, dict):
-      raise ValueError("each trace entry must be a table")
+  extra_keys = set(trace_data) - {"node", "extend"}
+  if extra_keys:
+    names = ", ".join(sorted(extra_keys))
+    raise ValueError(f"unsupported trace fields: {names}")
+
+  nodes = trace_data.get("node")
+  if not isinstance(nodes, list) or not nodes:
+    raise ValueError("trace config must contain [[trace.node]] entries")
+
+  traces = []
+  used_paths: set[tuple[int, ...]] = set()
+  for node in nodes:
+    if not isinstance(node, dict):
+      raise ValueError("each trace.node entry must be a table")
+    extra_keys = set(node) - {"node", "id", "tag"}
+    if extra_keys:
+      names = ", ".join(sorted(extra_keys))
+      raise ValueError(f"unsupported trace.node fields: {names}")
     for key in ("node", "id", "tag"):
-      if key not in trace:
-        raise ValueError(f"trace entry missing `{key}`")
-    if not isinstance(trace["node"], str) or not trace["node"]:
+      if key not in node:
+        raise ValueError(f"trace.node entry missing `{key}`")
+    if not isinstance(node["node"], str) or not node["node"]:
       raise ValueError("trace node must be a non-empty string")
-    if not isinstance(trace["tag"], str) or not trace["tag"]:
+    if not isinstance(node["tag"], str) or not node["tag"]:
       raise ValueError("trace tag must be a non-empty string")
-    if not isinstance(trace["id"], int) or trace["id"] < 0:
-      raise ValueError("trace id must be a non-negative integer")
-    if trace["id"] in used_ids:
-      raise ValueError(f"duplicate trace id: {trace['id']}")
-    used_ids.add(trace["id"])
+    trace_id, id_path = parse_id(node["id"])
+    path_tuple = tuple(id_path)
+    if path_tuple in used_paths:
+      raise ValueError(f"duplicate trace id_path: {id_path}")
+    used_paths.add(path_tuple)
+    traces.append({
+      "id": trace_id,
+      "id_path": id_path,
+      "node": node["node"],
+      "tag": node["tag"],
+    })
   return traces
+
+
+def parse_int_attr(line: str, pattern: re.Pattern[str]) -> int | None:
+  match = pattern.search(line)
+  if not match:
+    return None
+  return int(match.group(1))
+
+
+def load_trace_metadata(paths: list[Path]) -> dict[tuple[int, ...], dict]:
+  result = {}
+  for path in paths:
+    if not path.is_file():
+      raise FileNotFoundError(f"trace mlir does not exist: {path}")
+    for line in path.read_text(encoding="utf-8").splitlines():
+      if "buddy_trace.start" not in line:
+        continue
+      id_match = ID_PATH_RE.search(line)
+      tag_match = TAG_RE.search(line)
+      if not id_match or not tag_match:
+        continue
+      id_path = parse_int_list(id_match.group(1))
+      key = tuple(id_path)
+      meta = {
+        "id": id_path[0],
+        "id_path": id_path,
+        "node": "",
+        "tag": tag_match.group(1),
+      }
+      trace_type_match = TRACE_TYPE_RE.search(line)
+      if trace_type_match:
+        meta["trace_type"] = trace_type_match.group(1)
+      level = parse_int_attr(line, LEVEL_RE)
+      if level is not None:
+        meta["level"] = level
+      parent = parse_int_attr(line, PARENT_RE)
+      if parent is not None:
+        meta["parent"] = parent
+      result[key] = meta
+  return result
 
 
 def read_cycle(path: Path) -> dict[str, int]:
@@ -86,25 +182,98 @@ def count_lines(path: Path) -> int | None:
   return count
 
 
-def build_perfetto(trace_dir: Path, trace_toml: Path) -> dict:
+def collect_cycle_paths(trace_dir: Path) -> dict[tuple[int, ...], Path]:
+  cycle_dir = trace_dir / "cycle"
+  if not cycle_dir.is_dir():
+    raise NotADirectoryError(f"missing cycle trace directory: {cycle_dir}")
+
+  result = {}
+  for path in sorted(cycle_dir.iterdir()):
+    match = TRACE_FILE_RE.match(path.name)
+    if not match:
+      continue
+    id_path = tuple(int(item) for item in match.group(1).split("-"))
+    if id_path in result:
+      raise ValueError(f"duplicate trace file id_path: {list(id_path)}")
+    result[id_path] = path
+  return result
+
+
+def validate_cycle_paths(cycle_paths: dict[tuple[int, ...], Path]) -> None:
+  if not cycle_paths:
+    raise ValueError("no cycle trace files found")
+
+  for id_path in sorted(cycle_paths):
+    if len(id_path) == 1:
+      continue
+    for depth in range(1, len(id_path)):
+      parent = id_path[:depth]
+      if parent not in cycle_paths:
+        expected = f"trace-{path_key(list(parent))}.txt"
+        raise ValueError(
+            f"missing parent trace file for id_path {list(id_path)}: "
+            f"expected {expected}")
+
+
+def trace_level(trace: dict) -> int:
+  if "level" in trace:
+    return trace["level"]
+  return len(trace["id_path"]) - 1
+
+
+def level_name(level: int) -> str:
+  if level == 0:
+    return "L0 graph"
+  if level == 1:
+    return "L1 linalg"
+  if level == 2:
+    return "L2 buckyball"
+  return f"L{level} trace"
+
+
+def build_perfetto(trace_dir: Path, trace_toml: Path,
+                   mlir_paths: list[Path]) -> dict:
   traces = load_trace_config(trace_toml)
+  trace_by_path = {tuple(trace["id_path"]): trace for trace in traces}
+  cycle_paths = collect_cycle_paths(trace_dir)
+  validate_cycle_paths(cycle_paths)
+  has_nested_trace = any(len(id_path) > 1 for id_path in cycle_paths)
+  if has_nested_trace and not mlir_paths:
+    raise ValueError("multi-level trace output requires at least one --mlir file")
+  for id_path, trace in load_trace_metadata(mlir_paths).items():
+    if id_path not in trace_by_path:
+      trace_by_path[id_path] = trace
   entries = []
   base_ts = None
   serial_ts = 0
 
-  for trace in sorted(traces, key=lambda item: item["id"]):
-    trace_id = trace["id"]
-    cycle_path = trace_dir / "cycle" / f"trace-{trace_id}.txt"
-    tensor_path = trace_dir / "tensor" / f"trace-{trace_id}.txt"
+  for id_path, cycle_path in sorted(cycle_paths.items()):
+    trace = trace_by_path.get(id_path)
+    if trace is None:
+      raise ValueError(f"missing trace metadata for id_path: {list(id_path)}")
+    tensor_path = trace_dir / "tensor" / f"trace-{path_key(trace['id_path'])}.txt"
     cycle = read_cycle(cycle_path)
     if "start" in cycle:
       base_ts = cycle["start"] if base_ts is None else min(base_ts, cycle["start"])
     entries.append((trace, cycle_path, tensor_path, cycle))
 
   events = []
+  levels = sorted({trace_level(trace) for trace, _, _, _ in entries})
+  for level in levels:
+    events.append({
+      "name": "thread_name",
+      "ph": "M",
+      "pid": 0,
+      "tid": level,
+      "args": {
+        "name": level_name(level),
+      },
+    })
 
   for trace, cycle_path, tensor_path, cycle in entries:
     trace_id = trace["id"]
+    id_path = trace["id_path"]
+    level = trace_level(trace)
     dur = cycle["elapsed"]
     if base_ts is not None and "start" in cycle:
       ts = cycle["start"] - base_ts
@@ -115,6 +284,7 @@ def build_perfetto(trace_dir: Path, trace_toml: Path) -> dict:
 
     args = {
       "id": trace_id,
+      "id_path": id_path,
       "node": trace["node"],
       "cycle_file": str(cycle_path),
       "elapsed_cycle": dur,
@@ -125,6 +295,12 @@ def build_perfetto(trace_dir: Path, trace_toml: Path) -> dict:
     if tensor_elements is not None:
       args["tensor_file"] = str(tensor_path)
       args["tensor_elements"] = tensor_elements
+    if "trace_type" in trace:
+      args["trace_type"] = trace["trace_type"]
+    if "level" in trace:
+      args["level"] = trace["level"]
+    if "parent" in trace:
+      args["parent"] = trace["parent"]
 
     events.append({
       "name": trace["tag"],
@@ -133,7 +309,7 @@ def build_perfetto(trace_dir: Path, trace_toml: Path) -> dict:
       "ts": ts,
       "dur": dur,
       "pid": 0,
-      "tid": "cycle",
+      "tid": level,
       "args": args,
     })
 
@@ -152,6 +328,8 @@ def parse_args() -> argparse.Namespace:
                       help="trace.toml used to generate the trace output.")
   parser.add_argument("-o", "--output", type=Path,
                       help="Output Perfetto JSON path. Defaults to TRACE_DIR/perfetto.json.")
+  parser.add_argument("--mlir", action="append", type=Path, default=[],
+                      help="Expanded trace MLIR file. Required for multi-level trace output.")
   return parser.parse_args()
 
 
@@ -165,7 +343,8 @@ def main() -> None:
     raise FileNotFoundError(f"trace.toml does not exist: {trace_toml}")
 
   output = args.output.resolve() if args.output else trace_dir / "perfetto.json"
-  data = build_perfetto(trace_dir, trace_toml)
+  mlir_paths = [path.resolve() for path in args.mlir]
+  data = build_perfetto(trace_dir, trace_toml, mlir_paths)
   output.parent.mkdir(parents=True, exist_ok=True)
   output.write_text(json.dumps(data, indent=2), encoding="utf-8")
   print(output)

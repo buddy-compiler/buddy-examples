@@ -20,7 +20,6 @@ add_custom_command(
             -convert-linalg-to-affine-loops
             -affine-loop-fusion
             -lower-affine
-            -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-vector-to-scf
@@ -30,7 +29,9 @@ add_custom_command(
             -arith-expand
             -convert-arith-to-llvm
             -finalize-memref-to-llvm
+            -lower-affine
             -convert-scf-to-cf
+            -convert-cf-to-llvm
             -llvm-request-c-wrappers
             -convert-arith-to-llvm
             -convert-math-to-llvm
@@ -77,7 +78,6 @@ add_custom_command(
             -assign-physical-banks
             -lower-bank-ssa-to-intrinsics
             -lower-buckyball
-              -ownership-based-buffer-deallocation
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
               -expand-strided-metadata
@@ -99,9 +99,10 @@ add_custom_command(
               -convert-trace-to-llvm="cycle-trace"
               -expand-strided-metadata
               -convert-linalg-to-loops
-              -convert-scf-to-cf
               -lower-buckyball
-              -ownership-based-buffer-deallocation
+              -lower-affine
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
               -convert-cf-to-llvm
@@ -129,9 +130,10 @@ add_custom_command(
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
             -lower-buckyball
-              -ownership-based-buffer-deallocation
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
               -convert-cf-to-llvm

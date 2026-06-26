@@ -1,0 +1,34 @@
+[[trace.extend]]
+dialect = "linalg"
+granularity = "op"
+include = ["conv_2d_nhwc_fhwc", "matmul"]
+
+[[trace.extend]]
+dialect = "buckyball"
+granularity = "op"
+include = ["matmul", "bank_mvin", "bank_mvout", "bank_mul_warp16", "bank_im2col", "bank_transpose"]
+
+[[trace.node]]
+node = "convolution"
+id = [0]
+tag = "conv1"
+
+[[trace.node]]
+node = "convolution_1"
+id = [1]
+tag = "conv2"
+
+[[trace.node]]
+node = "addmm"
+id = [2]
+tag = "fc1"
+
+[[trace.node]]
+node = "addmm_1"
+id = [3]
+tag = "fc2"
+
+[[trace.node]]
+node = "addmm_2"
+id = [4]
+tag = "fc3"

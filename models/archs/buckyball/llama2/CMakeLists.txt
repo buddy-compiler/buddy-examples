@@ -16,12 +16,12 @@ add_custom_command(
             -one-shot-bufferize="bufferize-function-boundaries"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-vector-to-scf
             -lower-affine
             -convert-scf-to-cf
+            -convert-cf-to-llvm
             -convert-cf-to-llvm
             -convert-vector-to-llvm
             -llvm-request-c-wrappers
@@ -50,12 +50,12 @@ add_custom_command(
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-vector-to-scf
             -lower-affine
             -convert-scf-to-cf
+            -convert-cf-to-llvm
             -convert-cf-to-llvm
             -convert-vector-to-llvm
             -convert-math-to-llvm

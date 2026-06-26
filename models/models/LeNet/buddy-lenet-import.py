@@ -43,6 +43,12 @@ parser.add_argument(
     default=False,
     help="Import with trace/trace.toml.",
 )
+parser.add_argument(
+    "--trace-config",
+    type=str,
+    default="trace.toml",
+    help="Trace config file under trace/.",
+)
 args = parser.parse_args()
 
 # Retrieve the LeNet model path from environment variables.
@@ -60,7 +66,7 @@ model = model.eval()
 
 output_dir = model_dir
 if args.trace:
-    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / args.trace_config))
     verbose = False
     verbose_path = None
 else:

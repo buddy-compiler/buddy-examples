@@ -1,29 +1,29 @@
-[[trace]]
+[[trace.node]]
 node = "sin"
 id = 100
 tag = "unet_sin"
 
-[[trace]]
+[[trace.node]]
 node = "cos"
 id = 101
 tag = "unet_cos"
 
-[[trace]]
+[[trace.node]]
 node = "cat"
 id = 102
 tag = "unet_cat"
 
-[[trace]]
+[[trace.node]]
 node = "convolution"
 id = 103
 tag = "unet_convolution"
 
-[[trace]]
+[[trace.node]]
 node = "addmm"
 id = 104
 tag = "unet_addmm"
 
-[[trace]]
+[[trace.node]]
 node = "convolution_1"
 id = 105
 tag = "unet_convolution_1"
