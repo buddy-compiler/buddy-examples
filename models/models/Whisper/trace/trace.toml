@@ -1,0 +1,51 @@
+[trace]
+
+[[trace.node]]
+node = "convolution"
+id = 0
+tag = "encoder.conv1"
+
+[[trace.node]]
+node = "convolution_1"
+id = 1
+tag = "encoder.conv2"
+
+[[trace.node]]
+node = "addmm"
+id = 2
+tag = "encoder.layer0.self_attn.q_proj"
+
+[[trace.node]]
+node = "mm"
+id = 3
+tag = "encoder.layer0.self_attn.k_proj"
+
+[[trace.node]]
+node = "addmm_1"
+id = 4
+tag = "encoder.layer0.self_attn.v_proj"
+
+[[trace.node]]
+node = "addmm_2"
+id = 5
+tag = "encoder.layer0.self_attn.out_proj"
+
+[[trace.node]]
+node = "addmm_30"
+id = 6
+tag = "decoder.layer0.self_attn.q_proj"
+
+[[trace.node]]
+node = "mm_6"
+id = 7
+tag = "decoder.layer0.self_attn.k_proj"
+
+[[trace.node]]
+node = "addmm_31"
+id = 8
+tag = "decoder.layer0.self_attn.v_proj"
+
+[[trace.node]]
+node = "mm_18"
+id = 9
+tag = "decoder.lm_logits"

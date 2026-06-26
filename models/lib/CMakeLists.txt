@@ -64,6 +64,7 @@ set_target_properties(ModelTestDIP_riscv PROPERTIES LINKER_LANGUAGE CXX)
 # ==============================================================================
 
 set(DAP_MLIR_PATH ${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DAP.mlir)
+set(DAP_EXTEND_MLIR_PATH ${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DAP-extend.mlir)
 
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/DAP_riscv.o
@@ -91,6 +92,37 @@ add_custom_command(
 add_library(ModelTestDAP_riscv STATIC ${CMAKE_CURRENT_BINARY_DIR}/DAP_riscv.o)
 set_target_properties(ModelTestDAP_riscv PROPERTIES LINKER_LANGUAGE CXX)
 
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/DAP_extend_riscv.o
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${DAP_EXTEND_MLIR_PATH}
+          -extend-dap
+          -one-shot-bufferize
+          -convert-linalg-to-loops
+          -convert-scf-to-cf
+          -expand-strided-metadata
+          -lower-affine
+          -convert-vector-to-llvm
+          -memref-expand
+          -arith-expand
+          -convert-arith-to-llvm
+          -finalize-memref-to-llvm
+          -convert-math-to-llvm
+          -llvm-request-c-wrappers
+          -convert-func-to-llvm
+          -convert-cf-to-llvm
+          -convert-arith-to-llvm
+          -reconcile-unrealized-casts |
+          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          -o ${CMAKE_CURRENT_BINARY_DIR}/DAP_extend_riscv.o
+  DEPENDS ${DAP_EXTEND_MLIR_PATH}
+  COMMENT "Building DAP extend library for RISC-V"
+  VERBATIM
+)
+
+add_library(ModelTestDAPExtend_riscv STATIC ${CMAKE_CURRENT_BINARY_DIR}/DAP_extend_riscv.o)
+set_target_properties(ModelTestDAPExtend_riscv PROPERTIES LINKER_LANGUAGE CXX)
+
 # ==============================================================================
 # Export variables for parent CMakeLists
 # ==============================================================================
@@ -99,3 +131,4 @@ set(MODELTEST_CRUNNER_UTILS_LIB ModelTestCRunnerUtils PARENT_SCOPE)
 set(MODELTEST_HOST_CRUNNER_UTILS_OBJ ModelTestHostCRunnerUtils PARENT_SCOPE)
 set(MODELTEST_DIP_RISCV_LIB ModelTestDIP_riscv PARENT_SCOPE)
 set(MODELTEST_DAP_RISCV_LIB ModelTestDAP_riscv PARENT_SCOPE)
+set(MODELTEST_DAP_EXTEND_RISCV_LIB ModelTestDAPExtend_riscv PARENT_SCOPE)

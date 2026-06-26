@@ -9,6 +9,7 @@ set(BUCKYBALL_QWEN3_DIR ${BUCKYBALL_DIR}/Qwen3)
 set(BUCKYBALL_YOLO26_DIR ${BUCKYBALL_DIR}/YOLO26)
 set(BUCKYBALL_BUDDYNEXT_DIR ${BUCKYBALL_DIR}/BuddyNext)
 set(BUCKYBALL_GEMMA4_DIR ${BUCKYBALL_DIR}/Gemma4)
+set(BUCKYBALL_WHISPER_DIR ${BUCKYBALL_DIR}/Whisper)
 
 function(add_buckyball_perfetto_target target)
   set(one_value_args TRACE_DIR TRACE_TOML OUTPUT)
@@ -92,4 +93,8 @@ endif()
 
 if (MODEL_GEMMA4)
   add_subdirectory(Gemma4)
+endif()
+
+if (MODEL_WHISPER)
+  add_subdirectory(Whisper)
 endif()
