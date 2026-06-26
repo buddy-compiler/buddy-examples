@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
   echo "Error: workload name is required"
   echo "Usage: $0 <workload-name>"
   echo "Valid workload-names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
-       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
+       bert-gemmini, stable-diffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
        qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
   exit 1
 fi
@@ -51,13 +51,13 @@ elif [ $WORKLOAD == "bert-gemmini" ]; then
     -DMODEL="bert" \
     -DARCH="gemmini"
   ninja buddy-gemmini-bert-run
-elif [ $WORKLOAD == "stablediffusion-gemmini" ]; then
+elif [ $WORKLOAD == "stable-diffusion-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
   cmake -G Ninja .. \
-    -DMODEL="stablediffusion" \
+    -DMODEL="stable-diffusion" \
     -DARCH="gemmini"
-  ninja buddy-gemmini-stablediffusion-run
+  ninja buddy-gemmini-stable-diffusion-run
 elif [ $WORKLOAD == "llama2-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
@@ -103,7 +103,7 @@ elif [ $WORKLOAD == "cnn-gemmini" ]; then
 else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
-       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
+       bert-gemmini, stable-diffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
        qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
   exit 1
 fi
@@ -152,14 +152,14 @@ elif [ $WORKLOAD == "bert-gemmini" ]; then
   cp $ROOT/models/models/Bert/arg0.data ./
   cp $ROOT/models/models/Bert/arg1.data ./
   cp $ROOT/models/models/Bert/vocab.txt ./
-elif [ $WORKLOAD == "stablediffusion-gemmini" ]; then
+elif [ $WORKLOAD == "stable-diffusion-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/StableDiffusion/buddy-gemmini-stablediffusion-run ]; then
-    echo "Error: buddy-gemmini-stablediffusion-run not found"
+  if [ ! -f $ROOT/models/build/archs/gemmini/StableDiffusion/buddy-gemmini-stable-diffusion-run ]; then
+    echo "Error: buddy-gemmini-stable-diffusion-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/StableDiffusion/buddy-gemmini-stablediffusion-run ./
+  cp $ROOT/models/build/archs/gemmini/StableDiffusion/buddy-gemmini-stable-diffusion-run ./
   cp $ROOT/models/models/StableDiffusion/arg0_text_encoder.data ./
   cp $ROOT/models/models/StableDiffusion/arg1_text_encoder.data ./
   cp $ROOT/models/models/StableDiffusion/arg0_unet.data ./
@@ -259,7 +259,7 @@ elif [ $WORKLOAD == "cnn-gemmini" ]; then
 else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
-       bert-gemmini, stablediffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
+       bert-gemmini, stable-diffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
        qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
   exit 1
 fi

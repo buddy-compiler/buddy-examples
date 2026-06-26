@@ -72,6 +72,7 @@ add_custom_command(
             -assign-physical-banks
             -llvm-request-c-wrappers
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
@@ -100,6 +101,7 @@ add_custom_command(
           -assign-physical-banks
           -llvm-request-c-wrappers
           -lower-bank-ssa-to-intrinsics
+          -convert-trace-to-llvm="cycle-trace"
           -expand-strided-metadata
           -convert-linalg-to-loops
           -convert-scf-to-cf
@@ -146,6 +148,7 @@ add_custom_command(TARGET buddy-buckyball-mobilenetv3-run POST_BUILD
 # Sync runtime deps (images/, arg0.data, Labels.txt) directly to OUTPUT directory
 add_custom_target(sync-buckyball-mobilenetv3-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_MOBILENETV3_DIR}/images
           ${MOBILENETV3_OUTPUT_DIR}/images

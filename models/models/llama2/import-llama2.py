@@ -20,6 +20,7 @@
 
 import os
 import argparse
+from pathlib import Path
 import torch
 import torch._dynamo as dynamo
 from transformers import LlamaForCausalLM, LlamaTokenizer
@@ -30,6 +31,7 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.ops import tosa
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse, apply_classic_fusion
+from buddy.compiler.trace import TraceConfig, load_trace_config
 
 # Add argument parser to allow custom output directory.
 parser = argparse.ArgumentParser(description="LLaMA2 model AOT importer")
@@ -48,11 +50,28 @@ parser.add_argument(
     help="HuggingFace authentication token (required for Llama-2). "
     "Can be a token string or flag. If flag only, uses cached credentials from: huggingface-cli login",
 )
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
 args = parser.parse_args()
 
 # Ensure the output directory exists.
-output_dir = args.output_dir
-os.makedirs(output_dir, exist_ok=True)
+output_dir = Path(args.output_dir).resolve()
+output_dir.mkdir(parents=True, exist_ok=True)
+model_dir = Path(__file__).resolve().parent
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
 # Download Llama-2-7b-hf from HuggingFace
 model_path = "meta-llama/Llama-2-7b-hf"
@@ -75,10 +94,10 @@ else:
 # If using HuggingFace, it will automatically download and cache the model.
 try:
     tokenizer = LlamaTokenizer.from_pretrained(
-        model_path, legacy=True, use_auth_token=auth_token if auth_token else None
+        model_path, legacy=True, token=auth_token if auth_token else None
     )
     model = LlamaForCausalLM.from_pretrained(
-        model_path, torchscript=True, use_auth_token=auth_token if auth_token else None
+        model_path, token=auth_token if auth_token else None
     )
 except Exception as e:
     print(f"\nError loading model: {e}")
@@ -93,6 +112,9 @@ model.config.use_cache = False
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 
 # Import the model into MLIR module and parameters.
@@ -109,11 +131,11 @@ driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 
 # Save the generated files to the specified output directory.
-with open(os.path.join(output_dir, "subgraph0.mlir"), "w") as module_file:
+with open(output_dir / "subgraph0.mlir", "w") as module_file:
     print(driver.subgraphs[0]._imported_module, file=module_file)
-with open(os.path.join(output_dir, "forward.mlir"), "w") as module_file:
+with open(output_dir / "forward.mlir", "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 all_param = numpy.concatenate(
     [param.detach().numpy().reshape([-1]) for param in params]
 )
-all_param.tofile(os.path.join(output_dir, "arg0.data"))
+all_param.tofile(output_dir / "arg0.data")

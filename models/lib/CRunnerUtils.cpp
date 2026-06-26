@@ -40,6 +40,13 @@ static FILE *openTraceFile(const char *kind, int64_t id) {
   return file;
 }
 
+static float bf16ToF32(uint16_t value) {
+  uint32_t bits = static_cast<uint32_t>(value) << 16;
+  float result;
+  memcpy(&result, &bits, sizeof(result));
+  return result;
+}
+
 static void writeCycleSummary() {
   FILE *file = fopen("trace/cycle/summary.txt", "w");
   if (!file) {
@@ -57,6 +64,13 @@ static void writeCycleSummary() {
   fprintf(file, "trace_count %llu\n",
           static_cast<unsigned long long>(traceCycleCount));
   fclose(file);
+}
+
+static void checkTraceTensor(void *tensor) {
+  if (!tensor) {
+    fprintf(stderr, "trace tensor is null\n");
+    abort();
+  }
 }
 
 extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
@@ -123,16 +137,28 @@ extern "C" void printNewline() { fputc('\n', stdout); }
 extern "C" void
 _mlir_ciface_buddyTraceTensorF32(int64_t id,
                                  StridedMemRefType<float, 1> *tensor) {
-  if (!tensor) {
-    fprintf(stderr, "trace tensor is null\n");
-    abort();
-  }
+  checkTraceTensor(tensor);
 
   DynamicMemRefType<float> ref(*tensor);
 
   FILE *file = openTraceFile("tensor", id);
   for (int64_t i = 0; i < ref.sizes[0]; ++i)
     fprintf(file, "%.9g\n", ref.data[ref.offset + i * ref.strides[0]]);
+  fclose(file);
+}
+
+extern "C" void
+_mlir_ciface_buddyTraceTensorBF16(int64_t id,
+                                  StridedMemRefType<uint16_t, 1> *tensor) {
+  checkTraceTensor(tensor);
+
+  DynamicMemRefType<uint16_t> ref(*tensor);
+
+  FILE *file = openTraceFile("tensor", id);
+  for (int64_t i = 0; i < ref.sizes[0]; ++i) {
+    uint16_t value = ref.data[ref.offset + i * ref.strides[0]];
+    fprintf(file, "%.9g\n", bf16ToF32(value));
+  }
   fclose(file);
 }
 

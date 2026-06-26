@@ -58,6 +58,7 @@ add_custom_command(
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
             -convert-tile-to-buckyball
+            -batchmatmul-optimize
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -lower-bank-ssa-to-intrinsics
@@ -72,10 +73,12 @@ add_custom_command(
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
             -convert-tile-to-buckyball
+            -batchmatmul-optimize
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -llvm-request-c-wrappers
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
@@ -94,29 +97,31 @@ add_custom_command(
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
-          -eliminate-empty-tensors
-          -convert-elementwise-to-linalg
-          -convert-tensor-to-linalg
-          -one-shot-bufferize="bufferize-function-boundaries"
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
             -convert-tile-to-buckyball
+            -batchmatmul-optimize
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -llvm-request-c-wrappers
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
             -lower-buckyball
-          -ownership-based-buffer-deallocation
-          -buffer-deallocation-simplification
-          -bufferization-lower-deallocations
-          -convert-math-to-llvm
-          -convert-math-to-libm
-          -convert-arith-to-llvm
-          -convert-func-to-llvm
-          -finalize-memref-to-llvm
-          -reconcile-unrealized-casts |
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-arith-to-llvm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
         ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_BERT_DIR}/subgraph0.mlir
@@ -146,6 +151,7 @@ add_custom_command(TARGET buddy-buckyball-bert-run POST_BUILD
 
 add_custom_target(sync-buckyball-bert-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${BERT_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${BERT_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_BERT_DIR}/arg0.data
           ${BERT_OUTPUT_DIR}/arg0.data

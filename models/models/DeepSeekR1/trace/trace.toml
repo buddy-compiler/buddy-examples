@@ -1,0 +1,470 @@
+[[trace]]
+node = "embedding"
+id = 0
+tag = "embedding"
+
+[[trace]]
+node = "add"
+id = 1
+tag = "add"
+
+[[trace]]
+node = "unsqueeze"
+id = 2
+tag = "unsqueeze"
+
+[[trace]]
+node = "convert_element_type"
+id = 3
+tag = "convert_element_type"
+
+[[trace]]
+node = "add_1"
+id = 4
+tag = "add_1"
+
+[[trace]]
+node = "add_2"
+id = 5
+tag = "add_2"
+
+[[trace]]
+node = "unsqueeze_1"
+id = 6
+tag = "unsqueeze_1"
+
+[[trace]]
+node = "unsqueeze_2"
+id = 7
+tag = "unsqueeze_2"
+
+[[trace]]
+node = "unsqueeze_3"
+id = 8
+tag = "unsqueeze_3"
+
+[[trace]]
+node = "unsqueeze_4"
+id = 9
+tag = "unsqueeze_4"
+
+[[trace]]
+node = "unsqueeze_5"
+id = 10
+tag = "unsqueeze_5"
+
+[[trace]]
+node = "unsqueeze_6"
+id = 11
+tag = "unsqueeze_6"
+
+[[trace]]
+node = "unsqueeze_7"
+id = 12
+tag = "unsqueeze_7"
+
+[[trace]]
+node = "unsqueeze_8"
+id = 13
+tag = "unsqueeze_8"
+
+[[trace]]
+node = "unsqueeze_9"
+id = 14
+tag = "unsqueeze_9"
+
+[[trace]]
+node = "le"
+id = 15
+tag = "le"
+
+[[trace]]
+node = "bitwise_and"
+id = 16
+tag = "bitwise_and"
+
+[[trace]]
+node = "index"
+id = 17
+tag = "index"
+
+[[trace]]
+node = "bitwise_and_1"
+id = 18
+tag = "bitwise_and_1"
+
+[[trace]]
+node = "expand"
+id = 19
+tag = "expand"
+
+[[trace]]
+node = "unsqueeze_10"
+id = 20
+tag = "unsqueeze_10"
+
+[[trace]]
+node = "unsqueeze_11"
+id = 21
+tag = "unsqueeze_11"
+
+[[trace]]
+node = "expand_1"
+id = 22
+tag = "expand_1"
+
+[[trace]]
+node = "unsqueeze_12"
+id = 23
+tag = "unsqueeze_12"
+
+[[trace]]
+node = "convert_element_type_1"
+id = 24
+tag = "convert_element_type_1"
+
+[[trace]]
+node = "expand_2"
+id = 25
+tag = "expand_2"
+
+[[trace]]
+node = "view"
+id = 26
+tag = "view"
+
+[[trace]]
+node = "expand_3"
+id = 27
+tag = "expand_3"
+
+[[trace]]
+node = "view_1"
+id = 28
+tag = "view_1"
+
+[[trace]]
+node = "bmm"
+id = 29
+tag = "bmm"
+
+[[trace]]
+node = "view_2"
+id = 30
+tag = "view_2"
+
+[[trace]]
+node = "permute"
+id = 31
+tag = "permute"
+
+[[trace]]
+node = "unsqueeze_13"
+id = 32
+tag = "unsqueeze_13"
+
+[[trace]]
+node = "expand_4"
+id = 33
+tag = "expand_4"
+
+[[trace]]
+node = "clone"
+id = 34
+tag = "clone"
+
+[[trace]]
+node = "view_3"
+id = 35
+tag = "view_3"
+
+[[trace]]
+node = "clone_1"
+id = 36
+tag = "clone_1"
+
+[[trace]]
+node = "cos"
+id = 37
+tag = "cos"
+
+[[trace]]
+node = "mul"
+id = 38
+tag = "mul"
+
+[[trace]]
+node = "sin"
+id = 39
+tag = "sin"
+
+[[trace]]
+node = "mul_1"
+id = 40
+tag = "mul_1"
+
+[[trace]]
+node = "convert_element_type_2"
+id = 41
+tag = "convert_element_type_2"
+
+[[trace]]
+node = "convert_element_type_3"
+id = 42
+tag = "convert_element_type_3"
+
+[[trace]]
+node = "convert_element_type_4"
+id = 43
+tag = "convert_element_type_4"
+
+[[trace]]
+node = "pow_1"
+id = 44
+tag = "pow_1"
+
+[[trace]]
+node = "mean"
+id = 45
+tag = "mean"
+
+[[trace]]
+node = "add_3"
+id = 46
+tag = "add_3"
+
+[[trace]]
+node = "rsqrt"
+id = 47
+tag = "rsqrt"
+
+[[trace]]
+node = "mul_2"
+id = 48
+tag = "mul_2"
+
+[[trace]]
+node = "convert_element_type_5"
+id = 49
+tag = "convert_element_type_5"
+
+[[trace]]
+node = "mul_3"
+id = 50
+tag = "mul_3"
+
+[[trace]]
+node = "view_4"
+id = 51
+tag = "view_4"
+
+[[trace]]
+node = "permute_1"
+id = 52
+tag = "permute_1"
+
+[[trace]]
+node = "addmm"
+id = 53
+tag = "addmm"
+
+[[trace]]
+node = "view_5"
+id = 54
+tag = "view_5"
+
+[[trace]]
+node = "view_6"
+id = 55
+tag = "view_6"
+
+[[trace]]
+node = "permute_2"
+id = 56
+tag = "permute_2"
+
+[[trace]]
+node = "view_7"
+id = 57
+tag = "view_7"
+
+[[trace]]
+node = "permute_3"
+id = 58
+tag = "permute_3"
+
+[[trace]]
+node = "addmm_1"
+id = 59
+tag = "addmm_1"
+
+[[trace]]
+node = "view_8"
+id = 60
+tag = "view_8"
+
+[[trace]]
+node = "view_9"
+id = 61
+tag = "view_9"
+
+[[trace]]
+node = "permute_4"
+id = 62
+tag = "permute_4"
+
+[[trace]]
+node = "view_10"
+id = 63
+tag = "view_10"
+
+[[trace]]
+node = "permute_5"
+id = 64
+tag = "permute_5"
+
+[[trace]]
+node = "addmm_2"
+id = 65
+tag = "addmm_2"
+
+[[trace]]
+node = "view_11"
+id = 66
+tag = "view_11"
+
+[[trace]]
+node = "view_12"
+id = 67
+tag = "view_12"
+
+[[trace]]
+node = "permute_6"
+id = 68
+tag = "permute_6"
+
+[[trace]]
+node = "unsqueeze_14"
+id = 69
+tag = "unsqueeze_14"
+
+[[trace]]
+node = "unsqueeze_15"
+id = 70
+tag = "unsqueeze_15"
+
+[[trace]]
+node = "mul_4"
+id = 71
+tag = "mul_4"
+
+[[trace]]
+node = "slice_1"
+id = 72
+tag = "slice_1"
+
+[[trace]]
+node = "slice_2"
+id = 73
+tag = "slice_2"
+
+[[trace]]
+node = "neg"
+id = 74
+tag = "neg"
+
+[[trace]]
+node = "cat"
+id = 75
+tag = "cat"
+
+[[trace]]
+node = "mul_5"
+id = 76
+tag = "mul_5"
+
+[[trace]]
+node = "add_4"
+id = 77
+tag = "add_4"
+
+[[trace]]
+node = "mul_6"
+id = 78
+tag = "mul_6"
+
+[[trace]]
+node = "slice_3"
+id = 79
+tag = "slice_3"
+
+[[trace]]
+node = "slice_4"
+id = 80
+tag = "slice_4"
+
+[[trace]]
+node = "neg_1"
+id = 81
+tag = "neg_1"
+
+[[trace]]
+node = "cat_1"
+id = 82
+tag = "cat_1"
+
+[[trace]]
+node = "mul_7"
+id = 83
+tag = "mul_7"
+
+[[trace]]
+node = "add_5"
+id = 84
+tag = "add_5"
+
+[[trace]]
+node = "unsqueeze_16"
+id = 85
+tag = "unsqueeze_16"
+
+[[trace]]
+node = "expand_5"
+id = 86
+tag = "expand_5"
+
+[[trace]]
+node = "clone_2"
+id = 87
+tag = "clone_2"
+
+[[trace]]
+node = "view_13"
+id = 88
+tag = "view_13"
+
+[[trace]]
+node = "unsqueeze_17"
+id = 89
+tag = "unsqueeze_17"
+
+[[trace]]
+node = "expand_6"
+id = 90
+tag = "expand_6"
+
+[[trace]]
+node = "clone_3"
+id = 91
+tag = "clone_3"
+
+[[trace]]
+node = "view_14"
+id = 92
+tag = "view_14"
+
+[[trace]]
+node = "where"
+id = 93
+tag = "where"
+

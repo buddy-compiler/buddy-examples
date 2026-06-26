@@ -4,6 +4,7 @@ add_custom_command(
          ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/import-whisper.py
           --output-dir ${CMAKE_CURRENT_BINARY_DIR}
+          --trace
   COMMENT "Generating forward.mlir, subgraph0.mlir and arg0.data..."
 )
 set(PATTERN_ARG "test-decompose-pad-tensor")
@@ -32,6 +33,7 @@ add_custom_command(
               -convert-elementwise-to-linalg
               -empty-tensor-to-alloc-tensor
               -one-shot-bufferize="bufferize-function-boundaries"
+              -convert-trace-to-llvm="cycle-trace"
               -ownership-based-buffer-deallocation
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
@@ -83,6 +85,7 @@ SET_TARGET_PROPERTIES(
 
 set(BUDDY_WHISPER_FILES
   whisper-main.cpp
+  $<TARGET_OBJECTS:ModelTestHostCRunnerUtils>
 )
 
 add_executable(buddy-whisper-run ${BUDDY_WHISPER_FILES})

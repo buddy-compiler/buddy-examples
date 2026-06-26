@@ -72,6 +72,7 @@ add_custom_command(
             -assign-physical-banks
             -llvm-request-c-wrappers
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
@@ -100,6 +101,7 @@ add_custom_command(
           -assign-physical-banks
           -llvm-request-c-wrappers
           -lower-bank-ssa-to-intrinsics
+          -convert-trace-to-llvm="cycle-trace"
           -expand-strided-metadata
           -convert-linalg-to-loops
           -convert-scf-to-cf
@@ -145,6 +147,7 @@ add_custom_command(TARGET buddy-buckyball-resnet-run POST_BUILD
 # Sync runtime deps (images/, arg0.data, Labels.txt) directly to OUTPUT directory
 add_custom_target(sync-buckyball-resnet-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${RESNET18_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${RESNET18_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_RESNET18_DIR}/images
           ${RESNET18_OUTPUT_DIR}/images

@@ -96,6 +96,7 @@ add_custom_command(
               -assign-physical-banks
               -llvm-request-c-wrappers
               -lower-bank-ssa-to-intrinsics
+              -convert-trace-to-llvm="cycle-trace"
               -expand-strided-metadata
               -convert-linalg-to-loops
               -convert-scf-to-cf
@@ -125,6 +126,7 @@ add_custom_command(
             -assign-physical-banks
             -llvm-request-c-wrappers
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -convert-scf-to-cf
@@ -174,6 +176,7 @@ add_custom_command(TARGET buddy-buckyball-deepseekr1-run POST_BUILD
 
 add_custom_target(sync-buckyball-deepseekr1-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${DEEPSEEKR1_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${DEEPSEEKR1_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_DEEPSEEKR1_DIR}/arg0.data
           ${DEEPSEEKR1_OUTPUT_DIR}/arg0.data

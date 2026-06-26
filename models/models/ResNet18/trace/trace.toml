@@ -1,0 +1,2050 @@
+[[trace]]
+node = "convolution"
+id = 0
+tag = "convolution"
+
+[[trace]]
+node = "convert_element_type"
+id = 1
+tag = "convert_element_type"
+
+[[trace]]
+node = "convert_element_type_1"
+id = 2
+tag = "convert_element_type_1"
+
+[[trace]]
+node = "add"
+id = 3
+tag = "add"
+
+[[trace]]
+node = "sqrt"
+id = 4
+tag = "sqrt"
+
+[[trace]]
+node = "reciprocal"
+id = 5
+tag = "reciprocal"
+
+[[trace]]
+node = "mul"
+id = 6
+tag = "mul"
+
+[[trace]]
+node = "unsqueeze"
+id = 7
+tag = "unsqueeze"
+
+[[trace]]
+node = "unsqueeze_1"
+id = 8
+tag = "unsqueeze_1"
+
+[[trace]]
+node = "unsqueeze_2"
+id = 9
+tag = "unsqueeze_2"
+
+[[trace]]
+node = "unsqueeze_3"
+id = 10
+tag = "unsqueeze_3"
+
+[[trace]]
+node = "sub"
+id = 11
+tag = "sub"
+
+[[trace]]
+node = "mul_1"
+id = 12
+tag = "mul_1"
+
+[[trace]]
+node = "unsqueeze_4"
+id = 13
+tag = "unsqueeze_4"
+
+[[trace]]
+node = "unsqueeze_5"
+id = 14
+tag = "unsqueeze_5"
+
+[[trace]]
+node = "mul_2"
+id = 15
+tag = "mul_2"
+
+[[trace]]
+node = "unsqueeze_6"
+id = 16
+tag = "unsqueeze_6"
+
+[[trace]]
+node = "unsqueeze_7"
+id = 17
+tag = "unsqueeze_7"
+
+[[trace]]
+node = "add_1"
+id = 18
+tag = "add_1"
+
+[[trace]]
+node = "relu"
+id = 19
+tag = "relu"
+
+[[trace]]
+node = "getitem"
+id = 20
+tag = "getitem"
+
+[[trace]]
+node = "convolution_1"
+id = 21
+tag = "convolution_1"
+
+[[trace]]
+node = "convert_element_type_2"
+id = 22
+tag = "convert_element_type_2"
+
+[[trace]]
+node = "convert_element_type_3"
+id = 23
+tag = "convert_element_type_3"
+
+[[trace]]
+node = "add_2"
+id = 24
+tag = "add_2"
+
+[[trace]]
+node = "sqrt_1"
+id = 25
+tag = "sqrt_1"
+
+[[trace]]
+node = "reciprocal_1"
+id = 26
+tag = "reciprocal_1"
+
+[[trace]]
+node = "mul_3"
+id = 27
+tag = "mul_3"
+
+[[trace]]
+node = "unsqueeze_8"
+id = 28
+tag = "unsqueeze_8"
+
+[[trace]]
+node = "unsqueeze_9"
+id = 29
+tag = "unsqueeze_9"
+
+[[trace]]
+node = "unsqueeze_10"
+id = 30
+tag = "unsqueeze_10"
+
+[[trace]]
+node = "unsqueeze_11"
+id = 31
+tag = "unsqueeze_11"
+
+[[trace]]
+node = "sub_1"
+id = 32
+tag = "sub_1"
+
+[[trace]]
+node = "mul_4"
+id = 33
+tag = "mul_4"
+
+[[trace]]
+node = "unsqueeze_12"
+id = 34
+tag = "unsqueeze_12"
+
+[[trace]]
+node = "unsqueeze_13"
+id = 35
+tag = "unsqueeze_13"
+
+[[trace]]
+node = "mul_5"
+id = 36
+tag = "mul_5"
+
+[[trace]]
+node = "unsqueeze_14"
+id = 37
+tag = "unsqueeze_14"
+
+[[trace]]
+node = "unsqueeze_15"
+id = 38
+tag = "unsqueeze_15"
+
+[[trace]]
+node = "add_3"
+id = 39
+tag = "add_3"
+
+[[trace]]
+node = "relu_1"
+id = 40
+tag = "relu_1"
+
+[[trace]]
+node = "convolution_2"
+id = 41
+tag = "convolution_2"
+
+[[trace]]
+node = "convert_element_type_4"
+id = 42
+tag = "convert_element_type_4"
+
+[[trace]]
+node = "convert_element_type_5"
+id = 43
+tag = "convert_element_type_5"
+
+[[trace]]
+node = "add_4"
+id = 44
+tag = "add_4"
+
+[[trace]]
+node = "sqrt_2"
+id = 45
+tag = "sqrt_2"
+
+[[trace]]
+node = "reciprocal_2"
+id = 46
+tag = "reciprocal_2"
+
+[[trace]]
+node = "mul_6"
+id = 47
+tag = "mul_6"
+
+[[trace]]
+node = "unsqueeze_16"
+id = 48
+tag = "unsqueeze_16"
+
+[[trace]]
+node = "unsqueeze_17"
+id = 49
+tag = "unsqueeze_17"
+
+[[trace]]
+node = "unsqueeze_18"
+id = 50
+tag = "unsqueeze_18"
+
+[[trace]]
+node = "unsqueeze_19"
+id = 51
+tag = "unsqueeze_19"
+
+[[trace]]
+node = "sub_2"
+id = 52
+tag = "sub_2"
+
+[[trace]]
+node = "mul_7"
+id = 53
+tag = "mul_7"
+
+[[trace]]
+node = "unsqueeze_20"
+id = 54
+tag = "unsqueeze_20"
+
+[[trace]]
+node = "unsqueeze_21"
+id = 55
+tag = "unsqueeze_21"
+
+[[trace]]
+node = "mul_8"
+id = 56
+tag = "mul_8"
+
+[[trace]]
+node = "unsqueeze_22"
+id = 57
+tag = "unsqueeze_22"
+
+[[trace]]
+node = "unsqueeze_23"
+id = 58
+tag = "unsqueeze_23"
+
+[[trace]]
+node = "add_5"
+id = 59
+tag = "add_5"
+
+[[trace]]
+node = "add_6"
+id = 60
+tag = "add_6"
+
+[[trace]]
+node = "relu_2"
+id = 61
+tag = "relu_2"
+
+[[trace]]
+node = "convolution_3"
+id = 62
+tag = "convolution_3"
+
+[[trace]]
+node = "convert_element_type_6"
+id = 63
+tag = "convert_element_type_6"
+
+[[trace]]
+node = "convert_element_type_7"
+id = 64
+tag = "convert_element_type_7"
+
+[[trace]]
+node = "add_7"
+id = 65
+tag = "add_7"
+
+[[trace]]
+node = "sqrt_3"
+id = 66
+tag = "sqrt_3"
+
+[[trace]]
+node = "reciprocal_3"
+id = 67
+tag = "reciprocal_3"
+
+[[trace]]
+node = "mul_9"
+id = 68
+tag = "mul_9"
+
+[[trace]]
+node = "unsqueeze_24"
+id = 69
+tag = "unsqueeze_24"
+
+[[trace]]
+node = "unsqueeze_25"
+id = 70
+tag = "unsqueeze_25"
+
+[[trace]]
+node = "unsqueeze_26"
+id = 71
+tag = "unsqueeze_26"
+
+[[trace]]
+node = "unsqueeze_27"
+id = 72
+tag = "unsqueeze_27"
+
+[[trace]]
+node = "sub_3"
+id = 73
+tag = "sub_3"
+
+[[trace]]
+node = "mul_10"
+id = 74
+tag = "mul_10"
+
+[[trace]]
+node = "unsqueeze_28"
+id = 75
+tag = "unsqueeze_28"
+
+[[trace]]
+node = "unsqueeze_29"
+id = 76
+tag = "unsqueeze_29"
+
+[[trace]]
+node = "mul_11"
+id = 77
+tag = "mul_11"
+
+[[trace]]
+node = "unsqueeze_30"
+id = 78
+tag = "unsqueeze_30"
+
+[[trace]]
+node = "unsqueeze_31"
+id = 79
+tag = "unsqueeze_31"
+
+[[trace]]
+node = "add_8"
+id = 80
+tag = "add_8"
+
+[[trace]]
+node = "relu_3"
+id = 81
+tag = "relu_3"
+
+[[trace]]
+node = "convolution_4"
+id = 82
+tag = "convolution_4"
+
+[[trace]]
+node = "convert_element_type_8"
+id = 83
+tag = "convert_element_type_8"
+
+[[trace]]
+node = "convert_element_type_9"
+id = 84
+tag = "convert_element_type_9"
+
+[[trace]]
+node = "add_9"
+id = 85
+tag = "add_9"
+
+[[trace]]
+node = "sqrt_4"
+id = 86
+tag = "sqrt_4"
+
+[[trace]]
+node = "reciprocal_4"
+id = 87
+tag = "reciprocal_4"
+
+[[trace]]
+node = "mul_12"
+id = 88
+tag = "mul_12"
+
+[[trace]]
+node = "unsqueeze_32"
+id = 89
+tag = "unsqueeze_32"
+
+[[trace]]
+node = "unsqueeze_33"
+id = 90
+tag = "unsqueeze_33"
+
+[[trace]]
+node = "unsqueeze_34"
+id = 91
+tag = "unsqueeze_34"
+
+[[trace]]
+node = "unsqueeze_35"
+id = 92
+tag = "unsqueeze_35"
+
+[[trace]]
+node = "sub_4"
+id = 93
+tag = "sub_4"
+
+[[trace]]
+node = "mul_13"
+id = 94
+tag = "mul_13"
+
+[[trace]]
+node = "unsqueeze_36"
+id = 95
+tag = "unsqueeze_36"
+
+[[trace]]
+node = "unsqueeze_37"
+id = 96
+tag = "unsqueeze_37"
+
+[[trace]]
+node = "mul_14"
+id = 97
+tag = "mul_14"
+
+[[trace]]
+node = "unsqueeze_38"
+id = 98
+tag = "unsqueeze_38"
+
+[[trace]]
+node = "unsqueeze_39"
+id = 99
+tag = "unsqueeze_39"
+
+[[trace]]
+node = "add_10"
+id = 100
+tag = "add_10"
+
+[[trace]]
+node = "add_11"
+id = 101
+tag = "add_11"
+
+[[trace]]
+node = "relu_4"
+id = 102
+tag = "relu_4"
+
+[[trace]]
+node = "convolution_5"
+id = 103
+tag = "convolution_5"
+
+[[trace]]
+node = "convert_element_type_10"
+id = 104
+tag = "convert_element_type_10"
+
+[[trace]]
+node = "convert_element_type_11"
+id = 105
+tag = "convert_element_type_11"
+
+[[trace]]
+node = "add_12"
+id = 106
+tag = "add_12"
+
+[[trace]]
+node = "sqrt_5"
+id = 107
+tag = "sqrt_5"
+
+[[trace]]
+node = "reciprocal_5"
+id = 108
+tag = "reciprocal_5"
+
+[[trace]]
+node = "mul_15"
+id = 109
+tag = "mul_15"
+
+[[trace]]
+node = "unsqueeze_40"
+id = 110
+tag = "unsqueeze_40"
+
+[[trace]]
+node = "unsqueeze_41"
+id = 111
+tag = "unsqueeze_41"
+
+[[trace]]
+node = "unsqueeze_42"
+id = 112
+tag = "unsqueeze_42"
+
+[[trace]]
+node = "unsqueeze_43"
+id = 113
+tag = "unsqueeze_43"
+
+[[trace]]
+node = "sub_5"
+id = 114
+tag = "sub_5"
+
+[[trace]]
+node = "mul_16"
+id = 115
+tag = "mul_16"
+
+[[trace]]
+node = "unsqueeze_44"
+id = 116
+tag = "unsqueeze_44"
+
+[[trace]]
+node = "unsqueeze_45"
+id = 117
+tag = "unsqueeze_45"
+
+[[trace]]
+node = "mul_17"
+id = 118
+tag = "mul_17"
+
+[[trace]]
+node = "unsqueeze_46"
+id = 119
+tag = "unsqueeze_46"
+
+[[trace]]
+node = "unsqueeze_47"
+id = 120
+tag = "unsqueeze_47"
+
+[[trace]]
+node = "add_13"
+id = 121
+tag = "add_13"
+
+[[trace]]
+node = "relu_5"
+id = 122
+tag = "relu_5"
+
+[[trace]]
+node = "convolution_6"
+id = 123
+tag = "convolution_6"
+
+[[trace]]
+node = "convert_element_type_12"
+id = 124
+tag = "convert_element_type_12"
+
+[[trace]]
+node = "convert_element_type_13"
+id = 125
+tag = "convert_element_type_13"
+
+[[trace]]
+node = "add_14"
+id = 126
+tag = "add_14"
+
+[[trace]]
+node = "sqrt_6"
+id = 127
+tag = "sqrt_6"
+
+[[trace]]
+node = "reciprocal_6"
+id = 128
+tag = "reciprocal_6"
+
+[[trace]]
+node = "mul_18"
+id = 129
+tag = "mul_18"
+
+[[trace]]
+node = "unsqueeze_48"
+id = 130
+tag = "unsqueeze_48"
+
+[[trace]]
+node = "unsqueeze_49"
+id = 131
+tag = "unsqueeze_49"
+
+[[trace]]
+node = "unsqueeze_50"
+id = 132
+tag = "unsqueeze_50"
+
+[[trace]]
+node = "unsqueeze_51"
+id = 133
+tag = "unsqueeze_51"
+
+[[trace]]
+node = "sub_6"
+id = 134
+tag = "sub_6"
+
+[[trace]]
+node = "mul_19"
+id = 135
+tag = "mul_19"
+
+[[trace]]
+node = "unsqueeze_52"
+id = 136
+tag = "unsqueeze_52"
+
+[[trace]]
+node = "unsqueeze_53"
+id = 137
+tag = "unsqueeze_53"
+
+[[trace]]
+node = "mul_20"
+id = 138
+tag = "mul_20"
+
+[[trace]]
+node = "unsqueeze_54"
+id = 139
+tag = "unsqueeze_54"
+
+[[trace]]
+node = "unsqueeze_55"
+id = 140
+tag = "unsqueeze_55"
+
+[[trace]]
+node = "add_15"
+id = 141
+tag = "add_15"
+
+[[trace]]
+node = "convolution_7"
+id = 142
+tag = "convolution_7"
+
+[[trace]]
+node = "convert_element_type_14"
+id = 143
+tag = "convert_element_type_14"
+
+[[trace]]
+node = "convert_element_type_15"
+id = 144
+tag = "convert_element_type_15"
+
+[[trace]]
+node = "add_16"
+id = 145
+tag = "add_16"
+
+[[trace]]
+node = "sqrt_7"
+id = 146
+tag = "sqrt_7"
+
+[[trace]]
+node = "reciprocal_7"
+id = 147
+tag = "reciprocal_7"
+
+[[trace]]
+node = "mul_21"
+id = 148
+tag = "mul_21"
+
+[[trace]]
+node = "unsqueeze_56"
+id = 149
+tag = "unsqueeze_56"
+
+[[trace]]
+node = "unsqueeze_57"
+id = 150
+tag = "unsqueeze_57"
+
+[[trace]]
+node = "unsqueeze_58"
+id = 151
+tag = "unsqueeze_58"
+
+[[trace]]
+node = "unsqueeze_59"
+id = 152
+tag = "unsqueeze_59"
+
+[[trace]]
+node = "sub_7"
+id = 153
+tag = "sub_7"
+
+[[trace]]
+node = "mul_22"
+id = 154
+tag = "mul_22"
+
+[[trace]]
+node = "unsqueeze_60"
+id = 155
+tag = "unsqueeze_60"
+
+[[trace]]
+node = "unsqueeze_61"
+id = 156
+tag = "unsqueeze_61"
+
+[[trace]]
+node = "mul_23"
+id = 157
+tag = "mul_23"
+
+[[trace]]
+node = "unsqueeze_62"
+id = 158
+tag = "unsqueeze_62"
+
+[[trace]]
+node = "unsqueeze_63"
+id = 159
+tag = "unsqueeze_63"
+
+[[trace]]
+node = "add_17"
+id = 160
+tag = "add_17"
+
+[[trace]]
+node = "add_18"
+id = 161
+tag = "add_18"
+
+[[trace]]
+node = "relu_6"
+id = 162
+tag = "relu_6"
+
+[[trace]]
+node = "convolution_8"
+id = 163
+tag = "convolution_8"
+
+[[trace]]
+node = "convert_element_type_16"
+id = 164
+tag = "convert_element_type_16"
+
+[[trace]]
+node = "convert_element_type_17"
+id = 165
+tag = "convert_element_type_17"
+
+[[trace]]
+node = "add_19"
+id = 166
+tag = "add_19"
+
+[[trace]]
+node = "sqrt_8"
+id = 167
+tag = "sqrt_8"
+
+[[trace]]
+node = "reciprocal_8"
+id = 168
+tag = "reciprocal_8"
+
+[[trace]]
+node = "mul_24"
+id = 169
+tag = "mul_24"
+
+[[trace]]
+node = "unsqueeze_64"
+id = 170
+tag = "unsqueeze_64"
+
+[[trace]]
+node = "unsqueeze_65"
+id = 171
+tag = "unsqueeze_65"
+
+[[trace]]
+node = "unsqueeze_66"
+id = 172
+tag = "unsqueeze_66"
+
+[[trace]]
+node = "unsqueeze_67"
+id = 173
+tag = "unsqueeze_67"
+
+[[trace]]
+node = "sub_8"
+id = 174
+tag = "sub_8"
+
+[[trace]]
+node = "mul_25"
+id = 175
+tag = "mul_25"
+
+[[trace]]
+node = "unsqueeze_68"
+id = 176
+tag = "unsqueeze_68"
+
+[[trace]]
+node = "unsqueeze_69"
+id = 177
+tag = "unsqueeze_69"
+
+[[trace]]
+node = "mul_26"
+id = 178
+tag = "mul_26"
+
+[[trace]]
+node = "unsqueeze_70"
+id = 179
+tag = "unsqueeze_70"
+
+[[trace]]
+node = "unsqueeze_71"
+id = 180
+tag = "unsqueeze_71"
+
+[[trace]]
+node = "add_20"
+id = 181
+tag = "add_20"
+
+[[trace]]
+node = "relu_7"
+id = 182
+tag = "relu_7"
+
+[[trace]]
+node = "convolution_9"
+id = 183
+tag = "convolution_9"
+
+[[trace]]
+node = "convert_element_type_18"
+id = 184
+tag = "convert_element_type_18"
+
+[[trace]]
+node = "convert_element_type_19"
+id = 185
+tag = "convert_element_type_19"
+
+[[trace]]
+node = "add_21"
+id = 186
+tag = "add_21"
+
+[[trace]]
+node = "sqrt_9"
+id = 187
+tag = "sqrt_9"
+
+[[trace]]
+node = "reciprocal_9"
+id = 188
+tag = "reciprocal_9"
+
+[[trace]]
+node = "mul_27"
+id = 189
+tag = "mul_27"
+
+[[trace]]
+node = "unsqueeze_72"
+id = 190
+tag = "unsqueeze_72"
+
+[[trace]]
+node = "unsqueeze_73"
+id = 191
+tag = "unsqueeze_73"
+
+[[trace]]
+node = "unsqueeze_74"
+id = 192
+tag = "unsqueeze_74"
+
+[[trace]]
+node = "unsqueeze_75"
+id = 193
+tag = "unsqueeze_75"
+
+[[trace]]
+node = "sub_9"
+id = 194
+tag = "sub_9"
+
+[[trace]]
+node = "mul_28"
+id = 195
+tag = "mul_28"
+
+[[trace]]
+node = "unsqueeze_76"
+id = 196
+tag = "unsqueeze_76"
+
+[[trace]]
+node = "unsqueeze_77"
+id = 197
+tag = "unsqueeze_77"
+
+[[trace]]
+node = "mul_29"
+id = 198
+tag = "mul_29"
+
+[[trace]]
+node = "unsqueeze_78"
+id = 199
+tag = "unsqueeze_78"
+
+[[trace]]
+node = "unsqueeze_79"
+id = 200
+tag = "unsqueeze_79"
+
+[[trace]]
+node = "add_22"
+id = 201
+tag = "add_22"
+
+[[trace]]
+node = "add_23"
+id = 202
+tag = "add_23"
+
+[[trace]]
+node = "relu_8"
+id = 203
+tag = "relu_8"
+
+[[trace]]
+node = "convolution_10"
+id = 204
+tag = "convolution_10"
+
+[[trace]]
+node = "convert_element_type_20"
+id = 205
+tag = "convert_element_type_20"
+
+[[trace]]
+node = "convert_element_type_21"
+id = 206
+tag = "convert_element_type_21"
+
+[[trace]]
+node = "add_24"
+id = 207
+tag = "add_24"
+
+[[trace]]
+node = "sqrt_10"
+id = 208
+tag = "sqrt_10"
+
+[[trace]]
+node = "reciprocal_10"
+id = 209
+tag = "reciprocal_10"
+
+[[trace]]
+node = "mul_30"
+id = 210
+tag = "mul_30"
+
+[[trace]]
+node = "unsqueeze_80"
+id = 211
+tag = "unsqueeze_80"
+
+[[trace]]
+node = "unsqueeze_81"
+id = 212
+tag = "unsqueeze_81"
+
+[[trace]]
+node = "unsqueeze_82"
+id = 213
+tag = "unsqueeze_82"
+
+[[trace]]
+node = "unsqueeze_83"
+id = 214
+tag = "unsqueeze_83"
+
+[[trace]]
+node = "sub_10"
+id = 215
+tag = "sub_10"
+
+[[trace]]
+node = "mul_31"
+id = 216
+tag = "mul_31"
+
+[[trace]]
+node = "unsqueeze_84"
+id = 217
+tag = "unsqueeze_84"
+
+[[trace]]
+node = "unsqueeze_85"
+id = 218
+tag = "unsqueeze_85"
+
+[[trace]]
+node = "mul_32"
+id = 219
+tag = "mul_32"
+
+[[trace]]
+node = "unsqueeze_86"
+id = 220
+tag = "unsqueeze_86"
+
+[[trace]]
+node = "unsqueeze_87"
+id = 221
+tag = "unsqueeze_87"
+
+[[trace]]
+node = "add_25"
+id = 222
+tag = "add_25"
+
+[[trace]]
+node = "relu_9"
+id = 223
+tag = "relu_9"
+
+[[trace]]
+node = "convolution_11"
+id = 224
+tag = "convolution_11"
+
+[[trace]]
+node = "convert_element_type_22"
+id = 225
+tag = "convert_element_type_22"
+
+[[trace]]
+node = "convert_element_type_23"
+id = 226
+tag = "convert_element_type_23"
+
+[[trace]]
+node = "add_26"
+id = 227
+tag = "add_26"
+
+[[trace]]
+node = "sqrt_11"
+id = 228
+tag = "sqrt_11"
+
+[[trace]]
+node = "reciprocal_11"
+id = 229
+tag = "reciprocal_11"
+
+[[trace]]
+node = "mul_33"
+id = 230
+tag = "mul_33"
+
+[[trace]]
+node = "unsqueeze_88"
+id = 231
+tag = "unsqueeze_88"
+
+[[trace]]
+node = "unsqueeze_89"
+id = 232
+tag = "unsqueeze_89"
+
+[[trace]]
+node = "unsqueeze_90"
+id = 233
+tag = "unsqueeze_90"
+
+[[trace]]
+node = "unsqueeze_91"
+id = 234
+tag = "unsqueeze_91"
+
+[[trace]]
+node = "sub_11"
+id = 235
+tag = "sub_11"
+
+[[trace]]
+node = "mul_34"
+id = 236
+tag = "mul_34"
+
+[[trace]]
+node = "unsqueeze_92"
+id = 237
+tag = "unsqueeze_92"
+
+[[trace]]
+node = "unsqueeze_93"
+id = 238
+tag = "unsqueeze_93"
+
+[[trace]]
+node = "mul_35"
+id = 239
+tag = "mul_35"
+
+[[trace]]
+node = "unsqueeze_94"
+id = 240
+tag = "unsqueeze_94"
+
+[[trace]]
+node = "unsqueeze_95"
+id = 241
+tag = "unsqueeze_95"
+
+[[trace]]
+node = "add_27"
+id = 242
+tag = "add_27"
+
+[[trace]]
+node = "convolution_12"
+id = 243
+tag = "convolution_12"
+
+[[trace]]
+node = "convert_element_type_24"
+id = 244
+tag = "convert_element_type_24"
+
+[[trace]]
+node = "convert_element_type_25"
+id = 245
+tag = "convert_element_type_25"
+
+[[trace]]
+node = "add_28"
+id = 246
+tag = "add_28"
+
+[[trace]]
+node = "sqrt_12"
+id = 247
+tag = "sqrt_12"
+
+[[trace]]
+node = "reciprocal_12"
+id = 248
+tag = "reciprocal_12"
+
+[[trace]]
+node = "mul_36"
+id = 249
+tag = "mul_36"
+
+[[trace]]
+node = "unsqueeze_96"
+id = 250
+tag = "unsqueeze_96"
+
+[[trace]]
+node = "unsqueeze_97"
+id = 251
+tag = "unsqueeze_97"
+
+[[trace]]
+node = "unsqueeze_98"
+id = 252
+tag = "unsqueeze_98"
+
+[[trace]]
+node = "unsqueeze_99"
+id = 253
+tag = "unsqueeze_99"
+
+[[trace]]
+node = "sub_12"
+id = 254
+tag = "sub_12"
+
+[[trace]]
+node = "mul_37"
+id = 255
+tag = "mul_37"
+
+[[trace]]
+node = "unsqueeze_100"
+id = 256
+tag = "unsqueeze_100"
+
+[[trace]]
+node = "unsqueeze_101"
+id = 257
+tag = "unsqueeze_101"
+
+[[trace]]
+node = "mul_38"
+id = 258
+tag = "mul_38"
+
+[[trace]]
+node = "unsqueeze_102"
+id = 259
+tag = "unsqueeze_102"
+
+[[trace]]
+node = "unsqueeze_103"
+id = 260
+tag = "unsqueeze_103"
+
+[[trace]]
+node = "add_29"
+id = 261
+tag = "add_29"
+
+[[trace]]
+node = "add_30"
+id = 262
+tag = "add_30"
+
+[[trace]]
+node = "relu_10"
+id = 263
+tag = "relu_10"
+
+[[trace]]
+node = "convolution_13"
+id = 264
+tag = "convolution_13"
+
+[[trace]]
+node = "convert_element_type_26"
+id = 265
+tag = "convert_element_type_26"
+
+[[trace]]
+node = "convert_element_type_27"
+id = 266
+tag = "convert_element_type_27"
+
+[[trace]]
+node = "add_31"
+id = 267
+tag = "add_31"
+
+[[trace]]
+node = "sqrt_13"
+id = 268
+tag = "sqrt_13"
+
+[[trace]]
+node = "reciprocal_13"
+id = 269
+tag = "reciprocal_13"
+
+[[trace]]
+node = "mul_39"
+id = 270
+tag = "mul_39"
+
+[[trace]]
+node = "unsqueeze_104"
+id = 271
+tag = "unsqueeze_104"
+
+[[trace]]
+node = "unsqueeze_105"
+id = 272
+tag = "unsqueeze_105"
+
+[[trace]]
+node = "unsqueeze_106"
+id = 273
+tag = "unsqueeze_106"
+
+[[trace]]
+node = "unsqueeze_107"
+id = 274
+tag = "unsqueeze_107"
+
+[[trace]]
+node = "sub_13"
+id = 275
+tag = "sub_13"
+
+[[trace]]
+node = "mul_40"
+id = 276
+tag = "mul_40"
+
+[[trace]]
+node = "unsqueeze_108"
+id = 277
+tag = "unsqueeze_108"
+
+[[trace]]
+node = "unsqueeze_109"
+id = 278
+tag = "unsqueeze_109"
+
+[[trace]]
+node = "mul_41"
+id = 279
+tag = "mul_41"
+
+[[trace]]
+node = "unsqueeze_110"
+id = 280
+tag = "unsqueeze_110"
+
+[[trace]]
+node = "unsqueeze_111"
+id = 281
+tag = "unsqueeze_111"
+
+[[trace]]
+node = "add_32"
+id = 282
+tag = "add_32"
+
+[[trace]]
+node = "relu_11"
+id = 283
+tag = "relu_11"
+
+[[trace]]
+node = "convolution_14"
+id = 284
+tag = "convolution_14"
+
+[[trace]]
+node = "convert_element_type_28"
+id = 285
+tag = "convert_element_type_28"
+
+[[trace]]
+node = "convert_element_type_29"
+id = 286
+tag = "convert_element_type_29"
+
+[[trace]]
+node = "add_33"
+id = 287
+tag = "add_33"
+
+[[trace]]
+node = "sqrt_14"
+id = 288
+tag = "sqrt_14"
+
+[[trace]]
+node = "reciprocal_14"
+id = 289
+tag = "reciprocal_14"
+
+[[trace]]
+node = "mul_42"
+id = 290
+tag = "mul_42"
+
+[[trace]]
+node = "unsqueeze_112"
+id = 291
+tag = "unsqueeze_112"
+
+[[trace]]
+node = "unsqueeze_113"
+id = 292
+tag = "unsqueeze_113"
+
+[[trace]]
+node = "unsqueeze_114"
+id = 293
+tag = "unsqueeze_114"
+
+[[trace]]
+node = "unsqueeze_115"
+id = 294
+tag = "unsqueeze_115"
+
+[[trace]]
+node = "sub_14"
+id = 295
+tag = "sub_14"
+
+[[trace]]
+node = "mul_43"
+id = 296
+tag = "mul_43"
+
+[[trace]]
+node = "unsqueeze_116"
+id = 297
+tag = "unsqueeze_116"
+
+[[trace]]
+node = "unsqueeze_117"
+id = 298
+tag = "unsqueeze_117"
+
+[[trace]]
+node = "mul_44"
+id = 299
+tag = "mul_44"
+
+[[trace]]
+node = "unsqueeze_118"
+id = 300
+tag = "unsqueeze_118"
+
+[[trace]]
+node = "unsqueeze_119"
+id = 301
+tag = "unsqueeze_119"
+
+[[trace]]
+node = "add_34"
+id = 302
+tag = "add_34"
+
+[[trace]]
+node = "add_35"
+id = 303
+tag = "add_35"
+
+[[trace]]
+node = "relu_12"
+id = 304
+tag = "relu_12"
+
+[[trace]]
+node = "convolution_15"
+id = 305
+tag = "convolution_15"
+
+[[trace]]
+node = "convert_element_type_30"
+id = 306
+tag = "convert_element_type_30"
+
+[[trace]]
+node = "convert_element_type_31"
+id = 307
+tag = "convert_element_type_31"
+
+[[trace]]
+node = "add_36"
+id = 308
+tag = "add_36"
+
+[[trace]]
+node = "sqrt_15"
+id = 309
+tag = "sqrt_15"
+
+[[trace]]
+node = "reciprocal_15"
+id = 310
+tag = "reciprocal_15"
+
+[[trace]]
+node = "mul_45"
+id = 311
+tag = "mul_45"
+
+[[trace]]
+node = "unsqueeze_120"
+id = 312
+tag = "unsqueeze_120"
+
+[[trace]]
+node = "unsqueeze_121"
+id = 313
+tag = "unsqueeze_121"
+
+[[trace]]
+node = "unsqueeze_122"
+id = 314
+tag = "unsqueeze_122"
+
+[[trace]]
+node = "unsqueeze_123"
+id = 315
+tag = "unsqueeze_123"
+
+[[trace]]
+node = "sub_15"
+id = 316
+tag = "sub_15"
+
+[[trace]]
+node = "mul_46"
+id = 317
+tag = "mul_46"
+
+[[trace]]
+node = "unsqueeze_124"
+id = 318
+tag = "unsqueeze_124"
+
+[[trace]]
+node = "unsqueeze_125"
+id = 319
+tag = "unsqueeze_125"
+
+[[trace]]
+node = "mul_47"
+id = 320
+tag = "mul_47"
+
+[[trace]]
+node = "unsqueeze_126"
+id = 321
+tag = "unsqueeze_126"
+
+[[trace]]
+node = "unsqueeze_127"
+id = 322
+tag = "unsqueeze_127"
+
+[[trace]]
+node = "add_37"
+id = 323
+tag = "add_37"
+
+[[trace]]
+node = "relu_13"
+id = 324
+tag = "relu_13"
+
+[[trace]]
+node = "convolution_16"
+id = 325
+tag = "convolution_16"
+
+[[trace]]
+node = "convert_element_type_32"
+id = 326
+tag = "convert_element_type_32"
+
+[[trace]]
+node = "convert_element_type_33"
+id = 327
+tag = "convert_element_type_33"
+
+[[trace]]
+node = "add_38"
+id = 328
+tag = "add_38"
+
+[[trace]]
+node = "sqrt_16"
+id = 329
+tag = "sqrt_16"
+
+[[trace]]
+node = "reciprocal_16"
+id = 330
+tag = "reciprocal_16"
+
+[[trace]]
+node = "mul_48"
+id = 331
+tag = "mul_48"
+
+[[trace]]
+node = "unsqueeze_128"
+id = 332
+tag = "unsqueeze_128"
+
+[[trace]]
+node = "unsqueeze_129"
+id = 333
+tag = "unsqueeze_129"
+
+[[trace]]
+node = "unsqueeze_130"
+id = 334
+tag = "unsqueeze_130"
+
+[[trace]]
+node = "unsqueeze_131"
+id = 335
+tag = "unsqueeze_131"
+
+[[trace]]
+node = "sub_16"
+id = 336
+tag = "sub_16"
+
+[[trace]]
+node = "mul_49"
+id = 337
+tag = "mul_49"
+
+[[trace]]
+node = "unsqueeze_132"
+id = 338
+tag = "unsqueeze_132"
+
+[[trace]]
+node = "unsqueeze_133"
+id = 339
+tag = "unsqueeze_133"
+
+[[trace]]
+node = "mul_50"
+id = 340
+tag = "mul_50"
+
+[[trace]]
+node = "unsqueeze_134"
+id = 341
+tag = "unsqueeze_134"
+
+[[trace]]
+node = "unsqueeze_135"
+id = 342
+tag = "unsqueeze_135"
+
+[[trace]]
+node = "add_39"
+id = 343
+tag = "add_39"
+
+[[trace]]
+node = "convolution_17"
+id = 344
+tag = "convolution_17"
+
+[[trace]]
+node = "convert_element_type_34"
+id = 345
+tag = "convert_element_type_34"
+
+[[trace]]
+node = "convert_element_type_35"
+id = 346
+tag = "convert_element_type_35"
+
+[[trace]]
+node = "add_40"
+id = 347
+tag = "add_40"
+
+[[trace]]
+node = "sqrt_17"
+id = 348
+tag = "sqrt_17"
+
+[[trace]]
+node = "reciprocal_17"
+id = 349
+tag = "reciprocal_17"
+
+[[trace]]
+node = "mul_51"
+id = 350
+tag = "mul_51"
+
+[[trace]]
+node = "unsqueeze_136"
+id = 351
+tag = "unsqueeze_136"
+
+[[trace]]
+node = "unsqueeze_137"
+id = 352
+tag = "unsqueeze_137"
+
+[[trace]]
+node = "unsqueeze_138"
+id = 353
+tag = "unsqueeze_138"
+
+[[trace]]
+node = "unsqueeze_139"
+id = 354
+tag = "unsqueeze_139"
+
+[[trace]]
+node = "sub_17"
+id = 355
+tag = "sub_17"
+
+[[trace]]
+node = "mul_52"
+id = 356
+tag = "mul_52"
+
+[[trace]]
+node = "unsqueeze_140"
+id = 357
+tag = "unsqueeze_140"
+
+[[trace]]
+node = "unsqueeze_141"
+id = 358
+tag = "unsqueeze_141"
+
+[[trace]]
+node = "mul_53"
+id = 359
+tag = "mul_53"
+
+[[trace]]
+node = "unsqueeze_142"
+id = 360
+tag = "unsqueeze_142"
+
+[[trace]]
+node = "unsqueeze_143"
+id = 361
+tag = "unsqueeze_143"
+
+[[trace]]
+node = "add_41"
+id = 362
+tag = "add_41"
+
+[[trace]]
+node = "add_42"
+id = 363
+tag = "add_42"
+
+[[trace]]
+node = "relu_14"
+id = 364
+tag = "relu_14"
+
+[[trace]]
+node = "convolution_18"
+id = 365
+tag = "convolution_18"
+
+[[trace]]
+node = "convert_element_type_36"
+id = 366
+tag = "convert_element_type_36"
+
+[[trace]]
+node = "convert_element_type_37"
+id = 367
+tag = "convert_element_type_37"
+
+[[trace]]
+node = "add_43"
+id = 368
+tag = "add_43"
+
+[[trace]]
+node = "sqrt_18"
+id = 369
+tag = "sqrt_18"
+
+[[trace]]
+node = "reciprocal_18"
+id = 370
+tag = "reciprocal_18"
+
+[[trace]]
+node = "mul_54"
+id = 371
+tag = "mul_54"
+
+[[trace]]
+node = "unsqueeze_144"
+id = 372
+tag = "unsqueeze_144"
+
+[[trace]]
+node = "unsqueeze_145"
+id = 373
+tag = "unsqueeze_145"
+
+[[trace]]
+node = "unsqueeze_146"
+id = 374
+tag = "unsqueeze_146"
+
+[[trace]]
+node = "unsqueeze_147"
+id = 375
+tag = "unsqueeze_147"
+
+[[trace]]
+node = "sub_18"
+id = 376
+tag = "sub_18"
+
+[[trace]]
+node = "mul_55"
+id = 377
+tag = "mul_55"
+
+[[trace]]
+node = "unsqueeze_148"
+id = 378
+tag = "unsqueeze_148"
+
+[[trace]]
+node = "unsqueeze_149"
+id = 379
+tag = "unsqueeze_149"
+
+[[trace]]
+node = "mul_56"
+id = 380
+tag = "mul_56"
+
+[[trace]]
+node = "unsqueeze_150"
+id = 381
+tag = "unsqueeze_150"
+
+[[trace]]
+node = "unsqueeze_151"
+id = 382
+tag = "unsqueeze_151"
+
+[[trace]]
+node = "add_44"
+id = 383
+tag = "add_44"
+
+[[trace]]
+node = "relu_15"
+id = 384
+tag = "relu_15"
+
+[[trace]]
+node = "convolution_19"
+id = 385
+tag = "convolution_19"
+
+[[trace]]
+node = "convert_element_type_38"
+id = 386
+tag = "convert_element_type_38"
+
+[[trace]]
+node = "convert_element_type_39"
+id = 387
+tag = "convert_element_type_39"
+
+[[trace]]
+node = "add_45"
+id = 388
+tag = "add_45"
+
+[[trace]]
+node = "sqrt_19"
+id = 389
+tag = "sqrt_19"
+
+[[trace]]
+node = "reciprocal_19"
+id = 390
+tag = "reciprocal_19"
+
+[[trace]]
+node = "mul_57"
+id = 391
+tag = "mul_57"
+
+[[trace]]
+node = "unsqueeze_152"
+id = 392
+tag = "unsqueeze_152"
+
+[[trace]]
+node = "unsqueeze_153"
+id = 393
+tag = "unsqueeze_153"
+
+[[trace]]
+node = "unsqueeze_154"
+id = 394
+tag = "unsqueeze_154"
+
+[[trace]]
+node = "unsqueeze_155"
+id = 395
+tag = "unsqueeze_155"
+
+[[trace]]
+node = "sub_19"
+id = 396
+tag = "sub_19"
+
+[[trace]]
+node = "mul_58"
+id = 397
+tag = "mul_58"
+
+[[trace]]
+node = "unsqueeze_156"
+id = 398
+tag = "unsqueeze_156"
+
+[[trace]]
+node = "unsqueeze_157"
+id = 399
+tag = "unsqueeze_157"
+
+[[trace]]
+node = "mul_59"
+id = 400
+tag = "mul_59"
+
+[[trace]]
+node = "unsqueeze_158"
+id = 401
+tag = "unsqueeze_158"
+
+[[trace]]
+node = "unsqueeze_159"
+id = 402
+tag = "unsqueeze_159"
+
+[[trace]]
+node = "add_46"
+id = 403
+tag = "add_46"
+
+[[trace]]
+node = "add_47"
+id = 404
+tag = "add_47"
+
+[[trace]]
+node = "relu_16"
+id = 405
+tag = "relu_16"
+
+[[trace]]
+node = "mean"
+id = 406
+tag = "mean"
+
+[[trace]]
+node = "view"
+id = 407
+tag = "view"
+
+[[trace]]
+node = "permute"
+id = 408
+tag = "permute"
+
+[[trace]]
+node = "addmm"
+id = 409
+tag = "addmm"
+

@@ -19,6 +19,7 @@ add_custom_command(
     ${MODEL_LENET_DIR}/output/buddy-graph.txt
   COMMAND export LENET_MODEL_PATH=${MODEL_LENET_DIR} &&
           ${Python3_EXECUTABLE} ${MODEL_LENET_DIR}/buddy-lenet-import.py
+          --trace
   DEPENDS buddy-lenet-import.py model.py ${MODEL_LENET_DIR}/lenet-model.pth
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )

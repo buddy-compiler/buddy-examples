@@ -19,6 +19,7 @@
 # ===---------------------------------------------------------------------------
 
 import os
+import argparse
 from pathlib import Path
 import sys
 
@@ -35,6 +36,15 @@ from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 from model import LeNet
 
+parser = argparse.ArgumentParser(description="LeNet model AOT importer")
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
+args = parser.parse_args()
+
 # Retrieve the LeNet model path from environment variables.
 model_path = os.environ.get("LENET_MODEL_PATH")
 if model_path is None:
@@ -42,33 +52,29 @@ if model_path is None:
         "The environment variable 'LENET_MODEL_PATH' is not set or is invalid."
     )
 model_dir = Path(model_path)
-trace_dir = model_dir / "trace"
 
 model = LeNet()
 
 model = torch.load(model_dir / "lenet-model.pth", weights_only=False)
 model = model.eval()
 
-#===------------------------------------------------
-# No-Trace mode
-#===------------------------------------------------
-# dynamo_compiler = DynamoCompiler(
-#     primary_registry=tosa.ops_registry,
-#     aot_autograd_decomposition=inductor_decomp,
-#     verbose=True,
-#     verbose_path=model_dir / "output" / "buddy-graph.txt",
-#     trace=None,
-# )
+output_dir = model_dir
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
-#===------------------------------------------------
-# Trace mode
-#===------------------------------------------------
-trace = TraceConfig(
-    load_trace_config(trace_dir / "trace.toml"),
-)
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
+    verbose=verbose,
+    verbose_path=verbose_path,
     trace=trace,
 )
 

@@ -33,6 +33,7 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
+from buddy.compiler.trace import TraceConfig, load_trace_config
 
 
 parser = argparse.ArgumentParser(description="yolo26n model AOT importer")
@@ -48,10 +49,27 @@ parser.add_argument(
     default=640,
     help="Input image size for model import.",
 )
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
 args = parser.parse_args()
 
-output_dir = Path(args.output_dir)
+output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
+model_dir = Path(__file__).resolve().parent
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
 default_model_path = Path(__file__).resolve().parents[2] / "yolo26n.pt"
 model_path = os.environ.get(
@@ -72,6 +90,9 @@ dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
     func_name="forward",
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 
 with torch.no_grad():

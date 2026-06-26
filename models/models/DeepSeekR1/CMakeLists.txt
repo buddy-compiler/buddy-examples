@@ -4,6 +4,7 @@ add_custom_command(
          ${MODEL_DEEPSEEKR1_DIR}/arg0.data
   COMMAND ${Python3_EXECUTABLE} ${MODEL_DEEPSEEKR1_DIR}/import-deepseek-r1.py
           --output-dir ${MODEL_DEEPSEEKR1_DIR}
+          --trace
   COMMENT "Generating forward.mlir, subgraph0.mlir and arg0.data..."
 )
 

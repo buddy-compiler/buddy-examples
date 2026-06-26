@@ -48,7 +48,8 @@ RE_ADD_GEN = re.compile(
 )
 # Previous line: const 1 for cumlen offset (kv_length = 1 at trace)
 RE_CONST_ONE = re.compile(
-    r'(%\w+) = "tosa\.const"\(\) <\{values = dense<1> : tensor<1xi64>\}>'
+    r'(%\w+) = (?:"tosa\.const"\(\) <\{values = |arith\.constant )'
+    r"dense<1> : tensor<1xi64>[\}>]*"
 )
 
 patch_count = 0

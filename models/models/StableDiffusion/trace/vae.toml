@@ -1,0 +1,29 @@
+[[trace]]
+node = "convolution"
+id = 200
+tag = "vae_convolution"
+
+[[trace]]
+node = "convolution_1"
+id = 201
+tag = "vae_convolution_1"
+
+[[trace]]
+node = "add"
+id = 202
+tag = "vae_add"
+
+[[trace]]
+node = "convolution_2"
+id = 203
+tag = "vae_convolution_2"
+
+[[trace]]
+node = "mm"
+id = 204
+tag = "vae_mm"
+
+[[trace]]
+node = "mm_1"
+id = 205
+tag = "vae_mm_1"

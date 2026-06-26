@@ -20,6 +20,7 @@
 
 import os
 import argparse
+from pathlib import Path
 import torch
 import torch._dynamo as dynamo
 from torch._inductor.decomposition import decompositions as inductor_decomp
@@ -30,6 +31,7 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.ops import tosa
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
+from buddy.compiler.trace import TraceConfig, load_trace_config
 
 # Parse command-line arguments for output directory.
 parser = argparse.ArgumentParser(description="Whisper model AOT importer")
@@ -39,10 +41,28 @@ parser.add_argument(
     default="./",
     help="Directory to save output files.",
 )
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
 args = parser.parse_args()
 
-output_dir = args.output_dir
-os.makedirs(output_dir, exist_ok=True)
+output_dir = Path(args.output_dir).resolve()
+output_dir.mkdir(parents=True, exist_ok=True)
+model_dir = Path(__file__).resolve().parent
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    (output_dir / "output").mkdir(parents=True, exist_ok=True)
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
 # Retrieve the Whisper model path from environment variables.
 model_path = os.environ.get("WHISPER_MODEL_PATH")
@@ -65,6 +85,9 @@ inputs = {
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 
 # Import the model into MLIR module and parameters.
@@ -80,13 +103,13 @@ driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 
 # Save the MLIR files and parameter data to the specified output directory.
-with open(os.path.join(output_dir, "subgraph0.mlir"), "w") as module_file:
+with open(output_dir / "subgraph0.mlir", "w") as module_file:
     print(driver.subgraphs[0]._imported_module, file=module_file)
 
-with open(os.path.join(output_dir, "forward.mlir"), "w") as module_file:
+with open(output_dir / "forward.mlir", "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 
 all_param = numpy.concatenate(
     [param.detach().numpy().reshape([-1]) for param in params]
 )
-all_param.tofile(os.path.join(output_dir, "arg0.data"))
+all_param.tofile(output_dir / "arg0.data")

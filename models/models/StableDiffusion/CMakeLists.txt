@@ -11,10 +11,11 @@ add_custom_command(
          ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_vae.mlir
   COMMAND ${Python3_EXECUTABLE} ${MODEL_STABLEDIFFUSION_DIR}/import-stable-diffusion.py
           --output-dir ${MODEL_STABLEDIFFUSION_DIR}
+          --trace
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )
 
-add_custom_target(stablediffusion-model-build DEPENDS
+add_custom_target(stable-diffusion-model-build DEPENDS
   ${MODEL_STABLEDIFFUSION_DIR}/arg0_text_encoder.data
   ${MODEL_STABLEDIFFUSION_DIR}/arg1_text_encoder.data
   ${MODEL_STABLEDIFFUSION_DIR}/arg0_unet.data

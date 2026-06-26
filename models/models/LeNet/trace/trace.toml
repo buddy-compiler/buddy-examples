@@ -1,49 +1,65 @@
 [[trace]]
 node = "convolution"
 id = 0
-tag = "conv1_out_nchw"
+tag = "convolution"
 
 [[trace]]
 node = "relu"
 id = 1
-tag = "relu1_out_nchw"
+tag = "relu"
 
 [[trace]]
 node = "convolution_1"
 id = 2
-tag = "conv2_out_nchw"
+tag = "convolution_1"
 
 [[trace]]
 node = "relu_1"
 id = 3
-tag = "relu2_out_nchw"
+tag = "relu_1"
 
 [[trace]]
 node = "view"
 id = 4
-tag = "flatten_out"
+tag = "view"
+
+[[trace]]
+node = "permute"
+id = 5
+tag = "permute"
 
 [[trace]]
 node = "addmm"
-id = 5
-tag = "fc1_out"
+id = 6
+tag = "addmm"
 
 [[trace]]
 node = "relu_2"
-id = 6
-tag = "relu3_out"
+id = 7
+tag = "relu_2"
+
+[[trace]]
+node = "permute_1"
+id = 8
+tag = "permute_1"
 
 [[trace]]
 node = "addmm_1"
-id = 7
-tag = "fc2_out"
+id = 9
+tag = "addmm_1"
 
 [[trace]]
 node = "relu_3"
-id = 8
-tag = "relu4_out"
+id = 10
+tag = "relu_3"
+
+[[trace]]
+node = "permute_2"
+id = 11
+tag = "permute_2"
 
 [[trace]]
 node = "addmm_2"
-id = 9
-tag = "fc3_out"
+id = 12
+tag = "addmm_2"
+

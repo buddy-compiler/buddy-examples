@@ -1,0 +1,29 @@
+[[trace]]
+node = "embedding"
+id = 0
+tag = "text_encoder_embedding"
+
+[[trace]]
+node = "embedding_1"
+id = 1
+tag = "text_encoder_embedding_1"
+
+[[trace]]
+node = "add"
+id = 2
+tag = "text_encoder_add"
+
+[[trace]]
+node = "rsqrt"
+id = 3
+tag = "text_encoder_rsqrt"
+
+[[trace]]
+node = "addmm"
+id = 4
+tag = "text_encoder_addmm"
+
+[[trace]]
+node = "addmm_1"
+id = 5
+tag = "text_encoder_addmm_1"

@@ -280,13 +280,13 @@ set_target_properties(GemminiTEXTENCODER PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(GemminiUNET PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(GemminiVAE PROPERTIES LINKER_LANGUAGE CXX)
 
-add_dependencies(GemminiTEXTENCODER stablediffusion-model-build)
-add_dependencies(GemminiUNET stablediffusion-model-build)
-add_dependencies(GemminiVAE stablediffusion-model-build)
+add_dependencies(GemminiTEXTENCODER stable-diffusion-model-build)
+add_dependencies(GemminiUNET stable-diffusion-model-build)
+add_dependencies(GemminiVAE stable-diffusion-model-build)
 
-add_executable(buddy-gemmini-stablediffusion-run ${MODEL_STABLEDIFFUSION_DIR}/buddy-stable-diffusion-main.cpp)
+add_executable(buddy-gemmini-stable-diffusion-run ${MODEL_STABLEDIFFUSION_DIR}/buddy-stable-diffusion-main.cpp)
 
-target_include_directories(buddy-gemmini-stablediffusion-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
+target_include_directories(buddy-gemmini-stable-diffusion-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
 
 
 if(BUDDY_MLIR_USE_MIMALLOC)
@@ -301,4 +301,4 @@ set(BUDDY_STABLE_DIFFUSION_LIBS
   ModelTestDIP_riscv
 )
 
-target_link_libraries(buddy-gemmini-stablediffusion-run -static ${BUDDY_STABLE_DIFFUSION_LIBS})
+target_link_libraries(buddy-gemmini-stable-diffusion-run -static ${BUDDY_STABLE_DIFFUSION_LIBS})

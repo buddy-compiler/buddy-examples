@@ -16,11 +16,15 @@ add_custom_command(
             -one-shot-bufferize="bufferize-function-boundaries"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
+            -convert-vector-to-scf
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-vector-to-llvm
+            -llvm-request-c-wrappers
             -convert-arith-to-llvm
             -convert-math-to-llvm
             -convert-math-to-libm
@@ -45,19 +49,18 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
-            -convert-linalg-to-tile
-            -convert-tile-to-buckyball
-            -lower-buckyball-to-bank-ssa
-            -assign-physical-banks
             -llvm-request-c-wrappers
-            -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
-            -lower-buckyball
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
+            -convert-vector-to-scf
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-vector-to-llvm
             -convert-arith-to-llvm
             -convert-math-to-llvm
             -convert-math-to-libm
@@ -82,11 +85,15 @@ add_custom_command(
             -one-shot-bufferize="bufferize-function-boundaries"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
-            -llvm-request-c-wrappers
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
+            -convert-vector-to-scf
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-vector-to-llvm
+            -llvm-request-c-wrappers
             -convert-arith-to-llvm
             -convert-math-to-llvm
             -convert-math-to-libm
@@ -113,19 +120,18 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
-            -convert-linalg-to-tile
-            -convert-tile-to-buckyball
-            -lower-buckyball-to-bank-ssa
-            -assign-physical-banks
             -llvm-request-c-wrappers
-            -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
-            -lower-buckyball
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
+            -convert-vector-to-scf
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-vector-to-llvm
             -convert-arith-to-llvm
             -convert-math-to-llvm
             -convert-math-to-libm
@@ -171,17 +177,25 @@ add_custom_command(TARGET buddy-buckyball-qwen3-run POST_BUILD
 
 add_custom_target(sync-buckyball-qwen3-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${QWEN3_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${QWEN3_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_QWEN3_DIR}/arg0_0_6b.data
           ${CMAKE_CURRENT_BINARY_DIR}/arg0_0_6b.data
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_QWEN3_DIR}/arg1_0_6b.data
+          ${CMAKE_CURRENT_BINARY_DIR}/arg1_0_6b.data
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_QWEN3_DIR}/arg0_0_6b.data
           ${QWEN3_OUTPUT_DIR}/arg0_0_6b.data
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          ${MODEL_QWEN3_DIR}/arg1_0_6b.data
+          ${QWEN3_OUTPUT_DIR}/arg1_0_6b.data
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_QWEN3_DIR}/vocab.txt
           ${QWEN3_OUTPUT_DIR}/vocab.txt
   DEPENDS
           ${MODEL_QWEN3_DIR}/arg0_0_6b.data
+          ${MODEL_QWEN3_DIR}/arg1_0_6b.data
           ${MODEL_QWEN3_DIR}/vocab.txt
   COMMENT "Syncing Qwen3 runtime deps to output directory"
   VERBATIM

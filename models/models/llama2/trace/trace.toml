@@ -1,0 +1,19 @@
+[[trace]]
+node = "cos"
+id = 0
+tag = "cos"
+
+[[trace]]
+node = "sin"
+id = 1
+tag = "sin"
+
+[[trace]]
+node = "pow_1"
+id = 2
+tag = "pow_1"
+
+[[trace]]
+node = "add_3"
+id = 3
+tag = "add_3"

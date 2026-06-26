@@ -22,6 +22,7 @@
 import argparse
 import os
 import subprocess
+from pathlib import Path
 
 import numpy
 import torch
@@ -39,6 +40,7 @@ from buddy.compiler.graph.transform import (
 )
 from buddy.compiler.graph.type import DeviceType
 from buddy.compiler.ops import tosa
+from buddy.compiler.trace import TraceConfig, load_trace_config
 from torch._inductor.decomposition import decompositions as inductor_decomp
 from transformers import (
     AutoConfig,
@@ -62,10 +64,27 @@ parser.add_argument(
     choices=["f32"],
     help="Precision mode for generated MLIR and input data.",
 )
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
 args = parser.parse_args()
 
-output_dir = args.output_dir
-os.makedirs(output_dir, exist_ok=True)
+output_dir = Path(args.output_dir).resolve()
+output_dir.mkdir(parents=True, exist_ok=True)
+model_dir = Path(__file__).resolve().parent
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
 model_path = os.environ.get("GEMMA4_MODEL_PATH")
 if model_path is None:
@@ -114,12 +133,18 @@ dynamo_compiler_prefill = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
     func_name="forward_prefill",
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 
 dynamo_compiler_decode = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
     func_name="forward_decode",
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 
 with torch.no_grad():
@@ -200,16 +225,16 @@ driver_prefill.subgraphs[0].lower_to_top_level_ir()
 driver_decode = GraphDriver(graphs_decode[0])
 driver_decode.subgraphs[0].lower_to_top_level_ir()
 
-with open(os.path.join(output_dir, "subgraph0_prefill.mlir"), "w") as module_file:
+with open(output_dir / "subgraph0_prefill.mlir", "w") as module_file:
     print(driver_prefill.subgraphs[0]._imported_module, file=module_file)
-with open(os.path.join(output_dir, "forward_prefill.mlir"), "w") as module_file:
+with open(output_dir / "forward_prefill.mlir", "w") as module_file:
     print(driver_prefill.construct_main_graph(True), file=module_file)
 all_param = numpy.concatenate([param.detach().numpy().reshape([-1]) for param in params])
-all_param.tofile(os.path.join(output_dir, "arg0.data"))
+all_param.tofile(output_dir / "arg0.data")
 
-with open(os.path.join(output_dir, "subgraph0_decode.mlir"), "w") as module_file:
+with open(output_dir / "subgraph0_decode.mlir", "w") as module_file:
     print(driver_decode.subgraphs[0]._imported_module, file=module_file)
-with open(os.path.join(output_dir, "forward_decode.mlir"), "w") as module_file:
+with open(output_dir / "forward_decode.mlir", "w") as module_file:
     print(driver_decode.construct_main_graph(True), file=module_file)
 
 # Export vocabulary file for the C++ tokenizer.
@@ -217,7 +242,7 @@ print("Exporting vocabulary...")
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 vocab = tokenizer.get_vocab()
 sorted_vocab = sorted(vocab.items(), key=lambda x: x[1])
-vocab_path = os.path.join(output_dir, "vocab.txt")
+vocab_path = output_dir / "vocab.txt"
 with open(vocab_path, "w", encoding="utf-8") as vf:
     for token, _ in sorted_vocab:
         vf.write(token.replace("\n", "\\n") + "\n")
@@ -227,9 +252,9 @@ print("All files saved to:", output_dir)
 # Post-process: patch the constant-folded cumulative_length in decode subgraph.
 # torch._dynamo bakes cumulative_length as a compile-time constant, but it must
 # be dynamic for correct attention masking across different cache positions.
-patch_script = os.path.join(os.path.dirname(__file__), "patch_decode_mlir.py")
-decode_mlir = os.path.join(output_dir, "subgraph0_decode.mlir")
-if os.path.exists(patch_script) and os.path.exists(decode_mlir):
+patch_script = Path(__file__).resolve().parent / "patch_decode_mlir.py"
+decode_mlir = output_dir / "subgraph0_decode.mlir"
+if patch_script.exists() and decode_mlir.exists():
     print("Patching constant-folded cumulative_length in decode subgraph...")
-    subprocess.run(["python3", patch_script, decode_mlir], check=True)
+    subprocess.run(["python3", str(patch_script), str(decode_mlir)], check=True)
     print("Patch applied successfully.")
