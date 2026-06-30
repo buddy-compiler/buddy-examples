@@ -4,6 +4,7 @@ add_custom_command(
          ${MODEL_RESNET18_DIR}/subgraph0.mlir
   COMMAND ${Python3_EXECUTABLE} ${MODEL_RESNET18_DIR}/buddy-resnet-import.py
           --output-dir ${MODEL_RESNET18_DIR}
+          --trace
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )
 

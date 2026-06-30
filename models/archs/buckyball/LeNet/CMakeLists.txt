@@ -17,7 +17,9 @@ add_custom_command(
             -llvm-request-c-wrappers
             -convert-math-to-llvm
             -convert-math-to-libm
+            -lower-affine
             -convert-scf-to-cf
+            -convert-cf-to-llvm
             -convert-arith-to-llvm
             -expand-strided-metadata
             -finalize-memref-to-llvm
@@ -31,27 +33,36 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT  subgraph0.o
+  BYPRODUCTS
+    subgraph0_linalg.mlir
+    subgraph0_loops.mlir
+    subgraph0_buckyball.mlir
+    subgraph0.ll
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
             > subgraph0_linalg.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
+            -extend-trace-to-linalg
             -eliminate-empty-tensors
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
             -convert-tile-to-buckyball
+            -extend-trace-to-buckyball
             -batchmatmul-optimize
             > subgraph0_loops.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
+            -extend-trace-to-linalg
             -eliminate-empty-tensors
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
             -convert-tile-to-buckyball
+            -extend-trace-to-buckyball
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -lower-bank-ssa-to-intrinsics
@@ -60,19 +71,23 @@ add_custom_command(
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
+            -extend-trace-to-linalg
             -eliminate-empty-tensors
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
             -convert-tile-to-buckyball
+            -extend-trace-to-buckyball
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
             -llvm-request-c-wrappers
             -lower-buckyball
-            -ownership-based-buffer-deallocation
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-arith-to-llvm
@@ -84,19 +99,23 @@ add_custom_command(
     COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
           -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
         ${BUDDY_BINARY_DIR}/buddy-opt
+          -extend-trace-to-linalg
           -eliminate-empty-tensors
           -one-shot-bufferize="bufferize-function-boundaries"
           -convert-linalg-to-tile
           -convert-tile-to-buckyball
+          -extend-trace-to-buckyball
           -lower-buckyball-to-bank-ssa
           -assign-physical-banks
           -llvm-request-c-wrappers
           -lower-bank-ssa-to-intrinsics
+          -convert-trace-to-llvm="cycle-trace"
           -expand-strided-metadata
           -convert-linalg-to-loops
-          -convert-scf-to-cf
           -lower-buckyball
-          -ownership-based-buffer-deallocation
+          -lower-affine
+          -convert-scf-to-cf
+          -convert-cf-to-llvm
           -buffer-deallocation-simplification
           -bufferization-lower-deallocations
           -convert-arith-to-llvm
@@ -138,6 +157,7 @@ add_custom_target(buddy-buckyball-lenet-all-run
 # Sync runtime deps (images/, arg0.data) directly to OUTPUT directory
 add_custom_target(sync-buckyball-lenet-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_LENET_DIR}/images
           ${LENET_OUTPUT_DIR}/images
@@ -150,3 +170,14 @@ add_custom_target(sync-buckyball-lenet-deps
 )
 
 add_dependencies(buddy-buckyball-lenet-run sync-buckyball-lenet-deps)
+
+add_buckyball_perfetto_target(buddy-buckyball-lenet-perfetto
+  TRACE_DIR ${LENET_OUTPUT_DIR}/trace
+  TRACE_TOML ${MODEL_LENET_DIR}/trace/trace-linalg-buckyball.toml
+  OUTPUT ${LENET_OUTPUT_DIR}/trace/perfetto.json
+  MLIR
+    ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_linalg.mlir
+    ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_buckyball.mlir
+  DEPENDS
+    buddy-buckyball-lenet-run
+)

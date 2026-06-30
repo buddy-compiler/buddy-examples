@@ -4,6 +4,7 @@ add_custom_command(
          ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
   COMMAND ${Python3_EXECUTABLE} ${MODEL_MOBILENETV3_DIR}/buddy-mobilenetv3-import.py
           --output-dir ${MODEL_MOBILENETV3_DIR}
+          --trace
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )
 

@@ -1,6 +1,8 @@
 .metals/
 .vscode/
 .scala-build/
+__pycache__/
+output/
 
 build/
 

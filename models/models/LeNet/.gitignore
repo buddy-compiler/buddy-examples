@@ -1,6 +1,7 @@
 data/
 output/
 arg0.data
+__pycache__/
 
 *.pth
 *.mlir

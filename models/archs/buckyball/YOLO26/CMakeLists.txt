@@ -14,9 +14,10 @@ add_custom_command(
             -one-shot-bufferize="bufferize-function-boundaries"
             -expand-strided-metadata
             -convert-linalg-to-loops
+            -lower-affine
             -convert-scf-to-cf
+            -convert-cf-to-llvm
             -llvm-request-c-wrappers
-            -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-math-to-llvm
@@ -46,11 +47,13 @@ add_custom_command(
             -assign-physical-banks
             -llvm-request-c-wrappers
             -lower-bank-ssa-to-intrinsics
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -convert-scf-to-cf
             -lower-buckyball
-            -ownership-based-buffer-deallocation
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -convert-math-to-llvm
@@ -95,6 +98,7 @@ add_custom_command(TARGET buddy-buckyball-yolo26-run POST_BUILD
 # Sync runtime deps (images/, arg0.data, labels.txt) directly to OUTPUT directory
 add_custom_target(sync-buckyball-yolo26-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}/trace/cycle
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_YOLO26_DIR}/images
           ${YOLO26_OUTPUT_DIR}/images

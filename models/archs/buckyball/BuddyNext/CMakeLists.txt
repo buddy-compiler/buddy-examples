@@ -44,11 +44,13 @@ function(add_buddynext_buckyball_target target_name mlir_file object_name mlir_b
               -assign-physical-banks
               -llvm-request-c-wrappers
               -lower-bank-ssa-to-intrinsics
+              -convert-trace-to-llvm="cycle-trace"
               -expand-strided-metadata
               -convert-linalg-to-loops
-              -convert-scf-to-cf
               -lower-buckyball
-              -ownership-based-buffer-deallocation
+              -lower-affine
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
               -convert-vector-to-llvm
@@ -120,6 +122,7 @@ set(BUDDYNEXT_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyb
 foreach(run_target ${BUDDYNEXT_PREFILL_TARGETS} ${BUDDYNEXT_DECODE_TARGETS})
   add_custom_command(TARGET ${run_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${BUDDYNEXT_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${BUDDYNEXT_OUTPUT_DIR}/trace/cycle
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${run_target}>
             ${BUDDYNEXT_OUTPUT_DIR}/$<TARGET_FILE_NAME:${run_target}>

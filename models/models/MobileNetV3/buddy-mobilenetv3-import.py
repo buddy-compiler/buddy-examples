@@ -30,20 +30,38 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
+from buddy.compiler.trace import TraceConfig, load_trace_config
 
 # Parse command-line arguments.
 parser = argparse.ArgumentParser(description="MobileNetV3 model AOT importer")
 parser.add_argument(
     "--output-dir", type=str, default="./", help="Directory to save output files."
 )
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
 args = parser.parse_args()
 
 # Ensure output directory exists.
-output_dir = Path(args.output_dir)
+output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
+model_dir = Path(__file__).resolve().parent
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
 # Retrieve the MobileNet V3 model path.
-model_path = os.path.dirname(os.path.abspath(__file__))
+model_path = str(model_dir)
 
 model = models.mobilenet_v3_small(
     weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1, pretrained=True
@@ -60,6 +78,9 @@ for layer in model.modules():
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 data = torch.randn([1, 3, 224, 224])
 # Import the model into MLIR module and parameters.

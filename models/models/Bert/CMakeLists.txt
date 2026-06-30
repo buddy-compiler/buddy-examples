@@ -5,6 +5,7 @@ add_custom_command(
          ${MODEL_BERT_DIR}/arg1.data
   COMMAND ${Python3_EXECUTABLE} ${MODEL_BERT_DIR}/import-bert.py
           --output-dir ${MODEL_BERT_DIR}
+          --trace
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )
 

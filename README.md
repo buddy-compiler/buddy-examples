@@ -248,7 +248,7 @@ $ ./buddy-gemmini-bert-run
 ```bash
 cd buddy-examples
 source ./env.sh
-./sims/marshal/build-image.sh stablediffusion-gemmini
+./sims/marshal/build-image.sh stable-diffusion-gemmini
 ```
 
 2. Simulation in firesim
@@ -278,7 +278,7 @@ screen -r fsim0
 Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
 
 ```bash
-$ ./buddy-gemmini-stablediffusion-run
+$ ./buddy-gemmini-stable-diffusion-run
 ```
 
 ### Example 6: Llama2-Gemmini

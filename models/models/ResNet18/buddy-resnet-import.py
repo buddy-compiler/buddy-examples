@@ -32,20 +32,38 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
+from buddy.compiler.trace import TraceConfig, load_trace_config
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="ResNet18 model AOT importer")
 parser.add_argument(
     "--output-dir", type=str, default="./", help="Directory to save output files."
 )
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
 args = parser.parse_args()
 
 # Ensure output directory exists
-output_dir = os.path.abspath(args.output_dir)
-os.makedirs(output_dir, exist_ok=True)
+output_dir = Path(args.output_dir).resolve()
+output_dir.mkdir(parents=True, exist_ok=True)
+model_dir = Path(__file__).resolve().parent
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
 
 # Retrieve the ResNet18 model path.
-model_path = os.path.dirname(os.path.abspath(__file__))
+model_path = str(model_dir)
 
 model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model = model.eval()
@@ -66,6 +84,9 @@ remove_decompositions(inductor_decomp, DEFAULT_DECOMPOSITIONS)
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 data = torch.randn([1, 3, 224, 224])
 # Import the model into MLIR module and parameters.
@@ -80,9 +101,9 @@ driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 
 # Write the MLIR module and forward graph to the specified output directory
-with open(os.path.join(output_dir, "subgraph0.mlir"), "w") as module_file:
+with open(output_dir / "subgraph0.mlir", "w") as module_file:
     print(driver.subgraphs[0]._imported_module, file=module_file)
-with open(os.path.join(output_dir, "forward.mlir"), "w") as module_file:
+with open(output_dir / "forward.mlir", "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 
 params = dynamo_compiler.imported_params[graph]
@@ -95,4 +116,4 @@ float32_param = np.concatenate(
         if param.dtype == torch.float32
     ]
 )
-float32_param.tofile(Path(output_dir) / "arg0.data")
+float32_param.tofile(output_dir / "arg0.data")

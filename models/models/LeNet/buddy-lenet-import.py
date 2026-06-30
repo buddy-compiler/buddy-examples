@@ -19,11 +19,9 @@
 # ===---------------------------------------------------------------------------
 
 import os
+import argparse
 from pathlib import Path
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
+import sys
 
 import torch._inductor.lowering
 
@@ -35,7 +33,23 @@ from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
+from buddy.compiler.trace import TraceConfig, load_trace_config
 from model import LeNet
+
+parser = argparse.ArgumentParser(description="LeNet model AOT importer")
+parser.add_argument(
+    "--trace",
+    action="store_true",
+    default=False,
+    help="Import with trace/trace.toml.",
+)
+parser.add_argument(
+    "--trace-config",
+    type=str,
+    default="trace.toml",
+    help="Trace config file under trace/.",
+)
+args = parser.parse_args()
 
 # Retrieve the LeNet model path from environment variables.
 model_path = os.environ.get("LENET_MODEL_PATH")
@@ -45,52 +59,29 @@ if model_path is None:
     )
 model_dir = Path(model_path)
 
-
-def load_trace_config(path: Path) -> dict:
-    if not path.exists():
-        raise FileNotFoundError(f"trace config not found: {path}")
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
-    items = data.get("trace")
-    if not isinstance(items, list):
-        raise ValueError("trace config must contain [[trace]] entries")
-
-    result = {}
-    ids = set()
-    for item in items:
-        node = item.get("node")
-        trace_id = item.get("id")
-        tag = item.get("tag")
-        layout = item.get("layout")
-        if not isinstance(node, str) or not node:
-            raise ValueError("trace.node must be a non-empty string")
-        if not isinstance(trace_id, int):
-            raise ValueError(f"trace id for {node} must be an integer")
-        if not isinstance(tag, str) or not tag:
-            raise ValueError(f"trace tag for {node} must be a non-empty string")
-        if not isinstance(layout, str) or not layout:
-            raise ValueError(f"trace layout for {node} must be a non-empty string")
-        if node in result:
-            raise ValueError(f"duplicate trace node: {node}")
-        if trace_id in ids:
-            raise ValueError(f"duplicate trace id: {trace_id}")
-        ids.add(trace_id)
-        result[node] = {"id": trace_id, "tag": tag, "layout": layout}
-    return result
-
 model = LeNet()
-trace_dir = model_dir / "trace"
-output_dir = model_dir / "output"
 
 model = torch.load(model_dir / "lenet-model.pth", weights_only=False)
 model = model.eval()
-trace_config = load_trace_config(trace_dir / "trace.toml")
 
-# Initialize Dynamo Compiler with specific configurations as an importer.
+output_dir = model_dir
+if args.trace:
+    trace = TraceConfig(load_trace_config(model_dir / "trace" / args.trace_config))
+    verbose = False
+    verbose_path = None
+else:
+    trace = None
+    verbose = True
+    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
+    if os.path.exists(verbose_path):
+        os.remove(verbose_path)
+
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
-    trace_config=trace_config,
-    trace_dump_dir=output_dir,
+    verbose=verbose,
+    verbose_path=verbose_path,
+    trace=trace,
 )
 
 data = torch.randn([1, 1, 28, 28])
