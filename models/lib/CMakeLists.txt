@@ -49,7 +49,7 @@ add_custom_command(
           -convert-arith-to-llvm
           -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --mlir-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+D -float-abi=hard
           -o ${CMAKE_CURRENT_BINARY_DIR}/DIP_riscv.o
   DEPENDS ${DIP_MLIR_PATH}
   COMMENT "Building DIP library for RISC-V"
@@ -82,7 +82,7 @@ add_custom_command(
           -convert-arith-to-llvm
           -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --mlir-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+D -float-abi=hard
           -o ${CMAKE_CURRENT_BINARY_DIR}/DAP_riscv.o
   DEPENDS ${DAP_MLIR_PATH}
   COMMENT "Building DAP library for RISC-V"
@@ -113,7 +113,7 @@ add_custom_command(
           -convert-arith-to-llvm
           -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+D -float-abi=hard
           -o ${CMAKE_CURRENT_BINARY_DIR}/DAP_extend_riscv.o
   DEPENDS ${DAP_EXTEND_MLIR_PATH}
   COMMENT "Building DAP extend library for RISC-V"

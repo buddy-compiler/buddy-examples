@@ -45,7 +45,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard
           -o forward_text_encoder.o
   DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/forward_text_encoder.mlir
   COMMENT "Building forward_text_encoder.o "
@@ -77,7 +77,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard
             -o subgraph0_text_encoder.o
     DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_text_encoder.mlir
     COMMENT "Building subgraph0_text_encoder.o "
@@ -124,7 +124,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard
           -o forward_unet.o
   DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/forward_unet.mlir
   COMMENT "Building forward_unet.o "
@@ -171,7 +171,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard
             -o subgraph0_unet.o
     DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_unet.mlir
     COMMENT "Building subgraph0_unet.o "
@@ -218,7 +218,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard
           -o forward_vae.o
   DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/forward_vae.mlir
   COMMENT "Building forward_vae.o "
@@ -265,7 +265,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard
             -o subgraph0_vae.o
     DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_vae.mlir
     COMMENT "Building subgraph0_vae.o "

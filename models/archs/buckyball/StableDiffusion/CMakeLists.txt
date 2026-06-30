@@ -41,7 +41,7 @@ function(add_sd_object output mlir trace)
               -finalize-memref-to-llvm
               -reconcile-unrealized-casts |
             ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-            ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o ${output}
+            ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xbbpebble,+D -float-abi=hard -o ${output}
     DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/${mlir}
     COMMENT "Building ${output}"
     VERBATIM

@@ -28,7 +28,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o forward_prefill.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_prefill.o
   DEPENDS ${MODEL_GEMMA4_DIR}/forward_prefill.mlir
   COMMENT "Building forward_prefill.o"
   VERBATIM)
@@ -61,7 +61,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph_prefill.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_prefill.o
   DEPENDS ${MODEL_GEMMA4_DIR}/subgraph0_prefill.mlir
   COMMENT "Building subgraph_prefill.o"
   VERBATIM)
@@ -90,7 +90,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o forward_decode.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_decode.o
   DEPENDS ${MODEL_GEMMA4_DIR}/forward_decode.mlir
   COMMENT "Building forward_decode.o"
   VERBATIM)
@@ -125,7 +125,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph_decode.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_decode.o
   DEPENDS ${MODEL_GEMMA4_DIR}/subgraph0_decode.mlir
   COMMENT "Building subgraph_decode.o"
   VERBATIM)

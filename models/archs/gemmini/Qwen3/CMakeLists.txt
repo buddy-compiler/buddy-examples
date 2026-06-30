@@ -28,7 +28,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o forward_prefill_0_6b.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_prefill_0_6b.o
   DEPENDS ${MODEL_QWEN3_DIR}/forward_prefill_0_6b.mlir
   COMMENT "Building forward_prefill_0_6b.o"
   VERBATIM)
@@ -61,7 +61,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph_prefill_0_6b.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_prefill_0_6b.o
   DEPENDS ${MODEL_QWEN3_DIR}/subgraph0_prefill_0_6b.mlir
   COMMENT "Building subgraph_prefill_0_6b.o"
   VERBATIM)
@@ -90,7 +90,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o forward_decode_0_6b.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_decode_0_6b.o
   DEPENDS ${MODEL_QWEN3_DIR}/forward_decode_0_6b.mlir
   COMMENT "Building forward_decode_0_6b.o"
   VERBATIM)
@@ -125,7 +125,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph_decode_0_6b.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_decode_0_6b.o
   DEPENDS ${MODEL_QWEN3_DIR}/subgraph0_decode_0_6b.mlir
   COMMENT "Building subgraph_decode_0_6b.o"
   VERBATIM)

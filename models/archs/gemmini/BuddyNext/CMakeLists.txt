@@ -54,7 +54,7 @@ function(add_buddynext_gemmini_target target_name mlir_file object_name mlir_bas
               -finalize-memref-to-llvm
               -reconcile-unrealized-casts |
             ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-            ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o ${object_name}
+            ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o ${object_name}
     DEPENDS ${mlir_file}
     COMMENT "Building ${target_name} object"
     VERBATIM

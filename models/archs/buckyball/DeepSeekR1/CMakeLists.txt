@@ -39,7 +39,7 @@ add_custom_command(
             -convert-func-to-llvm
             -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=+buddyext,+D -float-abi=hard -o forward.o
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=+xbbmeteor,+D -float-abi=hard -o forward.o
   DEPENDS ${MODEL_DEEPSEEKR1_DIR}/forward.mlir
   COMMENT "Building forward.o "
   VERBATIM)
@@ -144,7 +144,7 @@ add_custom_command(
               -finalize-memref-to-llvm
               -reconcile-unrealized-casts |
             ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-            ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O3 -mattr=+buddyext,+D -float-abi=hard
+            ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O3 -mattr=+xbbmeteor,+D -float-abi=hard
               -o subgraph0.o
             DEPENDS ${MODEL_DEEPSEEKR1_DIR}/subgraph0.mlir
     COMMENT "Building subgraph0.o"

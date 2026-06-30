@@ -23,7 +23,7 @@ add_custom_command(
             -convert-func-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o forward.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
         DEPENDS ${MODEL_BERT_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)
@@ -105,7 +105,7 @@ add_custom_command(
           -finalize-memref-to-llvm
           -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+buddyext,+D -float-abi=hard -o subgraph0.o
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_BERT_DIR}/subgraph0.mlir
   COMMENT "Building subgraph.o "
   VERBATIM)
