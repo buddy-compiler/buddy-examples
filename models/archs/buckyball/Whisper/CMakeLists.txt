@@ -25,7 +25,7 @@ add_custom_command(
             -convert-func-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xbbpebble,+D -float-abi=hard -o forward.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o forward.o
   DEPENDS ${MODEL_WHISPER_BUILD_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)
@@ -53,8 +53,8 @@ add_custom_command(
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt subgraph0_loops.mlir
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
-            -lower-bank-ssa-to-intrinsics
-            -lower-buckyball
+            ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
+            ${BUCKYBALL_LOWER_BUCKYBALL}
             -o subgraph0_buckyball.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt subgraph0_buckyball.mlir
             -llvm-request-c-wrappers
@@ -91,7 +91,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xbbpebble,+D -float-abi=hard -o subgraph0.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
   DEPENDS ${MODEL_WHISPER_BUILD_DIR}/subgraph0.mlir
   COMMENT "Building subgraph0.o"
   VERBATIM)

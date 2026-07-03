@@ -25,7 +25,7 @@ add_custom_command(
             -convert-func-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xbbmeteor,+D -float-abi=hard -o forward.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o forward.o
         DEPENDS ${MODEL_BERT_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)
@@ -63,8 +63,8 @@ add_custom_command(
             -batchmatmul-optimize
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
-            -lower-bank-ssa-to-intrinsics
-            -lower-buckyball
+            ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
+            ${BUCKYBALL_LOWER_BUCKYBALL}
             > subgraph0_buckyball.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
@@ -79,11 +79,11 @@ add_custom_command(
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -llvm-request-c-wrappers
-            -lower-bank-ssa-to-intrinsics
+            ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -lower-buckyball
+            ${BUCKYBALL_LOWER_BUCKYBALL}
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
@@ -110,11 +110,11 @@ add_custom_command(
             -lower-buckyball-to-bank-ssa
             -assign-physical-banks
             -llvm-request-c-wrappers
-            -lower-bank-ssa-to-intrinsics
+            ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            -lower-buckyball
+            ${BUCKYBALL_LOWER_BUCKYBALL}
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
@@ -127,7 +127,7 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xbbmeteor,+D -float-abi=hard -o subgraph0.o
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_BERT_DIR}/subgraph0.mlir
   COMMENT "Building subgraph.o "
   VERBATIM)

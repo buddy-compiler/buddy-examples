@@ -13,7 +13,7 @@ set(BUCKYBALL_WHISPER_DIR ${BUCKYBALL_DIR}/Whisper)
 
 function(add_buckyball_perfetto_target target)
   set(one_value_args TRACE_DIR TRACE_TOML OUTPUT)
-  set(multi_value_args MLIR DEPENDS)
+  set(multi_value_args MLIR)
   cmake_parse_arguments(PFT "" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
   if (NOT PFT_TRACE_DIR)
@@ -44,7 +44,6 @@ function(add_buckyball_perfetto_target target)
             ${PFT_TRACE_TOML}
             -o ${output}
             ${mlir_args}
-    DEPENDS ${PFT_DEPENDS} ${PFT_MLIR}
     COMMENT "Generating Perfetto trace ${output}"
     VERBATIM
     USES_TERMINAL
