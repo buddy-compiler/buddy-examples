@@ -138,9 +138,9 @@ int main() {
   auto out = output.getData();
   softmax(out, 1000);
   // Find the classification and print the result.
-  float maxVal = 0;
-  float maxIdx = 0;
-  for (int i = 0; i < 1001; ++i) {
+  float maxVal = out[0];
+  int maxIdx = 0;
+  for (int i = 1; i < 1000; ++i) {
     if (out[i] > maxVal) {
       maxVal = out[i];
       maxIdx = i;
