@@ -28,6 +28,9 @@ add_custom_command(
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
           ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o forward.o
           DEPENDS ${MODEL_LENET_DIR}/forward.mlir
+                  ${BUDDY_BINARY_DIR}/buddy-opt
+                  ${BUDDY_BINARY_DIR}/buddy-translate
+                  ${BUDDY_BINARY_DIR}/buddy-llc
   COMMENT "Building forward.o"
   VERBATIM)
 
@@ -64,7 +67,7 @@ add_custom_command(
             -convert-tile-to-buckyball
             -extend-trace-to-buckyball
             -lower-buckyball-to-bank-ssa
-            -assign-physical-banks
+            "--assign-physical-banks=bank_num=${BUCKYBALL_MLIR_BANK_NUM}"
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
             > subgraph0_buckyball.mlir
@@ -78,7 +81,7 @@ add_custom_command(
             -convert-tile-to-buckyball
             -extend-trace-to-buckyball
             -lower-buckyball-to-bank-ssa
-            -assign-physical-banks
+            "--assign-physical-banks=bank_num=${BUCKYBALL_MLIR_BANK_NUM}"
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
@@ -106,7 +109,7 @@ add_custom_command(
           -convert-tile-to-buckyball
           -extend-trace-to-buckyball
           -lower-buckyball-to-bank-ssa
-          -assign-physical-banks
+          "--assign-physical-banks=bank_num=${BUCKYBALL_MLIR_BANK_NUM}"
           -llvm-request-c-wrappers
           ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
           -convert-trace-to-llvm="cycle-trace"
@@ -125,6 +128,9 @@ add_custom_command(
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
         ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_LENET_DIR}/subgraph0.mlir
+                ${BUDDY_BINARY_DIR}/buddy-opt
+                ${BUDDY_BINARY_DIR}/buddy-translate
+                ${BUDDY_BINARY_DIR}/buddy-llc
   COMMENT "Building subgraph0.o"
   VERBATIM)
 
