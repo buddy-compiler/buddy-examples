@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+project(ModelTestE2E LANGUAGES C CXX)
+
 # Use the buddy-mlir built by the main Buckyball repo, exposed via
 # BUDDY_MLIR_BUILD_DIR (set by sourceme.sh in `nix develop`).
 if(NOT DEFINED ENV{BUDDY_MLIR_BUILD_DIR})
@@ -23,13 +26,15 @@ else()
 endif()
 message(STATUS "Buckyball RISC-V mattr: ${BUCKYBALL_RISCV_MATTR}")
 
-execute_process(
-  COMMAND which python3
-  OUTPUT_VARIABLE PYTHON3_ABS
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  COMMAND_ERROR_IS_FATAL ANY
-)
-set(Python3_EXECUTABLE ${PYTHON3_ABS})
+if(NOT Python3_EXECUTABLE)
+  execute_process(
+    COMMAND which python3
+    OUTPUT_VARIABLE PYTHON3_ABS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+  set(Python3_EXECUTABLE ${PYTHON3_ABS})
+endif()
 message(STATUS "Using Python3: ${Python3_EXECUTABLE}")
 
 set(WORKLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR})

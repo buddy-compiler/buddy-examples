@@ -23,11 +23,8 @@ import argparse
 from pathlib import Path
 import sys
 
-import torch._inductor.lowering
-
 import numpy as np
 import torch
-from torch._inductor.decomposition import decompositions as inductor_decomp
 
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
@@ -78,7 +75,6 @@ else:
 
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
-    aot_autograd_decomposition=inductor_decomp,
     verbose=verbose,
     verbose_path=verbose_path,
     trace=trace,

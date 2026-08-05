@@ -3,7 +3,7 @@ set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
 set(MODEL_MOBILENETV3_DIR ${MODEL_DIR}/MobileNetV3)
 set(BUCKYBALL_MOBILENETV3_DIR ${BUCKYBALL_DIR}/MobileNetV3)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
-set(INCLUDE_DIR ${BUCKYBALL_MOBILENETV3_DIR}/include)
+set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 
 add_custom_command(

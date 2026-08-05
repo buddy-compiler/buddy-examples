@@ -3,7 +3,7 @@ set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
 set(MODEL_LENET_DIR ${MODEL_DIR}/LeNet)
 set(BUCKYBALL_LENET_DIR ${BUCKYBALL_DIR}/LeNet)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
-set(INCLUDE_DIR ${MODEL_LENET_DIR}/include)
+set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 
 add_custom_command(

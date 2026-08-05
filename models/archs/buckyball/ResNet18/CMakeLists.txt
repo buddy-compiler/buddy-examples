@@ -3,7 +3,7 @@ set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
 set(MODEL_RESNET18_DIR ${MODEL_DIR}/ResNet18)
 set(BUCKYBALL_RESNET18_DIR ${BUCKYBALL_DIR}/ResNet18)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
-set(INCLUDE_DIR ${BUCKYBALL_RESNET18_DIR}/include)
+set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 
 add_custom_command(
