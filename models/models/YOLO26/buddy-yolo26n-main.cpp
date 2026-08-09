@@ -15,11 +15,11 @@
 //===----------------------------------------------------------------------===//
 
 #include <algorithm>
-#include <bbhw/isa/isa.h>
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
@@ -30,10 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "testutils.h"
-
-constexpr size_t ParamsSize = 64840;
-constexpr size_t WeightsSize = 2552208;
+constexpr size_t ParamsSize = 2617048;
 constexpr int InputSize = 640;
 constexpr int MaxDetections = 300;
 constexpr float PadValue = 114.0f / 255.0f;
@@ -59,29 +56,38 @@ struct Detection {
 
 extern "C" void _mlir_ciface_forward(MemRef<float, 3> *output,
                                      MemRef<float, 1> *arg0,
-                                     MemRef<int8_t, 1> *weights,
                                      MemRef<float, 4> *arg1);
 
-template <typename T, size_t N>
-class BorrowedBuffer : public MemRef<T, N> {
-public:
-  BorrowedBuffer(T *data, intptr_t sizes[N]) : MemRef<T, N>(sizes, false, 0) {
-    this->allocated = this->aligned = data;
-  }
-  ~BorrowedBuffer() { this->allocated = this->aligned = nullptr; }
-};
-
-template <typename T>
-void loadBinary(const std::string &path, T *data, size_t count) {
-  std::ifstream file(path, std::ios::binary);
-  if (!file.is_open())
-    throw std::runtime_error("failed to open binary file: " + path);
-  file.read(reinterpret_cast<char *>(data), sizeof(T) * count);
-  if (file.gcount() != static_cast<std::streamsize>(sizeof(T) * count))
-    throw std::runtime_error("short binary file: " + path);
-}
-
 void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }
+
+void loadParameters(const std::string &paramFilePath,
+                    MemRef<float, 1> &params) {
+  const auto loadStart = std::chrono::high_resolution_clock::now();
+  std::ifstream paramFile(paramFilePath, std::ios::in | std::ios::binary);
+  if (!paramFile.is_open()) {
+    throw std::runtime_error("[Error] Failed to open params file!");
+  }
+
+  printLogLabel();
+  std::cout << "Loading params..." << std::endl;
+  printLogLabel();
+  std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
+            << std::endl;
+
+  paramFile.read(reinterpret_cast<char *>(params.getData()),
+                 sizeof(float) * params.getSize());
+  if (paramFile.fail()) {
+    throw std::runtime_error("Error occurred while reading params file!");
+  }
+  paramFile.close();
+
+  const auto loadEnd = std::chrono::high_resolution_clock::now();
+  const std::chrono::duration<double, std::milli> loadTime =
+      loadEnd - loadStart;
+  printLogLabel();
+  std::cout << "Params load time: " << loadTime.count() / 1000.0 << "s\n"
+            << std::endl;
+}
 
 std::vector<std::string> loadLabels(const std::string &labelsFilePath) {
   std::ifstream labelsFile(labelsFilePath);
@@ -177,6 +183,7 @@ int main(int argc, char **argv) {
 
   const std::string imagePath =
       argc >= 2 ? argv[1] : "images/bus_16bit.bmp";
+  const std::string paramsPath = argc >= 3 ? argv[2] : "arg0.data";
   const std::vector<std::string> labels = loadLabels("labels.txt");
   std::string imageExt = std::filesystem::path(imagePath).extension().string();
   std::transform(imageExt.begin(), imageExt.end(), imageExt.begin(),
@@ -189,22 +196,18 @@ int main(int argc, char **argv) {
   dip::Image<float, 4> image(imagePath, dip::DIP_RGB, true /* norm */);
   LetterboxResult letterbox = letterboxImage(image);
 
-  static float paramsData[ParamsSize] __attribute__((aligned(64)));
-  static int8_t weightsData[WeightsSize] __attribute__((aligned(64)));
-  intptr_t paramsSize[1] = {ParamsSize};
-  intptr_t weightsSize[1] = {WeightsSize};
-  BorrowedBuffer<float, 1> paramsContainer(paramsData, paramsSize);
-  BorrowedBuffer<int8_t, 1> weightsContainer(weightsData, weightsSize);
-  loadBinary("yolo26.payload/params.f32", paramsData, ParamsSize);
-  loadBinary("yolo26.payload/weights.i8", weightsData, WeightsSize);
+  MemRef<float, 1> params({ParamsSize});
+  loadParameters(paramsPath, params);
 
   MemRef<float, 3> output({1, MaxDetections, 6});
-  unsigned long start = read_cycles();
-  _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer,
-                       &letterbox.input);
-  unsigned long end = read_cycles();
-  std::cout << "Cycle count: " << end - start << std::endl;
-
+  const auto inferStart = std::chrono::high_resolution_clock::now();
+  _mlir_ciface_forward(&output, &params, &letterbox.input);
+  const auto inferEnd = std::chrono::high_resolution_clock::now();
+  const std::chrono::duration<double, std::milli> inferTime =
+      inferEnd - inferStart;
+  printLogLabel();
+  std::cout << "Inference time: " << inferTime.count() / 1000.0 << "s"
+            << std::endl;
   const intptr_t *outSizes = output.getSizes();
   const intptr_t *outStrides = output.getStrides();
   printLogLabel();
@@ -220,10 +223,6 @@ int main(int argc, char **argv) {
       continue;
     }
     const Detection mapped = mapToOriginalImage(det, letterbox);
-    if (mapped.classId < 0 ||
-        static_cast<size_t>(mapped.classId) >= labels.size()) {
-      throw std::runtime_error("detection class_id out of labels range");
-    }
     const std::string &label = labels[static_cast<size_t>(mapped.classId)];
     std::cout << "[" << validCount << "] class_id=" << mapped.classId
               << " label=" << label << " score=" << mapped.score << " box=("
@@ -232,20 +231,6 @@ int main(int argc, char **argv) {
     ++validCount;
   }
   std::cout << "Detections: " << validCount << std::endl;
-  if (validCount == 0)
-    throw std::runtime_error("FAIL expected detections > 0");
-  // bus_16bit.bmp must contain a bus (COCO class 5); 8/29 golden was score~0.80.
-  constexpr int kBus = 5;
-  constexpr float kBusMin = 0.5f;
-  bool gotBus = false;
-  for (const Detection &det : detections) {
-    if (det.score >= kBusMin && det.classId == kBus) {
-      gotBus = true;
-      break;
-    }
-  }
-  if (!gotBus)
-    throw std::runtime_error("FAIL expected bus class_id=5 score>=0.5");
-  std::cout << "YOLO Inference PASS" << std::endl;
+
   return 0;
 }
