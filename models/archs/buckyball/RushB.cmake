@@ -81,33 +81,28 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${snapshot}
               -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
               ${BUDDY_BINARY_DIR}/buddy-opt
+              -extend-trace-to-linalg
               -eliminate-empty-tensors
-              -empty-tensor-to-alloc-tensor
-              -convert-elementwise-to-linalg
-              -convert-tensor-to-linalg
               -one-shot-bufferize="bufferize-function-boundaries"
               -convert-linalg-to-tile
               -convert-tile-to-buckyball
-              -batchmatmul-optimize
+              -extend-trace-to-buckyball
               -lower-buckyball-to-bank-ssa
-              -assign-physical-banks
+              "--assign-physical-banks=bank_num=${BUCKYBALL_MLIR_BANK_NUM}"
               -llvm-request-c-wrappers
               ${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS}
               -convert-trace-to-llvm="cycle-trace"
               -expand-strided-metadata
               -convert-linalg-to-loops
+              ${BUCKYBALL_LOWER_BUCKYBALL_RUSHB}
               -lower-affine
               -convert-scf-to-cf
               -convert-cf-to-llvm
               -buffer-deallocation-simplification
               -bufferization-lower-deallocations
-              -convert-vector-to-llvm
               -convert-arith-to-llvm
-              -convert-math-to-llvm
-              -convert-math-to-libm
               -convert-func-to-llvm
               -finalize-memref-to-llvm
-              ${BUCKYBALL_LOWER_BUCKYBALL_RUSHB}
               -lower-buckyball-intrinsics-to-rushb
               -reconcile-unrealized-casts |
               ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
