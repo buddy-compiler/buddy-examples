@@ -84,7 +84,7 @@ set(BUDDY_YOLO26_LIBS BuckyballYOLO26 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-buckyball-yolo26-run -static ${BUDDY_YOLO26_LIBS})
 
 # Define output directory path (mirrors the build directory structure)
-set(YOLO26_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/YOLO26)
+set(YOLO26_OUTPUT_DIR ${BUCKYBALL_OUTPUT_DIR}/YOLO26)
 
 add_custom_command(TARGET buddy-buckyball-yolo26-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}

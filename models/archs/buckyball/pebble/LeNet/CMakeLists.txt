@@ -144,7 +144,7 @@ target_include_directories(buddy-buckyball-lenet-run PRIVATE ${INTERFACE_DIR} ${
 target_link_libraries(buddy-buckyball-lenet-run -static BuckyballLENET ${MODELTEST_CRUNNER_UTILS_LIB})
 
 # Define output directory path (mirrors the build directory structure)
-set(LENET_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/LeNet)
+set(LENET_OUTPUT_DIR ${BUCKYBALL_OUTPUT_DIR}/LeNet)
 
 add_custom_command(TARGET buddy-buckyball-lenet-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}

@@ -137,7 +137,7 @@ set(BUDDY_RESNET18_LIBS BuckyballRESNET18 ModelTestCRunnerUtils ModelTestDIP_ris
 target_link_libraries(buddy-buckyball-resnet-run -static ${BUDDY_RESNET18_LIBS})
 
 # Define output directory path (mirrors the build directory structure)
-set(RESNET18_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/ResNet18)
+set(RESNET18_OUTPUT_DIR ${BUCKYBALL_OUTPUT_DIR}/ResNet18)
 
 add_custom_command(TARGET buddy-buckyball-resnet-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${RESNET18_OUTPUT_DIR}

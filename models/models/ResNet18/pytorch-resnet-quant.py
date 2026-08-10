@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]  # e2e/
 sys.path.insert(0, str(ROOT))
 
-from quant.core.pack import pack
+from framework.quant.core.pack import pack
 
 HERE = Path(__file__).resolve().parent
 QUANT = HERE / "quant"

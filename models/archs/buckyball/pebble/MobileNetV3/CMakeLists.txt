@@ -138,7 +138,7 @@ set(BUDDY_MOBILENETV3_LIBS BuckyballMOBILENETV3 ModelTestCRunnerUtils ModelTestD
 target_link_libraries(buddy-buckyball-mobilenetv3-run -static ${BUDDY_MOBILENETV3_LIBS})
 
 # Define output directory path (mirrors the build directory structure)
-set(MOBILENETV3_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/MobileNetV3)
+set(MOBILENETV3_OUTPUT_DIR ${BUCKYBALL_OUTPUT_DIR}/MobileNetV3)
 
 add_custom_command(TARGET buddy-buckyball-mobilenetv3-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}
