@@ -3,3 +3,4 @@ arg1.data
 forward.mlir
 subgraph0.mlir
 quant/out/
+*.mlir

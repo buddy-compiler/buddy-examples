@@ -1,7 +1,6 @@
 set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
 
 set(MODEL_LENET_DIR ${MODEL_DIR}/LeNet)
-set(MODEL_LENET_GENERATED_DIR ${MODEL_LENET_DIR}/output)
 set(BUCKYBALL_LENET_DIR ${BUCKYBALL_DIR}/LeNet)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
@@ -9,7 +8,7 @@ set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 add_custom_command(
   OUTPUT  forward.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_GENERATED_DIR}/forward.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/forward.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
             -buffer-deallocation-simplification
@@ -28,7 +27,7 @@ add_custom_command(
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
           ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o forward.o
-          DEPENDS ${MODEL_LENET_GENERATED_DIR}/forward.mlir
+          DEPENDS ${MODEL_LENET_DIR}/forward.mlir
                   ${BUDDY_BINARY_DIR}/buddy-opt
                   ${BUDDY_BINARY_DIR}/buddy-translate
                   ${BUDDY_BINARY_DIR}/buddy-llc
@@ -42,57 +41,53 @@ add_custom_command(
     subgraph0_loops.mlir
     subgraph0_buckyball.mlir
     subgraph0.ll
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_GENERATED_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
             > subgraph0_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_GENERATED_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
-            # -extend-trace-to-linalg
+            -extend-trace-to-linalg
             -eliminate-empty-tensors
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-            # -extend-trace-to-buckyball
+            -extend-trace-to-buckyball
             -batchmatmul-optimize
             > subgraph0_loops.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_GENERATED_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
-            # -extend-trace-to-linalg
+            -extend-trace-to-linalg
             -eliminate-empty-tensors
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-            # -extend-trace-to-buckyball
+            -extend-trace-to-buckyball
             -lower-buckyball-to-bank-ssa
             ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
-            -canonicalize
-            -cse
             > subgraph0_buckyball.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_GENERATED_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
-            # -extend-trace-to-linalg
+            -extend-trace-to-linalg
             -eliminate-empty-tensors
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-            # -extend-trace-to-buckyball
+            -extend-trace-to-buckyball
             -lower-buckyball-to-bank-ssa
             ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            # -convert-trace-to-llvm="cycle-trace"
+            -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             -llvm-request-c-wrappers
             ${BUCKYBALL_LOWER_BUCKYBALL}
-            -canonicalize
-            -cse
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
@@ -104,25 +99,23 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir
           > subgraph0.ll
-    COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_GENERATED_DIR}/subgraph0.mlir
+    COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_LENET_DIR}/subgraph0.mlir
           -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
         ${BUDDY_BINARY_DIR}/buddy-opt
-          # -extend-trace-to-linalg
+          -extend-trace-to-linalg
           -eliminate-empty-tensors
           -one-shot-bufferize="bufferize-function-boundaries"
           -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-          # -extend-trace-to-buckyball
+          -extend-trace-to-buckyball
           -lower-buckyball-to-bank-ssa
           ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -llvm-request-c-wrappers
           ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-          # -convert-trace-to-llvm="cycle-trace"
+          -convert-trace-to-llvm="cycle-trace"
           -expand-strided-metadata
           -convert-linalg-to-loops
           ${BUCKYBALL_LOWER_BUCKYBALL}
-          -canonicalize
-          -cse
           -lower-affine
           -convert-scf-to-cf
           -convert-cf-to-llvm
@@ -133,8 +126,8 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
           -finalize-memref-to-llvm
           -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
-        DEPENDS ${MODEL_LENET_GENERATED_DIR}/subgraph0.mlir
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
+        DEPENDS ${MODEL_LENET_DIR}/subgraph0.mlir
                 ${BUDDY_BINARY_DIR}/buddy-opt
                 ${BUDDY_BINARY_DIR}/buddy-translate
                 ${BUDDY_BINARY_DIR}/buddy-llc
@@ -151,7 +144,7 @@ target_include_directories(buddy-buckyball-lenet-run PRIVATE ${INTERFACE_DIR} ${
 target_link_libraries(buddy-buckyball-lenet-run -static BuckyballLENET ${MODELTEST_CRUNNER_UTILS_LIB})
 
 # Define output directory path (mirrors the build directory structure)
-set(LENET_OUTPUT_DIR ${BUCKYBALL_OUTPUT_DIR}/LeNet)
+set(LENET_OUTPUT_DIR ${OUTPUT_BIN_DIR}/src/ModelTest/e2e/models/archs/buckyball/LeNet)
 
 add_custom_command(TARGET buddy-buckyball-lenet-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
@@ -167,7 +160,7 @@ add_custom_target(buddy-buckyball-lenet-all-run
     buddy-buckyball-lenet-run
 )
 
-# Sync the RAX model package and images directly to the output directory.
+# Sync runtime deps (images/, arg0.data) directly to OUTPUT directory
 add_custom_target(sync-buckyball-lenet-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}/trace/cycle
@@ -175,15 +168,9 @@ add_custom_target(sync-buckyball-lenet-deps
           ${MODEL_LENET_DIR}/images
           ${LENET_OUTPUT_DIR}/images
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_LENET_GENERATED_DIR}/lenet.rax
-          ${LENET_OUTPUT_DIR}/lenet.rax
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-          ${MODEL_LENET_GENERATED_DIR}/lenet.payload
-          ${LENET_OUTPUT_DIR}/lenet.payload
-  DEPENDS ${MODEL_LENET_GENERATED_DIR}/lenet.rax
-          ${MODEL_LENET_GENERATED_DIR}/lenet.payload/params.f32
-          ${MODEL_LENET_GENERATED_DIR}/lenet.payload/weights.i8
-          ${MODEL_LENET_GENERATED_DIR}/lenet.payload/scales.bin
+          ${MODEL_LENET_DIR}/arg0.data
+          ${LENET_OUTPUT_DIR}/arg0.data
+  DEPENDS ${MODEL_LENET_DIR}/arg0.data
   COMMENT "Syncing LeNet runtime deps to output directory"
   VERBATIM
 )

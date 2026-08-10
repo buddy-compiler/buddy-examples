@@ -1,6 +1,10 @@
 # Common host-native lowering for Buckyball models. CPU forward functions stay
 # native x86; only Buckyball subgraphs are converted to the rushB C ABI.
 function(add_buckyball_rushb_targets model target_prefix source_dir)
+  # The Buddy external-dialect loader is process-safe only when lowering one
+  # MLIR module at a time. Keep object compilation parallel, but serialize the
+  # custom MLIR lowering commands even when the workload build uses ninja -j.
+  set_property(GLOBAL PROPERTY JOB_POOLS buckyball_rushb_lowering=1)
   set(interface_dir ${BUDDY_MLIR_DIR}/frontend/Interfaces)
   set(dip_mlir ${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DIP.mlir)
   set(dap_extend_mlir ${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DAP-extend.mlir)
@@ -19,6 +23,54 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
 
   set(objects)
   set(mlir_snapshot_dir ${CMAKE_CURRENT_BINARY_DIR}/rushB/mlir/${target_prefix})
+  # Resolve a compiler subgraph to a physical Core. Chip-specific workload
+  # CMake files may provide type groups parsed from their tile TOML.
+  function(_buckyball_rushb_core_id source_dir source out_var)
+    get_filename_component(_name ${source} NAME_WE)
+    set(_id -1)
+    if(_name MATCHES "^subgraph([0-9]+)$")
+      set(_id ${CMAKE_MATCH_1})
+    elseif(DEFINED BUCKYBALL_RUSHB_PLACEMENT_STRICT)
+      file(RELATIVE_PATH _relative ${source_dir} ${source})
+      get_filename_component(_relative_dir "${_relative}" DIRECTORY)
+      if(NOT _relative_dir OR _relative_dir STREQUAL ".")
+        string(REGEX MATCH "_([A-Za-z0-9]+)(_[A-Za-z0-9]+)*$" _suffix "${_name}")
+        if(_suffix)
+          string(REGEX REPLACE "^_([A-Za-z0-9]+).*$" "\\1" _type "${_suffix}")
+        endif()
+      else()
+        string(REPLACE "/" ";" _parts "${_relative_dir}")
+        list(GET _parts 0 _type)
+      endif()
+      set(_ids "${_POLY_CORE_IDS_${_type}}")
+      if(NOT _ids)
+        if(_name MATCHES "^subgraph([0-9]+)(_|$)")
+          set(_id ${CMAKE_MATCH_1})
+          set(_type)
+          set(_ids 1)
+        else()
+          message(FATAL_ERROR
+            "No Core type '${_type}' is declared in the Poly tile TOML for ${source}")
+        endif()
+      endif()
+      if(NOT _type)
+        set(${out_var} ${_id} PARENT_SCOPE)
+        return()
+      endif()
+      get_property(_next GLOBAL PROPERTY BUCKYBALL_RUSHB_NEXT_${_type})
+      if(NOT _next)
+        set(_next 0)
+      endif()
+      list(LENGTH _ids _count)
+      math(EXPR _slot "${_next} % ${_count}")
+      list(GET _ids ${_slot} _id)
+      math(EXPR _next "${_next} + 1")
+      set_property(GLOBAL PROPERTY BUCKYBALL_RUSHB_NEXT_${_type} ${_next})
+    endif()
+    set(${out_var} ${_id} PARENT_SCOPE)
+  endfunction()
+  set(_rushb_host_options "-eliminate-empty-tensors;-empty-tensor-to-alloc-tensor;-convert-elementwise-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-expand-strided-metadata;-convert-linalg-to-loops;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-vector-to-scf;-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-llvm;-convert-index-to-llvm;-llvm-request-c-wrappers;-convert-arith-to-llvm;-convert-math-to-llvm;-convert-math-to-libm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
+  string(REPLACE ";" " " _rushb_host_options "${_rushb_host_options}")
   foreach(mlir IN LISTS forward_mlir)
     if(IS_ABSOLUTE ${mlir})
       set(source ${mlir})
@@ -26,40 +78,20 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       set(source ${source_dir}/${mlir})
     endif()
     get_filename_component(name ${mlir} NAME_WE)
+    # Host forward functions never execute on a Buckyball Core.
+    set(rushb_core_id -1)
     set(snapshot ${mlir_snapshot_dir}/${name}.mlir)
     set(object ${CMAKE_CURRENT_BINARY_DIR}/${target_prefix}-${name}-rushb.o)
     add_custom_command(
       OUTPUT ${object}
       COMMAND ${CMAKE_COMMAND} -E make_directory ${mlir_snapshot_dir}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${source} ${snapshot}
-      COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${snapshot}
-              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-              ${BUDDY_BINARY_DIR}/buddy-opt
-              -eliminate-empty-tensors
-              -empty-tensor-to-alloc-tensor
-              -convert-elementwise-to-linalg
-              -one-shot-bufferize="bufferize-function-boundaries"
-              -expand-strided-metadata
-              -convert-linalg-to-loops
-              -buffer-deallocation-simplification
-              -bufferization-lower-deallocations
-              -convert-vector-to-scf
-              -lower-affine
-              -convert-scf-to-cf
-              -convert-cf-to-llvm
-              -convert-vector-to-llvm
-              -llvm-request-c-wrappers
-              -convert-arith-to-llvm
-              -convert-math-to-llvm
-              -convert-math-to-libm
-              -convert-func-to-llvm
-              -finalize-memref-to-llvm
-              -reconcile-unrealized-casts |
-              ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-              ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}
+      COMMAND ${CMAKE_COMMAND} -E rm -f ${object} ${object}.tmp
+      COMMAND bash -o pipefail -c "${BUDDY_BINARY_DIR}/buddy-opt ${snapshot} -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))' | ${BUDDY_BINARY_DIR}/buddy-opt ${_rushb_host_options} | ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir | ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}.tmp && mv ${object}.tmp ${object}"
       DEPENDS ${BUDDY_BINARY_DIR}/buddy-opt
               ${BUDDY_BINARY_DIR}/buddy-translate
               ${BUDDY_BINARY_DIR}/buddy-llc
+      JOB_POOL buckyball_rushb_lowering
       COMMENT "Lowering rushB host CPU function ${model}/${mlir}"
       VERBATIM)
     list(APPEND objects ${object})
@@ -72,44 +104,24 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       set(source ${source_dir}/${mlir})
     endif()
     get_filename_component(name ${mlir} NAME_WE)
+    # Bind each compiler-generated subgraph to its tile Core. This belongs in
+    # the accelerator loop: the preceding forward-function loop may be empty.
+    _buckyball_rushb_core_id(${source_dir} ${source} rushb_core_id)
+    set(_rushb_accel_options "-extend-trace-to-linalg;-eliminate-empty-tensors;-convert-elementwise-to-linalg;-convert-tensor-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-convert-linalg-to-tile;${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL};-extend-trace-to-buckyball;-lower-buckyball-to-bank-ssa;${BUCKYBALL_ASSIGN_PHYSICAL_BANKS};-llvm-request-c-wrappers;${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS};-lower-buckyball-intrinsics-to-rushb=core_id=${rushb_core_id};-convert-trace-to-llvm='cycle-trace';-expand-strided-metadata;-convert-linalg-to-loops;${BUCKYBALL_LOWER_BUCKYBALL_RUSHB};-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-scf;-convert-vector-to-llvm;-convert-index-to-llvm;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-math-to-llvm;-convert-math-to-libm;-convert-arith-to-llvm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
+    string(REPLACE ";" " " _rushb_accel_options "${_rushb_accel_options}")
+    string(REGEX REPLACE "(-convert-tile-to-buckyball=)(bank_width=[^ ]+ bank_depth=[^ ]+ bank_num=[^ ]+)" "\\1'\\2'" _rushb_accel_options "${_rushb_accel_options}")
     set(snapshot ${mlir_snapshot_dir}/${name}.mlir)
     set(object ${CMAKE_CURRENT_BINARY_DIR}/${target_prefix}-${name}-rushb.o)
     add_custom_command(
       OUTPUT ${object}
       COMMAND ${CMAKE_COMMAND} -E make_directory ${mlir_snapshot_dir}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${source} ${snapshot}
-      COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${snapshot}
-              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-              ${BUDDY_BINARY_DIR}/buddy-opt
-              -extend-trace-to-linalg
-              -eliminate-empty-tensors
-              -one-shot-bufferize="bufferize-function-boundaries"
-              -convert-linalg-to-tile
-              -convert-tile-to-buckyball
-              -extend-trace-to-buckyball
-              -lower-buckyball-to-bank-ssa
-              "--assign-physical-banks=bank_num=${BUCKYBALL_MLIR_BANK_NUM}"
-              -llvm-request-c-wrappers
-              ${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS}
-              -convert-trace-to-llvm="cycle-trace"
-              -expand-strided-metadata
-              -convert-linalg-to-loops
-              ${BUCKYBALL_LOWER_BUCKYBALL_RUSHB}
-              -lower-affine
-              -convert-scf-to-cf
-              -convert-cf-to-llvm
-              -buffer-deallocation-simplification
-              -bufferization-lower-deallocations
-              -convert-arith-to-llvm
-              -convert-func-to-llvm
-              -finalize-memref-to-llvm
-              -lower-buckyball-intrinsics-to-rushb
-              -reconcile-unrealized-casts |
-              ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-              ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}
+      COMMAND ${CMAKE_COMMAND} -E rm -f ${object} ${object}.tmp
+      COMMAND bash -o pipefail -c "${BUDDY_BINARY_DIR}/buddy-opt ${snapshot} -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))' | ${BUDDY_BINARY_DIR}/buddy-opt ${_rushb_accel_options} | ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir | ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}.tmp && mv ${object}.tmp ${object}"
       DEPENDS ${BUDDY_BINARY_DIR}/buddy-opt
               ${BUDDY_BINARY_DIR}/buddy-translate
               ${BUDDY_BINARY_DIR}/buddy-llc
+      JOB_POOL buckyball_rushb_lowering
       COMMENT "Lowering rushB accelerator function ${model}/${mlir}"
       VERBATIM)
     list(APPEND objects ${object})
@@ -237,6 +249,16 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       set(local_library ${build_dir}/lib${runtime_name}.so)
       set(output_binary ${output_dir}/${target_prefix}-rushB-${backend}-run)
       set(output_library ${output_dir}/lib${runtime_name}.so)
+      set(bemu_riscv_lib_dir)
+      if(backend STREQUAL "bemu")
+        get_filename_component(_runtime_manifest_dir ${runtime_manifest} DIRECTORY)
+        file(GLOB _bemu_riscv_lib_dirs LIST_DIRECTORIES true
+          "${_runtime_manifest_dir}/target/release/build/bemu-goban-*/out/spike_install/lib")
+        list(LENGTH _bemu_riscv_lib_dirs _bemu_riscv_lib_dir_count)
+        if(_bemu_riscv_lib_dir_count GREATER 0)
+          list(GET _bemu_riscv_lib_dirs 0 bemu_riscv_lib_dir)
+        endif()
+      endif()
       add_custom_command(
         OUTPUT ${binary} ${output_binary} ${output_library}
         BYPRODUCTS ${local_library}
@@ -251,7 +273,9 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
                 ${runner_definitions}
                 ${runner_source} ${runtime_source} ${objects} ${runtime_objects}
                 -L${build_dir} -l${runtime_name}
+                ${bemu_riscv_lib_dir}/libriscv.so
                 -Wl,-rpath,${output_dir}
+                -Wl,-rpath,${bemu_riscv_lib_dir}
                 -o ${binary}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}/trace/cycle

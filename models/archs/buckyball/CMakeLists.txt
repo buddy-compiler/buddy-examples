@@ -73,7 +73,7 @@ endif()
 if (MODEL_BERT)
   add_subdirectory(Bert)
   add_buckyball_rushb_targets(Bert buddy-buckyball-bert ${MODEL_DIR}/Bert
-    forward.mlir subgraph0.mlir)
+    forward.mlir subgraph0.mlir subgraph1.mlir subgraph2.mlir subgraph3.mlir)
 endif()
 
 if (MODEL_STABLEDIFFUSION)
@@ -102,6 +102,9 @@ if (MODEL_QWEN3)
   add_buckyball_rushb_targets(Qwen3 buddy-buckyball-qwen3 ${MODEL_DIR}/Qwen3
     forward_prefill_0_6b.mlir subgraph0_prefill_0_6b.mlir
     forward_decode_0_6b.mlir subgraph0_decode_0_6b.mlir)
+  # The importer owns the generated prefill graph.  RushB codegen must wait
+  # for it, otherwise a fresh checkout fails while copying a missing MLIR.
+  add_dependencies(buddy-buckyball-qwen3-rushB-codegen qwen3-model-build)
 endif()
 
 if (MODEL_YOLO26)
