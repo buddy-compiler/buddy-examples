@@ -1,34 +1,29 @@
-# Whisper encoder-decoder ASR integration.
-#
-# Uses the shared buddy-codegen model entry point with MODEL_KIND=single_forward.
-# Whisper keeps custom import and manifest generators because the generic
-# DeepSeek path is LLM prefill/decode + KV-cache specific.
-
-include(${CMAKE_SOURCE_DIR}/tools/buddy-codegen/cmake/buddy_model.cmake)
+# Whisper model import for accelerator backends (forward.mlir / subgraph0.mlir).
+# Host .rax / buddy_add_model lives in buddy-mlir; do not use CMAKE_SOURCE_DIR
+# tools/buddy-codegen here — bb-tests nests ModelTest under a different source root.
 
 set(BUDDY_WHISPER_SPEC
   "${CMAKE_CURRENT_SOURCE_DIR}/specs/base.json"
   CACHE FILEPATH "Whisper variant spec JSON, e.g. specs/base.json")
-set(BUDDY_WHISPER_MODEL_PATH "" CACHE PATH
-  "Local HuggingFace whisper snapshot dir")
 
-set(WHISPER_EXAMPLE "${CMAKE_SOURCE_DIR}/examples/BuddyWhisper")
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/forward.mlir
+         ${CMAKE_CURRENT_BINARY_DIR}/subgraph0.mlir
+         ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
+  COMMAND ${CMAKE_COMMAND} -E env
+          TRANSFORMERS_OFFLINE=1
+          HF_HUB_OFFLINE=1
+          ${Python3_EXECUTABLE}
+          ${CMAKE_CURRENT_SOURCE_DIR}/codegen/import-whisper.py
+          --spec ${BUDDY_WHISPER_SPEC}
+          --output-dir ${CMAKE_CURRENT_BINARY_DIR}
+          --no-layer-partitioned
+  COMMENT "Generating Whisper forward.mlir, subgraph0.mlir and arg0.data..."
+  VERBATIM
+)
 
-buddy_add_model(
-  NAME whisper
-  MODEL_KIND single_forward
-  SPEC "${BUDDY_WHISPER_SPEC}"
-  RUNNER_SRC WhisperRunner.cpp
-  RUNNER_PLUGIN_SRC WhisperRunnerPlugin.cpp
-  LOCAL_MODEL "${BUDDY_WHISPER_MODEL_PATH}"
-  LOCAL_MODEL_ENV WHISPER_MODEL_PATH
-  IMPORT_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/codegen/import-whisper.py"
-  MANIFEST_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/codegen/gen_whisper_manifest.py"
-  MODEL_SO_NAME whisper_model.so
-  ASSET_FILES
-    "${WHISPER_EXAMPLE}/vocab.txt"
-    "${WHISPER_EXAMPLE}/audio.wav"
-  RUNTIME_LINK_LIBS
-    BuddyLibDAP
-    mlir_c_runner_utils
+add_custom_target(whisper-model-build DEPENDS
+  ${CMAKE_CURRENT_BINARY_DIR}/forward.mlir
+  ${CMAKE_CURRENT_BINARY_DIR}/subgraph0.mlir
+  ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
 )
