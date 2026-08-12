@@ -130,10 +130,21 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
   set(codegen_target ${target_prefix}-rushB-codegen)
   add_custom_target(${codegen_target} DEPENDS ${objects})
 
-  file(GLOB runner_sources LIST_DIRECTORIES false "${MODEL_DIR}/${model}/*.cpp")
+  # Host runners follow the accelerator convention: one *-main.cpp per model
+  # (BuddyNext uses buddy-next-runtime.cpp). Ignore Runner/Plugin sources used
+  # by buddy-cli — those are not rushB linkable mains.
+  if(model STREQUAL "BuddyNext")
+    set(runner_glob "buddy-next-runtime.cpp")
+  else()
+    set(runner_glob "*-main.cpp")
+  endif()
+  file(GLOB runner_sources LIST_DIRECTORIES false
+    "${MODEL_DIR}/${model}/${runner_glob}")
   list(LENGTH runner_sources runner_count)
   if(NOT runner_count EQUAL 1)
-    message(FATAL_ERROR "rushB requires exactly one host runner for ${model}")
+    message(FATAL_ERROR
+      "rushB requires exactly one host runner matching '${runner_glob}' "
+      "for ${model} (found ${runner_count}: ${runner_sources})")
   endif()
   list(GET runner_sources 0 runner_source)
   get_filename_component(runner_dir ${runner_source} DIRECTORY)
