@@ -7,20 +7,19 @@ from pathlib import Path
 import struct
 import subprocess
 
-from framework.quant.core.bwq import BwqPackage, validate_bwq
-
+DA_ADDR = 0
+DW_BASE_ADDR = 16
+MMIO_BYTES = 5120
+DMA_BYTES = 16
 SCALE_LANES = 16
 
 
 def scale_count(shape: list[int], axes: list[int]) -> int:
+    if axes == [0]:
+        return ((shape[0] + SCALE_LANES - 1) // SCALE_LANES) * SCALE_LANES
     if not axes:
         return 1
-    if len(axes) != 1:
-        raise ValueError(f"unsupported scale axes: {axes}")
-    ax = axes[0]
-    if ax < 0 or ax >= len(shape):
-        raise ValueError(f"scale axis {ax} out of range for shape {shape}")
-    return ((shape[ax] + SCALE_LANES - 1) // SCALE_LANES) * SCALE_LANES
+    raise ValueError(f"unsupported scale axes: {axes}")
 
 
 @dataclass
@@ -43,32 +42,6 @@ class RaxQuantPackage:
     params_f32: bytes
     scales_f32: bytes
     assets: dict[str, bytes]
-
-
-def rax_from_bwq(pkg: BwqPackage) -> RaxQuantPackage:
-    validate_bwq(pkg)
-    tensors: list[QuantTensor] = []
-    weights: list[bytes] = []
-    scales: list[bytes] = []
-    weight_off = scale_off = 0
-    for source in pkg.tensors:
-        if source.storage != "i8" or source.axes not in ([], [0]):
-            raise ValueError(f"RAX W8A8 requires i8 tensor/channel weight: {source.name}")
-        weight = pkg.weights[source.weight_off : source.weight_off + source.weight_len]
-        raw_scales = pkg.scales[source.scale_off : source.scale_off + source.scale_len]
-        raw_count = 1 if not source.axes else source.shape[0]
-        values = struct.unpack(f"<{raw_count}f", raw_scales)
-        padded_count = scale_count(source.shape, source.axes)
-        padded = values + (1.0,) * (padded_count - raw_count)
-        scale = struct.pack(f"<{padded_count}f", *padded)
-        tensors.append(QuantTensor(source.name, source.shape, source.shape,
-                                   source.storage, source.axes, weight_off,
-                                   len(weight), scale_off, len(scale)))
-        weights.append(weight)
-        scales.append(scale)
-        weight_off += len(weight)
-        scale_off += len(scale)
-    return RaxQuantPackage(tensors, b"".join(weights), b"", b"".join(scales), {})
 
 
 def _numel(shape: list[int], name: str) -> int:
@@ -96,17 +69,16 @@ def validate_rax_quant(pkg: RaxQuantPackage) -> None:
         if tensor.scale_off < 0 or tensor.scale_len < 0:
             raise ValueError(f"bad scale range for {tensor.name}")
         numel = _numel(tensor.shape, tensor.name)
-        payload_numel = _numel(tensor.payload_shape, tensor.name)
+        if _numel(tensor.payload_shape, tensor.name) != numel:
+            raise ValueError(f"payload shape mismatch for {tensor.name}")
         if tensor.storage == "i8":
-            if len(tensor.axes) > 1 or any(
-                axis < 0 or axis >= len(tensor.shape) for axis in tensor.axes
-            ):
+            if tensor.axes not in ([], [0]):
                 raise ValueError(f"unsupported scale axes for {tensor.name}: {tensor.axes}")
             if tensor.payload_off + tensor.payload_len > len(pkg.weights_i8):
                 raise ValueError(f"weight OOB for {tensor.name}")
             if tensor.payload_off != weight_end:
                 raise ValueError(f"non-contiguous weight payload for {tensor.name}")
-            if tensor.payload_len != payload_numel:
+            if tensor.payload_len != numel:
                 raise ValueError(f"weight_len mismatch for {tensor.name}")
             if tensor.scale_off + tensor.scale_len > len(pkg.scales_f32):
                 raise ValueError(f"scale OOB for {tensor.name}")
@@ -120,8 +92,7 @@ def validate_rax_quant(pkg: RaxQuantPackage) -> None:
             scales = struct.unpack_from(f"<{scale_n}f", pkg.scales_f32, tensor.scale_off)
             if any(not math.isfinite(scale) or scale <= 0.0 for scale in scales):
                 raise ValueError(f"invalid scale value for {tensor.name}")
-            channel_count = tensor.shape[tensor.axes[0]] if tensor.axes else 1
-            if tensor.axes and any(scale != 1.0 for scale in scales[channel_count:]):
+            if tensor.axes == [0] and any(scale != 1.0 for scale in scales[tensor.shape[0] :]):
                 raise ValueError(f"bad channel-scale padding for {tensor.name}")
             weight_end += tensor.payload_len
             scale_end += tensor.scale_len
@@ -147,6 +118,13 @@ def _payload_dir(rax: Path) -> Path:
     return rax.parent / f"{rax.stem}.payload"
 
 
+def _scale_image(pkg: RaxQuantPackage) -> bytes:
+    image = pkg.scales_f32 + bytes((-len(pkg.scales_f32)) % DMA_BYTES)
+    if DW_BASE_ADDR + len(image) > MMIO_BYTES:
+        raise ValueError("scale image exceeds Pebble MMIO capacity")
+    return image
+
+
 def _quant_index(pkg: RaxQuantPackage) -> dict:
     tensors = []
     for tensor in pkg.tensors:
@@ -158,11 +136,11 @@ def _quant_index(pkg: RaxQuantPackage) -> dict:
             "payload": "weights_i8" if tensor.storage == "i8" else "params_f32",
             "payload_offset": tensor.payload_off,
             "payload_bytes": tensor.payload_len,
-            "scale_offset": tensor.scale_off if tensor.storage == "i8" else 0,
-            "scale_bytes": tensor.scale_len if tensor.storage == "i8" else 0,
-            "scale_axes": tensor.axes if tensor.storage == "i8" else [],
+            "dw_addr": DW_BASE_ADDR + tensor.scale_off if tensor.storage == "i8" else 0,
+            "dw_bytes": tensor.scale_len,
+            "per_channel": bool(tensor.axes) if tensor.storage == "i8" else False,
         })
-    return {"version": 2, "tensors": tensors}
+    return {"version": 1, "da_addr": DA_ADDR, "dw_base_addr": DW_BASE_ADDR, "tensors": tensors}
 
 
 def _manifest(model_name: str, payload_name: str, weights_bytes: int, params_bytes: int,
@@ -201,15 +179,16 @@ def write_rax(pkg: RaxQuantPackage, rax: Path | str, rax_pack: Path | str,
         raise ValueError(f"rax-pack not found: {rax_pack}")
     payload_dir = _payload_dir(rax)
     payload_dir.mkdir(parents=True, exist_ok=True)
+    scales = _scale_image(pkg)
     index = json.dumps(_quant_index(pkg), sort_keys=True, indent=2).encode("ascii")
     (payload_dir / "weights.i8").write_bytes(pkg.weights_i8)
     (payload_dir / "params.f32").write_bytes(pkg.params_f32)
-    (payload_dir / "scales.bin").write_bytes(pkg.scales_f32)
+    (payload_dir / "scales.bin").write_bytes(scales)
     (payload_dir / "quant-index.json").write_bytes(index)
     for name, data in pkg.assets.items():
         (payload_dir / name).write_bytes(data)
     manifest = payload_dir / "quant.rhal.mlir"
     manifest.write_text(_manifest(model_name, payload_dir.name, len(pkg.weights_i8),
-                                  len(pkg.params_f32), len(pkg.scales_f32), len(index), pkg.assets),
+                                  len(pkg.params_f32), len(scales), len(index), pkg.assets),
                         encoding="ascii")
     subprocess.run([str(rax_pack), str(manifest), "-o", str(rax), "--embed-payload"], check=True)
