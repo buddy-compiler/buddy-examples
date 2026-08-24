@@ -88,7 +88,8 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${source} ${snapshot}
       COMMAND ${CMAKE_COMMAND} -E rm -f ${object} ${object}.tmp
       COMMAND bash -o pipefail -c "${BUDDY_BINARY_DIR}/buddy-opt ${snapshot} -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))' | ${BUDDY_BINARY_DIR}/buddy-opt ${_rushb_host_options} | ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir | ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}.tmp && mv ${object}.tmp ${object}"
-      DEPENDS ${BUDDY_BINARY_DIR}/buddy-opt
+      DEPENDS ${source}
+              ${BUDDY_BINARY_DIR}/buddy-opt
               ${BUDDY_BINARY_DIR}/buddy-translate
               ${BUDDY_BINARY_DIR}/buddy-llc
       JOB_POOL buckyball_rushb_lowering
@@ -118,7 +119,8 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${source} ${snapshot}
       COMMAND ${CMAKE_COMMAND} -E rm -f ${object} ${object}.tmp
       COMMAND bash -o pipefail -c "${BUDDY_BINARY_DIR}/buddy-opt ${snapshot} -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))' | ${BUDDY_BINARY_DIR}/buddy-opt ${_rushb_accel_options} | ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir | ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}.tmp && mv ${object}.tmp ${object}"
-      DEPENDS ${BUDDY_BINARY_DIR}/buddy-opt
+      DEPENDS ${source}
+              ${BUDDY_BINARY_DIR}/buddy-opt
               ${BUDDY_BINARY_DIR}/buddy-translate
               ${BUDDY_BINARY_DIR}/buddy-llc
       JOB_POOL buckyball_rushb_lowering
@@ -258,24 +260,30 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
         set(runtime_dependency ${runtime_library})
       endif()
       set(local_library ${build_dir}/lib${runtime_name}.so)
+      set(local_riscv_library)
       set(output_binary ${output_dir}/${target_prefix}-rushB-${backend}-run)
       set(output_library ${output_dir}/lib${runtime_name}.so)
-      set(bemu_riscv_lib_dir)
+      set(riscv_runtime_prepare)
+      set(riscv_runtime_publish)
       if(backend STREQUAL "bemu")
-        get_filename_component(_runtime_manifest_dir ${runtime_manifest} DIRECTORY)
-        file(GLOB _bemu_riscv_lib_dirs LIST_DIRECTORIES true
-          "${_runtime_manifest_dir}/target/release/build/bemu-goban-*/out/spike_install/lib")
-        list(LENGTH _bemu_riscv_lib_dirs _bemu_riscv_lib_dir_count)
-        if(_bemu_riscv_lib_dir_count GREATER 0)
-          list(GET _bemu_riscv_lib_dirs 0 bemu_riscv_lib_dir)
-        endif()
+        set(local_riscv_library ${build_dir}/libriscv.so)
+        set(riscv_runtime_prepare
+          COMMAND ${CMAKE_COMMAND}
+                  -DBEMU_RUNTIME_LIBRARY=${runtime_library}
+                  -DOUTPUT_LIBRARY=${local_riscv_library}
+                  -P ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/CopyBemuRiscv.cmake)
+        set(riscv_runtime_publish
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                  ${local_riscv_library} ${output_dir}/libriscv.so)
       endif()
       add_custom_command(
         OUTPUT ${binary} ${output_binary} ${output_library}
+               ${local_riscv_library}
         BYPRODUCTS ${local_library}
         ${runtime_build}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${build_dir}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${runtime_library} ${local_library}
+        ${riscv_runtime_prepare}
         COMMAND c++ -no-pie -std=c++17 -O2
                 -I${interface_dir}
                 -I${MODELTEST_LIB_DIR}
@@ -284,9 +292,8 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
                 ${runner_definitions}
                 ${runner_source} ${runtime_source} ${objects} ${runtime_objects}
                 -L${build_dir} -l${runtime_name}
-                ${bemu_riscv_lib_dir}/libriscv.so
+                ${local_riscv_library}
                 -Wl,-rpath,${output_dir}
-                -Wl,-rpath,${bemu_riscv_lib_dir}
                 -o ${binary}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${output_dir}/trace/cycle
@@ -295,6 +302,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
                 ${output_binary}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${local_library}
                 ${output_library}
+        ${riscv_runtime_publish}
         DEPENDS ${objects} ${runtime_objects}
                 ${runner_source} ${runtime_source}
                 ${BUCKYBALL_REPO_ROOT}/compiler/include/buckyball/rushb.h
