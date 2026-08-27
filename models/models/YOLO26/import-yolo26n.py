@@ -63,6 +63,7 @@ args = parser.parse_args()
 
 output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
+os.chdir(output_dir)
 model_dir = Path(__file__).resolve().parent
 if args.trace:
     trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))

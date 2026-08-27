@@ -14,7 +14,6 @@ add_custom_command(
           ${Python3_EXECUTABLE} ${MODEL_YOLO26_DIR}/import-yolo26n.py
           --output-dir ${MODEL_YOLO26_OUTPUT_DIR}
           --trace
-  WORKING_DIRECTORY ${MODEL_YOLO26_OUTPUT_DIR}
   COMMENT "Generating YOLO26 model files..."
 )
 
