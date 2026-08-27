@@ -27,7 +27,6 @@ add_custom_command(
           LENET_MODEL_PATH=${MODEL_LENET_OUTPUT_DIR}
           BUDDY_MLIR_BUILD_DIR=$ENV{BUDDY_MLIR_BUILD_DIR}
           PYTHONPATH=${BUDDY_BINARY_DIR}/../python_packages
-          LD_LIBRARY_PATH=${BUDDY_BINARY_DIR}/../python_packages/buddy_mlir/_mlir_libs:${BUDDY_BINARY_DIR}/../lib
           ${Python3_EXECUTABLE} ${MODEL_LENET_DIR}/buddy-lenet-import.py
   DEPENDS buddy-lenet-import.py model.py ${MODEL_LENET_OUTPUT_DIR}/lenet-model.pth
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"

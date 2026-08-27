@@ -70,13 +70,13 @@ def _write_recon(path: Path, arr: np.ndarray, dtype: str) -> None:
         raise ValueError(f"unsupported dtype: {dtype!r}")
 
 
-def _dequant_i8(q: np.ndarray, scale: np.ndarray, axes: list[int]) -> np.ndarray:
+def _dequant_i8(q: np.ndarray, dw: np.ndarray, axes: list[int]) -> np.ndarray:
     if not axes:
-        return q.astype(np.float32) / float(np.asarray(scale).reshape(()))
+        return q.astype(np.float32) * float(np.asarray(dw).reshape(()))
     shape = [1] * q.ndim
     for ax in axes:
         shape[ax] = q.shape[ax]
-    return q.astype(np.float32) / scale.reshape(shape).astype(np.float32)
+    return q.astype(np.float32) * dw.reshape(shape).astype(np.float32)
 
 
 def _to_dtype(arr: np.ndarray, dtype: str) -> np.ndarray:
@@ -136,10 +136,10 @@ def pack(
             axes = list(entry.get("axes", cfg["default_axes"]))
 
         if storage == "i8":
-            q, scale = quantize_symmetric(w, axes)
+            q, dw = quantize_symmetric(w, axes)
             wb = q.tobytes()
-            sb = np.asarray(scale, dtype=np.float32).tobytes()
-            recon = _dequant_i8(q, scale, axes)
+            sb = np.asarray(dw, dtype=np.float32).tobytes()
+            recon = _dequant_i8(q, dw, axes)
         else:
             wb, scale = quantize_mxfp(w, storage)
             sb = np.asarray(scale, dtype=np.uint8).tobytes()

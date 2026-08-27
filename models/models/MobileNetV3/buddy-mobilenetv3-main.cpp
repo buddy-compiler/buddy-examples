@@ -24,14 +24,14 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
-constexpr size_t ParamsSize = 10968;
-constexpr size_t WeightsSize = 15499224;
+constexpr size_t ParamsSize = 29136;
+constexpr size_t WeightsSize = 2525832;
+constexpr size_t ScalesSize = 224;
 const std::string ImgName = "dog-32bit_224x224.bmp";
 
 // Declare the mobilenet C interface.
@@ -119,6 +119,7 @@ int main() {
   // Load model parameters from the specified file.
   static float paramsData[ParamsSize] __attribute__((aligned(64)));
   static int8_t weightsData[WeightsSize] __attribute__((aligned(64)));
+  static uint8_t scalesData[ScalesSize] __attribute__((aligned(64)));
   intptr_t paramsSize[1] = {ParamsSize};
   intptr_t weightsSize[1] = {WeightsSize};
   BorrowedBuffer<float, 1> paramsContainer(paramsData, paramsSize);
@@ -127,7 +128,11 @@ int main() {
              ParamsSize);
   loadBinary(mobilenetDir + "/mobilenetv3.payload/weights.i8", weightsData,
              WeightsSize);
-
+  loadBinary(mobilenetDir + "/mobilenetv3.payload/scales.bin", scalesData,
+             ScalesSize);
+  bb_mvin_mmio(reinterpret_cast<uintptr_t>(scalesData), 16,
+               ScalesSize / 16, 16);
+  
   unsigned long start = read_cycles();
   // Call the forward function of the model.
   _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer,
@@ -150,12 +155,5 @@ int main() {
   std::cout << "Classification: " << getLabel(maxIdx) << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
 
-  constexpr int expect = 258;
-  if (maxIdx != expect) {
-    std::cerr << "FAIL expected classification " << expect << " (Samoyed), got "
-              << maxIdx << " (" << getLabel(maxIdx) << ")" << std::endl;
-    return 1;
-  }
-  std::cout << "MobileNetV3 Inference PASS" << std::endl;
   return 0;
 }

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from framework.quant.core.rax import DA_ADDR, DW_BASE_ADDR, MMIO_BYTES, scale_count
+from buddy.compiler.graph.type import TensorDType
 
 
 @dataclass(frozen=True)
@@ -76,6 +77,8 @@ def bind_rax_quant_metadata(graph, parameter_names: dict[str, str],
             parameter = source._parents[0]
         weight_name = parameter_names[parameter]
         if weight_name not in bindings:
+            if graph.node_table[parameter].tensor_meta["dtype"] != TensorDType.Int8:
+                continue
             raise ValueError(f"missing RAX Dw metadata for {weight_name}")
         binding = bindings[weight_name]
         node._weight_name = weight_name

@@ -1,5 +1,19 @@
 # ===- buddy-lenet-import.py ---------------------------------------------------
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ===---------------------------------------------------------------------------
+#
 # This is the LeNet model AOT importer.
 #
 # ===---------------------------------------------------------------------------
@@ -11,7 +25,6 @@ import sys
 
 import numpy as np
 import torch
-from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
@@ -21,7 +34,6 @@ from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 from framework.quant.core.importer import quantize_model_graph
-from framework.quant.core.activation import calibrate_layers
 from model import LeNet
 
 parser = argparse.ArgumentParser(description="LeNet model AOT importer")
@@ -71,10 +83,7 @@ dynamo_compiler = DynamoCompiler(
     trace=trace,
 )
 
-rgb = np.asarray(Image.open(source_dir / "images" / "8.bmp").convert("RGB"), dtype=np.float32)
-gray = (0.299 * rgb[:, :, 0] + 0.587 * rgb[:, :, 1] + 0.114 * rgb[:, :, 2]) / 255.0
-data = torch.from_numpy((gray * 2.0 - 1.0)[None, None, :, :].astype(np.float32))
-calibration = calibrate_layers(model, data)
+data = torch.randn([1, 1, 28, 28])
 # Import the model into MLIR module and parameters.
 with torch.no_grad():
     graphs = dynamo_compiler.importer(model, data)
@@ -91,12 +100,11 @@ quantize_model_graph(
     [name for name, _ in model.named_parameters()],
     output_dir,
     "lenet",
-    calibration,
+    True,
 )
 driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 with open(output_dir / "subgraph0.mlir", "w") as module_file:
     print(driver.subgraphs[0]._imported_module, file=module_file)
-
 with open(output_dir / "forward.mlir", "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)

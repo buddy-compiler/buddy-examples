@@ -71,8 +71,7 @@ void loadParameters(const std::string &paramFilePath,
   printLogLabel();
   std::cout << "Loading params..." << std::endl;
   printLogLabel();
-  std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
-            << std::endl;
+  std::cout << "Params file: " << paramFilePath << std::endl;
 
   paramFile.read(reinterpret_cast<char *>(params.getData()),
                  sizeof(float) * params.getSize());

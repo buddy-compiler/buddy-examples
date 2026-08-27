@@ -1,6 +1,7 @@
 set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
 
 set(MODEL_MOBILENETV3_DIR ${MODEL_DIR}/MobileNetV3)
+set(MODEL_MOBILENETV3_GENERATED_DIR ${MODEL_MOBILENETV3_DIR}/output)
 set(BUCKYBALL_MOBILENETV3_DIR ${BUCKYBALL_DIR}/MobileNetV3)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
@@ -8,7 +9,7 @@ set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 add_custom_command(
   OUTPUT  forward.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/forward.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/forward.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
             ${BUDDY_BINARY_DIR}/buddy-opt
             -buffer-deallocation-simplification
@@ -27,16 +28,16 @@ add_custom_command(
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
           ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o forward.o
-          DEPENDS ${MODEL_MOBILENETV3_DIR}/forward.mlir
+          DEPENDS ${MODEL_MOBILENETV3_GENERATED_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)
 
 add_custom_command(
   OUTPUT  subgraph0.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
             > subgraph0_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -47,7 +48,7 @@ add_custom_command(
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             -batchmatmul-optimize
             > subgraph0_loops.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -61,7 +62,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
             > subgraph0_buckyball.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -91,7 +92,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir
           > subgraph0.ll
-    COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
+    COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
           -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
         ${BUDDY_BINARY_DIR}/buddy-opt
           -eliminate-empty-tensors
@@ -121,7 +122,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
         ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
-        DEPENDS ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
+        DEPENDS ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
   COMMENT "Building subgraph0.o"
   VERBATIM)
 
@@ -149,7 +150,7 @@ add_custom_command(TARGET buddy-buckyball-mobilenetv3-run POST_BUILD
   VERBATIM
 )
 
-# Sync runtime deps (images/, arg0.data, Labels.txt) directly to OUTPUT directory
+# Sync the RAX package and images directly to the output directory.
 add_custom_target(sync-buckyball-mobilenetv3-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}/trace/cycle
@@ -157,13 +158,19 @@ add_custom_target(sync-buckyball-mobilenetv3-deps
           ${MODEL_MOBILENETV3_DIR}/images
           ${MOBILENETV3_OUTPUT_DIR}/images
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_MOBILENETV3_DIR}/arg0.data
-          ${MOBILENETV3_OUTPUT_DIR}/arg0.data
+          ${MODEL_MOBILENETV3_GENERATED_DIR}/mobilenetv3.rax
+          ${MOBILENETV3_OUTPUT_DIR}/mobilenetv3.rax
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${MODEL_MOBILENETV3_GENERATED_DIR}/mobilenetv3.payload
+          ${MOBILENETV3_OUTPUT_DIR}/mobilenetv3.payload
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_MOBILENETV3_DIR}/Labels.txt
           ${MOBILENETV3_OUTPUT_DIR}/Labels.txt
   DEPENDS
-          ${MODEL_MOBILENETV3_DIR}/arg0.data
+          ${MODEL_MOBILENETV3_GENERATED_DIR}/mobilenetv3.rax
+          ${MODEL_MOBILENETV3_GENERATED_DIR}/mobilenetv3.payload/params.f32
+          ${MODEL_MOBILENETV3_GENERATED_DIR}/mobilenetv3.payload/weights.i8
+          ${MODEL_MOBILENETV3_GENERATED_DIR}/mobilenetv3.payload/scales.bin
           ${MODEL_MOBILENETV3_DIR}/Labels.txt
   COMMENT "Syncing MobileNetV3 runtime deps to output directory"
   VERBATIM

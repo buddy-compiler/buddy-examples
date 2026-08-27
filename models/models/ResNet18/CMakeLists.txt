@@ -10,11 +10,10 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E env
           BUDDY_MLIR_BUILD_DIR=$ENV{BUDDY_MLIR_BUILD_DIR}
           PYTHONPATH=${BUDDY_BINARY_DIR}/../python_packages
-          LD_LIBRARY_PATH=${BUDDY_BINARY_DIR}/../python_packages/buddy_mlir/_mlir_libs:${BUDDY_BINARY_DIR}/../lib
           ${Python3_EXECUTABLE} ${MODEL_RESNET18_DIR}/buddy-resnet-import.py
           --output-dir ${MODEL_RESNET18_OUTPUT_DIR}
-          # --trace
-          # --trace-config ${RESNET18_TRACE_CONFIG}
+          --trace
+          --trace-config ${RESNET18_TRACE_CONFIG}
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )
 

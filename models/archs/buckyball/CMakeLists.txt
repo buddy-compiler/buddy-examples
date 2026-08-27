@@ -80,6 +80,9 @@ endif()
 # Common host-native lowering for Buckyball models. CPU forward functions stay
 # native x86; only Buckyball subgraphs are converted to the rushB C ABI.
 function(add_buckyball_rushb_targets model target_prefix source_dir)
+  if(NOT DEFINED BUCKYBALL_RUSHB_BEMU_MANIFEST OR NOT DEFINED BUCKYBALL_RUSHB_VERILATOR_LIBRARY)
+    return()
+  endif()
   # The Buddy external-dialect loader is process-safe only when lowering one
   # MLIR module at a time. Keep object compilation parallel, but serialize the
   # custom MLIR lowering commands even when the workload build uses ninja -j.

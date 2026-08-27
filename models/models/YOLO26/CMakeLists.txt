@@ -11,10 +11,10 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E env
           BUDDY_MLIR_BUILD_DIR=$ENV{BUDDY_MLIR_BUILD_DIR}
           PYTHONPATH=${BUDDY_BINARY_DIR}/../python_packages
-          LD_LIBRARY_PATH=${BUDDY_BINARY_DIR}/../python_packages/buddy_mlir/_mlir_libs:${BUDDY_BINARY_DIR}/../lib
           ${Python3_EXECUTABLE} ${MODEL_YOLO26_DIR}/import-yolo26n.py
           --output-dir ${MODEL_YOLO26_OUTPUT_DIR}
-          # --trace
+          --trace
+  WORKING_DIRECTORY ${MODEL_YOLO26_OUTPUT_DIR}
   COMMENT "Generating YOLO26 model files..."
 )
 

@@ -7,6 +7,8 @@ from pathlib import Path
 import struct
 import subprocess
 
+from framework.quant.core.bwq import BwqPackage, validate_bwq
+
 DA_ADDR = 0
 DW_BASE_ADDR = 16
 MMIO_BYTES = 5120
@@ -42,6 +44,32 @@ class RaxQuantPackage:
     params_f32: bytes
     scales_f32: bytes
     assets: dict[str, bytes]
+
+
+def rax_from_bwq(pkg: BwqPackage) -> RaxQuantPackage:
+    validate_bwq(pkg)
+    tensors: list[QuantTensor] = []
+    weights: list[bytes] = []
+    scales: list[bytes] = []
+    weight_off = scale_off = 0
+    for source in pkg.tensors:
+        if source.storage != "i8" or source.axes not in ([], [0]):
+            raise ValueError(f"RAX W8A8 requires i8 tensor/channel weight: {source.name}")
+        weight = pkg.weights[source.weight_off : source.weight_off + source.weight_len]
+        raw_scales = pkg.scales[source.scale_off : source.scale_off + source.scale_len]
+        raw_count = 1 if not source.axes else source.shape[0]
+        values = struct.unpack(f"<{raw_count}f", raw_scales)
+        padded_count = scale_count(source.shape, source.axes)
+        padded = values + (1.0,) * (padded_count - raw_count)
+        scale = struct.pack(f"<{padded_count}f", *padded)
+        tensors.append(QuantTensor(source.name, source.shape, source.shape,
+                                   source.storage, source.axes, weight_off,
+                                   len(weight), scale_off, len(scale)))
+        weights.append(weight)
+        scales.append(scale)
+        weight_off += len(weight)
+        scale_off += len(scale)
+    return RaxQuantPackage(tensors, b"".join(weights), b"", b"".join(scales), {})
 
 
 def _numel(shape: list[int], name: str) -> int:
