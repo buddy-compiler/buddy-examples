@@ -8,8 +8,13 @@ if(NOT DEFINED ENV{BUDDY_MLIR_BUILD_DIR})
     "BUDDY_MLIR_BUILD_DIR is not set. Enter the nix develop shell so "
     "sourceme.sh is loaded, then re-run cmake.")
 endif()
-set(BUDDY_MLIR_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/..)
-set(BUDDY_BINARY_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/bin)
+if(NOT DEFINED BUDDY_MLIR_DIR)
+  get_filename_component(BUDDY_MLIR_DIR
+    "$ENV{BUDDY_MLIR_BUILD_DIR}/../.." ABSOLUTE)
+endif()
+if(NOT DEFINED BUDDY_BINARY_DIR)
+  set(BUDDY_BINARY_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/bin)
+endif()
 set(RISCV_GNU_TOOLCHAIN $ENV{RISCV})
 
 option(BUCKYBALL_STABLE "Use stable LLVM Buckyball extensions" OFF)
