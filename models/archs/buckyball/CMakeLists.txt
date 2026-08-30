@@ -84,14 +84,14 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
     return()
   endif()
   if(NOT BUCKYBALL_RUSHB_TARGET_LINES)
-    message(FATAL_ERROR "Chip.pb has no RushB-capable accelerator")
+    message(FATAL_ERROR "Chip.pb has no RushB-capable Core")
   endif()
   list(GET BUCKYBALL_RUSHB_TARGET_LINES 0 _rushb_default_target)
   if(NOT _rushb_default_target MATCHES "^([0-9]+):(.+)$")
     message(FATAL_ERROR
       "invalid default Chip.pb RushB target entry: ${_rushb_default_target}")
   endif()
-  set(_rushb_default_accelerator "${CMAKE_MATCH_1}")
+  set(_rushb_default_core "${CMAKE_MATCH_1}")
   # The Buddy external-dialect loader is process-safe only when lowering one
   # MLIR module at a time. Keep object compilation parallel, but serialize the
   # custom MLIR lowering commands even when the workload build uses ninja -j.
@@ -116,7 +116,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
   set(mlir_snapshot_dir ${CMAKE_CURRENT_BINARY_DIR}/rushB/mlir/${target_prefix})
   # A subgraph names its compiler profile (`subgraph0_prefill.mlir`). Resolve
   # that profile to one RushB endpoint from the Chip.pb-derived mapping.
-  function(_buckyball_rushb_target source out_accelerator_var out_target_var)
+  function(_buckyball_rushb_target source out_core_var out_target_var)
     get_filename_component(_name ${source} NAME_WE)
     list(LENGTH BUCKYBALL_TARGETS _target_count)
     if(_target_count EQUAL 1)
@@ -140,13 +140,13 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       if(NOT _rushb_target_field_count EQUAL 2)
         message(FATAL_ERROR "invalid Chip.pb RushB target entry: ${_rushb_target}")
       endif()
-      list(GET _rushb_target_fields 0 _accelerator_id)
+      list(GET _rushb_target_fields 0 _core_id)
       list(GET _rushb_target_fields 1 _rushb_target_name)
-      if(NOT _accelerator_id MATCHES "^[0-9]+$" OR _rushb_target_name STREQUAL "")
+      if(NOT _core_id MATCHES "^[0-9]+$" OR _rushb_target_name STREQUAL "")
         message(FATAL_ERROR "invalid Chip.pb RushB target entry: ${_rushb_target}")
       endif()
       if("${_rushb_target_name}" STREQUAL "${_target}")
-        list(APPEND _ids "${_accelerator_id}")
+        list(APPEND _ids "${_core_id}")
       endif()
     endforeach()
     list(LENGTH _ids _count)
@@ -159,10 +159,10 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       set(_next 0)
     endif()
     math(EXPR _slot "${_next} % ${_count}")
-    list(GET _ids ${_slot} _accelerator_id)
+    list(GET _ids ${_slot} _core_id)
     math(EXPR _next "${_next} + 1")
     set_property(GLOBAL PROPERTY BUCKYBALL_RUSHB_NEXT_${_target} ${_next})
-    set(${out_accelerator_var} ${_accelerator_id} PARENT_SCOPE)
+    set(${out_core_var} ${_core_id} PARENT_SCOPE)
     set(${out_target_var} ${_target} PARENT_SCOPE)
   endfunction()
   set(_rushb_host_options "-eliminate-empty-tensors;-empty-tensor-to-alloc-tensor;-convert-elementwise-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-expand-strided-metadata;-convert-linalg-to-loops;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-vector-to-scf;-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-llvm;-convert-index-to-llvm;-llvm-request-c-wrappers;-convert-arith-to-llvm;-convert-math-to-llvm;-convert-math-to-libm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
@@ -175,7 +175,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
     endif()
     get_filename_component(name ${mlir} NAME_WE)
     # Host forward functions never execute on a Buckyball Core.
-    set(rushb_accelerator_id -1)
+    set(rushb_core_id -1)
     set(snapshot ${mlir_snapshot_dir}/${name}.mlir)
     set(object ${CMAKE_CURRENT_BINARY_DIR}/${target_prefix}-${name}-rushb.o)
     add_custom_command(
@@ -203,9 +203,9 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
     get_filename_component(name ${mlir} NAME_WE)
     # Bind each compiler-generated subgraph to its RushB endpoint. This belongs in
     # the accelerator loop: the preceding forward-function loop may be empty.
-    _buckyball_rushb_target(${source} rushb_accelerator_id rushb_target)
-    set(_rushb_accel_options "--target=${rushb_target};-extend-trace-to-linalg;-eliminate-empty-tensors;-convert-elementwise-to-linalg;-convert-tensor-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-convert-linalg-to-tile;-convert-tile-to-buckyball;-extend-trace-to-buckyball;-lower-buckyball-to-bank-ssa;-assign-physical-banks;-llvm-request-c-wrappers;${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS};-convert-trace-to-llvm='cycle-trace';-expand-strided-metadata;-convert-linalg-to-loops;${BUCKYBALL_LOWER_BUCKYBALL_RUSHB};-lower-buckyball-intrinsics-to-rushb=core_id=${rushb_accelerator_id};-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-scf;-convert-vector-to-llvm;-convert-index-to-llvm;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-math-to-llvm;-convert-math-to-libm;-convert-arith-to-llvm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
-    string(REPLACE ";" " " _rushb_accel_options "${_rushb_accel_options}")
+    _buckyball_rushb_target(${source} rushb_core_id rushb_target)
+    set(_rushb_core_options "--target=${rushb_target};-extend-trace-to-linalg;-eliminate-empty-tensors;-convert-elementwise-to-linalg;-convert-tensor-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-convert-linalg-to-tile;-convert-tile-to-buckyball;-extend-trace-to-buckyball;-lower-buckyball-to-bank-ssa;-assign-physical-banks;-llvm-request-c-wrappers;${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS};-convert-trace-to-llvm='cycle-trace';-expand-strided-metadata;-convert-linalg-to-loops;${BUCKYBALL_LOWER_BUCKYBALL_RUSHB};-lower-buckyball-intrinsics-to-rushb=core_id=${rushb_core_id};-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-scf;-convert-vector-to-llvm;-convert-index-to-llvm;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-math-to-llvm;-convert-math-to-libm;-convert-arith-to-llvm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
+    string(REPLACE ";" " " _rushb_core_options "${_rushb_core_options}")
     set(snapshot ${mlir_snapshot_dir}/${name}.mlir)
     set(object ${CMAKE_CURRENT_BINARY_DIR}/${target_prefix}-${name}-rushb.o)
     add_custom_command(
@@ -213,13 +213,13 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       COMMAND ${CMAKE_COMMAND} -E make_directory ${mlir_snapshot_dir}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${source} ${snapshot}
       COMMAND ${CMAKE_COMMAND} -E rm -f ${object} ${object}.tmp
-      COMMAND bash -o pipefail -c "${BUDDY_BINARY_DIR}/buddy-opt ${snapshot} -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))' | ${BUDDY_BINARY_DIR}/buddy-opt ${_rushb_accel_options} | ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir | ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}.tmp && mv ${object}.tmp ${object}"
+      COMMAND bash -o pipefail -c "${BUDDY_BINARY_DIR}/buddy-opt ${snapshot} -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))' | ${BUDDY_BINARY_DIR}/buddy-opt ${_rushb_core_options} | ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir | ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=x86_64 -O2 -o ${object}.tmp && mv ${object}.tmp ${object}"
       DEPENDS ${source}
               ${BUDDY_BINARY_DIR}/buddy-opt
               ${BUDDY_BINARY_DIR}/buddy-translate
               ${BUDDY_BINARY_DIR}/buddy-llc
       JOB_POOL buckyball_rushb_lowering
-      COMMENT "Lowering rushB accelerator function ${model}/${mlir}"
+      COMMENT "Lowering rushB Core function ${model}/${mlir}"
       VERBATIM)
     list(APPEND objects ${object})
   endforeach()
@@ -387,8 +387,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${runtime_library} ${local_library}
         COMMAND c++ -no-pie -std=c++17 -O2
                 -DBUCKYBALL_RUSHB
-                -DBUCKYBALL_RUSHB_ACCELERATOR_ID=${_rushb_default_accelerator}
-                -DBUCKYBALL_RUSHB_CHIP_ID=0
+                -DBUCKYBALL_RUSHB_CORE_ID=${_rushb_default_core}
                 -I${interface_dir}
                 -I${MODELTEST_LIB_DIR}
                 -I${WORKLOAD_LIB_DIR}
