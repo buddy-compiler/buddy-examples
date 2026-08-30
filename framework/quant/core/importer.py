@@ -22,7 +22,15 @@ def _rax_pack() -> Path:
     if root is None:
         raise RuntimeError("BUDDY_MLIR_BUILD_DIR is required")
     build = Path(root)
-    return build.parent / "cores" / build.name / "bin" / "rax-pack"
+    candidates = (
+        build / "bin" / "rax-pack",
+        build.parent / "bin" / "rax-pack",
+        build.parent / "cores" / build.name / "bin" / "rax-pack",
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return candidates[0]
 
 
 def _replace_linears(graph) -> None:
