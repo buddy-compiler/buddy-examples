@@ -1,11 +1,13 @@
 set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
 
 set(MODEL_YOLO26_DIR ${MODEL_DIR}/YOLO26)
+set(MODEL_YOLO26_GENERATED_DIR ${MODEL_YOLO26_DIR}/output)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
+set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 add_custom_command(
   OUTPUT forward.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_YOLO26_DIR}/forward.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_YOLO26_GENERATED_DIR}/forward.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -28,13 +30,27 @@ add_custom_command(
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
           ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o forward.o
-  DEPENDS ${MODEL_YOLO26_DIR}/forward.mlir
+  DEPENDS ${MODEL_YOLO26_GENERATED_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)
 
 add_custom_command(
   OUTPUT subgraph0.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_YOLO26_DIR}/subgraph0.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_YOLO26_GENERATED_DIR}/subgraph0.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
+            > subgraph0_linalg.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_YOLO26_GENERATED_DIR}/subgraph0.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${BUDDY_BINARY_DIR}/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-tile
+${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
+            -batchmatmul-optimize
+            > subgraph0_loops.mlir
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_YOLO26_GENERATED_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${BUDDY_BINARY_DIR}/buddy-opt
             -eliminate-empty-tensors
@@ -45,14 +61,19 @@ add_custom_command(
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             -lower-buckyball-to-bank-ssa
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
-            -llvm-request-c-wrappers
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            -convert-trace-to-llvm="cycle-trace"
+            ${BUCKYBALL_LOWER_BUCKYBALL}
+            > subgraph0_buckyball.mlir
+  # Full single-process pipeline crashes on YOLO (MLIR IRRewrite
+  # SmallVector assert). Continue from the buckyball dump instead.
+  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt subgraph0_buckyball.mlir
+            --mlir-disable-threading
+            -llvm-request-c-wrappers
+            # -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
-            ${BUCKYBALL_LOWER_BUCKYBALL}
             -lower-affine
-            -convert-scf-to-cf
+            -convert-scf-to-cf=allow-pattern-rollback=false
             -convert-cf-to-llvm
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
@@ -64,7 +85,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
           ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
-  DEPENDS ${MODEL_YOLO26_DIR}/subgraph0.mlir
+  DEPENDS ${MODEL_YOLO26_GENERATED_DIR}/subgraph0.mlir
   COMMENT "Building subgraph0.o"
   VERBATIM)
 
@@ -79,11 +100,13 @@ target_compile_definitions(buddy-buckyball-yolo26-run PRIVATE
   YOLO26_EXAMPLE_PATH="${MODEL_YOLO26_DIR}/"
   YOLO26_EXAMPLE_BUILD_PATH="${CMAKE_CURRENT_BINARY_DIR}/"
 )
-target_include_directories(buddy-buckyball-yolo26-run PRIVATE ${INTERFACE_DIR})
+target_include_directories(buddy-buckyball-yolo26-run PRIVATE
+  ${INTERFACE_DIR}
+  ${INCLUDE_DIR}
+)
 set(BUDDY_YOLO26_LIBS BuckyballYOLO26 ModelTestCRunnerUtils ModelTestDIP_riscv)
 target_link_libraries(buddy-buckyball-yolo26-run -static ${BUDDY_YOLO26_LIBS})
 
-# Define output directory path (mirrors the build directory structure)
 set(YOLO26_OUTPUT_DIR ${BUCKYBALL_OUTPUT_DIR}/YOLO26)
 
 add_custom_command(TARGET buddy-buckyball-yolo26-run POST_BUILD
@@ -95,7 +118,6 @@ add_custom_command(TARGET buddy-buckyball-yolo26-run POST_BUILD
   VERBATIM
 )
 
-# Sync runtime deps (images/, arg0.data, labels.txt) directly to OUTPUT directory
 add_custom_target(sync-buckyball-yolo26-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${YOLO26_OUTPUT_DIR}/trace/cycle
@@ -103,13 +125,19 @@ add_custom_target(sync-buckyball-yolo26-deps
           ${MODEL_YOLO26_DIR}/images
           ${YOLO26_OUTPUT_DIR}/images
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_YOLO26_DIR}/arg0.data
-          ${YOLO26_OUTPUT_DIR}/arg0.data
+          ${MODEL_YOLO26_GENERATED_DIR}/yolo26.rax
+          ${YOLO26_OUTPUT_DIR}/yolo26.rax
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          ${MODEL_YOLO26_GENERATED_DIR}/yolo26.payload
+          ${YOLO26_OUTPUT_DIR}/yolo26.payload
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_YOLO26_DIR}/labels.txt
           ${YOLO26_OUTPUT_DIR}/labels.txt
   DEPENDS
-          ${MODEL_YOLO26_DIR}/arg0.data
+          ${MODEL_YOLO26_GENERATED_DIR}/yolo26.rax
+          ${MODEL_YOLO26_GENERATED_DIR}/yolo26.payload/params.f32
+          ${MODEL_YOLO26_GENERATED_DIR}/yolo26.payload/weights.i8
+          ${MODEL_YOLO26_GENERATED_DIR}/yolo26.payload/scales.bin
           ${MODEL_YOLO26_DIR}/labels.txt
   COMMENT "Syncing YOLO26 runtime deps to output directory"
   VERBATIM

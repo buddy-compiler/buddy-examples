@@ -26,7 +26,8 @@ if(BUCKYBALL_ARCH STREQUAL "goban" OR BUCKYBALL_ARCH STREQUAL "pebble")
   set(BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL
     --target=${BUCKYBALL_MODEL_TARGET}
     -convert-tile-to-buckyball)
-  set(BUCKYBALL_ASSIGN_PHYSICAL_BANKS -assign-physical-banks)
+  buckyball_assign_physical_banks(${BUCKYBALL_MODEL_TARGET}
+    BUCKYBALL_ASSIGN_PHYSICAL_BANKS)
 endif()
 
 set(BUCKYBALL_OUTPUT_DIR
@@ -53,8 +54,7 @@ foreach(entry IN LISTS BUCKYBALL_LAYOUT_ENTRIES)
   endif()
 endforeach()
 
-# Explicit -DMODEL= must match a layout on this chip. Default-all MODEL_*
-# without -DMODEL= only builds layouts that exist (many-to-many; no 1:1 gate).
+# -DMODEL= must match a layout on this chip.
 if(DEFINED MODEL)
   set(BUCKYBALL_ALL_MODELS
       LENET RESNET18 MOBILENETV3 YOLO26 BUDDYNEXT DEEPSEEKR1 STABLEDIFFUSION
@@ -82,6 +82,10 @@ endif()
 function(add_buckyball_rushb_targets model target_prefix source_dir)
   if(NOT DEFINED BUCKYBALL_RUSHB_BEMU_MANIFEST OR NOT DEFINED BUCKYBALL_RUSHB_VERILATOR_LIBRARY)
     return()
+  endif()
+  list(GET BUCKYBALL_TARGETS 0 _rushb_params_target)
+  if(DEFINED BUCKYBALL_MODEL_TARGET)
+    set(_rushb_params_target ${BUCKYBALL_MODEL_TARGET})
   endif()
   # The Buddy external-dialect loader is process-safe only when lowering one
   # MLIR module at a time. Keep object compilation parallel, but serialize the
@@ -194,7 +198,8 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
     # Bind each compiler-generated subgraph to its tile Core. This belongs in
     # the accelerator loop: the preceding forward-function loop may be empty.
     _buckyball_rushb_target(${source} rushb_core_id rushb_target)
-    set(_rushb_accel_options "--target=${rushb_target};-extend-trace-to-linalg;-eliminate-empty-tensors;-convert-elementwise-to-linalg;-convert-tensor-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-convert-linalg-to-tile;-convert-tile-to-buckyball;-extend-trace-to-buckyball;-lower-buckyball-to-bank-ssa;-assign-physical-banks;-llvm-request-c-wrappers;${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS};-lower-buckyball-intrinsics-to-rushb=core_id=${rushb_core_id};-convert-trace-to-llvm='cycle-trace';-expand-strided-metadata;-convert-linalg-to-loops;${BUCKYBALL_LOWER_BUCKYBALL_RUSHB};-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-scf;-convert-vector-to-llvm;-convert-index-to-llvm;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-math-to-llvm;-convert-math-to-libm;-convert-arith-to-llvm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
+    buckyball_assign_physical_banks(${rushb_target} _rushb_assign_physical_banks)
+    set(_rushb_accel_options "--target=${rushb_target};-extend-trace-to-linalg;-eliminate-empty-tensors;-convert-elementwise-to-linalg;-convert-tensor-to-linalg;-one-shot-bufferize='bufferize-function-boundaries';-convert-linalg-to-tile;-convert-tile-to-buckyball;-extend-trace-to-buckyball;-lower-buckyball-to-bank-ssa;${_rushb_assign_physical_banks};-llvm-request-c-wrappers;${BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS};-lower-buckyball-intrinsics-to-rushb=core_id=${rushb_core_id};-convert-trace-to-llvm='cycle-trace';-expand-strided-metadata;-convert-linalg-to-loops;${BUCKYBALL_LOWER_BUCKYBALL_RUSHB};-lower-affine;-convert-scf-to-cf;-convert-cf-to-llvm;-convert-vector-to-scf;-convert-vector-to-llvm;-convert-index-to-llvm;-buffer-deallocation-simplification;-bufferization-lower-deallocations;-convert-math-to-llvm;-convert-math-to-libm;-convert-arith-to-llvm;-convert-func-to-llvm;-finalize-memref-to-llvm;-reconcile-unrealized-casts")
     string(REPLACE ";" " " _rushb_accel_options "${_rushb_accel_options}")
     set(snapshot ${mlir_snapshot_dir}/${name}.mlir)
     set(object ${CMAKE_CURRENT_BINARY_DIR}/${target_prefix}-${name}-rushb.o)
@@ -366,6 +371,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
                 -I${interface_dir}
                 -I${MODELTEST_LIB_DIR}
                 -I${WORKLOAD_LIB_DIR}
+                -I${BUCKYBALL_ISA_DIR}/${_rushb_params_target}
                 -I${BUCKYBALL_REPO_ROOT}/compiler/include
                 ${runner_definitions}
                 ${runner_source} ${runtime_source} ${objects} ${runtime_objects}

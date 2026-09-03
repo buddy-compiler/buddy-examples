@@ -75,7 +75,7 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -llvm-request-c-wrappers
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            -convert-trace-to-llvm="cycle-trace"
+            # -convert-trace-to-llvm="cycle-trace"
             -expand-strided-metadata
             -convert-linalg-to-loops
             ${BUCKYBALL_LOWER_BUCKYBALL}
@@ -105,7 +105,7 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -llvm-request-c-wrappers
           ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-          -convert-trace-to-llvm="cycle-trace"
+          # -convert-trace-to-llvm="cycle-trace"
           -expand-strided-metadata
           -convert-linalg-to-loops
           ${BUCKYBALL_LOWER_BUCKYBALL}
