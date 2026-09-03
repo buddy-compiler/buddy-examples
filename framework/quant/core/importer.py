@@ -16,6 +16,7 @@ from buddy.compiler.graph.operation import (
     ClampMinOp,
     Conv2dOp,
     DivOp,
+    ExpOp,
     MatmulOp,
     MaxPool2dOp,
     MeanOp,
@@ -29,6 +30,7 @@ from buddy.compiler.graph.operation import (
     MegaMaxPool2dOp,
     HardswishOp,
     MulOp,
+    NegOp,
     OutputOp,
     PermuteOp,
     ReluOp,
@@ -68,6 +70,16 @@ def _rax_pack() -> Path:
 
 
 def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibration):
+    def uses(node, name):
+        pending = list(node.args)
+        while pending:
+            argument = pending.pop()
+            if isinstance(argument, (list, tuple)):
+                pending.extend(argument)
+            elif str(argument) == name:
+                return True
+        return False
+
     param_nodes = list(graph.params)
     input_node_list = list(graph.inputs)
     original_body = list(graph._body)
@@ -95,7 +107,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             weight_node = graph.node_table[str(weight_arg)]
             weight_name = parameter_names.get(weight_node.name)
             if weight_name is None:
-                raise ValueError(f"Mega Conv2D weight is not a parameter for {node.name}")
+                raise ValueError(
+                    f"Mega Conv2D weight is not a parameter for {node.name}"
+                )
             weight_shape = list(arrays[weight_name].shape)
             input_channels = int(
                 graph.node_table[str(activation_name)].tensor_meta["shape"][1]
@@ -142,7 +156,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             replacement = MegaMatmulOp()
             weight_name = parameter_names.get(weight_node.name)
             if weight_name is None:
-                raise ValueError(f"Mega MatMul weight is not a parameter for {node.name}")
+                raise ValueError(
+                    f"Mega MatMul weight is not a parameter for {node.name}"
+                )
             weight_shape = list(arrays[weight_name].shape)
             if len(weight_shape) != 2:
                 raise ValueError(f"Mega MatMul weight must be rank 2 for {node.name}")
@@ -179,7 +195,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             bias_node = graph.node_table[str(bias_arg)]
             bias_name = parameter_names.get(bias_node.name)
             if bias_name is None:
-                raise ValueError(f"Mega bias is not an offline parameter for {node.name}")
+                raise ValueError(
+                    f"Mega bias is not an offline parameter for {node.name}"
+                )
             bias = np.asarray(arrays[bias_name], dtype=np.float32).reshape(-1)
         if bias.size != output_channels:
             raise ValueError(f"bias channel count mismatch for {node.name}")
@@ -200,8 +218,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         direct_users = [
             candidate
             for candidate in graph._body
-            if candidate is not node
-            and any(str(arg) == node.name for arg in candidate.args)
+            if candidate is not node and uses(candidate, node.name)
         ]
         relus = [
             candidate
@@ -215,17 +232,54 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         activation = relus[0] if relus else None
         activation_nodes = [activation] if activation is not None else []
         activation_kind = (
-            2 if isinstance(activation, (HardswishOp, SiluOp))
-            else 1 if isinstance(activation, ReluOp)
-            else 0
+            2
+            if isinstance(activation, (HardswishOp, SiluOp))
+            else 1 if isinstance(activation, ReluOp) else 0
         )
         lut_kind = (
             "silu"
             if isinstance(activation, SiluOp)
-            else "hardswish"
-            if isinstance(activation, HardswishOp)
-            else None
+            else "hardswish" if isinstance(activation, HardswishOp) else None
         )
+
+        silu_negs = [
+            candidate for candidate in direct_users if isinstance(candidate, NegOp)
+        ]
+        if silu_negs:
+            if activation is not None or len(silu_negs) != 1:
+                raise ValueError(f"ambiguous decomposed SiLU after {node.name}")
+            neg = silu_negs[0]
+            neg_users = [
+                candidate for candidate in original_body if uses(candidate, neg.name)
+            ]
+            if len(neg_users) != 1 or not isinstance(neg_users[0], ExpOp):
+                raise ValueError(f"malformed decomposed SiLU exp after {node.name}")
+            exp = neg_users[0]
+            exp_users = [
+                candidate for candidate in original_body if uses(candidate, exp.name)
+            ]
+            if (
+                len(exp_users) != 1
+                or not isinstance(exp_users[0], AddOp)
+                or list(exp_users[0].args) != [exp.name, 1]
+            ):
+                raise ValueError(f"malformed decomposed SiLU add after {node.name}")
+            add = exp_users[0]
+            add_users = [
+                candidate for candidate in original_body if uses(candidate, add.name)
+            ]
+            if (
+                len(add_users) != 1
+                or not isinstance(add_users[0], DivOp)
+                or list(add_users[0].args) != [node.name, add.name]
+                or set(candidate.name for candidate in direct_users)
+                != {neg.name, add_users[0].name}
+            ):
+                raise ValueError(f"malformed decomposed SiLU div after {node.name}")
+            activation = add_users[0]
+            activation_nodes = [neg, exp, add, activation]
+            activation_kind = 2
+            lut_kind = "silu"
 
         hard_swish_adds = [
             candidate
@@ -240,19 +294,19 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 raise ValueError(f"ambiguous HardSwish after {node.name}")
             add = hard_swish_adds[0]
             add_users = [
-                candidate
-                for candidate in graph._body
-                if any(str(arg) == add.name for arg in candidate.args)
+                candidate for candidate in graph._body if uses(candidate, add.name)
             ]
             if len(add_users) != 1 or not isinstance(add_users[0], ClampMinOp):
                 raise ValueError(f"malformed HardSwish clamp-min after {node.name}")
             clamp_min = add_users[0]
             if list(clamp_min.args) != [add.name, 0]:
-                raise ValueError(f"malformed HardSwish clamp-min args after {node.name}")
+                raise ValueError(
+                    f"malformed HardSwish clamp-min args after {node.name}"
+                )
             clamp_min_users = [
                 candidate
                 for candidate in graph._body
-                if any(str(arg) == clamp_min.name for arg in candidate.args)
+                if uses(candidate, clamp_min.name)
             ]
             if len(clamp_min_users) != 1 or not isinstance(
                 clamp_min_users[0], ClampMaxOp
@@ -260,11 +314,13 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 raise ValueError(f"malformed HardSwish clamp-max after {node.name}")
             clamp_max = clamp_min_users[0]
             if list(clamp_max.args) != [clamp_min.name, 6]:
-                raise ValueError(f"malformed HardSwish clamp-max args after {node.name}")
+                raise ValueError(
+                    f"malformed HardSwish clamp-max args after {node.name}"
+                )
             clamp_max_users = [
                 candidate
                 for candidate in graph._body
-                if any(str(arg) == clamp_max.name for arg in candidate.args)
+                if uses(candidate, clamp_max.name)
             ]
             if len(clamp_max_users) != 1:
                 raise ValueError(f"ambiguous hard activation after {node.name}")
@@ -273,7 +329,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 if list(after_clamp.args) != [clamp_max.name, 6]:
                     raise ValueError(f"malformed hard-sigmoid after {node.name}")
                 if set(candidate.name for candidate in direct_users) != {add.name}:
-                    raise ValueError(f"hard-sigmoid input has extra users after {node.name}")
+                    raise ValueError(
+                        f"hard-sigmoid input has extra users after {node.name}"
+                    )
                 activation = after_clamp
                 activation_nodes = [add, clamp_min, clamp_max, after_clamp]
                 activation_kind = 2
@@ -281,19 +339,26 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             elif isinstance(after_clamp, MulOp):
                 mul = after_clamp
                 if list(map(str, mul.args)) != [node.name, clamp_max.name]:
-                    raise ValueError(f"malformed HardSwish multiply args after {node.name}")
-                if set(candidate.name for candidate in direct_users) != {add.name, mul.name}:
-                    raise ValueError(f"HardSwish input has extra users after {node.name}")
+                    raise ValueError(
+                        f"malformed HardSwish multiply args after {node.name}"
+                    )
+                if set(candidate.name for candidate in direct_users) != {
+                    add.name,
+                    mul.name,
+                }:
+                    raise ValueError(
+                        f"HardSwish input has extra users after {node.name}"
+                    )
                 mul_users = [
-                    candidate
-                    for candidate in graph._body
-                    if any(str(arg) == mul.name for arg in candidate.args)
+                    candidate for candidate in graph._body if uses(candidate, mul.name)
                 ]
                 if len(mul_users) != 1 or not isinstance(mul_users[0], DivOp):
                     raise ValueError(f"malformed HardSwish divide after {node.name}")
                 div = mul_users[0]
                 if list(div.args) != [mul.name, 6]:
-                    raise ValueError(f"malformed HardSwish divide args after {node.name}")
+                    raise ValueError(
+                        f"malformed HardSwish divide args after {node.name}"
+                    )
                 activation = div
                 activation_nodes = [add, clamp_min, clamp_max, mul, div]
                 activation_kind = 2
@@ -307,7 +372,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             for candidate in graph._body
             if candidate is not activation
             and candidate is not node
-            and any(str(arg) == result_name for arg in candidate.args)
+            and uses(candidate, result_name)
         ]
         plans[node.name] = {
             "index": index,
@@ -346,6 +411,8 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
     for node in original_body:
         if node.name in removed:
             continue
+        activation = None
+        result_name = node.name
         if isinstance(node, MaxPool2dOp):
             if (
                 len(node.args) not in (3, 4)
@@ -359,7 +426,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             if len(padding) == 1:
                 padding = [padding[0], padding[0]]
             if len(padding) != 2 or padding[0] != padding[1]:
-                raise ValueError(f"asymmetric MegaKernel MaxPool2D padding for {node.name}")
+                raise ValueError(
+                    f"asymmetric MegaKernel MaxPool2D padding for {node.name}"
+                )
             replacement = MegaMaxPool2dOp()
         elif isinstance(node, MeanOp):
             if (
@@ -369,8 +438,10 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             ):
                 continue
             replacement = MegaGlobalAvgPoolOp()
-        elif isinstance(node, MulOp) and len(node.args) == 2 and all(
-            isinstance(arg, str) for arg in node.args
+        elif (
+            isinstance(node, MulOp)
+            and len(node.args) == 2
+            and all(isinstance(arg, str) for arg in node.args)
         ):
             if any(
                 renamed.get(str(arg), str(arg)) not in quantized_values
@@ -378,8 +449,10 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             ):
                 continue
             replacement = MegaInt8MulOp()
-        elif isinstance(node, AddOp) and len(node.args) == 2 and all(
-            isinstance(arg, str) for arg in node.args
+        elif (
+            isinstance(node, AddOp)
+            and len(node.args) == 2
+            and all(isinstance(arg, str) for arg in node.args)
         ):
             if any(
                 renamed.get(str(arg), str(arg)) not in quantized_values
@@ -389,8 +462,45 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             replacement = MegaInt8AddOp()
         else:
             continue
-        special[node.name] = {"node": node, "replacement": replacement}
+        if isinstance(replacement, (MegaInt8AddOp, MegaInt8MulOp)):
+            users = [
+                candidate for candidate in original_body if uses(candidate, node.name)
+            ]
+            if not any(
+                isinstance(
+                    candidate,
+                    (
+                        ReluOp,
+                        Conv2dOp,
+                        AddMMOp,
+                        MatmulOp,
+                        MeanOp,
+                        MaxPool2dOp,
+                        AddOp,
+                        MulOp,
+                    ),
+                )
+                for candidate in users
+            ):
+                continue
+            relus = [candidate for candidate in users if isinstance(candidate, ReluOp)]
+            if relus:
+                if len(users) != 1 or len(relus) != 1:
+                    raise ValueError(
+                        f"Mega INT8 elementwise ReLU must be its only user: {node.name}"
+                    )
+                activation = relus[0]
+                result_name = activation.name
+                renamed[result_name] = node.name
+                removed.add(result_name)
+        special[node.name] = {
+            "node": node,
+            "replacement": replacement,
+            "activation": activation,
+            "result_name": result_name,
+        }
         quantized_values.add(node.name)
+        quantized_values.add(result_name)
 
     for plan in plans.values():
         consumers = [
@@ -404,38 +514,50 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             else plan["calibrated_output_scale"]
         )
 
-    for item in special.values():
+    for item in reversed(list(special.values())):
         node = item["node"]
         consumers = [
             candidate
             for candidate in plans.values()
-            if candidate["activation_name"] == node.name
+            if renamed.get(candidate["activation_name"], candidate["activation_name"])
+            == node.name
+        ]
+        downstream_scales = [
+            candidate["output_scale"]
+            for candidate in special.values()
+            if "output_scale" in candidate
+            and any(
+                uses(candidate["node"], source)
+                for source in (node.name, item["result_name"])
+            )
         ]
         if not consumers and isinstance(node, (MeanOp, MaxPool2dOp)):
             users = [
-                candidate
-                for candidate in original_body
-                if any(str(arg) == node.name for arg in candidate.args)
+                candidate for candidate in original_body if uses(candidate, node.name)
             ]
             if len(users) != 1 or not isinstance(users[0], (ViewOp, ReshapeOp)):
                 raise ValueError(f"MegaKernel mean has no unique consumer: {node.name}")
             consumers = [
                 candidate
                 for candidate in plans.values()
-                if candidate["activation_name"] == users[0].name
+                if renamed.get(
+                    candidate["activation_name"], candidate["activation_name"]
+                )
+                == users[0].name
             ]
-        if not consumers:
+        if not consumers and not downstream_scales:
             users = [
                 candidate.name
                 for candidate in original_body
-                if any(str(arg) == node.name for arg in candidate.args)
+                if uses(candidate, node.name)
             ]
             raise ValueError(
                 f"MegaKernel stage has no compute consumer: {node.name}, "
                 f"args={node.args}, users={users}"
             )
         item["output_scale"] = max(
-            consumer["required_input_scale"] for consumer in consumers
+            [consumer["required_input_scale"] for consumer in consumers]
+            + downstream_scales
         )
 
     for plan in plans.values():
@@ -457,6 +579,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         value_scale[plan["result_name"]] = plan["output_scale"]
     for name, item in special.items():
         value_scale[name] = item["output_scale"]
+        value_scale[item["result_name"]] = item["output_scale"]
 
     for plan in plans.values():
         activation_name = renamed.get(plan["activation_name"], plan["activation_name"])
@@ -483,14 +606,18 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         replacement._name = node.name
         replacement._arguments = [activation_name, plan["weight_arg"]]
         replacement._parents = list(replacement._arguments)
-        replacement._children = [renamed.get(user.name, user.name) for user in plan["users"]]
+        replacement._children = [
+            renamed.get(user.name, user.name) for user in plan["users"]
+        ]
         replacement._tensor_meta = node._tensor_meta.copy()
         direct_compute_consumers = [
             candidate
             for candidate in plans.values()
             if candidate["activation_name"] == plan["result_name"]
         ]
-        replacement._final_output = not isinstance(node, Conv2dOp) and not direct_compute_consumers
+        replacement._final_output = (
+            not isinstance(node, Conv2dOp) and not direct_compute_consumers
+        )
         replacement._tensor_meta["dtype"] = (
             TensorDType.Float32 if replacement._final_output else TensorDType.Int8
         )
@@ -498,13 +625,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         replacement._output_scale = plan["output_scale"]
         replacement._bias_i32 = bias_i64.astype(np.int32).tolist()
         replacement._requant_scale = (
-            np.float32(input_scale)
-            * plan["dw"]
-            / np.float32(plan["output_scale"])
+            np.float32(input_scale) * plan["dw"] / np.float32(plan["output_scale"])
         ).tolist()
-        replacement._dequant_scale = (
-            np.float32(input_scale) * plan["dw"]
-        ).tolist()
+        replacement._dequant_scale = (np.float32(input_scale) * plan["dw"]).tolist()
         replacement._activation = plan["activation_kind"]
         if replacement._activation == 2:
             raw = np.arange(256, dtype=np.int16)
@@ -515,17 +638,24 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             elif plan["lut_kind"] == "hardsigmoid":
                 y = np.clip(x + np.float32(3.0), 0.0, 6.0) / np.float32(6.0)
             elif plan["lut_kind"] == "silu":
-                y = x / (np.float32(1.0) + np.exp(-x))
+                y = x / (
+                    np.float32(1.0)
+                    + np.exp(-np.clip(x, np.float32(-80.0), np.float32(80.0)))
+                )
             else:
                 raise ValueError(f"missing LUT function for {node.name}")
-            replacement._lut_i8 = np.clip(
-                np.rint(y / np.float32(plan["output_scale"])), -128, 127
-            ).astype(np.int8).tolist()
+            replacement._lut_i8 = (
+                np.clip(np.rint(y / np.float32(plan["output_scale"])), -128, 127)
+                .astype(np.int8)
+                .tolist()
+            )
         else:
             replacement._lut_i8 = [0]
         replacement.trace_meta = node.trace_meta
         if isinstance(replacement, (MegaConv2dOp, MegaConv2dDepthwiseOp)):
-            replacement._input_shape = list(plan["activation_node"].tensor_meta["shape"])
+            replacement._input_shape = list(
+                plan["activation_node"].tensor_meta["shape"]
+            )
             replacement._weight_shape = plan["weight_shape"]
             replacement._output_shape = list(node.tensor_meta["shape"])
             replacement._stride = int(node.args[3][0])
@@ -533,7 +663,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
     for name, item in special.items():
         node = item["node"]
         replacement = item["replacement"]
-        args = [renamed.get(str(arg), str(arg)) for arg in node.args if isinstance(arg, str)]
+        args = [
+            renamed.get(str(arg), str(arg)) for arg in node.args if isinstance(arg, str)
+        ]
         if isinstance(replacement, MegaMaxPool2dOp):
             if len(args) != 1 or args[0] not in value_scale:
                 raise ValueError(f"invalid Mega MaxPool2D input for {name}")
@@ -557,10 +689,18 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 raise ValueError(f"invalid Mega INT8 elementwise input for {name}")
             replacement._lhs_scale = value_scale[args[0]]
             replacement._rhs_scale = value_scale[args[1]]
+            replacement._activation = 1 if item["activation"] is not None else 0
         replacement._name = name
         replacement._arguments = args
         replacement._parents = list(args)
-        replacement._children = [renamed.get(child, child) for child in node._children]
+        replacement._children = [
+            renamed.get(child, child)
+            for child in (
+                item["activation"]._children
+                if item["activation"] is not None
+                else node._children
+            )
+        ]
         replacement._tensor_meta = node._tensor_meta.copy()
         replacement._tensor_meta["dtype"] = TensorDType.Int8
         replacement._output_scale = item["output_scale"]
@@ -571,30 +711,39 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         for plan in plans.values()
         if isinstance(plan["node"], Conv2dOp)
     } | set(special)
-    conv_components = []
-    stage_component = {}
+    entries = []
     for node in original_body:
         if node.name in plans and isinstance(node, Conv2dOp):
             stage = plans[node.name]["replacement"]
+            result_name = plans[node.name]["result_name"]
         elif node.name in special:
             stage = special[node.name]["replacement"]
+            result_name = special[node.name]["result_name"]
         else:
             continue
+        entries.append((stage, result_name))
 
-        parents = {
-            stage_component[str(argument)]
-            for argument in stage.args
-            if str(argument) in stage_component
+    conv_components = []
+    stage_component = {}
+    for stage, result_name in reversed(entries):
+        users = [
+            candidate for candidate in original_body if uses(candidate, result_name)
+        ]
+        user_names = [renamed.get(user.name, user.name) for user in users]
+        children = {
+            stage_component[name] for name in user_names if name in stage_component
         }
-        if len(parents) > 1:
-            raise ValueError(f"MegaKernel stage joins disconnected regions: {node.name}")
-        if parents:
-            component = next(iter(parents))
-        else:
+        external = not users or any(name not in conv_stage_names for name in user_names)
+        if external or len(children) != 1:
             component = len(conv_components)
             conv_components.append([])
+        else:
+            component = next(iter(children))
         conv_components[component].append(stage)
         stage_component[stage.name] = component
+
+    for stages in conv_components:
+        stages.reverse()
 
     for stages in conv_components:
         last = stages[-1]
@@ -634,7 +783,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         kernels.append(kernel)
 
     original_stage_names = conv_stage_names | {
-        plan["node"].name for plan in plans.values() if not isinstance(plan["node"], Conv2dOp)
+        plan["node"].name
+        for plan in plans.values()
+        if not isinstance(plan["node"], Conv2dOp)
     }
     first_to_kernel = {kernel._stages[0].name: kernel for kernel in kernels}
     drop = original_stage_names | removed
@@ -647,19 +798,62 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         graph.node_table.pop(name, None)
     for kernel in kernels:
         graph.node_table[kernel.name] = kernel
+
+    def rename_argument(argument):
+        if isinstance(argument, list):
+            return [rename_argument(item) for item in argument]
+        if isinstance(argument, tuple):
+            return tuple(rename_argument(item) for item in argument)
+        return renamed.get(str(argument), argument)
+
     for group in graph.op_groups.values():
         group[:] = [
             first_to_kernel.get(node.name, node)
             for node in group
             if node.name not in drop or node.name in first_to_kernel
         ]
+        for node in group:
+            node._arguments = [rename_argument(argument) for argument in node.args]
+            node._parents = [renamed.get(parent, parent) for parent in node._parents]
+            node._children = [renamed.get(child, child) for child in node._children]
 
+    body_position = {node.name: index for index, node in enumerate(graph._body)}
     for node in graph._body:
+        node._arguments = [rename_argument(argument) for argument in node.args]
         node._parents = [renamed.get(parent, parent) for parent in node._parents]
         node._children = [renamed.get(child, child) for child in node._children]
         missing = [parent for parent in node._parents if parent not in graph.node_table]
         if missing:
-            raise ValueError(f"dangling graph parents for {node.name}: {missing}")
+            owners = {
+                parent: [
+                    [stage.name for stage in kernel._stages]
+                    for kernel in kernels
+                    if any(stage.name == parent for stage in kernel._stages)
+                ]
+                for parent in missing
+            }
+            raise ValueError(
+                f"dangling graph parents for {node.name}: {missing}, owners={owners}"
+            )
+        pending = list(node.args)
+        arguments = []
+        while pending:
+            argument = pending.pop()
+            if isinstance(argument, (list, tuple)):
+                pending.extend(argument)
+            elif isinstance(argument, str):
+                arguments.append(argument)
+        late = {
+            argument: body_position.get(argument)
+            for argument in arguments
+            if argument not in body_position
+            or body_position[argument] >= body_position[node.name]
+        }
+        if late:
+            raise ValueError(
+                f"graph is not topological at {node.name} position "
+                f"{body_position[node.name]}: {late}"
+            )
 
     body_index = {id(node): i for i, node in enumerate(graph._body)}
     graph._fake_params = [body_index[id(node)] for node in param_nodes]
@@ -717,22 +911,47 @@ def quantize_model_graph(
             node.tensor_meta["shape"] = list(q.shape)
             params[index] = torch.from_numpy(q.copy())
             raw_scales = np.asarray(dw, dtype=np.float32).reshape(-1)
-            padded = np.pad(raw_scales, (0, (-len(raw_scales)) % 16),
-                            constant_values=1.0)
+            padded = np.pad(
+                raw_scales, (0, (-len(raw_scales)) % 16), constant_values=1.0
+            )
             scale_bytes = padded.tobytes()
-            tensors.append(QuantTensor(name, list(q.shape), list(q.shape), "i8",
-                                       storage_axes, weight_off, q.nbytes, scale_off, len(scale_bytes)))
+            tensors.append(
+                QuantTensor(
+                    name,
+                    list(q.shape),
+                    list(q.shape),
+                    "i8",
+                    storage_axes,
+                    weight_off,
+                    q.nbytes,
+                    scale_off,
+                    len(scale_bytes),
+                )
+            )
             weights.append(q.tobytes())
             scales.append(scale_bytes)
             weight_off += q.nbytes
             scale_off += len(scale_bytes)
         else:
             raw = array.tobytes()
-            tensors.append(QuantTensor(name, list(array.shape), list(array.shape), "f32",
-                                       [], param_off, len(raw), 0, 0))
+            tensors.append(
+                QuantTensor(
+                    name,
+                    list(array.shape),
+                    list(array.shape),
+                    "f32",
+                    [],
+                    param_off,
+                    len(raw),
+                    0,
+                    0,
+                )
+            )
             fp_params.append(raw)
             param_off += len(raw)
-    package = RaxQuantPackage(tensors, b"".join(weights), b"".join(fp_params), b"".join(scales), {})
+    package = RaxQuantPackage(
+        tensors, b"".join(weights), b"".join(fp_params), b"".join(scales), {}
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     rax = output_dir / f"{model_name}.rax"
     write_rax(package, rax, _rax_pack(), model_name)
