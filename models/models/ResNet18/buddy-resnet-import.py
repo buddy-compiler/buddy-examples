@@ -36,7 +36,8 @@ from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 
-from framework.quant.core.importer import quantize_model_graph
+from framework.quant.core.importer import fold_batch_norms, quantize_model_graph
+from framework.quant.core.activation import calibrate_layers
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="ResNet18 model AOT importer")
@@ -77,6 +78,7 @@ model_path = str(model_dir)
 
 model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model = model.eval()
+fold_batch_norms(model)
 
 # Remove the num_batches_tracked attribute.
 for layer in model.modules():
@@ -99,6 +101,7 @@ dynamo_compiler = DynamoCompiler(
     trace=trace,
 )
 data = torch.randn([1, 3, 224, 224])
+calibration = calibrate_layers(model, data)
 # Import the model into MLIR module and parameters.
 with torch.no_grad():
     graphs = dynamo_compiler.importer(model, data)
@@ -114,7 +117,7 @@ quantize_model_graph(
     + [name for name, _ in model.named_buffers()],
     output_dir,
     "resnet18",
-    False,
+    calibration,
 )
 driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()

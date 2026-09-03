@@ -17,13 +17,32 @@ set(DIP_MLIR_PATH ${BUDDY_MLIR_DIR}/frontend/Interfaces/lib/DIP.mlir)
 set(CRUNNER_UTILS_SRC ${MODELTEST_LIB_DIR}/CRunnerUtils.cpp)
 set(BBHW_MEM_C ${WORKLOAD_LIB_DIR}/bbhw/mem/mem.c)
 
+if(NOT BUCKYBALL_TARGETS)
+  message(FATAL_ERROR "ModelTestCRunnerUtils requires Chip.pb compiler targets")
+endif()
+set(_params_ref "")
+foreach(_t IN LISTS BUCKYBALL_TARGETS)
+  set(_params_file "${BUCKYBALL_ISA_DIR}/${_t}/params.h")
+  if(NOT EXISTS "${_params_file}")
+    message(FATAL_ERROR "missing generated params.h for target ${_t}")
+  endif()
+  file(READ "${_params_file}" _params)
+  if(_params_ref STREQUAL "")
+    set(_params_ref "${_params}")
+    set(_params_target "${_t}")
+  elseif(NOT _params STREQUAL _params_ref)
+    message(FATAL_ERROR
+      "ModelTestCRunnerUtils compiles mem.c once; compiler targets disagree on params.h")
+  endif()
+endforeach()
+
 add_library(ModelTestCRunnerUtils STATIC ${CRUNNER_UTILS_SRC} ${BBHW_MEM_C})
 
 target_include_directories(ModelTestCRunnerUtils
   PUBLIC
   ${LLVM_MLIR_EXECUTION_ENGINE_DIR}
   ${WORKLOAD_LIB_DIR}
-  ${WORKLOAD_LIB_DIR}/bbhw/mem
+  ${BUCKYBALL_ISA_DIR}/${_params_target}
 )
 
 add_library(ModelTestHostCRunnerUtils OBJECT ${CRUNNER_UTILS_SRC})

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import torch
 
 
 def _activation_array(values: np.ndarray) -> np.ndarray:
@@ -22,6 +23,35 @@ def activation_scale(values: np.ndarray) -> np.float32:
     if max_abs == 0.0:
         return np.float32(1.0)
     return np.float32(max_abs / np.float32(127.0))
+
+
+def calibrate_layers(model: torch.nn.Module, sample: torch.Tensor) -> dict:
+    scales = {}
+    handles = []
+    for name, module in model.named_modules():
+        if not isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
+            continue
+
+        def record(layer, inputs, output, weight_name=f"{name}.weight"):
+            if len(inputs) != 1 or not torch.is_tensor(inputs[0]) or not torch.is_tensor(output):
+                raise ValueError(f"unsupported calibration signature for {weight_name}")
+            scales.setdefault(weight_name, []).append(
+                (
+                    activation_scale(inputs[0].detach().cpu().numpy()),
+                    activation_scale(output.detach().cpu().numpy()),
+                )
+            )
+
+        handles.append(module.register_forward_hook(record))
+    try:
+        with torch.no_grad():
+            model(sample)
+    finally:
+        for handle in handles:
+            handle.remove()
+    if not scales:
+        raise ValueError("calibration found no Conv2d or Linear layers")
+    return scales
 
 
 def quantize_activation_with_scale(

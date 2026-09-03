@@ -34,7 +34,8 @@ from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 
-from framework.quant.core.importer import quantize_model_graph
+from framework.quant.core.importer import fold_batch_norms, quantize_model_graph
+from framework.quant.core.activation import calibrate_layers
 
 # Parse command-line arguments.
 parser = argparse.ArgumentParser(description="MobileNetV3 model AOT importer")
@@ -71,6 +72,7 @@ model = models.mobilenet_v3_small(
     weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1, pretrained=True
 )
 model = model.eval()
+fold_batch_norms(model)
 
 # Remove the num_batches_tracked attribute.
 for layer in model.modules():
@@ -87,6 +89,7 @@ dynamo_compiler = DynamoCompiler(
     trace=trace,
 )
 data = torch.randn([1, 3, 224, 224])
+calibration = calibrate_layers(model, data)
 # Import the model into MLIR module and parameters.
 with torch.no_grad():
     graphs = dynamo_compiler.importer(model, data)
@@ -102,7 +105,7 @@ quantize_model_graph(
     + [name for name, _ in model.named_buffers()],
     output_dir,
     "mobilenetv3",
-    False,
+    calibration,
 )
 driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()

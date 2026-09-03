@@ -37,7 +37,8 @@ from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 
-from framework.quant.core.importer import quantize_model_graph
+from framework.quant.core.importer import fold_batch_norms, quantize_model_graph
+from framework.quant.core.activation import calibrate_layers
 
 
 parser = argparse.ArgumentParser(description="yolo26n model AOT importer")
@@ -82,6 +83,7 @@ model_path = os.environ.get(
     str(default_model_path if default_model_path.exists() else "yolo26n.pt"),
 )
 model = YOLO(model_path).model.eval()
+fold_batch_norms(model)
 detect_head = model.model[-1]
 detect_head.end2end = True
 detect_head.export = True
@@ -90,6 +92,7 @@ detect_head.xyxy = True
 input_tensor = torch.randn(
     (1, 3, args.img_size, args.img_size), dtype=torch.float32
 )
+calibration = calibrate_layers(model, input_tensor)
 
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
@@ -110,14 +113,50 @@ graph = graphs[0]
 params = dynamo_compiler.imported_params[graph]
 
 graph.fuse_ops([simply_fuse])
+
+
+def _param_names(mod, imported):
+    state = [
+        (n, t)
+        for n, t in list(mod.named_parameters()) + list(mod.named_buffers())
+        if not n.endswith("num_batches_tracked")
+    ]
+    extras = []
+    dh = mod.model[-1]
+    for attr in ("anchors", "strides"):
+        t = getattr(dh, attr, None)
+        if torch.is_tensor(t):
+            extras.append((f"model.{len(mod.model)-1}.{attr}", t))
+    state = state + extras
+    used = set()
+    names = []
+    for p in imported:
+        hit = None
+        for n, t in state:
+            if n in used:
+                continue
+            if t.shape != p.shape:
+                continue
+            if torch.equal(t.detach().cpu().float(), p.detach().cpu().float()):
+                hit = n
+                break
+        if hit is None:
+            raise ValueError(
+                f"imported param shape {tuple(p.shape)} has no matching "
+                "named parameter/buffer/detect anchors"
+            )
+        used.add(hit)
+        names.append(hit)
+    return names
+
+
 quantize_model_graph(
     graph,
     params,
-    [name for name, _ in model.named_parameters()]
-    + [name for name, _ in model.named_buffers()],
+    _param_names(model, params),
     output_dir,
     "yolo26",
-    False,
+    calibration,
 )
 driver = GraphDriver(graph)
 driver.subgraphs[0].lower_to_top_level_ir()

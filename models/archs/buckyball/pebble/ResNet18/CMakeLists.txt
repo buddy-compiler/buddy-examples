@@ -5,8 +5,8 @@ set(MODEL_RESNET18_GENERATED_DIR ${MODEL_RESNET18_DIR}/output)
 set(BUCKYBALL_RESNET18_DIR ${BUCKYBALL_DIR}/ResNet18)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
-set(RESNET18_TRACE_MODES "cycle-trace" CACHE STRING "ResNet18 trace modes")
-set(RESNET18_TRACE_CONFIG "trace/trace.toml" CACHE FILEPATH "ResNet18 trace config")
+# set(RESNET18_TRACE_MODES "cycle-trace" CACHE STRING "ResNet18 trace modes")
+# set(RESNET18_TRACE_CONFIG "trace/trace.toml" CACHE FILEPATH "ResNet18 trace config")
 
 
 add_custom_command(
@@ -77,7 +77,7 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -llvm-request-c-wrappers
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            -convert-trace-to-llvm="${RESNET18_TRACE_MODES}"
+            # -convert-trace-to-llvm="${RESNET18_TRACE_MODES}"
             -expand-strided-metadata
             -convert-linalg-to-loops
             ${BUCKYBALL_LOWER_BUCKYBALL}
@@ -107,7 +107,7 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -llvm-request-c-wrappers
           ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-          -convert-trace-to-llvm="${RESNET18_TRACE_MODES}"
+          # -convert-trace-to-llvm="${RESNET18_TRACE_MODES}"
           -expand-strided-metadata
           -convert-linalg-to-loops
           ${BUCKYBALL_LOWER_BUCKYBALL}

@@ -34,7 +34,6 @@
 
 constexpr size_t ParamsSize = 236;
 constexpr size_t WeightsSize = 44190;
-constexpr size_t ScalesSize = 1088;
 constexpr size_t MnistCount = 10000;
 constexpr size_t MnistPixels = 28 * 28;
 const std::string ImgName = "8.bmp";
@@ -43,7 +42,6 @@ const std::string ImgName = "8.bmp";
 struct Opts {
   std::string params = "./lenet.payload/params.f32";
   std::string weights = "./lenet.payload/weights.i8";
-  std::string scales = "./lenet.payload/scales.bin";
   std::string dataset;
 };
 
@@ -59,10 +57,6 @@ static Opts parseArgs(int argc, char **argv) {
       if (++i >= argc)
         throw std::runtime_error("--weights needs a path");
       o.weights = argv[i];
-    } else if (a == "--scales") {
-      if (++i >= argc)
-        throw std::runtime_error("--scales needs a path");
-      o.scales = argv[i];
     } else if (a == "--dataset") {
       if (++i >= argc)
         throw std::runtime_error("--dataset needs a path");
@@ -236,23 +230,19 @@ int main(int argc, char **argv) {
   intptr_t sizesOutput[2] = {1, 10};
   static float paramsData[ParamsSize] __attribute__((aligned(64)));
   static int8_t weightsData[WeightsSize] __attribute__((aligned(64)));
-  static uint8_t scalesData[ScalesSize] __attribute__((aligned(64)));
   intptr_t paramsSize[1] = {ParamsSize};
   intptr_t weightsSize[1] = {WeightsSize};
   BorrowedBuffer<float, 1> paramsContainer(paramsData, paramsSize);
   BorrowedBuffer<int8_t, 1> weightsContainer(weightsData, weightsSize);
   loadBinary(opts.params, paramsData, ParamsSize);
   loadBinary(opts.weights, weightsData, WeightsSize);
-  loadBinary(opts.scales, scalesData, ScalesSize);
-  bb_mvin_mmio(reinterpret_cast<uintptr_t>(scalesData), 16,
-               ScalesSize / 16, 16);
 
   if (!opts.dataset.empty()) {
     auto images = loadMnistImages(opts.dataset);
     auto labels = loadMnistLabels(opts.dataset);
     size_t correct = 0;
     std::vector<float> buf(MnistPixels);
-    intptr_t inSizes[4] = {1, 1, 28, 28};
+    intptr_t inSizes[4] = {1, 28, 28, 1};
     static float outputData[10] __attribute__((aligned(64)));
     BorrowedBuffer<float, 2> output(outputData, sizesOutput);
     for (size_t i = 0; i < MnistCount; ++i) {
@@ -268,7 +258,7 @@ int main(int argc, char **argv) {
   }
 
   static float inputData[MnistPixels] __attribute__((aligned(64)));
-  intptr_t inputSizes[4] = {1, 1, 28, 28};
+  intptr_t inputSizes[4] = {1, 28, 28, 1};
   loadLeNetInput(inputData);
   BorrowedImage input(inputData, inputSizes);
   static float outputData[10] __attribute__((aligned(64)));
@@ -304,6 +294,6 @@ int main(int argc, char **argv) {
               << std::endl;
     return 1;
   }
-  std::cout << "PASS classification=" << maxIdx << std::endl;
+  std::cout << "LeNet Inference PASS" << std::endl;
   return 0;
 }
