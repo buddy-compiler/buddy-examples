@@ -33,6 +33,7 @@ from buddy.compiler.graph.operation import (
     PermuteOp,
     ReluOp,
     ReshapeOp,
+    SiluOp,
     TOp,
     ViewOp,
 )
@@ -205,7 +206,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         relus = [
             candidate
             for candidate in graph._body
-            if isinstance(candidate, (ReluOp, HardswishOp))
+            if isinstance(candidate, (ReluOp, HardswishOp, SiluOp))
             and len(candidate.args) == 1
             and str(candidate.args[0]) == node.name
         ]
@@ -214,11 +215,17 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         activation = relus[0] if relus else None
         activation_nodes = [activation] if activation is not None else []
         activation_kind = (
-            2 if isinstance(activation, HardswishOp)
+            2 if isinstance(activation, (HardswishOp, SiluOp))
             else 1 if isinstance(activation, ReluOp)
             else 0
         )
-        lut_kind = "hardswish" if activation_kind == 2 else None
+        lut_kind = (
+            "silu"
+            if isinstance(activation, SiluOp)
+            else "hardswish"
+            if isinstance(activation, HardswishOp)
+            else None
+        )
 
         hard_swish_adds = [
             candidate
@@ -331,6 +338,11 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             removed.update(item.name for item in plan["activation_nodes"])
 
     special = {}
+    quantized_values = {
+        name
+        for plan in plans.values()
+        for name in (plan["node"].name, plan["result_name"])
+    }
     for node in original_body:
         if node.name in removed:
             continue
@@ -360,14 +372,25 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         elif isinstance(node, MulOp) and len(node.args) == 2 and all(
             isinstance(arg, str) for arg in node.args
         ):
+            if any(
+                renamed.get(str(arg), str(arg)) not in quantized_values
+                for arg in node.args
+            ):
+                continue
             replacement = MegaInt8MulOp()
         elif isinstance(node, AddOp) and len(node.args) == 2 and all(
             isinstance(arg, str) for arg in node.args
         ):
+            if any(
+                renamed.get(str(arg), str(arg)) not in quantized_values
+                for arg in node.args
+            ):
+                continue
             replacement = MegaInt8AddOp()
         else:
             continue
         special[node.name] = {"node": node, "replacement": replacement}
+        quantized_values.add(node.name)
 
     for plan in plans.values():
         consumers = [
@@ -401,9 +424,19 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 for candidate in plans.values()
                 if candidate["activation_name"] == users[0].name
             ]
-        if len(consumers) != 1:
-            raise ValueError(f"MegaKernel stage has no unique compute consumer: {node.name}")
-        item["output_scale"] = consumers[0]["required_input_scale"]
+        if not consumers:
+            users = [
+                candidate.name
+                for candidate in original_body
+                if any(str(arg) == node.name for arg in candidate.args)
+            ]
+            raise ValueError(
+                f"MegaKernel stage has no compute consumer: {node.name}, "
+                f"args={node.args}, users={users}"
+            )
+        item["output_scale"] = max(
+            consumer["required_input_scale"] for consumer in consumers
+        )
 
     for plan in plans.values():
         max_pool_consumers = [
@@ -481,6 +514,8 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 y = x * np.clip(x + np.float32(3.0), 0.0, 6.0) / np.float32(6.0)
             elif plan["lut_kind"] == "hardsigmoid":
                 y = np.clip(x + np.float32(3.0), 0.0, 6.0) / np.float32(6.0)
+            elif plan["lut_kind"] == "silu":
+                y = x / (np.float32(1.0) + np.exp(-x))
             else:
                 raise ValueError(f"missing LUT function for {node.name}")
             replacement._lut_i8 = np.clip(
