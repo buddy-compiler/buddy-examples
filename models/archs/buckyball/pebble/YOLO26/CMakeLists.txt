@@ -63,6 +63,8 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
+            -canonicalize
+            -cse
             > subgraph0_buckyball.mlir
   # Full single-process pipeline crashes on YOLO (MLIR IRRewrite
   # SmallVector assert). Continue from the buckyball dump instead.

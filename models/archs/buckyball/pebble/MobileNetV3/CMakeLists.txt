@@ -61,6 +61,8 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
+            -canonicalize
+            -cse
             > subgraph0_buckyball.mlir
   COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
@@ -79,6 +81,8 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -expand-strided-metadata
             -convert-linalg-to-loops
             ${BUCKYBALL_LOWER_BUCKYBALL}
+            -canonicalize
+            -cse
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
@@ -109,6 +113,8 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -expand-strided-metadata
           -convert-linalg-to-loops
           ${BUCKYBALL_LOWER_BUCKYBALL}
+          -canonicalize
+          -cse
           -lower-affine
           -convert-scf-to-cf
           -convert-cf-to-llvm
