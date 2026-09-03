@@ -12,11 +12,14 @@ from framework.quant.core.rax import QuantTensor, RaxQuantPackage, write_rax
 from buddy.compiler.graph.operation import (
     AddOp,
     AddMMOp,
+    CatOp,
     ClampMaxOp,
     ClampMinOp,
     Conv2dOp,
     DivOp,
     ExpOp,
+    GetItemOp,
+    LowMemoryMaxPoolWithOffsetsOp,
     MatmulOp,
     MaxPool2dOp,
     MeanOp,
@@ -24,10 +27,13 @@ from buddy.compiler.graph.operation import (
     MegaConv2dOp,
     MegaConv2dDepthwiseOp,
     MegaGlobalAvgPoolOp,
+    MegaChannelConcatOp,
+    MegaChannelSliceOp,
     MegaInt8AddOp,
     MegaInt8MulOp,
     MegaMatmulOp,
     MegaMaxPool2dOp,
+    MegaResizeNearestOp,
     HardswishOp,
     MulOp,
     NegOp,
@@ -36,7 +42,10 @@ from buddy.compiler.graph.operation import (
     ReluOp,
     ReshapeOp,
     SiluOp,
+    SplitOp,
+    SplitWithSizesOp,
     TOp,
+    UnsafeIndexOp,
     ViewOp,
 )
 from buddy.compiler.graph.type import TensorDType
@@ -409,11 +418,123 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         for name in (plan["node"].name, plan["result_name"])
     }
     for node in original_body:
+        if not isinstance(node, GetItemOp) or len(node.args) != 2:
+            continue
+        source = graph.node_table.get(str(node.args[0]))
+        if not isinstance(source, (SplitOp, SplitWithSizesOp)) or len(source.args) != 3:
+            continue
+        input_name = renamed.get(str(source.args[0]), str(source.args[0]))
+        if int(source.args[2]) == 1 and input_name in quantized_values:
+            quantized_values.add(node.name)
+    for node in original_body:
         if node.name in removed:
             continue
         activation = None
         result_name = node.name
-        if isinstance(node, MaxPool2dOp):
+        arguments = None
+        attributes = {}
+        if isinstance(node, GetItemOp):
+            if len(node.args) != 2 or not isinstance(node.args[1], int):
+                continue
+            source = graph.node_table[str(node.args[0])]
+            index = int(node.args[1])
+            if isinstance(source, (SplitOp, SplitWithSizesOp)):
+                if len(source.args) != 3:
+                    continue
+                input_name = renamed.get(str(source.args[0]), str(source.args[0]))
+                if input_name not in quantized_values:
+                    continue
+                if int(source.args[2]) != 1:
+                    raise ValueError(
+                        f"Mega channel split must use NCHW C at {source.name}"
+                    )
+                if isinstance(source, SplitOp):
+                    channels = int(
+                        graph.node_table[str(source.args[0])].tensor_meta["shape"][1]
+                    )
+                    size = int(source.args[1])
+                    sizes = [size] * (channels // size)
+                    if channels % size:
+                        sizes.append(channels % size)
+                else:
+                    sizes = [int(value) for value in source.args[1]]
+                if index < 0 or index >= len(sizes):
+                    raise ValueError(
+                        f"Mega channel split index is invalid at {node.name}"
+                    )
+                replacement = MegaChannelSliceOp()
+                arguments = [input_name]
+                attributes = {
+                    "offset": sum(sizes[:index]),
+                    "output_shape": list(node.tensor_meta["shape"]),
+                }
+                removed.add(source.name)
+            elif isinstance(source, LowMemoryMaxPoolWithOffsetsOp):
+                if index != 0 or len(source.args) != 6:
+                    raise ValueError(
+                        f"Mega SPPF must select MaxPool values at {node.name}"
+                    )
+                kernel, stride, padding, dilation, ceil_mode = source.args[1:]
+                if (
+                    list(kernel) != [5, 5]
+                    or list(stride) != [1, 1]
+                    or list(padding) != [2, 2]
+                    or list(dilation) != [1, 1]
+                    or ceil_mode
+                ):
+                    raise ValueError(f"unsupported Mega SPPF MaxPool at {source.name}")
+                input_name = renamed.get(str(source.args[0]), str(source.args[0]))
+                if input_name not in quantized_values:
+                    continue
+                replacement = MegaMaxPool2dOp()
+                arguments = [input_name]
+                attributes = {
+                    "input_shape": list(
+                        graph.node_table[str(source.args[0])].tensor_meta["shape"]
+                    ),
+                    "output_shape": list(node.tensor_meta["shape"]),
+                    "kernel": 5,
+                    "stride": 1,
+                    "padding": 2,
+                }
+                removed.add(source.name)
+            else:
+                continue
+        elif isinstance(node, CatOp):
+            if len(node.args) != 2 or int(node.args[1]) != 1:
+                continue
+            arguments = [renamed.get(str(value), str(value)) for value in node.args[0]]
+            if len(arguments) < 2 or any(
+                value not in quantized_values for value in arguments
+            ):
+                continue
+            replacement = MegaChannelConcatOp()
+            attributes = {"output_shape": list(node.tensor_meta["shape"])}
+        elif isinstance(node, UnsafeIndexOp):
+            if len(node.args) != 2:
+                continue
+            input_name = renamed.get(str(node.args[0]), str(node.args[0]))
+            if input_name not in quantized_values:
+                continue
+            input_shape = list(graph.node_table[str(node.args[0])].tensor_meta["shape"])
+            output_shape = list(node.tensor_meta["shape"])
+            if (
+                len(input_shape) != 4
+                or len(output_shape) != 4
+                or input_shape[0] != output_shape[0]
+                or input_shape[1] != output_shape[1]
+                or output_shape[2] % input_shape[2]
+                or output_shape[3] % input_shape[3]
+            ):
+                raise ValueError(f"unsupported Mega nearest resize at {node.name}")
+            replacement = MegaResizeNearestOp()
+            arguments = [input_name]
+            attributes = {
+                "output_shape": output_shape,
+                "scale_h": output_shape[2] // input_shape[2],
+                "scale_w": output_shape[3] // input_shape[3],
+            }
+        elif isinstance(node, MaxPool2dOp):
             if (
                 len(node.args) not in (3, 4)
                 or len(node.args[1]) != 2
@@ -498,6 +619,8 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             "replacement": replacement,
             "activation": activation,
             "result_name": result_name,
+            "arguments": arguments,
+            **attributes,
         }
         quantized_values.add(node.name)
         quantized_values.add(result_name)
@@ -572,6 +695,45 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             raise ValueError(f"multiple MaxPool2D consumers for {plan['node'].name}")
         if max_pool_consumers:
             plan["output_scale"] = max_pool_consumers[0]["output_scale"]
+
+    changed = True
+    while changed:
+        changed = False
+        for name, item in special.items():
+            if not isinstance(
+                item["replacement"],
+                (
+                    MegaChannelSliceOp,
+                    MegaChannelConcatOp,
+                    MegaResizeNearestOp,
+                    MegaMaxPool2dOp,
+                ),
+            ):
+                continue
+            sources = item["arguments"]
+            if sources is None:
+                sources = [
+                    renamed.get(str(item["node"].args[0]), str(item["node"].args[0]))
+                ]
+            scales = [item["output_scale"]]
+            for source in sources:
+                if source in plans:
+                    scales.append(plans[source]["output_scale"])
+                elif source in special:
+                    scales.append(special[source]["output_scale"])
+                else:
+                    raise ValueError(
+                        f"Mega view source has no scale at {name}: {source}"
+                    )
+            scale = max(scales)
+            if item["output_scale"] != scale:
+                item["output_scale"] = scale
+                changed = True
+            for source in sources:
+                producer = plans[source] if source in plans else special[source]
+                if producer["output_scale"] != scale:
+                    producer["output_scale"] = scale
+                    changed = True
 
     value_scale = {}
     for plan in plans.values():
@@ -663,23 +825,49 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
     for name, item in special.items():
         node = item["node"]
         replacement = item["replacement"]
-        args = [
-            renamed.get(str(arg), str(arg)) for arg in node.args if isinstance(arg, str)
-        ]
+        args = item["arguments"]
+        if args is None:
+            args = [
+                renamed.get(str(arg), str(arg))
+                for arg in node.args
+                if isinstance(arg, str)
+            ]
         if isinstance(replacement, MegaMaxPool2dOp):
             if len(args) != 1 or args[0] not in value_scale:
                 raise ValueError(f"invalid Mega MaxPool2D input for {name}")
             replacement._input_scale = value_scale[args[0]]
             replacement._output_scale = replacement._input_scale
-            replacement._input_shape = list(
-                graph.node_table[str(node.args[0])].tensor_meta["shape"]
-            )
-            replacement._output_shape = list(node.tensor_meta["shape"])
-            replacement._kernel = int(node.args[1][0])
-            replacement._stride = int(node.args[2][0])
-            padding = node.args[3] if len(node.args) == 4 else [0, 0]
-            replacement._padding = int(padding[0])
+            if "input_shape" in item:
+                replacement._input_shape = item["input_shape"]
+                replacement._output_shape = item["output_shape"]
+                replacement._kernel = item["kernel"]
+                replacement._stride = item["stride"]
+                replacement._padding = item["padding"]
+            else:
+                replacement._input_shape = list(
+                    graph.node_table[str(node.args[0])].tensor_meta["shape"]
+                )
+                replacement._output_shape = list(node.tensor_meta["shape"])
+                replacement._kernel = int(node.args[1][0])
+                replacement._stride = int(node.args[2][0])
+                padding = node.args[3] if len(node.args) == 4 else [0, 0]
+                replacement._padding = int(padding[0])
             replacement._final_output = False
+        elif isinstance(replacement, MegaChannelSliceOp):
+            if len(args) != 1 or args[0] not in value_scale:
+                raise ValueError(f"invalid Mega channel-slice input for {name}")
+            replacement._offset = item["offset"]
+            replacement._output_shape = item["output_shape"]
+        elif isinstance(replacement, MegaChannelConcatOp):
+            if any(arg not in value_scale for arg in args):
+                raise ValueError(f"invalid Mega channel-concat input for {name}")
+            replacement._output_shape = item["output_shape"]
+        elif isinstance(replacement, MegaResizeNearestOp):
+            if len(args) != 1 or args[0] not in value_scale:
+                raise ValueError(f"invalid Mega resize input for {name}")
+            replacement._output_shape = item["output_shape"]
+            replacement._scale_h = item["scale_h"]
+            replacement._scale_w = item["scale_w"]
         elif isinstance(replacement, MegaGlobalAvgPoolOp):
             if len(args) != 1 or args[0] not in value_scale:
                 raise ValueError(f"invalid Mega global-average input for {name}")
@@ -715,25 +903,22 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
     for node in original_body:
         if node.name in plans and isinstance(node, Conv2dOp):
             stage = plans[node.name]["replacement"]
-            result_name = plans[node.name]["result_name"]
         elif node.name in special:
             stage = special[node.name]["replacement"]
-            result_name = special[node.name]["result_name"]
         else:
             continue
-        entries.append((stage, result_name))
+        entries.append(stage)
 
     conv_components = []
     stage_component = {}
-    for stage, result_name in reversed(entries):
-        users = [
-            candidate for candidate in original_body if uses(candidate, result_name)
-        ]
-        user_names = [renamed.get(user.name, user.name) for user in users]
+    for stage in reversed(entries):
+        user_names = list(stage._children)
         children = {
             stage_component[name] for name in user_names if name in stage_component
         }
-        external = not users or any(name not in conv_stage_names for name in user_names)
+        external = not user_names or any(
+            name not in conv_stage_names for name in user_names
+        )
         if external or len(children) != 1:
             component = len(conv_components)
             conv_components.append([])
@@ -744,6 +929,22 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
 
     for stages in conv_components:
         stages.reverse()
+
+    stage_by_name = {stage.name: stage for stage in entries}
+    for component, stages in enumerate(conv_components):
+        for stage in stages:
+            crossing = [
+                str(argument)
+                for argument in stage.args
+                if str(argument) in stage_component
+                and stage_component[str(argument)] != component
+            ]
+            if crossing:
+                raise ValueError(
+                    f"INT8 inputs cross MegaKernel boundary at {stage.name}: "
+                    f"{crossing}; stage children={stage._children}, source children="
+                    f"{ {name: stage_by_name[name]._children for name in crossing} }"
+                )
 
     for stages in conv_components:
         last = stages[-1]
