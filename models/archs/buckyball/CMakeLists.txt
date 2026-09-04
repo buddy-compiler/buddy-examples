@@ -129,7 +129,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
     endif()
 
     set(_ids)
-    foreach(_core_target IN LISTS BUCKYBALL_CORE_TARGET_LINES)
+    foreach(_core_target IN LISTS BUCKYBALL_RUSHB_TARGET_LINES)
       string(REPLACE ":" ";" _core_target_fields "${_core_target}")
       list(LENGTH _core_target_fields _core_target_field_count)
       if(NOT _core_target_field_count EQUAL 2)
