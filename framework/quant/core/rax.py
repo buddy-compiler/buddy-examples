@@ -96,8 +96,7 @@ def validate_rax_quant(pkg: RaxQuantPackage) -> None:
         if tensor.scale_off < 0 or tensor.scale_len < 0:
             raise ValueError(f"bad scale range for {tensor.name}")
         numel = _numel(tensor.shape, tensor.name)
-        if _numel(tensor.payload_shape, tensor.name) != numel:
-            raise ValueError(f"payload shape mismatch for {tensor.name}")
+        payload_numel = _numel(tensor.payload_shape, tensor.name)
         if tensor.storage == "i8":
             if len(tensor.axes) > 1 or any(
                 axis < 0 or axis >= len(tensor.shape) for axis in tensor.axes
@@ -107,7 +106,7 @@ def validate_rax_quant(pkg: RaxQuantPackage) -> None:
                 raise ValueError(f"weight OOB for {tensor.name}")
             if tensor.payload_off != weight_end:
                 raise ValueError(f"non-contiguous weight payload for {tensor.name}")
-            if tensor.payload_len != numel:
+            if tensor.payload_len != payload_numel:
                 raise ValueError(f"weight_len mismatch for {tensor.name}")
             if tensor.scale_off + tensor.scale_len > len(pkg.scales_f32):
                 raise ValueError(f"scale OOB for {tensor.name}")
