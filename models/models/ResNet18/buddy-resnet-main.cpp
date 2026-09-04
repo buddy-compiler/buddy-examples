@@ -31,7 +31,7 @@
 #include <vector>
 
 constexpr size_t ParamsSize = 20200;
-constexpr size_t WeightsSize = 11678912;
+constexpr size_t WeightsSize = 22806528;
 const std::string ImgName = "ice-cream-24bit-224x224.bmp";
 
 // Declare the resnet C interface.
