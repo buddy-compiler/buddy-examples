@@ -129,7 +129,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -finalize-memref-to-llvm
           -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
+        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_RESNET18_GENERATED_DIR}/subgraph0.mlir
   COMMENT "Building subgraph0.o"
   VERBATIM)

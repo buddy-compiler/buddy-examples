@@ -1099,13 +1099,27 @@ def quantize_model_graph(
             if array.ndim == 4:
                 if getattr(node, "_mega_depthwise_weight", False):
                     q = np.transpose(q, (2, 3, 0, 1)).copy()
-                    storage_axes = [2]
                 else:
-                    q = np.transpose(q, (2, 3, 1, 0)).copy()
-                    storage_axes = [3]
+                    output_channels, input_channels, kh, kw = q.shape
+                    output_panels = (output_channels + 15) // 16
+                    padded_kernel = ((kh * kw + 15) // 16) * 16
+                    padded = np.pad(
+                        q,
+                        ((0, output_panels * 16 - output_channels),
+                         (0, 0), (0, 0), (0, 0)),
+                    )
+                    packed = padded.reshape(
+                        output_panels, 16, input_channels, kh, kw
+                    ).transpose(0, 2, 3, 4, 1)
+                    q = np.zeros(
+                        (output_panels, input_channels, padded_kernel, 16),
+                        dtype=np.int8,
+                    )
+                    q[:, :, : kh * kw, :] = packed.reshape(
+                        output_panels, input_channels, kh * kw, 16
+                    )
             elif array.ndim == 2:
                 q = q.T.copy()
-                storage_axes = [1]
             else:
                 raise ValueError(f"unsupported Mega weight rank for {name}")
             node.tensor_meta["dtype"] = TensorDType.Int8
@@ -1119,10 +1133,10 @@ def quantize_model_graph(
             tensors.append(
                 QuantTensor(
                     name,
-                    list(q.shape),
+                    list(array.shape),
                     list(q.shape),
                     "i8",
-                    storage_axes,
+                    axes,
                     weight_off,
                     q.nbytes,
                     scale_off,
