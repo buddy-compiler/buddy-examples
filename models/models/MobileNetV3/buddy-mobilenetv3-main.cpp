@@ -30,8 +30,8 @@
 #include <utility>
 #include <vector>
 
-constexpr size_t ParamsSize = 29136;
-constexpr size_t WeightsSize = 2525832;
+constexpr size_t ParamsSize = 10968;
+constexpr size_t WeightsSize = 15499224;
 const std::string ImgName = "dog-32bit_224x224.bmp";
 
 // Declare the mobilenet C interface.
