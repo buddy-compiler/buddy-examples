@@ -6,6 +6,20 @@ set(BUCKYBALL_MOBILENETV3_DIR ${BUCKYBALL_DIR}/MobileNetV3)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
+option(PEBBLE_MOBILENETV3_STAGE_TRACE
+       "Materialize and dump leading MobileNetV3 MegaKernel stages" OFF)
+set(PEBBLE_MOBILENETV3_STAGE_TRACE_LIMIT 6 CACHE STRING
+    "Number of leading MobileNetV3 MegaKernel stages to dump")
+set(PEBBLE_MOBILENETV3_STAGE_TRACE_START 0 CACHE STRING
+    "First MobileNetV3 MegaKernel stage to dump")
+set(MOBILENETV3_BANK_SSA_PASS -lower-buckyball-to-bank-ssa)
+set(MOBILENETV3_TRACE_PASS)
+if(PEBBLE_MOBILENETV3_STAGE_TRACE)
+  set(MOBILENETV3_BANK_SSA_PASS
+      "--lower-buckyball-to-bank-ssa=trace-mega-stages=true trace-mega-stage-start=${PEBBLE_MOBILENETV3_STAGE_TRACE_START} trace-mega-stage-limit=${PEBBLE_MOBILENETV3_STAGE_TRACE_LIMIT}")
+  set(MOBILENETV3_TRACE_PASS "-convert-trace-to-llvm=tensor-trace")
+endif()
+
 
 add_custom_command(
   OUTPUT  forward.o
@@ -57,7 +71,7 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-            -lower-buckyball-to-bank-ssa
+            ${MOBILENETV3_BANK_SSA_PASS}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
@@ -73,11 +87,11 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -one-shot-bufferize="bufferize-function-boundaries"
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-            -lower-buckyball-to-bank-ssa
+            ${MOBILENETV3_BANK_SSA_PASS}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -llvm-request-c-wrappers
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            # -convert-trace-to-llvm="cycle-trace"
+            ${MOBILENETV3_TRACE_PASS}
             -expand-strided-metadata
             -convert-linalg-to-loops
             ${BUCKYBALL_LOWER_BUCKYBALL}
@@ -105,11 +119,11 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -one-shot-bufferize="bufferize-function-boundaries"
           -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-          -lower-buckyball-to-bank-ssa
+          ${MOBILENETV3_BANK_SSA_PASS}
 ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -llvm-request-c-wrappers
           ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-          # -convert-trace-to-llvm="cycle-trace"
+          ${MOBILENETV3_TRACE_PASS}
           -expand-strided-metadata
           -convert-linalg-to-loops
           ${BUCKYBALL_LOWER_BUCKYBALL}
@@ -129,6 +143,9 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
         ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
+                ${BUDDY_BINARY_DIR}/buddy-opt
+                ${BUDDY_BINARY_DIR}/buddy-translate
+                ${BUDDY_BINARY_DIR}/buddy-llc
   COMMENT "Building subgraph0.o"
   VERBATIM)
 
@@ -160,6 +177,7 @@ add_custom_command(TARGET buddy-buckyball-mobilenetv3-run POST_BUILD
 add_custom_target(sync-buckyball-mobilenetv3-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}/trace/cycle
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${MOBILENETV3_OUTPUT_DIR}/trace/tensor
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_MOBILENETV3_DIR}/images
           ${MOBILENETV3_OUTPUT_DIR}/images

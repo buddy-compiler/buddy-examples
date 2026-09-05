@@ -182,12 +182,30 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         if records is None or occurrence >= len(records):
             raise ValueError(f"missing calibration for {weight_name}")
         calibration_index[weight_name] = occurrence + 1
-        calibrated_input, output_scale = records[occurrence]
+        (
+            calibrated_input,
+            raw_output_scale,
+            relu_output_scale,
+            raw_channel_scales,
+            hardswish_channel_scales,
+        ) = records[occurrence]
+        raw_channel_scales = np.asarray(raw_channel_scales, dtype=np.float32)
+        hardswish_channel_scales = np.asarray(
+            hardswish_channel_scales, dtype=np.float32
+        )
         if (
             not np.isfinite(calibrated_input)
             or calibrated_input <= 0.0
-            or not np.isfinite(output_scale)
-            or output_scale <= 0.0
+            or not np.isfinite(raw_output_scale)
+            or raw_output_scale <= 0.0
+            or not np.isfinite(relu_output_scale)
+            or relu_output_scale <= 0.0
+            or raw_channel_scales.shape != (weight_shape[0],)
+            or hardswish_channel_scales.shape != (weight_shape[0],)
+            or not np.all(np.isfinite(raw_channel_scales))
+            or not np.all(np.isfinite(hardswish_channel_scales))
+            or np.any(raw_channel_scales <= 0.0)
+            or np.any(hardswish_channel_scales <= 0.0)
         ):
             raise ValueError(f"invalid calibration scale for {node.name}")
         activation_node = graph.node_table[str(activation_name)]
@@ -216,13 +234,16 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         bias_headroom = np.iinfo(np.int32).max - product_bound
         if bias_headroom <= 1:
             raise ValueError(f"INT32 accumulator cannot hold {node.name}")
-        minimum_input_scale = float(
-            np.max(
-                np.abs(bias.astype(np.float64))
-                / ((bias_headroom - 1) * dw.astype(np.float64))
-            )
+        minimum_weight_scale = np.abs(bias.astype(np.float64)) / (
+            (bias_headroom - 1) * float(calibrated_input)
         )
-        required_input_scale = max(float(calibrated_input), minimum_input_scale)
+        minimum_weight_scale = np.nextafter(
+            minimum_weight_scale.astype(np.float32), np.float32(np.inf)
+        )
+        dw = np.maximum(dw, minimum_weight_scale)
+        weight_scales[weight_name] = dw
+        weight_node._mega_weight_scales = dw.copy()
+        required_input_scale = float(calibrated_input)
 
         direct_users = [
             candidate
@@ -394,7 +415,11 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             "dw": dw,
             "bias": bias,
             "required_input_scale": required_input_scale,
-            "calibrated_output_scale": float(output_scale),
+            "calibrated_output_scale": float(
+                relu_output_scale if activation_kind == 1 else raw_output_scale
+            ),
+            "raw_channel_scales": raw_channel_scales,
+            "hardswish_channel_scales": hardswish_channel_scales,
             "activation": activation,
             "activation_nodes": activation_nodes,
             "activation_kind": activation_kind,
@@ -405,6 +430,35 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             "padding": padding if isinstance(node, Conv2dOp) else None,
             "product_bound": product_bound,
         }
+
+    first_conv = min(
+        (plan for plan in plans.values() if isinstance(plan["node"], Conv2dOp)),
+        key=lambda plan: plan["index"],
+        default=None,
+    )
+    if first_conv is not None and first_conv["lut_kind"] == "hardswish":
+        consumers = [
+            candidate
+            for candidate in plans.values()
+            if candidate["activation_name"] == first_conv["result_name"]
+        ]
+        if (
+            first_conv["weight_shape"][0] != 16
+            or len(first_conv["users"]) != 1
+            or len(consumers) != 1
+            or not isinstance(consumers[0]["replacement"], MegaConv2dDepthwiseOp)
+            or consumers[0]["weight_shape"][0] != 16
+        ):
+            raise ValueError(
+                "the first Hardswish Conv must feed one 16-channel depthwise Conv"
+            )
+        first_conv["lane_input_scales"] = first_conv["raw_channel_scales"]
+        first_conv["lane_output_scales"] = first_conv[
+            "hardswish_channel_scales"
+        ]
+        consumers[0]["input_channel_scales"] = first_conv[
+            "lane_output_scales"
+        ]
 
     for plan in plans.values():
         if plan["activation"] is not None:
@@ -746,9 +800,43 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
     for plan in plans.values():
         activation_name = renamed.get(plan["activation_name"], plan["activation_name"])
         input_scale = value_scale.get(activation_name, plan["required_input_scale"])
+        dw = plan["dw"]
+        input_channel_scales = plan.get("input_channel_scales")
+        if input_channel_scales is not None:
+            input_channel_scales = np.asarray(
+                input_channel_scales, dtype=np.float32
+            )
+            if (
+                not isinstance(plan["replacement"], MegaConv2dDepthwiseOp)
+                or input_channel_scales.shape != (dw.size,)
+            ):
+                raise ValueError(
+                    f"per-channel input scale requires matching depthwise Conv: "
+                    f"{plan['node'].name}"
+                )
+            minimum_weight_scale = np.abs(plan["bias"].astype(np.float64)) / (
+                (np.iinfo(np.int32).max - plan["product_bound"] - 1)
+                * input_channel_scales.astype(np.float64)
+            )
+            dw = np.maximum(
+                dw,
+                np.nextafter(
+                    minimum_weight_scale.astype(np.float32), np.float32(np.inf)
+                ),
+            )
+            plan["dw"] = dw
+            graph.node_table[plan["weight_arg"]]._mega_weight_scales = dw.copy()
+        accumulator_input_scale = (
+            input_channel_scales
+            if input_channel_scales is not None
+            else np.float32(input_scale)
+        )
         bias_i64 = np.rint(
             plan["bias"].astype(np.float64)
-            / (input_scale * plan["dw"].astype(np.float64))
+            / (
+                np.asarray(accumulator_input_scale, dtype=np.float64)
+                * dw.astype(np.float64)
+            )
         ).astype(np.int64)
         overflow = np.flatnonzero(
             np.abs(bias_i64) + plan["product_bound"] > np.iinfo(np.int32).max
@@ -757,7 +845,8 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             channel = int(overflow[0])
             raise ValueError(
                 f"INT32 accumulator overflow for {plan['node'].name} channel {channel}: "
-                f"input_scale={input_scale}, weight_scale={float(plan['dw'][channel])}, "
+                f"input_scale={float(np.asarray(accumulator_input_scale).reshape(-1)[channel if input_channel_scales is not None else 0])}, "
+                f"weight_scale={float(dw[channel])}, "
                 f"bias_i32={int(bias_i64[channel])}, "
                 f"product_bound={plan['product_bound']}"
             )
@@ -786,15 +875,25 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         replacement._input_scale = input_scale
         replacement._output_scale = plan["output_scale"]
         replacement._bias_i32 = bias_i64.astype(np.int32).tolist()
+        requant_output_scale = np.asarray(
+            plan.get("lane_input_scales", plan["output_scale"]), dtype=np.float32
+        )
         replacement._requant_scale = (
-            np.float32(input_scale) * plan["dw"] / np.float32(plan["output_scale"])
+            np.asarray(accumulator_input_scale, dtype=np.float32)
+            * dw
+            / requant_output_scale
         ).tolist()
-        replacement._dequant_scale = (np.float32(input_scale) * plan["dw"]).tolist()
+        replacement._dequant_scale = (
+            np.asarray(accumulator_input_scale, dtype=np.float32) * dw
+        ).tolist()
         replacement._activation = plan["activation_kind"]
         if replacement._activation == 2:
             raw = np.arange(256, dtype=np.int16)
             signed = np.where(raw < 128, raw, raw - 256).astype(np.float32)
-            x = signed * np.float32(plan["output_scale"])
+            if "lane_input_scales" in plan:
+                x = plan["lane_input_scales"][:, None] * signed[None, :]
+            else:
+                x = signed * np.float32(plan["output_scale"])
             if plan["lut_kind"] == "hardswish":
                 y = x * np.clip(x + np.float32(3.0), 0.0, 6.0) / np.float32(6.0)
             elif plan["lut_kind"] == "hardsigmoid":
@@ -806,13 +905,24 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 )
             else:
                 raise ValueError(f"missing LUT function for {node.name}")
+            lut_output_scale = np.asarray(
+                plan.get("lane_output_scales", plan["output_scale"]),
+                dtype=np.float32,
+            )
+            if lut_output_scale.ndim == 1:
+                lut_output_scale = lut_output_scale[:, None]
             replacement._lut_i8 = (
-                np.clip(np.rint(y / np.float32(plan["output_scale"])), -128, 127)
+                np.clip(np.rint(y / lut_output_scale), -128, 127)
                 .astype(np.int8)
+                .reshape(-1)
                 .tolist()
             )
+            replacement._lane_output_scales = plan.get(
+                "lane_output_scales", np.empty(0, dtype=np.float32)
+            ).tolist()
         else:
             replacement._lut_i8 = [0]
+            replacement._lane_output_scales = []
         replacement.trace_meta = node.trace_meta
         if isinstance(replacement, (MegaConv2dOp, MegaConv2dDepthwiseOp)):
             replacement._input_shape = list(
@@ -1095,7 +1205,22 @@ def quantize_model_graph(
         array = arrays[name]
         if getattr(node, "_mega_weight", False):
             axes = [0]
-            q, dw = quantize_symmetric(array, axes)
+            adjusted_dw = getattr(node, "_mega_weight_scales", None)
+            if adjusted_dw is None:
+                q, dw = quantize_symmetric(array, axes)
+            else:
+                dw = np.asarray(adjusted_dw, dtype=np.float32).reshape(-1)
+                if (
+                    dw.size != array.shape[0]
+                    or not np.all(np.isfinite(dw))
+                    or np.any(dw <= 0)
+                ):
+                    raise ValueError(f"invalid adjusted weight scales for {name}")
+                q = np.clip(
+                    np.rint(array / dw.reshape((-1,) + (1,) * (array.ndim - 1))),
+                    -128,
+                    127,
+                ).astype(np.int8)
             if array.ndim == 4:
                 if getattr(node, "_mega_depthwise_weight", False):
                     q = np.transpose(q, (2, 3, 0, 1)).copy()

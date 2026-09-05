@@ -5,6 +5,7 @@
 #include <Msan.h>
 #include <algorithm>
 #include <alloca.h>
+#include <cerrno>
 #include <cstdlib>
 #include <cstdint>
 #include <cstdio>
@@ -252,6 +253,49 @@ extern "C" void _mlir_ciface_buddyTraceTensorI8Path(
   for (int64_t i = 0; i < ref.sizes[0]; ++i)
     fprintf(file, "%d\n", static_cast<int>(ref.data[ref.offset + i * ref.strides[0]]));
   fclose(file);
+}
+
+extern "C" void _mlir_ciface_buckyballTraceStageI8Path(
+    int64_t id, int64_t depth, int64_t path0, int64_t path1, int64_t path2,
+    int64_t path3, StridedMemRefType<int8_t, 1> *tensor) {
+  (void)id;
+  checkTraceTensor(tensor);
+
+  DynamicMemRefType<int8_t> ref(*tensor);
+  if (ref.strides[0] != 1) {
+    fprintf(stderr, "Buckyball stage trace requires a contiguous tensor\n");
+    abort();
+  }
+
+  char key[64];
+  writeTracePath(key, sizeof(key), depth, path0, path1, path2, path3);
+  size_t size = static_cast<size_t>(ref.sizes[0]);
+  constexpr size_t chunkSize = 8192;
+  int8_t buffer[chunkSize];
+  for (size_t offset = 0, part = 0; offset < size; ++part) {
+    char path[160];
+    snprintf(path, sizeof(path), "trace/tensor/trace-%s-part-%zu.i8", key,
+             part);
+    FILE *file = fopen(path, "wb");
+    if (!file) {
+      fprintf(stderr, "failed to open stage trace file: %s: %s\n", path,
+              strerror(errno));
+      abort();
+    }
+    size_t chunk = std::min(chunkSize, size - offset);
+    memcpy(buffer, ref.data + ref.offset + offset, chunk);
+    if (fwrite(buffer, 1, chunk, file) != chunk) {
+      fprintf(stderr, "failed to write complete stage trace: %s: %s\n", path,
+              strerror(errno));
+      abort();
+    }
+    if (fclose(file) != 0) {
+      fprintf(stderr, "failed to close stage trace file: %s: %s\n", path,
+              strerror(errno));
+      abort();
+    }
+    offset += chunk;
+  }
 }
 
 extern "C" void _mlir_ciface_buddyTraceTensorI32Path(
