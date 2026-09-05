@@ -22,8 +22,10 @@ import os
 from pathlib import Path
 import argparse
 import sys
+import numpy as np
 import torch
 import torchvision.models as models
+from PIL import Image
 from torch._inductor.decomposition import decompositions as inductor_decomp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
@@ -88,7 +90,13 @@ dynamo_compiler = DynamoCompiler(
     verbose_path=verbose_path,
     trace=trace,
 )
-data = torch.randn([1, 3, 224, 224])
+pixels = np.asarray(
+    Image.open(model_dir / "images" / "dog-32bit_224x224.bmp").convert("RGB"),
+    dtype=np.float32,
+)
+if pixels.shape != (224, 224, 3):
+    raise ValueError(f"expected a 224x224 RGB calibration image, got {pixels.shape}")
+data = torch.from_numpy((pixels / np.float32(255.0)).copy()).permute(2, 0, 1)[None]
 calibration = calibrate_layers(model, data)
 # Import the model into MLIR module and parameters.
 with torch.no_grad():

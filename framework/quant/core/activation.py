@@ -35,10 +35,42 @@ def calibrate_layers(model: torch.nn.Module, sample: torch.Tensor) -> dict:
         def record(layer, inputs, output, weight_name=f"{name}.weight"):
             if len(inputs) != 1 or not torch.is_tensor(inputs[0]) or not torch.is_tensor(output):
                 raise ValueError(f"unsupported calibration signature for {weight_name}")
+            output_values = output.detach().cpu().numpy()
+            if output_values.ndim not in (2, 4):
+                raise ValueError(
+                    f"unsupported calibration output rank for {weight_name}: "
+                    f"{output_values.ndim}"
+                )
+            channel_axis = 1
+            reduction_axes = tuple(
+                axis for axis in range(output_values.ndim) if axis != channel_axis
+            )
+            raw_channel_max = np.max(np.abs(output_values), axis=reduction_axes)
+            hardswish_values = (
+                output_values
+                * np.clip(output_values + np.float32(3.0), 0.0, 6.0)
+                / np.float32(6.0)
+            )
+            hardswish_channel_max = np.max(
+                np.abs(hardswish_values), axis=reduction_axes
+            )
+            raw_channel_scales = np.where(
+                raw_channel_max == 0.0,
+                np.float32(1.0),
+                raw_channel_max / np.float32(127.0),
+            ).astype(np.float32)
+            hardswish_channel_scales = np.where(
+                hardswish_channel_max == 0.0,
+                np.float32(1.0),
+                hardswish_channel_max / np.float32(127.0),
+            ).astype(np.float32)
             scales.setdefault(weight_name, []).append(
                 (
                     activation_scale(inputs[0].detach().cpu().numpy()),
-                    activation_scale(output.detach().cpu().numpy()),
+                    activation_scale(output_values),
+                    activation_scale(np.maximum(output_values, np.float32(0.0))),
+                    raw_channel_scales,
+                    hardswish_channel_scales,
                 )
             )
 
