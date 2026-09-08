@@ -3,3 +3,4 @@ arg0.data
 
 # model mlir file
 *.mlir
+quant/out/

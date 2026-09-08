@@ -42,7 +42,16 @@ parser.add_argument(
     default=False,
     help="Import with trace/trace.toml.",
 )
+parser.add_argument(
+    "--core-count",
+    type=int,
+    default=1,
+    help="Split the fused BERT graph into this many homogeneous Core subgraphs.",
+)
 args = parser.parse_args()
+
+if args.core_count < 1:
+    parser.error("--core-count must be positive")
 
 # Ensure output directory exists
 output_dir = Path(args.output_dir).resolve()
@@ -86,12 +95,35 @@ graph = graphs[0]
 params = dynamo_compiler.imported_params[graph]
 pattern_list = [simply_fuse]
 graphs[0].fuse_ops(pattern_list)
-driver = GraphDriver(graphs[0])
-driver.subgraphs[0].lower_to_top_level_ir()
+graph = graphs[0]
+fused_ops = graph.op_groups.pop("subgraph0")
+if args.core_count > len(fused_ops):
+    raise ValueError(
+        f"cannot split {len(fused_ops)} fused BERT operations across "
+        f"{args.core_count} Cores"
+    )
+
+# A homogeneous tile uses one Core compiler target. Partition its one fused
+# graph into ordered chunks so each Core receives a distinct part of the model.
+base, remainder = divmod(len(fused_ops), args.core_count)
+offset = 0
+for core_id in range(args.core_count):
+    chunk_size = base + (1 if core_id < remainder else 0)
+    name = f"subgraph{core_id}"
+    graph.op_groups[name] = fused_ops[offset : offset + chunk_size]
+    graph.group_map_device[name] = graph.group_map_device.get(
+        "subgraph0", graph.device
+    )
+    offset += chunk_size
+
+driver = GraphDriver(graph)
+for subgraph in driver.subgraphs:
+    subgraph.lower_to_top_level_ir()
 
 # Write the MLIR module and forward graph to the specified output directory
-with open(os.path.join(output_dir, "subgraph0.mlir"), "w") as module_file:
-    print(driver.subgraphs[0]._imported_module, file=module_file)
+for core_id, subgraph in enumerate(driver.subgraphs):
+    with open(os.path.join(output_dir, f"subgraph{core_id}.mlir"), "w") as module_file:
+        print(subgraph._imported_module, file=module_file)
 with open(os.path.join(output_dir, "forward.mlir"), "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
 

@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
 #include <sys/time.h>
 
 using namespace buddy;
@@ -138,7 +139,12 @@ extern "C" void _mlir_ciface_forward_decode(
 void getUserInput(std::string &inputStr) {
   std::cout << "\nPlease send a message:" << std::endl;
   std::cout << ">>> ";
-  getline(std::cin, inputStr);
+  if (!isatty(STDIN_FILENO) || !getline(std::cin, inputStr)) {
+    // MCP/BEMU batch runs have no terminal stdin; keep the smoke workload
+    // deterministic instead of waiting forever at the interactive prompt.
+    inputStr = "Hello from the Poly multi-core BEMU smoke test.";
+    std::cout << inputStr << std::endl;
+  }
   std::cout << std::endl;
 }
 

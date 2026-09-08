@@ -88,7 +88,10 @@ fi
 
 if run_step "1"; then
   begin_step "1" "submodules init"
-  git submodule update --init 
+  git submodule update --init \
+    thirdparty/buddy-mlir \
+    thirdparty/chipyard \
+    thirdparty/buckyball
   replace_content ${ROOT}/thirdparty/chipyard/env.sh base-conda-setup "source $(conda info --base)/etc/profile.d/conda.sh"
 fi
 

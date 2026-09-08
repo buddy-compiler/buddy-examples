@@ -102,6 +102,9 @@ add_custom_target(sync-nv-mobilenetv3-deps
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_MOBILENETV3_DIR}/Labels.txt
           ${CMAKE_CURRENT_BINARY_DIR}/Labels.txt
+  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+          ${MODEL_MOBILENETV3_DIR}/quant/out
+          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
   DEPENDS
           ${MODEL_MOBILENETV3_DIR}/arg0.data
           ${MODEL_MOBILENETV3_DIR}/Labels.txt
@@ -126,6 +129,9 @@ if(DEFINED OUTPUT_BIN_DIR)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${MODEL_MOBILENETV3_DIR}/Labels.txt
             ${OUT_DIR}/Labels.txt
+    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+            ${MODEL_MOBILENETV3_DIR}/quant/out
+            ${OUT_DIR}/quant/out
     COMMENT "Copying NV mobilenetv3 executable and deps to output directory"
     VERBATIM)
 endif()

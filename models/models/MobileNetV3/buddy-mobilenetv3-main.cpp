@@ -15,6 +15,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "testutils.h"
+#include <bbhw/isa/isa.h>
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
@@ -23,52 +24,43 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
-constexpr size_t ParamsSize = 2554968;
+constexpr size_t ParamsSize = 10968;
+constexpr size_t WeightsSize = 15499224;
 const std::string ImgName = "dog-32bit_224x224.bmp";
 
 // Declare the mobilenet C interface.
 extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
                                      MemRef<float, 1> *arg0,
+                                     MemRef<int8_t, 1> *weights,
                                      MemRef<float, 4> *input);
+
+template <typename T, size_t N>
+class BorrowedBuffer : public MemRef<T, N> {
+public:
+  BorrowedBuffer(T *data, intptr_t sizes[N]) : MemRef<T, N>(sizes, false, 0) {
+    this->allocated = this->aligned = data;
+  }
+  ~BorrowedBuffer() { this->allocated = this->aligned = nullptr; }
+};
+
+template <typename T>
+void loadBinary(const std::string &path, T *data, size_t count) {
+  std::ifstream file(path, std::ios::binary);
+  if (!file.is_open())
+    throw std::runtime_error("failed to open binary file: " + path);
+  file.read(reinterpret_cast<char *>(data), sizeof(T) * count);
+  if (file.gcount() != static_cast<std::streamsize>(sizeof(T) * count))
+    throw std::runtime_error("short binary file: " + path);
+}
 
 /// Print [Log] label in bold blue format.
 void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }
-
-/// Load parameters into data container.
-void loadParameters(const std::string &paramFilePath,
-                    MemRef<float, 1> &params) {
-  const auto loadStart = std::chrono::high_resolution_clock::now();
-  // Open the parameter file in binary mode.
-  std::ifstream paramFile(paramFilePath, std::ios::in | std::ios::binary);
-  if (!paramFile.is_open()) {
-    throw std::runtime_error("[Error] Failed to open params file!");
-  }
-  printLogLabel();
-  std::cout << "Loading params..." << std::endl;
-  printLogLabel();
-  // Print the canonical path of the parameter file.
-  std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
-            << std::endl;
-  // Read the parameter data into the provided memory reference.
-  paramFile.read(reinterpret_cast<char *>(params.getData()),
-                 sizeof(float) * (params.getSize()));
-  if (paramFile.fail()) {
-    throw std::runtime_error("Error occurred while reading params file!");
-  }
-  paramFile.close();
-  const auto loadEnd = std::chrono::high_resolution_clock::now();
-  const std::chrono::duration<double, std::milli> loadTime =
-      loadEnd - loadStart;
-  printLogLabel();
-  std::cout << "Params load time: " << (double)(loadTime.count()) / 1000
-            << "s\n"
-            << std::endl;
-}
 
 // Softmax function.
 void softmax(float *input, size_t size) {
@@ -125,13 +117,21 @@ int main() {
   MemRef<float, 2> output(sizesOutput);
 
   // Load model parameters from the specified file.
-  std::string paramsDir = mobilenetDir + "/arg0.data";
-  MemRef<float, 1> paramsContainer({ParamsSize});
-  loadParameters(paramsDir, paramsContainer);
-  
+  static float paramsData[ParamsSize] __attribute__((aligned(64)));
+  static int8_t weightsData[WeightsSize] __attribute__((aligned(64)));
+  intptr_t paramsSize[1] = {ParamsSize};
+  intptr_t weightsSize[1] = {WeightsSize};
+  BorrowedBuffer<float, 1> paramsContainer(paramsData, paramsSize);
+  BorrowedBuffer<int8_t, 1> weightsContainer(weightsData, weightsSize);
+  loadBinary(mobilenetDir + "/mobilenetv3.payload/params.f32", paramsData,
+             ParamsSize);
+  loadBinary(mobilenetDir + "/mobilenetv3.payload/weights.i8", weightsData,
+             WeightsSize);
+
   unsigned long start = read_cycles();
   // Call the forward function of the model.
-  _mlir_ciface_forward(&output, &paramsContainer, &inputResize);
+  _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer,
+                       &inputResize);
   unsigned long end = read_cycles();
   std::cout << "Cycle count: " << end - start << std::endl;
 
@@ -150,5 +150,12 @@ int main() {
   std::cout << "Classification: " << getLabel(maxIdx) << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
 
+  constexpr int expect = 258;
+  if (maxIdx != expect) {
+    std::cerr << "FAIL expected classification " << expect << " (Samoyed), got "
+              << maxIdx << " (" << getLabel(maxIdx) << ")" << std::endl;
+    return 1;
+  }
+  std::cout << "MobileNetV3 Inference PASS" << std::endl;
   return 0;
 }

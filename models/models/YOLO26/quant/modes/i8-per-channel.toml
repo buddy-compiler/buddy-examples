@@ -1,0 +1,2 @@
+storage = "i8"
+default_axes = [0]

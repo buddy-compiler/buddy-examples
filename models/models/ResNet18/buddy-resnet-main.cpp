@@ -15,6 +15,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "testutils.h"
+#include <bbhw/isa/isa.h>
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
@@ -23,51 +24,35 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
-constexpr size_t ParamsSize = 11699112;
+constexpr size_t ParamsSize = 20200;
+constexpr size_t WeightsSize = 22806528;
 const std::string ImgName = "ice-cream-24bit-224x224.bmp";
 
 // Declare the resnet C interface.
 extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
                                      MemRef<float, 1> *arg0,
+                                     MemRef<int8_t, 1> *weights,
                                      MemRef<float, 4> *input);
 
-/// Print [Log] label in bold blue format.
-void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }
+template <typename T, size_t N>
+class BorrowedBuffer : public MemRef<T, N> {
+public:
+  BorrowedBuffer(T *data, intptr_t sizes[N]) : MemRef<T, N>(sizes, false, 0) {
+    this->allocated = this->aligned = data;
+  }
+  ~BorrowedBuffer() { this->allocated = this->aligned = nullptr; }
+};
 
-/// Load parameters into data container.
-void loadParameters(const std::string &paramFilePath,
-                    MemRef<float, 1> &params) {
-  const auto loadStart = std::chrono::high_resolution_clock::now();
-  // Open the parameter file in binary mode.
-  std::ifstream paramFile(paramFilePath, std::ios::in | std::ios::binary);
-  if (!paramFile.is_open()) {
-    throw std::runtime_error("[Error] Failed to open params file!");
-  }
-  printLogLabel();
-  std::cout << "Loading params..." << std::endl;
-  printLogLabel();
-  // Print the canonical path of the parameter file.
-  std::cout << "Params file: " << std::filesystem::canonical(paramFilePath)
-            << std::endl;
-  // Read the parameter data into the provided memory reference.
-  paramFile.read(reinterpret_cast<char *>(params.getData()),
-                 sizeof(float) * (params.getSize()));
-  if (paramFile.fail()) {
-    throw std::runtime_error("Error occurred while reading params file!");
-  }
-  paramFile.close();
-  const auto loadEnd = std::chrono::high_resolution_clock::now();
-  const std::chrono::duration<double, std::milli> loadTime =
-      loadEnd - loadStart;
-  printLogLabel();
-  std::cout << "Params load time: " << (double)(loadTime.count()) / 1000
-            << "s\n"
-            << std::endl;
+template <typename T>
+void loadBinary(const std::string &path, T *data, size_t count) {
+  std::ifstream file(path, std::ios::binary);
+  file.read(reinterpret_cast<char *>(data), sizeof(T) * count);
 }
 
 // Softmax function.
@@ -121,25 +106,38 @@ int main() {
   MemRef<float, 4> inputResize = dip::Resize4D_NCHW(
       &input, dip::INTERPOLATION_TYPE::BILINEAR_INTERPOLATION,
       {1, 3, 224, 224} /*{image_cols, image_rows}*/);
+  constexpr float Mean[] = {0.485f, 0.456f, 0.406f};
+  constexpr float Std[] = {0.229f, 0.224f, 0.225f};
+  float *inputData = inputResize.getData();
+  for (size_t channel = 0; channel < 3; ++channel) {
+    for (size_t pixel = 0; pixel < 224 * 224; ++pixel) {
+      size_t index = channel * 224 * 224 + pixel;
+      inputData[index] = (inputData[index] - Mean[channel]) / Std[channel];
+    }
+  }
 
   MemRef<float, 2> output(sizesOutput);
 
-  // Load model parameters from the specified file.
-  std::string paramsDir = resnetDir + "/arg0.data";
-  MemRef<float, 1> paramsContainer({ParamsSize});
-  loadParameters(paramsDir, paramsContainer);
+  static float paramsData[ParamsSize] __attribute__((aligned(64)));
+  static int8_t weightsData[WeightsSize] __attribute__((aligned(64)));
+  intptr_t paramsSize[1] = {ParamsSize};
+  intptr_t weightsSize[1] = {WeightsSize};
+  BorrowedBuffer<float, 1> paramsContainer(paramsData, paramsSize);
+  BorrowedBuffer<int8_t, 1> weightsContainer(weightsData, weightsSize);
+  loadBinary(resnetDir + "/resnet18.payload/params.f32", paramsData, ParamsSize);
+  loadBinary(resnetDir + "/resnet18.payload/weights.i8", weightsData, WeightsSize);
 
   unsigned long start = read_cycles();
-  _mlir_ciface_forward(&output, &paramsContainer, &inputResize);  
+  _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer, &inputResize);
   unsigned long end = read_cycles();
   std::cout << "Cycle count: " << end - start << std::endl;
 
   auto out = output.getData();
   softmax(out, 1000);
   // Find the classification and print the result.
-  float maxVal = 0;
-  float maxIdx = 0;
-  for (int i = 0; i < 1001; ++i) {
+  float maxVal = out[0];
+  int maxIdx = 0;
+  for (int i = 1; i < 1000; ++i) {
     if (out[i] > maxVal) {
       maxVal = out[i];
       maxIdx = i;
@@ -149,5 +147,12 @@ int main() {
   std::cout << "Classification: " << getLabel(maxIdx) << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
 
+  constexpr int expect = 928;
+  if (maxIdx != expect) {
+    std::cerr << "FAIL expected classification " << expect << " (ice cream), got "
+              << maxIdx << " (" << getLabel(maxIdx) << ")" << std::endl;
+    return 1;
+  }
+  std::cout << "ResNet Inference PASS" << std::endl;
   return 0;
 }

@@ -95,6 +95,16 @@ add_custom_target(sync-nv-lenet-deps
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_LENET_DIR}/arg0.data
           ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
+  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+          ${MODEL_LENET_DIR}/data
+          ${CMAKE_CURRENT_BINARY_DIR}/data
+  COMMAND bash -c "mkdir -p \"$0\" && if [ -f \"$1\" ]; then cp -f \"$1\" \"$2\"; fi"
+          ${CMAKE_CURRENT_BINARY_DIR}/quant
+          ${MODEL_LENET_DIR}/quant/arg0_qdq.data
+          ${CMAKE_CURRENT_BINARY_DIR}/quant/arg0_qdq.data
+  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+          ${MODEL_LENET_DIR}/quant/out
+          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
   DEPENDS
           ${MODEL_LENET_DIR}/arg0.data
   COMMENT "Syncing NV lenet runtime deps"
@@ -115,6 +125,16 @@ if(DEFINED OUTPUT_BIN_DIR)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${MODEL_LENET_DIR}/arg0.data
             ${OUT_DIR}/arg0.data
+    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+            ${MODEL_LENET_DIR}/data
+            ${OUT_DIR}/data
+    COMMAND bash -c "mkdir -p \"$0\" && if [ -f \"$1\" ]; then cp -f \"$1\" \"$2\"; fi"
+            ${OUT_DIR}/quant
+            ${MODEL_LENET_DIR}/quant/arg0_qdq.data
+            ${OUT_DIR}/quant/arg0_qdq.data
+    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+            ${MODEL_LENET_DIR}/quant/out
+            ${OUT_DIR}/quant/out
     COMMENT "Copying NV lenet executable and deps to output directory"
     VERBATIM)
 endif()

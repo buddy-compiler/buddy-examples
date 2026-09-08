@@ -14,15 +14,22 @@ set(RISCV_GNU_TOOLCHAIN $ENV{RISCV})
 
 option(BUCKYBALL_STABLE "Use stable LLVM Buckyball extensions" OFF)
 if(BUCKYBALL_STABLE)
-  set(BUCKYBALL_RISCV_MATTR "+xbbpebble,+xbbmeteor,+D")
+  set(BUCKYBALL_RISCV_MATTR "+xbbpebble,+xbuckyball,+D")
   set(BUCKYBALL_LOWER_BUCKYBALL "--lower-buckyball=stable=true")
+  set(BUCKYBALL_LOWER_BUCKYBALL_RUSHB
+      "--lower-buckyball=stable=true rushb=true")
   set(BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS
       "--lower-bank-ssa-to-intrinsics=stable=true")
+  set(BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS
+      "--lower-bank-ssa-to-intrinsics=stable=true rushb=true")
 else()
   set(BUCKYBALL_RISCV_MATTR "+xbuckyball,+D")
   set(BUCKYBALL_LOWER_BUCKYBALL -lower-buckyball)
+  set(BUCKYBALL_LOWER_BUCKYBALL_RUSHB "--lower-buckyball=rushb=true")
   set(BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS
       -lower-bank-ssa-to-intrinsics)
+  set(BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS
+      "--lower-bank-ssa-to-intrinsics=rushb=true")
 endif()
 message(STATUS "Buckyball RISC-V mattr: ${BUCKYBALL_RISCV_MATTR}")
 
@@ -38,9 +45,13 @@ endif()
 message(STATUS "Using Python3: ${Python3_EXECUTABLE}")
 
 set(WORKLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(MODELTEST_WORKLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(MODEL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/models)
 set(ARCH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/archs)
 set(MODELTEST_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+if(NOT DEFINED WORKLOAD_LIB_DIR)
+  set(WORKLOAD_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../lib)
+endif()
 
 # ============================================================================
 # Parse ARCH variable: ARCH="gemmini,other_arch,..."
@@ -59,6 +70,12 @@ endif()
 # Parse MODEL variable: MODEL="lenet,resnet18,bert,..."
 # ============================================================================
 if (DEFINED MODEL)
+  # Explicit selection replaces any cached MODEL_* flags from prior configures.
+  foreach(model_flag IN ITEMS
+      LENET RESNET18 MOBILENETV3 YOLO26 BUDDYNEXT DEEPSEEKR1 STABLEDIFFUSION
+      WHISPER LLAMA2 BERT GEMMA4 QWEN3 MINIMAX_H3_FL2VA MINIMAX_H3_REF2VA)
+    set(MODEL_${model_flag} OFF)
+  endforeach()
   string(REPLACE "," ";" MODEL_LIST ${MODEL})
   foreach(model_item ${MODEL_LIST})
     string(STRIP ${model_item} model_item)

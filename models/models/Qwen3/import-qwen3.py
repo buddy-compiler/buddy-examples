@@ -112,7 +112,9 @@ if model_path is None:
     model_path = "Qwen/Qwen3-0.6B"
 
 # Initialize the model from the specified model path.
-model = AutoModelForCausalLM.from_pretrained(model_path).eval()
+model = AutoModelForCausalLM.from_pretrained(
+    model_path, dtype=torch.float32
+).eval()
 model.config.use_cache = False
 
 # Initialize Dynamo Compiler with specific configurations as an importer.

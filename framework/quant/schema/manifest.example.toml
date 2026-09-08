@@ -1,0 +1,45 @@
+version = 1
+
+# i8 per-channel (scale_len = num_channels * 4 bytes f32)
+[[tensor]]
+name = "w0"
+shape = [64, 32]
+storage = "i8"
+axes = [0]
+weight_off = 0
+weight_len = 2048
+scale_off = 0
+scale_len = 256
+
+# i8 per-tensor (scale_len = 4 bytes f32)
+[[tensor]]
+name = "b0"
+shape = [64]
+storage = "i8"
+axes = []
+weight_off = 2048
+weight_len = 64
+scale_off = 256
+scale_len = 4
+
+# mxfp8: numel must be divisible by 32; weight_len = numel bytes; scale_len = numel//32 uint8
+[[tensor]]
+name = "w1"
+shape = [128, 32]
+storage = "mxfp8"
+axes = []
+weight_off = 2112
+weight_len = 4096
+scale_off = 260
+scale_len = 128
+
+# mxfp4: weight_len = numel//2 packed bytes; scale_len = numel//32 uint8
+[[tensor]]
+name = "w2"
+shape = [64, 32]
+storage = "mxfp4"
+axes = []
+weight_off = 6208
+weight_len = 1024
+scale_off = 388
+scale_len = 64

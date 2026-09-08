@@ -1,2 +1,4 @@
 *.data
 *.mlir
+cycle/
+quant/out/

@@ -1,7 +1,10 @@
 data/
 output/
-arg0.data
+*.data
+*.bin
 __pycache__/
 
 *.pth
 *.mlir
+quant/out/
+*.bwq/

@@ -1,7 +1,7 @@
-set(ARCH_GEMMINI_DIR ${MODELTEST_WORKLOAD_DIR}/archs/gemmini)
-set(GEMMINI_DIR ${MODELTEST_WORKLOAD_DIR}/archs/gemmini)
-set(ARCH_BUCKYBALL_DIR ${MODELTEST_WORKLOAD_DIR}/archs/buckyball)
-set(BUCKYBALL_DIR ${MODELTEST_WORKLOAD_DIR}/archs/buckyball)
+set(ARCH_GEMMINI_DIR ${ARCH_DIR}/gemmini)
+set(GEMMINI_DIR ${ARCH_DIR}/gemmini)
+set(ARCH_BUCKYBALL_DIR ${ARCH_DIR}/buckyball)
+set(BUCKYBALL_ROOT_DIR ${ARCH_DIR}/buckyball)
 set(ARCH_NV_DIR ${ARCH_DIR}/nv)
 set(NV_DIR ${ARCH_DIR}/nv)
 
@@ -16,4 +16,3 @@ endif()
 if (ARCH_NV)
   add_subdirectory(nv)
 endif()
-

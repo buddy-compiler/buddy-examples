@@ -170,6 +170,9 @@ add_custom_target(sync-nv-qwen3-deps
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_QWEN3_DIR}/vocab.txt
           ${CMAKE_CURRENT_BINARY_DIR}/vocab.txt
+  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+          ${MODEL_QWEN3_DIR}/quant/out
+          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
   DEPENDS
           ${MODEL_QWEN3_DIR}/arg0_0_6b.data
           ${MODEL_QWEN3_DIR}/arg1_0_6b.data
@@ -195,6 +198,9 @@ if(DEFINED OUTPUT_BIN_DIR)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${MODEL_QWEN3_DIR}/vocab.txt
             ${OUT_DIR}/vocab.txt
+    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+            ${MODEL_QWEN3_DIR}/quant/out
+            ${OUT_DIR}/quant/out
     COMMENT "Copying NV qwen3 executable and deps to output directory"
     VERBATIM)
 endif()

@@ -21,18 +21,23 @@
 import os
 import argparse
 from pathlib import Path
-import numpy as np
+import sys
 import torch
 import torchvision.models as models
 import torch._inductor.lowering
 from torch._inductor.decomposition import decompositions as inductor_decomp
 from torch._decomp import remove_decompositions
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
+
+from framework.quant.core.importer import fold_batch_norms, quantize_model_graph
+from framework.quant.core.activation import calibrate_layers
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="ResNet18 model AOT importer")
@@ -45,6 +50,12 @@ parser.add_argument(
     default=False,
     help="Import with trace/trace.toml.",
 )
+parser.add_argument(
+    "--trace-config",
+    type=Path,
+    default=Path("trace/trace.toml"),
+    help="Trace config relative to the model directory.",
+)
 args = parser.parse_args()
 
 # Ensure output directory exists
@@ -52,7 +63,7 @@ output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
 model_dir = Path(__file__).resolve().parent
 if args.trace:
-    trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
+    trace = TraceConfig(load_trace_config(model_dir / args.trace_config))
     verbose = False
     verbose_path = None
 else:
@@ -67,6 +78,7 @@ model_path = str(model_dir)
 
 model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model = model.eval()
+fold_batch_norms(model)
 
 # Remove the num_batches_tracked attribute.
 for layer in model.modules():
@@ -89,6 +101,7 @@ dynamo_compiler = DynamoCompiler(
     trace=trace,
 )
 data = torch.randn([1, 3, 224, 224])
+calibration = calibrate_layers(model, data)
 # Import the model into MLIR module and parameters.
 with torch.no_grad():
     graphs = dynamo_compiler.importer(model, data)
@@ -97,6 +110,15 @@ graph = graphs[0]
 params = dynamo_compiler.imported_params[graph]
 pattern_list = [simply_fuse]
 graphs[0].fuse_ops(pattern_list)
+quantize_model_graph(
+    graph,
+    params,
+    [name for name, _ in model.named_parameters()]
+    + [name for name, _ in model.named_buffers()],
+    output_dir,
+    "resnet18",
+    calibration,
+)
 driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 
@@ -105,15 +127,3 @@ with open(output_dir / "subgraph0.mlir", "w") as module_file:
     print(driver.subgraphs[0]._imported_module, file=module_file)
 with open(output_dir / "forward.mlir", "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
-
-params = dynamo_compiler.imported_params[graph]
-current_path = os.path.dirname(os.path.abspath(__file__))
-
-float32_param = np.concatenate(
-    [
-        param.detach().numpy().reshape([-1])
-        for param in params
-        if param.dtype == torch.float32
-    ]
-)
-float32_param.tofile(output_dir / "arg0.data")

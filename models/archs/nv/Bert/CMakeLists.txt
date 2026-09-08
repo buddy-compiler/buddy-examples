@@ -101,6 +101,9 @@ add_custom_target(sync-nv-bert-deps
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_BERT_DIR}/vocab.txt
           ${CMAKE_CURRENT_BINARY_DIR}/vocab.txt
+  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+          ${MODEL_BERT_DIR}/quant/out
+          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
   DEPENDS
           ${MODEL_BERT_DIR}/arg0.data
           ${MODEL_BERT_DIR}/arg1.data
@@ -126,6 +129,9 @@ if(DEFINED OUTPUT_BIN_DIR)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${MODEL_BERT_DIR}/vocab.txt
             ${OUT_DIR}/vocab.txt
+    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+            ${MODEL_BERT_DIR}/quant/out
+            ${OUT_DIR}/quant/out
     COMMENT "Copying NV bert executable and deps to output directory"
     VERBATIM)
 endif()

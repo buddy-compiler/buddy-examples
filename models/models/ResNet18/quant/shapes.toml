@@ -1,0 +1,410 @@
+# ResNet18 arg0 concat order from subgraph0.mlir param signature
+
+[[tensor]]
+name = "p000"
+shape = [64, 3, 7, 7]
+
+[[tensor]]
+name = "p001"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p002"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p003"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p004"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p005"
+shape = [64, 64, 3, 3]
+
+[[tensor]]
+name = "p006"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p007"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p008"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p009"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p010"
+shape = [64, 64, 3, 3]
+
+[[tensor]]
+name = "p011"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p012"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p013"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p014"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p015"
+shape = [64, 64, 3, 3]
+
+[[tensor]]
+name = "p016"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p017"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p018"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p019"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p020"
+shape = [64, 64, 3, 3]
+
+[[tensor]]
+name = "p021"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p022"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p023"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p024"
+shape = [64]
+axes = []
+[[tensor]]
+name = "p025"
+shape = [128, 64, 3, 3]
+
+[[tensor]]
+name = "p026"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p027"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p028"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p029"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p030"
+shape = [128, 128, 3, 3]
+
+[[tensor]]
+name = "p031"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p032"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p033"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p034"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p035"
+shape = [128, 64, 1, 1]
+
+[[tensor]]
+name = "p036"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p037"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p038"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p039"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p040"
+shape = [128, 128, 3, 3]
+
+[[tensor]]
+name = "p041"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p042"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p043"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p044"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p045"
+shape = [128, 128, 3, 3]
+
+[[tensor]]
+name = "p046"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p047"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p048"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p049"
+shape = [128]
+axes = []
+[[tensor]]
+name = "p050"
+shape = [256, 128, 3, 3]
+
+[[tensor]]
+name = "p051"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p052"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p053"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p054"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p055"
+shape = [256, 256, 3, 3]
+
+[[tensor]]
+name = "p056"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p057"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p058"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p059"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p060"
+shape = [256, 128, 1, 1]
+
+[[tensor]]
+name = "p061"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p062"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p063"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p064"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p065"
+shape = [256, 256, 3, 3]
+
+[[tensor]]
+name = "p066"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p067"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p068"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p069"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p070"
+shape = [256, 256, 3, 3]
+
+[[tensor]]
+name = "p071"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p072"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p073"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p074"
+shape = [256]
+axes = []
+[[tensor]]
+name = "p075"
+shape = [512, 256, 3, 3]
+
+[[tensor]]
+name = "p076"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p077"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p078"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p079"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p080"
+shape = [512, 512, 3, 3]
+
+[[tensor]]
+name = "p081"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p082"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p083"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p084"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p085"
+shape = [512, 256, 1, 1]
+
+[[tensor]]
+name = "p086"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p087"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p088"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p089"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p090"
+shape = [512, 512, 3, 3]
+
+[[tensor]]
+name = "p091"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p092"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p093"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p094"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p095"
+shape = [512, 512, 3, 3]
+
+[[tensor]]
+name = "p096"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p097"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p098"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p099"
+shape = [512]
+axes = []
+[[tensor]]
+name = "p100"
+shape = [1000, 512]
+
+[[tensor]]
+name = "p101"
+shape = [1000]
+axes = []

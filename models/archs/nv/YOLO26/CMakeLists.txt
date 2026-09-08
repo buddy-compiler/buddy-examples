@@ -106,6 +106,9 @@ add_custom_target(sync-nv-yolo26-deps
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
           ${MODEL_YOLO26_DIR}/labels.txt
           ${CMAKE_CURRENT_BINARY_DIR}/labels.txt
+  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+          ${MODEL_YOLO26_DIR}/quant/out
+          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
   DEPENDS
           ${MODEL_YOLO26_DIR}/arg0.data
           ${MODEL_YOLO26_DIR}/labels.txt
@@ -130,6 +133,9 @@ if(DEFINED OUTPUT_BIN_DIR)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${MODEL_YOLO26_DIR}/labels.txt
             ${OUT_DIR}/labels.txt
+    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
+            ${MODEL_YOLO26_DIR}/quant/out
+            ${OUT_DIR}/quant/out
     COMMENT "Copying NV yolo26 executable and deps to output directory"
     VERBATIM)
 endif()

@@ -1,6 +1,6 @@
 # buddy-examples
 
-This repository demonstrates buddy-mlir capabilities through selected representative workloads running on Chipyard 1.13.1 platform. These example models are lowered to Gemmini Dialect by buddy-mlir, where Gemmini is a DNN accelerator integrated in Chipyard. The workloads are simulated using tools provided by Chipyard: the FireSim FPGA-accelerated simulation.
+This repository demonstrates buddy-mlir capabilities through selected representative workloads running on the Chipyard 1.14.0 platform. These example models are lowered to Gemmini Dialect by buddy-mlir, where Gemmini is a DNN accelerator integrated in Chipyard. The workloads are simulated using tools provided by Chipyard: the FireSim FPGA-accelerated simulation.
 
 ## Quick Start
 

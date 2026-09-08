@@ -1,0 +1,4 @@
+*.data
+*.mlir
+output/
+__pycache__/

@@ -26,6 +26,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <sys/time.h>
 
 using namespace buddy;
@@ -53,149 +54,328 @@ extern "C" double _mlir_ciface_rtclock() {
 }
 
 struct MemRefContainer {
-
+  // Layout must match MLIR returns: (i64, k, v) x 28 + logits.
+  MemRef<long long, 1> pos0;
   MemRef<uint16_t, 4> kv0;
   MemRef<uint16_t, 4> kv1;
+  MemRef<long long, 1> pos1;
   MemRef<uint16_t, 4> kv2;
   MemRef<uint16_t, 4> kv3;
+  MemRef<long long, 1> pos2;
   MemRef<uint16_t, 4> kv4;
   MemRef<uint16_t, 4> kv5;
+  MemRef<long long, 1> pos3;
   MemRef<uint16_t, 4> kv6;
   MemRef<uint16_t, 4> kv7;
+  MemRef<long long, 1> pos4;
   MemRef<uint16_t, 4> kv8;
   MemRef<uint16_t, 4> kv9;
+  MemRef<long long, 1> pos5;
   MemRef<uint16_t, 4> kv10;
   MemRef<uint16_t, 4> kv11;
+  MemRef<long long, 1> pos6;
   MemRef<uint16_t, 4> kv12;
   MemRef<uint16_t, 4> kv13;
+  MemRef<long long, 1> pos7;
   MemRef<uint16_t, 4> kv14;
   MemRef<uint16_t, 4> kv15;
+  MemRef<long long, 1> pos8;
   MemRef<uint16_t, 4> kv16;
   MemRef<uint16_t, 4> kv17;
+  MemRef<long long, 1> pos9;
   MemRef<uint16_t, 4> kv18;
   MemRef<uint16_t, 4> kv19;
+  MemRef<long long, 1> pos10;
   MemRef<uint16_t, 4> kv20;
   MemRef<uint16_t, 4> kv21;
+  MemRef<long long, 1> pos11;
   MemRef<uint16_t, 4> kv22;
   MemRef<uint16_t, 4> kv23;
+  MemRef<long long, 1> pos12;
   MemRef<uint16_t, 4> kv24;
   MemRef<uint16_t, 4> kv25;
+  MemRef<long long, 1> pos13;
   MemRef<uint16_t, 4> kv26;
   MemRef<uint16_t, 4> kv27;
+  MemRef<long long, 1> pos14;
   MemRef<uint16_t, 4> kv28;
   MemRef<uint16_t, 4> kv29;
+  MemRef<long long, 1> pos15;
   MemRef<uint16_t, 4> kv30;
   MemRef<uint16_t, 4> kv31;
+  MemRef<long long, 1> pos16;
   MemRef<uint16_t, 4> kv32;
   MemRef<uint16_t, 4> kv33;
+  MemRef<long long, 1> pos17;
   MemRef<uint16_t, 4> kv34;
   MemRef<uint16_t, 4> kv35;
+  MemRef<long long, 1> pos18;
   MemRef<uint16_t, 4> kv36;
   MemRef<uint16_t, 4> kv37;
+  MemRef<long long, 1> pos19;
   MemRef<uint16_t, 4> kv38;
   MemRef<uint16_t, 4> kv39;
+  MemRef<long long, 1> pos20;
   MemRef<uint16_t, 4> kv40;
   MemRef<uint16_t, 4> kv41;
+  MemRef<long long, 1> pos21;
   MemRef<uint16_t, 4> kv42;
   MemRef<uint16_t, 4> kv43;
+  MemRef<long long, 1> pos22;
   MemRef<uint16_t, 4> kv44;
   MemRef<uint16_t, 4> kv45;
+  MemRef<long long, 1> pos23;
   MemRef<uint16_t, 4> kv46;
   MemRef<uint16_t, 4> kv47;
+  MemRef<long long, 1> pos24;
   MemRef<uint16_t, 4> kv48;
   MemRef<uint16_t, 4> kv49;
+  MemRef<long long, 1> pos25;
   MemRef<uint16_t, 4> kv50;
   MemRef<uint16_t, 4> kv51;
+  MemRef<long long, 1> pos26;
   MemRef<uint16_t, 4> kv52;
   MemRef<uint16_t, 4> kv53;
+  MemRef<long long, 1> pos27;
   MemRef<uint16_t, 4> kv54;
   MemRef<uint16_t, 4> kv55;
-
   MemRef<uint16_t, 3> logits;
 
-  std::array<MemRef<uint16_t, 4> *, 56> kv_ptrs;
-
   MemRefContainer(
-      MemRef<uint16_t, 4> k0, MemRef<uint16_t, 4> k1, MemRef<uint16_t, 4> k2,
-      MemRef<uint16_t, 4> k3, MemRef<uint16_t, 4> k4, MemRef<uint16_t, 4> k5,
-      MemRef<uint16_t, 4> k6, MemRef<uint16_t, 4> k7, MemRef<uint16_t, 4> k8,
-      MemRef<uint16_t, 4> k9, MemRef<uint16_t, 4> k10, MemRef<uint16_t, 4> k11,
-      MemRef<uint16_t, 4> k12, MemRef<uint16_t, 4> k13, MemRef<uint16_t, 4> k14,
-      MemRef<uint16_t, 4> k15, MemRef<uint16_t, 4> k16, MemRef<uint16_t, 4> k17,
-      MemRef<uint16_t, 4> k18, MemRef<uint16_t, 4> k19, MemRef<uint16_t, 4> k20,
-      MemRef<uint16_t, 4> k21, MemRef<uint16_t, 4> k22, MemRef<uint16_t, 4> k23,
-      MemRef<uint16_t, 4> k24, MemRef<uint16_t, 4> k25, MemRef<uint16_t, 4> k26,
-      MemRef<uint16_t, 4> k27, MemRef<uint16_t, 4> k28, MemRef<uint16_t, 4> k29,
-      MemRef<uint16_t, 4> k30, MemRef<uint16_t, 4> k31, MemRef<uint16_t, 4> k32,
-      MemRef<uint16_t, 4> k33, MemRef<uint16_t, 4> k34, MemRef<uint16_t, 4> k35,
-      MemRef<uint16_t, 4> k36, MemRef<uint16_t, 4> k37, MemRef<uint16_t, 4> k38,
-      MemRef<uint16_t, 4> k39, MemRef<uint16_t, 4> k40, MemRef<uint16_t, 4> k41,
-      MemRef<uint16_t, 4> k42, MemRef<uint16_t, 4> k43, MemRef<uint16_t, 4> k44,
-      MemRef<uint16_t, 4> k45, MemRef<uint16_t, 4> k46, MemRef<uint16_t, 4> k47,
-      MemRef<uint16_t, 4> k48, MemRef<uint16_t, 4> k49, MemRef<uint16_t, 4> k50,
-      MemRef<uint16_t, 4> k51, MemRef<uint16_t, 4> k52, MemRef<uint16_t, 4> k53,
-      MemRef<uint16_t, 4> k54, MemRef<uint16_t, 4> k55, MemRef<uint16_t, 3> l)
-      : kv0(k0), kv1(k1), kv2(k2), kv3(k3), kv4(k4), kv5(k5), kv6(k6), kv7(k7),
-        kv8(k8), kv9(k9), kv10(k10), kv11(k11), kv12(k12), kv13(k13), kv14(k14),
-        kv15(k15), kv16(k16), kv17(k17), kv18(k18), kv19(k19), kv20(k20),
-        kv21(k21), kv22(k22), kv23(k23), kv24(k24), kv25(k25), kv26(k26),
-        kv27(k27), kv28(k28), kv29(k29), kv30(k30), kv31(k31), kv32(k32),
-        kv33(k33), kv34(k34), kv35(k35), kv36(k36), kv37(k37), kv38(k38),
-        kv39(k39), kv40(k40), kv41(k41), kv42(k42), kv43(k43), kv44(k44),
-        kv45(k45), kv46(k46), kv47(k47), kv48(k48), kv49(k49), kv50(k50),
-        kv51(k51), kv52(k52), kv53(k53), kv54(k54), kv55(k55), logits(l),
-        kv_ptrs{&kv0,  &kv1,  &kv2,  &kv3,  &kv4,  &kv5,  &kv6,  &kv7,
-
-                &kv8,  &kv9,  &kv10, &kv11, &kv12, &kv13, &kv14, &kv15,
-
-                &kv16, &kv17, &kv18, &kv19, &kv20, &kv21, &kv22, &kv23,
-
-                &kv24, &kv25, &kv26, &kv27, &kv28, &kv29, &kv30, &kv31,
-
-                &kv32, &kv33, &kv34, &kv35, &kv36, &kv37, &kv38, &kv39,
-
-                &kv40, &kv41, &kv42, &kv43, &kv44, &kv45, &kv46, &kv47,
-
-                &kv48, &kv49, &kv50, &kv51, &kv52, &kv53, &kv54, &kv55} {}
+      MemRef<uint16_t, 4> k0, MemRef<uint16_t, 4> k1, MemRef<uint16_t, 4> k2, MemRef<uint16_t, 4> k3,
+      MemRef<uint16_t, 4> k4, MemRef<uint16_t, 4> k5, MemRef<uint16_t, 4> k6, MemRef<uint16_t, 4> k7,
+      MemRef<uint16_t, 4> k8, MemRef<uint16_t, 4> k9, MemRef<uint16_t, 4> k10, MemRef<uint16_t, 4> k11,
+      MemRef<uint16_t, 4> k12, MemRef<uint16_t, 4> k13, MemRef<uint16_t, 4> k14, MemRef<uint16_t, 4> k15,
+      MemRef<uint16_t, 4> k16, MemRef<uint16_t, 4> k17, MemRef<uint16_t, 4> k18, MemRef<uint16_t, 4> k19,
+      MemRef<uint16_t, 4> k20, MemRef<uint16_t, 4> k21, MemRef<uint16_t, 4> k22, MemRef<uint16_t, 4> k23,
+      MemRef<uint16_t, 4> k24, MemRef<uint16_t, 4> k25, MemRef<uint16_t, 4> k26, MemRef<uint16_t, 4> k27,
+      MemRef<uint16_t, 4> k28, MemRef<uint16_t, 4> k29, MemRef<uint16_t, 4> k30, MemRef<uint16_t, 4> k31,
+      MemRef<uint16_t, 4> k32, MemRef<uint16_t, 4> k33, MemRef<uint16_t, 4> k34, MemRef<uint16_t, 4> k35,
+      MemRef<uint16_t, 4> k36, MemRef<uint16_t, 4> k37, MemRef<uint16_t, 4> k38, MemRef<uint16_t, 4> k39,
+      MemRef<uint16_t, 4> k40, MemRef<uint16_t, 4> k41, MemRef<uint16_t, 4> k42, MemRef<uint16_t, 4> k43,
+      MemRef<uint16_t, 4> k44, MemRef<uint16_t, 4> k45, MemRef<uint16_t, 4> k46, MemRef<uint16_t, 4> k47,
+      MemRef<uint16_t, 4> k48, MemRef<uint16_t, 4> k49, MemRef<uint16_t, 4> k50, MemRef<uint16_t, 4> k51,
+      MemRef<uint16_t, 4> k52, MemRef<uint16_t, 4> k53, MemRef<uint16_t, 4> k54, MemRef<uint16_t, 4> k55,
+      MemRef<uint16_t, 3> l)
+      : pos0({1}, 0LL),
+        kv0(k0),
+        kv1(k1),
+        pos1({1}, 0LL),
+        kv2(k2),
+        kv3(k3),
+        pos2({1}, 0LL),
+        kv4(k4),
+        kv5(k5),
+        pos3({1}, 0LL),
+        kv6(k6),
+        kv7(k7),
+        pos4({1}, 0LL),
+        kv8(k8),
+        kv9(k9),
+        pos5({1}, 0LL),
+        kv10(k10),
+        kv11(k11),
+        pos6({1}, 0LL),
+        kv12(k12),
+        kv13(k13),
+        pos7({1}, 0LL),
+        kv14(k14),
+        kv15(k15),
+        pos8({1}, 0LL),
+        kv16(k16),
+        kv17(k17),
+        pos9({1}, 0LL),
+        kv18(k18),
+        kv19(k19),
+        pos10({1}, 0LL),
+        kv20(k20),
+        kv21(k21),
+        pos11({1}, 0LL),
+        kv22(k22),
+        kv23(k23),
+        pos12({1}, 0LL),
+        kv24(k24),
+        kv25(k25),
+        pos13({1}, 0LL),
+        kv26(k26),
+        kv27(k27),
+        pos14({1}, 0LL),
+        kv28(k28),
+        kv29(k29),
+        pos15({1}, 0LL),
+        kv30(k30),
+        kv31(k31),
+        pos16({1}, 0LL),
+        kv32(k32),
+        kv33(k33),
+        pos17({1}, 0LL),
+        kv34(k34),
+        kv35(k35),
+        pos18({1}, 0LL),
+        kv36(k36),
+        kv37(k37),
+        pos19({1}, 0LL),
+        kv38(k38),
+        kv39(k39),
+        pos20({1}, 0LL),
+        kv40(k40),
+        kv41(k41),
+        pos21({1}, 0LL),
+        kv42(k42),
+        kv43(k43),
+        pos22({1}, 0LL),
+        kv44(k44),
+        kv45(k45),
+        pos23({1}, 0LL),
+        kv46(k46),
+        kv47(k47),
+        pos24({1}, 0LL),
+        kv48(k48),
+        kv49(k49),
+        pos25({1}, 0LL),
+        kv50(k50),
+        kv51(k51),
+        pos26({1}, 0LL),
+        kv52(k52),
+        kv53(k53),
+        pos27({1}, 0LL),
+        kv54(k54),
+        kv55(k55),
+        logits(l) {}
 };
 
+using KVPtrArray = std::array<MemRef<uint16_t, 4> *, 56>;
+
+KVPtrArray buildKVPtrs(MemRefContainer &c) {
+  return {&c.kv0,  &c.kv1,  &c.kv2,  &c.kv3,  &c.kv4,  &c.kv5,  &c.kv6,  &c.kv7,
+          &c.kv8,  &c.kv9,  &c.kv10, &c.kv11, &c.kv12, &c.kv13, &c.kv14, &c.kv15,
+          &c.kv16, &c.kv17, &c.kv18, &c.kv19, &c.kv20, &c.kv21, &c.kv22, &c.kv23,
+          &c.kv24, &c.kv25, &c.kv26, &c.kv27, &c.kv28, &c.kv29, &c.kv30, &c.kv31,
+          &c.kv32, &c.kv33, &c.kv34, &c.kv35, &c.kv36, &c.kv37, &c.kv38, &c.kv39,
+          &c.kv40, &c.kv41, &c.kv42, &c.kv43, &c.kv44, &c.kv45, &c.kv46, &c.kv47,
+          &c.kv48, &c.kv49, &c.kv50, &c.kv51, &c.kv52, &c.kv53, &c.kv54, &c.kv55};
+}
+
 /// Declare Qwen3 forward function.
-extern "C" void _mlir_ciface_forward_prefill(MemRefContainer *result,
-                                             MemRef<uint16_t, 1> *arg0,
-                                             MemRef<float, 1> *arg1,
-                                             Text<size_t, 2> *arg2);
+extern "C" void _mlir_ciface_forward_prefill(
+    MemRefContainer *result, MemRef<uint16_t, 1> *arg0, MemRef<float, 1> *arg1,
+    Text<size_t, 2> *arg2,
+    MemRef<long long, 1> *pos0,
+    MemRef<long long, 1> *pos1,
+    MemRef<long long, 1> *pos2,
+    MemRef<long long, 1> *pos3,
+    MemRef<long long, 1> *pos4,
+    MemRef<long long, 1> *pos5,
+    MemRef<long long, 1> *pos6,
+    MemRef<long long, 1> *pos7,
+    MemRef<long long, 1> *pos8,
+    MemRef<long long, 1> *pos9,
+    MemRef<long long, 1> *pos10,
+    MemRef<long long, 1> *pos11,
+    MemRef<long long, 1> *pos12,
+    MemRef<long long, 1> *pos13,
+    MemRef<long long, 1> *pos14,
+    MemRef<long long, 1> *pos15,
+    MemRef<long long, 1> *pos16,
+    MemRef<long long, 1> *pos17,
+    MemRef<long long, 1> *pos18,
+    MemRef<long long, 1> *pos19,
+    MemRef<long long, 1> *pos20,
+    MemRef<long long, 1> *pos21,
+    MemRef<long long, 1> *pos22,
+    MemRef<long long, 1> *pos23,
+    MemRef<long long, 1> *pos24,
+    MemRef<long long, 1> *pos25,
+    MemRef<long long, 1> *pos26,
+    MemRef<long long, 1> *pos27);
 
 extern "C" void _mlir_ciface_forward_decode(
     MemRefContainer *result, MemRef<uint16_t, 1> *arg0, MemRef<float, 1> *arg1,
-    MemRef<long long, 2> *arg2, MemRef<long long, 1> *arg3,
-    MemRef<uint16_t, 4> *kv0, MemRef<uint16_t, 4> *kv1,
-    MemRef<uint16_t, 4> *kv2, MemRef<uint16_t, 4> *kv3,
-    MemRef<uint16_t, 4> *kv4, MemRef<uint16_t, 4> *kv5,
-    MemRef<uint16_t, 4> *kv6, MemRef<uint16_t, 4> *kv7,
-    MemRef<uint16_t, 4> *kv8, MemRef<uint16_t, 4> *kv9,
-    MemRef<uint16_t, 4> *kv10, MemRef<uint16_t, 4> *kv11,
-    MemRef<uint16_t, 4> *kv12, MemRef<uint16_t, 4> *kv13,
-    MemRef<uint16_t, 4> *kv14, MemRef<uint16_t, 4> *kv15,
-    MemRef<uint16_t, 4> *kv16, MemRef<uint16_t, 4> *kv17,
-    MemRef<uint16_t, 4> *kv18, MemRef<uint16_t, 4> *kv19,
-    MemRef<uint16_t, 4> *kv20, MemRef<uint16_t, 4> *kv21,
-    MemRef<uint16_t, 4> *kv22, MemRef<uint16_t, 4> *kv23,
-    MemRef<uint16_t, 4> *kv24, MemRef<uint16_t, 4> *kv25,
-    MemRef<uint16_t, 4> *kv26, MemRef<uint16_t, 4> *kv27,
-    MemRef<uint16_t, 4> *kv28, MemRef<uint16_t, 4> *kv29,
-    MemRef<uint16_t, 4> *kv30, MemRef<uint16_t, 4> *kv31,
-    MemRef<uint16_t, 4> *kv32, MemRef<uint16_t, 4> *kv33,
-    MemRef<uint16_t, 4> *kv34, MemRef<uint16_t, 4> *kv35,
-    MemRef<uint16_t, 4> *kv36, MemRef<uint16_t, 4> *kv37,
-    MemRef<uint16_t, 4> *kv38, MemRef<uint16_t, 4> *kv39,
-    MemRef<uint16_t, 4> *kv40, MemRef<uint16_t, 4> *kv41,
-    MemRef<uint16_t, 4> *kv42, MemRef<uint16_t, 4> *kv43,
-    MemRef<uint16_t, 4> *kv44, MemRef<uint16_t, 4> *kv45,
-    MemRef<uint16_t, 4> *kv46, MemRef<uint16_t, 4> *kv47,
-    MemRef<uint16_t, 4> *kv48, MemRef<uint16_t, 4> *kv49,
-    MemRef<uint16_t, 4> *kv50, MemRef<uint16_t, 4> *kv51,
-    MemRef<uint16_t, 4> *kv52, MemRef<uint16_t, 4> *kv53,
-    MemRef<uint16_t, 4> *kv54, MemRef<uint16_t, 4> *kv55);
+    MemRef<long long, 2> *arg2,
+    MemRef<long long, 1> *pos0,
+    MemRef<uint16_t, 4> *kv0,
+    MemRef<uint16_t, 4> *kv1,
+    MemRef<long long, 1> *pos1,
+    MemRef<uint16_t, 4> *kv2,
+    MemRef<uint16_t, 4> *kv3,
+    MemRef<long long, 1> *pos2,
+    MemRef<uint16_t, 4> *kv4,
+    MemRef<uint16_t, 4> *kv5,
+    MemRef<long long, 1> *pos3,
+    MemRef<uint16_t, 4> *kv6,
+    MemRef<uint16_t, 4> *kv7,
+    MemRef<long long, 1> *pos4,
+    MemRef<uint16_t, 4> *kv8,
+    MemRef<uint16_t, 4> *kv9,
+    MemRef<long long, 1> *pos5,
+    MemRef<uint16_t, 4> *kv10,
+    MemRef<uint16_t, 4> *kv11,
+    MemRef<long long, 1> *pos6,
+    MemRef<uint16_t, 4> *kv12,
+    MemRef<uint16_t, 4> *kv13,
+    MemRef<long long, 1> *pos7,
+    MemRef<uint16_t, 4> *kv14,
+    MemRef<uint16_t, 4> *kv15,
+    MemRef<long long, 1> *pos8,
+    MemRef<uint16_t, 4> *kv16,
+    MemRef<uint16_t, 4> *kv17,
+    MemRef<long long, 1> *pos9,
+    MemRef<uint16_t, 4> *kv18,
+    MemRef<uint16_t, 4> *kv19,
+    MemRef<long long, 1> *pos10,
+    MemRef<uint16_t, 4> *kv20,
+    MemRef<uint16_t, 4> *kv21,
+    MemRef<long long, 1> *pos11,
+    MemRef<uint16_t, 4> *kv22,
+    MemRef<uint16_t, 4> *kv23,
+    MemRef<long long, 1> *pos12,
+    MemRef<uint16_t, 4> *kv24,
+    MemRef<uint16_t, 4> *kv25,
+    MemRef<long long, 1> *pos13,
+    MemRef<uint16_t, 4> *kv26,
+    MemRef<uint16_t, 4> *kv27,
+    MemRef<long long, 1> *pos14,
+    MemRef<uint16_t, 4> *kv28,
+    MemRef<uint16_t, 4> *kv29,
+    MemRef<long long, 1> *pos15,
+    MemRef<uint16_t, 4> *kv30,
+    MemRef<uint16_t, 4> *kv31,
+    MemRef<long long, 1> *pos16,
+    MemRef<uint16_t, 4> *kv32,
+    MemRef<uint16_t, 4> *kv33,
+    MemRef<long long, 1> *pos17,
+    MemRef<uint16_t, 4> *kv34,
+    MemRef<uint16_t, 4> *kv35,
+    MemRef<long long, 1> *pos18,
+    MemRef<uint16_t, 4> *kv36,
+    MemRef<uint16_t, 4> *kv37,
+    MemRef<long long, 1> *pos19,
+    MemRef<uint16_t, 4> *kv38,
+    MemRef<uint16_t, 4> *kv39,
+    MemRef<long long, 1> *pos20,
+    MemRef<uint16_t, 4> *kv40,
+    MemRef<uint16_t, 4> *kv41,
+    MemRef<long long, 1> *pos21,
+    MemRef<uint16_t, 4> *kv42,
+    MemRef<uint16_t, 4> *kv43,
+    MemRef<long long, 1> *pos22,
+    MemRef<uint16_t, 4> *kv44,
+    MemRef<uint16_t, 4> *kv45,
+    MemRef<long long, 1> *pos23,
+    MemRef<uint16_t, 4> *kv46,
+    MemRef<uint16_t, 4> *kv47,
+    MemRef<long long, 1> *pos24,
+    MemRef<uint16_t, 4> *kv48,
+    MemRef<uint16_t, 4> *kv49,
+    MemRef<long long, 1> *pos25,
+    MemRef<uint16_t, 4> *kv50,
+    MemRef<uint16_t, 4> *kv51,
+    MemRef<long long, 1> *pos26,
+    MemRef<uint16_t, 4> *kv52,
+    MemRef<uint16_t, 4> *kv53,
+    MemRef<long long, 1> *pos27,
+    MemRef<uint16_t, 4> *kv54,
+    MemRef<uint16_t, 4> *kv55);
 
 // -----------------------------------------------------------------------------
 // Helper Functions
@@ -227,7 +407,7 @@ void tokenizeInput(const std::string &vocabFile,
   std::cout << "Vocab file: " << std::filesystem::canonical(vocabFile)
             << std::endl;
   const auto buddyTokenizeStart = std::chrono::high_resolution_clock::now();
-  inputContainer.tokenizeDeepSeekR1(vocabFile, MaxTokenLength);
+  inputContainer.tokenizeQwen3(vocabFile, MaxTokenLength);
   const auto buddyTokenizeEnd = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double, std::milli> buddyTokenizeTime =
       buddyTokenizeEnd - buddyTokenizeStart;
@@ -288,26 +468,35 @@ int findMaxIndex(const uint16_t *start, const uint16_t *end) {
   return maxIdx;
 }
 
-void copy_kv_by_cache_position_block(const MemRefContainer &prefill,
-                                     MemRefContainer &decode,
-                                     int cache_position) {
-  constexpr int num_kv = 56;
-  int copy_len = std::min(cache_position, (int)MaxTokenLength);
-
-  for (int k = 0; k < num_kv; ++k) {
-    auto &src = *prefill.kv_ptrs[k];
-    auto &dst = *decode.kv_ptrs[k];
-
+void copy_kv_by_cache_position_block(KVPtrArray &prefill_kvs,
+                                     KVPtrArray &decode_kvs, int copy_len) {
+  if (copy_len < 0 || copy_len > (int)MaxTokenLength) {
+    throw std::runtime_error("KV copy_len out of range");
+  }
+  for (int k = 0; k < 56; ++k) {
+    auto &src = *prefill_kvs[k];
+    auto &dst = *decode_kvs[k];
     for (int h = 0; h < (int)HeadNum; ++h) {
       size_t bytes_to_copy =
           static_cast<size_t>(copy_len) * HiddenSize * sizeof(uint16_t);
-
       uint16_t *src_ptr = src.getData() + h * MaxTokenLength * HiddenSize;
       uint16_t *dst_ptr = dst.getData() + h * MaxTokenLength * HiddenSize;
-
       std::memcpy(dst_ptr, src_ptr, bytes_to_copy);
     }
   }
+}
+
+void sync_cache_pos(MemRefContainer &c, long long pos) {
+  if (pos < 0 || pos >= (long long)MaxTokenLength) {
+    throw std::runtime_error("cache_position out of KV range");
+  }
+  MemRef<long long, 1> *posPtrs[28] = {
+      &c.pos0,  &c.pos1,  &c.pos2,  &c.pos3,  &c.pos4,  &c.pos5,  &c.pos6,
+      &c.pos7,  &c.pos8,  &c.pos9,  &c.pos10, &c.pos11, &c.pos12, &c.pos13,
+      &c.pos14, &c.pos15, &c.pos16, &c.pos17, &c.pos18, &c.pos19, &c.pos20,
+      &c.pos21, &c.pos22, &c.pos23, &c.pos24, &c.pos25, &c.pos26, &c.pos27};
+  for (int pi = 0; pi < 28; ++pi)
+    posPtrs[pi]->getData()[0] = pos;
 }
 
 // -----------------------------------------------------------------------------
@@ -431,8 +620,37 @@ int main() {
 
   double prefillTokensPerSec = 0.0;
   const auto inferenceStart = std::chrono::high_resolution_clock::now();
-  _mlir_ciface_forward_prefill(ptrPrefillResultContainer, &ParamsBf16Container,
-                               &ParamsF32Container, &inputContainerPrefill);
+  _mlir_ciface_forward_prefill(
+      ptrPrefillResultContainer, &ParamsBf16Container, &ParamsF32Container,
+      &inputContainerPrefill,
+      &ptrPrefillResultContainer->pos0,
+      &ptrPrefillResultContainer->pos1,
+      &ptrPrefillResultContainer->pos2,
+      &ptrPrefillResultContainer->pos3,
+      &ptrPrefillResultContainer->pos4,
+      &ptrPrefillResultContainer->pos5,
+      &ptrPrefillResultContainer->pos6,
+      &ptrPrefillResultContainer->pos7,
+      &ptrPrefillResultContainer->pos8,
+      &ptrPrefillResultContainer->pos9,
+      &ptrPrefillResultContainer->pos10,
+      &ptrPrefillResultContainer->pos11,
+      &ptrPrefillResultContainer->pos12,
+      &ptrPrefillResultContainer->pos13,
+      &ptrPrefillResultContainer->pos14,
+      &ptrPrefillResultContainer->pos15,
+      &ptrPrefillResultContainer->pos16,
+      &ptrPrefillResultContainer->pos17,
+      &ptrPrefillResultContainer->pos18,
+      &ptrPrefillResultContainer->pos19,
+      &ptrPrefillResultContainer->pos20,
+      &ptrPrefillResultContainer->pos21,
+      &ptrPrefillResultContainer->pos22,
+      &ptrPrefillResultContainer->pos23,
+      &ptrPrefillResultContainer->pos24,
+      &ptrPrefillResultContainer->pos25,
+      &ptrPrefillResultContainer->pos26,
+      &ptrPrefillResultContainer->pos27);
   const auto inferenceEnd = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double, std::milli> inferenceTime =
       inferenceEnd - inferenceStart;
@@ -461,46 +679,117 @@ int main() {
       kv50, kv51, kv52, kv53, kv54, kv55, logits_decode);
 
   MemRefContainer *ptrDecodeResultContainer = &decodeResultContainer;
+  KVPtrArray prefillKVs = buildKVPtrs(prefillResultContainer);
+  KVPtrArray decodeKVs = buildKVPtrs(decodeResultContainer);
 
-  copy_kv_by_cache_position_block(prefillResultContainer, decodeResultContainer,
-                                  inputContainerPrefill.getTokenCnt() + 1);
+  const size_t tokenCnt = inputContainerPrefill.getTokenCnt();
+  // Match BuddyQwen3: first decode writes at tokenCnt+1. Remaining slots are
+  // [tokenCnt+1, MaxTokenLength).
+  long long nextPos = static_cast<long long>(tokenCnt) + 1;
+  if (nextPos > (long long)MaxTokenLength) {
+    throw std::runtime_error(
+        "prefill tokenCnt too large for decode: tokenCnt+1 > MaxTokenLength");
+  }
+  int copy_len = static_cast<int>(
+      std::min(static_cast<size_t>(nextPos), MaxTokenLength));
+  copy_kv_by_cache_position_block(prefillKVs, decodeKVs, copy_len);
 
-  cachePosition.getData()[0] = inputContainerPrefill.getTokenCnt() + 1;
-  int generateLen = MaxTokenLength - inputContainerPrefill.getTokenCnt();
+  cachePosition.getData()[0] = nextPos;
+  int generateLen = static_cast<int>(MaxTokenLength) - static_cast<int>(nextPos);
+  printLogLabel();
+  std::cout << "tokenCnt=" << tokenCnt << " nextPos=" << nextPos
+            << " generateLen=" << generateLen << std::endl;
   double decodeTimeAccumMs = 0.0;
   size_t decodeTokens = 0;
   for (int i = 1; i <= generateLen; i++) {
+    sync_cache_pos(*ptrDecodeResultContainer, cachePosition.getData()[0]);
     const auto inferenceStart = std::chrono::high_resolution_clock::now();
     _mlir_ciface_forward_decode(
         ptrDecodeResultContainer, &ParamsBf16Container, &ParamsF32Container,
-        &inputContainerDecode, &cachePosition, &ptrDecodeResultContainer->kv0,
-        &ptrDecodeResultContainer->kv1, &ptrDecodeResultContainer->kv2,
-        &ptrDecodeResultContainer->kv3, &ptrDecodeResultContainer->kv4,
-        &ptrDecodeResultContainer->kv5, &ptrDecodeResultContainer->kv6,
-        &ptrDecodeResultContainer->kv7, &ptrDecodeResultContainer->kv8,
-        &ptrDecodeResultContainer->kv9, &ptrDecodeResultContainer->kv10,
-        &ptrDecodeResultContainer->kv11, &ptrDecodeResultContainer->kv12,
-        &ptrDecodeResultContainer->kv13, &ptrDecodeResultContainer->kv14,
-        &ptrDecodeResultContainer->kv15, &ptrDecodeResultContainer->kv16,
-        &ptrDecodeResultContainer->kv17, &ptrDecodeResultContainer->kv18,
-        &ptrDecodeResultContainer->kv19, &ptrDecodeResultContainer->kv20,
-        &ptrDecodeResultContainer->kv21, &ptrDecodeResultContainer->kv22,
-        &ptrDecodeResultContainer->kv23, &ptrDecodeResultContainer->kv24,
-        &ptrDecodeResultContainer->kv25, &ptrDecodeResultContainer->kv26,
-        &ptrDecodeResultContainer->kv27, &ptrDecodeResultContainer->kv28,
-        &ptrDecodeResultContainer->kv29, &ptrDecodeResultContainer->kv30,
-        &ptrDecodeResultContainer->kv31, &ptrDecodeResultContainer->kv32,
-        &ptrDecodeResultContainer->kv33, &ptrDecodeResultContainer->kv34,
-        &ptrDecodeResultContainer->kv35, &ptrDecodeResultContainer->kv36,
-        &ptrDecodeResultContainer->kv37, &ptrDecodeResultContainer->kv38,
-        &ptrDecodeResultContainer->kv39, &ptrDecodeResultContainer->kv40,
-        &ptrDecodeResultContainer->kv41, &ptrDecodeResultContainer->kv42,
-        &ptrDecodeResultContainer->kv43, &ptrDecodeResultContainer->kv44,
-        &ptrDecodeResultContainer->kv45, &ptrDecodeResultContainer->kv46,
-        &ptrDecodeResultContainer->kv47, &ptrDecodeResultContainer->kv48,
-        &ptrDecodeResultContainer->kv49, &ptrDecodeResultContainer->kv50,
-        &ptrDecodeResultContainer->kv51, &ptrDecodeResultContainer->kv52,
-        &ptrDecodeResultContainer->kv53, &ptrDecodeResultContainer->kv54,
+        &inputContainerDecode,
+        &ptrDecodeResultContainer->pos0,
+        &ptrDecodeResultContainer->kv0,
+        &ptrDecodeResultContainer->kv1,
+        &ptrDecodeResultContainer->pos1,
+        &ptrDecodeResultContainer->kv2,
+        &ptrDecodeResultContainer->kv3,
+        &ptrDecodeResultContainer->pos2,
+        &ptrDecodeResultContainer->kv4,
+        &ptrDecodeResultContainer->kv5,
+        &ptrDecodeResultContainer->pos3,
+        &ptrDecodeResultContainer->kv6,
+        &ptrDecodeResultContainer->kv7,
+        &ptrDecodeResultContainer->pos4,
+        &ptrDecodeResultContainer->kv8,
+        &ptrDecodeResultContainer->kv9,
+        &ptrDecodeResultContainer->pos5,
+        &ptrDecodeResultContainer->kv10,
+        &ptrDecodeResultContainer->kv11,
+        &ptrDecodeResultContainer->pos6,
+        &ptrDecodeResultContainer->kv12,
+        &ptrDecodeResultContainer->kv13,
+        &ptrDecodeResultContainer->pos7,
+        &ptrDecodeResultContainer->kv14,
+        &ptrDecodeResultContainer->kv15,
+        &ptrDecodeResultContainer->pos8,
+        &ptrDecodeResultContainer->kv16,
+        &ptrDecodeResultContainer->kv17,
+        &ptrDecodeResultContainer->pos9,
+        &ptrDecodeResultContainer->kv18,
+        &ptrDecodeResultContainer->kv19,
+        &ptrDecodeResultContainer->pos10,
+        &ptrDecodeResultContainer->kv20,
+        &ptrDecodeResultContainer->kv21,
+        &ptrDecodeResultContainer->pos11,
+        &ptrDecodeResultContainer->kv22,
+        &ptrDecodeResultContainer->kv23,
+        &ptrDecodeResultContainer->pos12,
+        &ptrDecodeResultContainer->kv24,
+        &ptrDecodeResultContainer->kv25,
+        &ptrDecodeResultContainer->pos13,
+        &ptrDecodeResultContainer->kv26,
+        &ptrDecodeResultContainer->kv27,
+        &ptrDecodeResultContainer->pos14,
+        &ptrDecodeResultContainer->kv28,
+        &ptrDecodeResultContainer->kv29,
+        &ptrDecodeResultContainer->pos15,
+        &ptrDecodeResultContainer->kv30,
+        &ptrDecodeResultContainer->kv31,
+        &ptrDecodeResultContainer->pos16,
+        &ptrDecodeResultContainer->kv32,
+        &ptrDecodeResultContainer->kv33,
+        &ptrDecodeResultContainer->pos17,
+        &ptrDecodeResultContainer->kv34,
+        &ptrDecodeResultContainer->kv35,
+        &ptrDecodeResultContainer->pos18,
+        &ptrDecodeResultContainer->kv36,
+        &ptrDecodeResultContainer->kv37,
+        &ptrDecodeResultContainer->pos19,
+        &ptrDecodeResultContainer->kv38,
+        &ptrDecodeResultContainer->kv39,
+        &ptrDecodeResultContainer->pos20,
+        &ptrDecodeResultContainer->kv40,
+        &ptrDecodeResultContainer->kv41,
+        &ptrDecodeResultContainer->pos21,
+        &ptrDecodeResultContainer->kv42,
+        &ptrDecodeResultContainer->kv43,
+        &ptrDecodeResultContainer->pos22,
+        &ptrDecodeResultContainer->kv44,
+        &ptrDecodeResultContainer->kv45,
+        &ptrDecodeResultContainer->pos23,
+        &ptrDecodeResultContainer->kv46,
+        &ptrDecodeResultContainer->kv47,
+        &ptrDecodeResultContainer->pos24,
+        &ptrDecodeResultContainer->kv48,
+        &ptrDecodeResultContainer->kv49,
+        &ptrDecodeResultContainer->pos25,
+        &ptrDecodeResultContainer->kv50,
+        &ptrDecodeResultContainer->kv51,
+        &ptrDecodeResultContainer->pos26,
+        &ptrDecodeResultContainer->kv52,
+        &ptrDecodeResultContainer->kv53,
+        &ptrDecodeResultContainer->pos27,
+        &ptrDecodeResultContainer->kv54,
         &ptrDecodeResultContainer->kv55);
 
     const auto inferenceEnd = std::chrono::high_resolution_clock::now();
@@ -539,7 +828,7 @@ int main() {
   std::cout << "\033[33;1m[Decoding]\033[0m " << decodeTokensPerSec
             << " tokens/s" << std::endl;
   std::cout << "\033[33;1m[Input]\033[0m " << inputStr << std::endl;
-  std::cout << "\033[33;1m[Output]\033[0m " << outputContainer.revertDeepSeekR1()
+  std::cout << "\033[33;1m[Output]\033[0m " << outputContainer.revertQwen3()
             << std::endl;
 
   return 0;

@@ -1,0 +1,1468 @@
+# Qwen3 arg0 bf16 concat order from subgraph0_prefill_0_6b.mlir
+
+[[tensor]]
+name = "p0"
+shape = [151936, 1024]
+
+[[tensor]]
+name = "p3"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p4"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p5"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p6"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p7"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p8"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p11"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p12"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p13"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p14"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p15"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p16"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p17"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p18"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p19"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p20"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p21"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p24"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p25"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p26"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p27"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p28"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p29"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p30"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p31"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p32"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p33"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p34"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p37"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p38"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p39"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p40"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p41"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p42"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p43"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p44"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p45"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p46"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p47"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p50"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p51"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p52"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p53"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p54"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p55"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p56"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p57"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p58"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p59"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p60"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p63"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p64"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p65"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p66"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p67"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p68"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p69"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p70"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p71"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p72"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p73"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p76"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p77"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p78"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p79"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p80"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p81"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p82"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p83"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p84"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p85"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p86"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p89"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p90"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p91"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p92"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p93"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p94"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p95"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p96"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p97"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p98"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p99"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p102"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p103"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p104"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p105"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p106"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p107"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p108"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p109"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p110"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p111"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p112"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p115"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p116"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p117"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p118"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p119"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p120"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p121"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p122"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p123"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p124"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p125"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p128"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p129"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p130"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p131"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p132"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p133"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p134"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p135"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p136"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p137"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p138"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p141"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p142"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p143"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p144"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p145"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p146"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p147"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p148"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p149"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p150"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p151"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p154"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p155"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p156"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p157"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p158"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p159"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p160"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p161"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p162"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p163"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p164"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p167"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p168"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p169"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p170"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p171"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p172"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p173"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p174"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p175"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p176"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p177"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p180"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p181"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p182"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p183"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p184"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p185"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p186"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p187"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p188"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p189"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p190"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p193"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p194"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p195"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p196"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p197"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p198"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p199"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p200"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p201"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p202"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p203"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p206"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p207"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p208"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p209"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p210"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p211"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p212"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p213"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p214"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p215"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p216"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p219"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p220"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p221"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p222"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p223"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p224"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p225"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p226"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p227"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p228"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p229"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p232"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p233"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p234"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p235"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p236"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p237"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p238"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p239"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p240"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p241"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p242"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p245"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p246"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p247"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p248"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p249"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p250"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p251"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p252"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p253"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p254"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p255"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p258"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p259"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p260"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p261"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p262"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p263"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p264"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p265"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p266"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p267"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p268"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p271"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p272"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p273"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p274"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p275"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p276"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p277"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p278"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p279"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p280"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p281"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p284"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p285"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p286"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p287"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p288"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p289"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p290"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p291"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p292"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p293"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p294"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p297"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p298"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p299"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p300"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p301"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p302"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p303"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p304"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p305"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p306"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p307"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p310"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p311"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p312"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p313"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p314"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p315"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p316"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p317"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p318"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p319"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p320"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p323"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p324"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p325"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p326"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p327"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p328"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p329"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p330"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p331"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p332"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p333"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p336"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p337"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p338"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p339"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p340"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p341"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p342"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p343"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p344"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p345"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p346"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p349"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p350"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p351"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p352"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p353"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p354"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p355"
+shape = [2048, 1024]
+
+[[tensor]]
+name = "p356"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p357"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p358"
+shape = [128]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p359"
+shape = [1024, 1024]
+
+[[tensor]]
+name = "p362"
+shape = [1024, 2048]
+
+[[tensor]]
+name = "p363"
+shape = [1024]
+storage = "i8"
+axes = []
+
+[[tensor]]
+name = "p364"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p365"
+shape = [3072, 1024]
+
+[[tensor]]
+name = "p366"
+shape = [1024, 3072]
+
+[[tensor]]
+name = "p367"
+shape = [1024]
+storage = "i8"
+axes = []
+

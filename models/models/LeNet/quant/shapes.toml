@@ -1,0 +1,44 @@
+[[tensor]]
+name = "conv1.weight"
+shape = [6, 1, 5, 5]
+
+[[tensor]]
+name = "conv1.bias"
+shape = [6]
+axes = []
+
+[[tensor]]
+name = "conv2.weight"
+shape = [16, 6, 5, 5]
+
+[[tensor]]
+name = "conv2.bias"
+shape = [16]
+axes = []
+
+[[tensor]]
+name = "fc1.weight"
+shape = [120, 256]
+
+[[tensor]]
+name = "fc1.bias"
+shape = [120]
+axes = []
+
+[[tensor]]
+name = "fc2.weight"
+shape = [84, 120]
+
+[[tensor]]
+name = "fc2.bias"
+shape = [84]
+axes = []
+
+[[tensor]]
+name = "fc3.weight"
+shape = [10, 84]
+
+[[tensor]]
+name = "fc3.bias"
+shape = [10]
+axes = []

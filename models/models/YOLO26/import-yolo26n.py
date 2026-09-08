@@ -22,18 +22,23 @@
 import argparse
 import os
 from pathlib import Path
+import sys
 
-import numpy as np
 import torch
 import torch._inductor.lowering
 from torch._inductor.decomposition import decompositions as inductor_decomp
 from ultralytics import YOLO
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
+
+from framework.quant.core.importer import fold_batch_norms, quantize_model_graph
+from framework.quant.core.activation import calibrate_layers
 
 
 parser = argparse.ArgumentParser(description="yolo26n model AOT importer")
@@ -59,6 +64,7 @@ args = parser.parse_args()
 
 output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
+os.chdir(output_dir)
 model_dir = Path(__file__).resolve().parent
 if args.trace:
     trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
@@ -71,12 +77,13 @@ else:
     if os.path.exists(verbose_path):
         os.remove(verbose_path)
 
-default_model_path = Path(__file__).resolve().parents[2] / "yolo26n.pt"
+default_model_path = output_dir / "yolo26n.pt"
 model_path = os.environ.get(
     "YOLO26N_MODEL_PATH",
     str(default_model_path if default_model_path.exists() else "yolo26n.pt"),
 )
 model = YOLO(model_path).model.eval()
+fold_batch_norms(model)
 detect_head = model.model[-1]
 detect_head.end2end = True
 detect_head.export = True
@@ -85,6 +92,7 @@ detect_head.xyxy = True
 input_tensor = torch.randn(
     (1, 3, args.img_size, args.img_size), dtype=torch.float32
 )
+calibration = calibrate_layers(model, input_tensor)
 
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
@@ -105,6 +113,51 @@ graph = graphs[0]
 params = dynamo_compiler.imported_params[graph]
 
 graph.fuse_ops([simply_fuse])
+
+
+def _param_names(mod, imported):
+    state = [
+        (n, t)
+        for n, t in list(mod.named_parameters()) + list(mod.named_buffers())
+        if not n.endswith("num_batches_tracked")
+    ]
+    extras = []
+    dh = mod.model[-1]
+    for attr in ("anchors", "strides"):
+        t = getattr(dh, attr, None)
+        if torch.is_tensor(t):
+            extras.append((f"model.{len(mod.model)-1}.{attr}", t))
+    state = state + extras
+    used = set()
+    names = []
+    for p in imported:
+        hit = None
+        for n, t in state:
+            if n in used:
+                continue
+            if t.shape != p.shape:
+                continue
+            if torch.equal(t.detach().cpu().float(), p.detach().cpu().float()):
+                hit = n
+                break
+        if hit is None:
+            raise ValueError(
+                f"imported param shape {tuple(p.shape)} has no matching "
+                "named parameter/buffer/detect anchors"
+            )
+        used.add(hit)
+        names.append(hit)
+    return names
+
+
+quantize_model_graph(
+    graph,
+    params,
+    _param_names(model, params),
+    output_dir,
+    "yolo26",
+    calibration,
+)
 driver = GraphDriver(graph)
 driver.subgraphs[0].lower_to_top_level_ir()
 with open(output_dir / "subgraph0.mlir", "w") as module_file:
@@ -112,11 +165,3 @@ with open(output_dir / "subgraph0.mlir", "w") as module_file:
 
 with open(output_dir / "forward.mlir", "w") as module_file:
     print(driver.construct_main_graph(True), file=module_file)
-
-np.concatenate(
-    [
-        param.detach().numpy().reshape([-1])
-        for param in params
-        if param.dtype == torch.float32
-    ]
-).tofile(output_dir / "arg0.data")
