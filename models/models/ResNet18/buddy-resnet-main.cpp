@@ -22,6 +22,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -29,8 +30,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <unistd.h>
 
-constexpr size_t ParamsSize = 20200;
+constexpr size_t ParamsSize = 5800;
 constexpr size_t WeightsSize = 22806528;
 const std::string ImgName = "ice-cream-24bit-224x224.bmp";
 
@@ -51,8 +53,20 @@ public:
 
 template <typename T>
 void loadBinary(const std::string &path, T *data, size_t count) {
-  std::ifstream file(path, std::ios::binary);
-  file.read(reinterpret_cast<char *>(data), sizeof(T) * count);
+  const size_t bytes = sizeof(T) * count;
+  const int fd = open(path.c_str(), O_RDONLY);
+  if (fd < 0)
+    throw std::runtime_error("failed to open binary file: " + path);
+  if (read(fd, data, bytes) != static_cast<ssize_t>(bytes)) {
+    close(fd);
+    throw std::runtime_error("short binary file: " + path);
+  }
+  uint8_t extra;
+  if (read(fd, &extra, 1) != 0) {
+    close(fd);
+    throw std::runtime_error("binary size mismatch: " + path);
+  }
+  close(fd);
 }
 
 // Softmax function.

@@ -78,59 +78,13 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             -canonicalize
             -cse
             > subgraph0_buckyball.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -eliminate-empty-tensors
-            -convert-elementwise-to-linalg
-            -convert-tensor-to-linalg
-            -one-shot-bufferize="bufferize-function-boundaries"
-            -convert-linalg-to-tile
-${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-            ${MOBILENETV3_BANK_SSA_PASS}
-${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
-            -llvm-request-c-wrappers
-            ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            ${MOBILENETV3_TRACE_PASS}
-            -expand-strided-metadata
-            -convert-linalg-to-loops
-            ${BUCKYBALL_LOWER_BUCKYBALL}
-            -canonicalize
-            -cse
-            -lower-affine
-            -convert-scf-to-cf
-            -convert-cf-to-llvm
-            -buffer-deallocation-simplification
-            -bufferization-lower-deallocations
-            -convert-math-to-llvm
-            -convert-math-to-libm
-            -convert-arith-to-llvm
-            -convert-func-to-llvm
-            -finalize-memref-to-llvm
-            -reconcile-unrealized-casts |
-          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir
-          > subgraph0.ll
-    COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
-          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-        ${BUDDY_BINARY_DIR}/buddy-opt
-          -eliminate-empty-tensors
-          -convert-elementwise-to-linalg
-          -convert-tensor-to-linalg
-          -one-shot-bufferize="bufferize-function-boundaries"
-          -convert-linalg-to-tile
-${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
-          ${MOBILENETV3_BANK_SSA_PASS}
-${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
+    COMMAND ${BUDDY_BINARY_DIR}/buddy-opt subgraph0_buckyball.mlir
+          --mlir-disable-threading
           -llvm-request-c-wrappers
-          ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-          ${MOBILENETV3_TRACE_PASS}
           -expand-strided-metadata
           -convert-linalg-to-loops
-          ${BUCKYBALL_LOWER_BUCKYBALL}
-          -canonicalize
-          -cse
           -lower-affine
-          -convert-scf-to-cf
+          -convert-scf-to-cf=allow-pattern-rollback=false
           -convert-cf-to-llvm
           -buffer-deallocation-simplification
           -bufferization-lower-deallocations
@@ -141,7 +95,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -finalize-memref-to-llvm
           -reconcile-unrealized-casts |
         ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-        ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
         DEPENDS ${MODEL_MOBILENETV3_GENERATED_DIR}/subgraph0.mlir
                 ${BUDDY_BINARY_DIR}/buddy-opt
                 ${BUDDY_BINARY_DIR}/buddy-translate
