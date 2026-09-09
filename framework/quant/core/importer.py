@@ -12,6 +12,8 @@ from framework.quant.core.rax import QuantTensor, RaxQuantPackage, write_rax
 from buddy.compiler.graph.operation import (
     AddOp,
     AddMMOp,
+    AliasOp,
+    BatchMatmulOp,
     CatOp,
     ClampMaxOp,
     ClampMinOp,
@@ -97,6 +99,18 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
     renamed = {}
     removed = set()
 
+    for node in original_body:
+        if not isinstance(node, AliasOp):
+            continue
+        if len(node.args) != 1 or not isinstance(node.args[0], str):
+            raise ValueError(f"unsupported Alias form for {node.name}")
+        source = str(node.args[0])
+        source_node = graph.node_table.get(source)
+        if source_node is None or source_node.tensor_meta.get("shape") != node.tensor_meta.get("shape"):
+            raise ValueError(f"Alias shape mismatch for {node.name}")
+        renamed[node.name] = renamed.get(source, source)
+        removed.add(node.name)
+
     for index, node in enumerate(original_body):
         if not isinstance(node, (Conv2dOp, AddMMOp, MatmulOp)):
             continue
@@ -113,6 +127,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             if len(padding) != 2 or padding[0] != padding[1]:
                 raise ValueError(f"asymmetric Mega Conv2D padding for {node.name}")
             activation_name, weight_arg, bias_arg = node.args[:3]
+            activation_name = renamed.get(str(activation_name), str(activation_name))
             weight_node = graph.node_table[str(weight_arg)]
             weight_name = parameter_names.get(weight_node.name)
             if weight_name is None:
@@ -146,6 +161,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 if len(node.args) != 2:
                     raise ValueError(f"unexpected Matmul form for {node.name}")
                 activation_name, weight_arg = node.args
+                activation_name = renamed.get(str(activation_name), str(activation_name))
                 bias_arg = None
             weight_value = graph.node_table[str(weight_arg)]
             valid_transpose = isinstance(weight_value, TOp) or (
@@ -653,6 +669,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                         MaxPool2dOp,
                         AddOp,
                         MulOp,
+                        CatOp,
                     ),
                 )
                 for candidate in users
@@ -1018,46 +1035,172 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         else:
             continue
         entries.append(stage)
+    demoted_values = set()
 
-    conv_components = []
-    stage_component = {}
-    for stage in reversed(entries):
-        user_names = list(stage._children)
-        children = {
-            stage_component[name] for name in user_names if name in stage_component
-        }
-        external = not user_names or any(
-            name not in conv_stage_names for name in user_names
-        )
-        if external or len(children) != 1:
-            component = len(conv_components)
-            conv_components.append([])
-        else:
-            component = next(iter(children))
-        conv_components[component].append(stage)
-        stage_component[stage.name] = component
+    def build_components(active_entries):
+        stage_names = {stage.name for stage in active_entries}
+        stage_aliases = {}
+        internal_names = set(removed)
+        for plan in plans.values():
+            stage_name = plan["node"].name
+            aliases = {stage_name, plan["result_name"]}
+            aliases.update(item.name for item in plan["activation_nodes"])
+            for alias in aliases:
+                stage_aliases[alias] = stage_name
+            internal_names.update(aliases)
+        for item in special.values():
+            if item["node"].name not in stage_names:
+                continue
+            stage_name = item["node"].name
+            aliases = {stage_name, item["result_name"]}
+            if item["activation"] is not None:
+                aliases.add(item["activation"].name)
+            for alias in aliases:
+                stage_aliases[alias] = stage_name
+            internal_names.update(aliases)
 
-    for stages in conv_components:
-        stages.reverse()
+        # Alias nodes are removed from the graph before component formation,
+        # but their names can still be present in stage arguments.  Resolve
+        # each alias through its source value to the producing stage.
+        for alias, source in renamed.items():
+            canonical = stage_aliases.get(str(source))
+            if canonical in stage_names:
+                stage_aliases[alias] = canonical
+                internal_names.add(alias)
 
-    stage_by_name = {stage.name: stage for stage in entries}
-    for component, stages in enumerate(conv_components):
-        for stage in stages:
-            crossing = [
-                str(argument)
-                for argument in stage.args
-                if str(argument) in stage_component
-                and stage_component[str(argument)] != component
+        non_stage_consumers = {stage_name: [] for stage_name in stage_names}
+        for stage_name in stage_names:
+            aliases = [
+                alias for alias, canonical in stage_aliases.items()
+                if canonical == stage_name
             ]
-            if crossing:
-                raise ValueError(
-                    f"INT8 inputs cross MegaKernel boundary at {stage.name}: "
-                    f"{crossing}; stage children={stage._children}, source children="
-                    f"{ {name: stage_by_name[name]._children for name in crossing} }"
-                )
+            for candidate in original_body:
+                if candidate.name in internal_names:
+                    continue
+                if any(uses(candidate, alias) for alias in aliases):
+                    non_stage_consumers[stage_name].append(candidate.name)
+
+        stage_consumers = {stage_name: [] for stage_name in stage_names}
+        for stage in active_entries:
+            for argument in stage.args:
+                source = stage_aliases.get(str(argument))
+                if source in stage_names and stage.name not in stage_consumers[source]:
+                    stage_consumers[source].append(stage.name)
+
+        stage_parent = {name: name for name in stage_names}
+        component_blocked = {
+            name: int(bool(non_stage_consumers[name])) for name in stage_names
+        }
+
+        def stage_find(name):
+            while stage_parent[name] != name:
+                stage_parent[name] = stage_parent[stage_parent[name]]
+                name = stage_parent[name]
+            return name
+
+        def stage_union(source, target):
+            target_name = target
+            source = stage_find(source)
+            target = stage_find(target)
+            if source == target or component_blocked[source]:
+                return
+            if component_blocked[target] and not non_stage_consumers[target_name]:
+                return
+            stage_parent[target] = source
+            component_blocked[source] += component_blocked[target]
+
+        for stage in active_entries:
+            for argument in stage.args:
+                source = stage_aliases.get(str(argument))
+                if (
+                    source in stage_names
+                    and not non_stage_consumers[source]
+                    and len(stage_consumers[source]) == 1
+                ):
+                    stage_union(source, stage.name)
+
+        grouped = {}
+        for stage in active_entries:
+            grouped.setdefault(stage_find(stage.name), []).append(stage)
+        components = list(grouped.values())
+        component_of = {
+            stage.name: component
+            for component, stages in enumerate(components)
+            for stage in stages
+        }
+        crossing = []
+        for component, stages in enumerate(components):
+            for stage in stages:
+                sources = [
+                    str(argument)
+                    for argument in stage.args
+                    if str(argument) in demoted_values
+                    or (
+                        stage_aliases.get(str(argument), str(argument)) in component_of
+                        and component_of[stage_aliases.get(str(argument), str(argument))]
+                        != component
+                    )
+                ]
+                if sources:
+                    crossing.append((stage, sources))
+        return components, component_of, stage_aliases, crossing
+
+    while True:
+        conv_components, stage_component, stage_aliases, crossing = build_components(entries)
+        demote = {
+            stage.name
+            for stage, _ in crossing
+            if not isinstance(stage, (MegaConv2dOp, MegaConv2dDepthwiseOp))
+        }
+        if demote:
+            for name in demote:
+                item = special.pop(name)
+                demoted_values.add(item["node"].name)
+                demoted_values.add(item["result_name"])
+                if item["activation"] is not None:
+                    demoted_values.add(item["activation"].name)
+                    removed.discard(item["activation"].name)
+                    if renamed.get(item["result_name"]) == item["node"].name:
+                        renamed.pop(item["result_name"], None)
+                source_name = str(item["node"].args[0]) if item["node"].args else None
+                removed.discard(source_name)
+            entries = [stage for stage in entries if stage.name not in demote]
+            continue
+        component_last = {
+            index: stages[-1].name for index, stages in enumerate(conv_components)
+        }
+        invalid = []
+        for stage, sources in crossing:
+            for source in sources:
+                canonical = stage_aliases.get(source, source)
+                if canonical not in stage_component:
+                    continue
+                source_component = stage_component[canonical]
+                if component_last[source_component] != canonical:
+                    invalid.append((stage.name, sources))
+        if invalid:
+            stage, sources = invalid[0]
+            raise ValueError(f"INT8 inputs cross MegaKernel boundary at {stage}: {sources}")
+        break
 
     for stages in conv_components:
         last = stages[-1]
+        active_stage_names = {stage.name for stage in entries}
+        has_downstream_stage = False
+        has_non_stage_consumer = False
+        for child in last._children:
+            canonical = stage_aliases.get(str(child))
+            if canonical == last.name:
+                continue
+            if canonical in active_stage_names:
+                has_downstream_stage = True
+            else:
+                has_non_stage_consumer = True
+        # A stage can feed both another Mega stage and an ordinary graph op.
+        # The ordinary consumer determines the external element type; keeping
+        # this result INT8 would create an invalid mixed-type graph at that use.
+        if has_downstream_stage and not has_non_stage_consumer:
+            continue
         if isinstance(last, (MegaConv2dOp, MegaConv2dDepthwiseOp)):
             last._final_output = True
             last._tensor_meta["dtype"] = TensorDType.Float32
@@ -1093,7 +1236,39 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         kernel.trace_meta = stages[0].trace_meta
         kernels.append(kernel)
 
-    original_stage_names = conv_stage_names | {
+    # Every value produced by a stage is represented outside its region by the
+    # region's kernel result (the last stage name).  Rewrite all aliases here,
+    # including activation results consumed by ordinary graph operations.
+    alias_to_kernel = {}
+    for kernel in kernels:
+        final_stage = kernel._stages[-1]
+        for alias, canonical in stage_aliases.items():
+            if canonical == final_stage.name:
+                alias_to_kernel[alias] = kernel.name
+        alias_to_kernel[final_stage.name] = kernel.name
+
+    def rewrite_name(name):
+        value = renamed.get(str(name), name)
+        return alias_to_kernel.get(str(value), value)
+
+    for kernel in kernels:
+        produced = {stage.name for stage in kernel._stages}
+        kernel._arguments = [
+            rewrite_name(argument)
+            for argument in kernel.args
+            if str(argument) not in produced
+        ]
+        # A child which is another stage in this region is internal.  Keep only
+        # the external users of the kernel result.
+        kernel._children = list(
+            dict.fromkeys(
+                child
+                for child in (rewrite_name(value) for value in kernel._children)
+                if child != kernel.name
+            )
+        )
+
+    original_stage_names = {stage.name for stage in entries} | {
         plan["node"].name
         for plan in plans.values()
         if not isinstance(plan["node"], Conv2dOp)
@@ -1115,7 +1290,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             return [rename_argument(item) for item in argument]
         if isinstance(argument, tuple):
             return tuple(rename_argument(item) for item in argument)
-        return renamed.get(str(argument), argument)
+        return rewrite_name(argument)
 
     for group in graph.op_groups.values():
         group[:] = [
@@ -1125,14 +1300,41 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         ]
         for node in group:
             node._arguments = [rename_argument(argument) for argument in node.args]
-            node._parents = [renamed.get(parent, parent) for parent in node._parents]
+            node._parents = [rewrite_name(parent) for parent in node._parents]
             node._children = [renamed.get(child, child) for child in node._children]
+
+    body_nodes = list(graph._body)
+    body_names = {node.name for node in body_nodes}
+    ordered = []
+    emitted = set()
+    while len(ordered) < len(body_nodes):
+        progress = False
+        for node in body_nodes:
+            if node.name in emitted:
+                continue
+            arguments = []
+            pending = list(node.args)
+            while pending:
+                argument = pending.pop()
+                if isinstance(argument, (list, tuple)):
+                    pending.extend(argument)
+                elif isinstance(argument, str):
+                    arguments.append(argument)
+            if all(argument not in body_names or argument in emitted
+                   for argument in arguments):
+                ordered.append(node)
+                emitted.add(node.name)
+                progress = True
+        if not progress:
+            remaining = [node.name for node in body_nodes if node.name not in emitted]
+            raise ValueError(f"graph dependency cycle after MegaKernel rewrite: {remaining}")
+    graph._body = ordered
 
     body_position = {node.name: index for index, node in enumerate(graph._body)}
     for node in graph._body:
         node._arguments = [rename_argument(argument) for argument in node.args]
-        node._parents = [renamed.get(parent, parent) for parent in node._parents]
-        node._children = [renamed.get(child, child) for child in node._children]
+        node._parents = [rewrite_name(parent) for parent in node._parents]
+        node._children = [rewrite_name(child) for child in node._children]
         missing = [parent for parent in node._parents if parent not in graph.node_table]
         if missing:
             owners = {

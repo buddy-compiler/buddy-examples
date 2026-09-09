@@ -33,7 +33,7 @@
 #include <vector>
 
 constexpr size_t ParamsSize = 236;
-constexpr size_t WeightsSize = 44190;
+constexpr size_t WeightsSize = 45224;
 constexpr size_t MnistCount = 10000;
 constexpr size_t MnistPixels = 28 * 28;
 const std::string ImgName = "8.bmp";
@@ -159,8 +159,15 @@ void loadBinary(const std::string &path, T *data, size_t count) {
   printLogLabel();
   std::cout << "Loading " << path << std::endl;
   const size_t bytes = sizeof(T) * count;
-  if (read(fd, data, bytes) != static_cast<ssize_t>(bytes))
+  if (read(fd, data, bytes) != static_cast<ssize_t>(bytes)) {
+    close(fd);
     throw std::runtime_error("short binary file: " + path);
+  }
+  uint8_t extra;
+  if (read(fd, &extra, 1) != 0) {
+    close(fd);
+    throw std::runtime_error("binary size mismatch: " + path);
+  }
   close(fd);
   const auto loadEnd = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double, std::milli> loadTime =
