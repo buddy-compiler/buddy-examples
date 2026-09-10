@@ -8,7 +8,20 @@ if(NOT DEFINED ENV{BUDDY_MLIR_BUILD_DIR})
     "BUDDY_MLIR_BUILD_DIR is not set. Enter the nix develop shell so "
     "sourceme.sh is loaded, then re-run cmake.")
 endif()
-set(BUDDY_MLIR_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/..)
+# The parent Buckyball workload project already points BUDDY_MLIR_DIR at the
+# buddy-mlir source tree.  Preserve it: per-chip compiler builds live under
+# build/<chip>, so deriving the source as BUDDY_MLIR_BUILD_DIR/.. would resolve
+# to the build directory instead.
+if(NOT DEFINED BUDDY_MLIR_DIR)
+  get_filename_component(_BUDDY_BUILD_PARENT
+    "$ENV{BUDDY_MLIR_BUILD_DIR}/.." ABSOLUTE)
+  if(EXISTS "${_BUDDY_BUILD_PARENT}/llvm/mlir")
+    set(BUDDY_MLIR_DIR "${_BUDDY_BUILD_PARENT}")
+  else()
+    get_filename_component(BUDDY_MLIR_DIR
+      "${_BUDDY_BUILD_PARENT}/.." ABSOLUTE)
+  endif()
+endif()
 set(BUDDY_BINARY_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/bin)
 set(RISCV_GNU_TOOLCHAIN $ENV{RISCV})
 
