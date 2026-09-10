@@ -33,7 +33,7 @@
 #include <vector>
 
 constexpr size_t ParamsSize = 236;
-constexpr size_t WeightsSize = 44190;
+constexpr size_t WeightsSize = 45224;
 constexpr size_t MnistCount = 10000;
 constexpr size_t MnistPixels = 28 * 28;
 const std::string ImgName = "8.bmp";

@@ -74,8 +74,7 @@ def _rax_pack() -> Path:
     root = os.environ.get("BUDDY_MLIR_BUILD_DIR")
     if root is None:
         raise RuntimeError("BUDDY_MLIR_BUILD_DIR is required")
-    build = Path(root)
-    return build.parent / "cores" / build.name / "bin" / "rax-pack"
+    return Path(root) / "bin" / "rax-pack"
 
 
 def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibration):
