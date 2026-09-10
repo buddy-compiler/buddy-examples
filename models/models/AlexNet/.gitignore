@@ -1,0 +1,11 @@
+# model params file
+arg0.data
+
+# model mlir files
+*.mlir
+
+# HuggingFace checkpoint (807 MB, downloaded by buddy-alexnet-import.py)
+model_*.pth
+
+# python caches
+__pycache__/

@@ -12,6 +12,7 @@ set(MODEL_BUDDYNEXT_DIR ${MODEL_DIR}/BuddyNext)
 set(MODEL_GEMMA4_DIR ${MODEL_DIR}/Gemma4)
 set(MODEL_MINIMAX_H3_FL2VA_DIR ${MODEL_DIR}/MiniMaxH3FL2VA)
 set(MODEL_MINIMAX_H3_REF2VA_DIR ${MODEL_DIR}/MiniMaxH3Ref2VA)
+set(MODEL_ALEXNET_DIR ${MODEL_DIR}/AlexNet)
 
 # Conditionally add model subdirectories based on MODEL_* flags
 if (MODEL_LENET)
@@ -68,4 +69,8 @@ endif()
 
 if (MODEL_MINIMAX_H3_REF2VA)
   add_subdirectory(MiniMaxH3Ref2VA)
+endif()
+
+if (MODEL_ALEXNET)
+  add_subdirectory(AlexNet)
 endif()
