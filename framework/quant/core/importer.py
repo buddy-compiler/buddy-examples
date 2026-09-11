@@ -1055,6 +1055,14 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 stage_aliases[alias] = stage_name
             internal_names.update(aliases)
 
+            if isinstance(item["replacement"], MegaChannelSliceOp):
+                split = graph.node_table[str(item["node"].args[0])]
+                source = renamed.get(str(split.args[0]), str(split.args[0]))
+                canonical = stage_aliases.get(source)
+                if canonical in stage_names:
+                    stage_aliases[split.name] = canonical
+                    internal_names.add(split.name)
+
         # Alias nodes are removed from the graph before component formation,
         # but their names can still be present in stage arguments.  Resolve
         # each alias through its source value to the producing stage.
@@ -1143,25 +1151,6 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
 
     while True:
         conv_components, stage_component, stage_aliases, crossing = build_components(entries)
-        demote = {
-            stage.name
-            for stage, _ in crossing
-            if not isinstance(stage, (MegaConv2dOp, MegaConv2dDepthwiseOp))
-        }
-        if demote:
-            for name in demote:
-                item = special.pop(name)
-                demoted_values.add(item["node"].name)
-                demoted_values.add(item["result_name"])
-                if item["activation"] is not None:
-                    demoted_values.add(item["activation"].name)
-                    removed.discard(item["activation"].name)
-                    if renamed.get(item["result_name"]) == item["node"].name:
-                        renamed.pop(item["result_name"], None)
-                source_name = str(item["node"].args[0]) if item["node"].args else None
-                removed.discard(source_name)
-            entries = [stage for stage in entries if stage.name not in demote]
-            continue
         component_last = {
             index: stages[-1].name for index, stages in enumerate(conv_components)
         }
@@ -1176,21 +1165,34 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                     invalid.append((stage.name, sources))
         if invalid:
             stage, sources = invalid[0]
-            raise ValueError(f"INT8 inputs cross MegaKernel boundary at {stage}: {sources}")
+            source = stage_aliases.get(sources[0], sources[0])
+            source_component = stage_component[source]
+            raise ValueError(
+                f"INT8 inputs cross MegaKernel boundary at {stage}: {sources}; "
+                f"source_component={[item.name for item in conv_components[source_component]]}"
+            )
         break
 
     for stages in conv_components:
         last = stages[-1]
         active_stage_names = {stage.name for stage in entries}
-        has_downstream_stage = False
+        has_downstream_stage = any(
+            stage_aliases.get(str(argument), str(argument)) == last.name
+            for stage in entries
+            for argument in stage.args
+        ) or any(
+            last.name in item["arguments"]
+            for item in special.values()
+            if item["arguments"] is not None
+        )
         has_non_stage_consumer = False
         for child in last._children:
+            if child in removed:
+                continue
             canonical = stage_aliases.get(str(child))
             if canonical == last.name:
                 continue
-            if canonical in active_stage_names:
-                has_downstream_stage = True
-            else:
+            if canonical not in active_stage_names:
                 has_non_stage_consumer = True
         # A stage can feed both another Mega stage and an ordinary graph op.
         # The ordinary consumer determines the external element type; keeping

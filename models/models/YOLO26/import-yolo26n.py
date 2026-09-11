@@ -20,11 +20,15 @@
 # ===---------------------------------------------------------------------------
 
 import argparse
+import hashlib
+from importlib.metadata import version
+import json
 import os
 from pathlib import Path
 import sys
 
 import torch
+import numpy as np
 import torch._inductor.lowering
 from torch._inductor.decomposition import decompositions as inductor_decomp
 from ultralytics import YOLO
@@ -39,9 +43,14 @@ from buddy.compiler.trace import TraceConfig, load_trace_config
 
 from framework.quant.core.importer import fold_batch_norms, quantize_model_graph
 from framework.quant.core.activation import calibrate_layers
+from calibration import load_calibration_images
 
 
 parser = argparse.ArgumentParser(description="yolo26n model AOT importer")
+parser.add_argument(
+    "--calibration-images", type=Path, nargs="+", required=True,
+    help="Ordered calibration images, separate from inference test images.",
+)
 parser.add_argument(
     "--output-dir",
     type=str,
@@ -61,6 +70,7 @@ parser.add_argument(
     help="Import with trace/trace.toml.",
 )
 args = parser.parse_args()
+calibration_images = [path.resolve(strict=True) for path in args.calibration_images]
 
 output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -77,22 +87,41 @@ else:
     if os.path.exists(verbose_path):
         os.remove(verbose_path)
 
-default_model_path = output_dir / "yolo26n.pt"
-model_path = os.environ.get(
-    "YOLO26N_MODEL_PATH",
-    str(default_model_path if default_model_path.exists() else "yolo26n.pt"),
-)
-model = YOLO(model_path).model.eval()
+model_path = Path(
+    os.environ.get("YOLO26N_MODEL_PATH", output_dir / "yolo26n.pt")
+).resolve(strict=True)
+model = YOLO(str(model_path)).model.eval()
 fold_batch_norms(model)
 detect_head = model.model[-1]
 detect_head.end2end = True
 detect_head.export = True
 detect_head.xyxy = True
 
-input_tensor = torch.randn(
-    (1, 3, args.img_size, args.img_size), dtype=torch.float32
+torch.set_num_threads(4)
+calibration_tensor = torch.from_numpy(
+    load_calibration_images(calibration_images, args.img_size)
 )
-calibration = calibrate_layers(model, input_tensor)
+calibration = calibrate_layers(model, calibration_tensor)
+input_tensor = calibration_tensor[:1].clone()
+(output_dir / "calibration-manifest.json").write_text(json.dumps(
+    {
+        "images": [
+            {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            for path in calibration_images
+        ],
+        "checkpoint_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
+        "input_sha256": hashlib.sha256(calibration_tensor.numpy().tobytes()).hexdigest(),
+        "calibration_batch": len(calibration_images),
+        "import_batch": 1,
+        "input_size": args.img_size,
+        "preprocessing": "RGB/255, DIP corner interpolation, letterbox 114/255",
+        "torch": torch.__version__,
+        "numpy": np.__version__,
+        "pillow": version("pillow"),
+        "ultralytics": version("ultralytics"),
+        "python": sys.version.split()[0],
+    }, indent=2,
+))
 
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,

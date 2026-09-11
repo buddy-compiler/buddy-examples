@@ -2,8 +2,8 @@
 # Model↔chip is many-to-many: a chip may host many models, and the same
 # model name may appear under multiple chips. Layout dirs under this folder
 # are the source of truth for which pairs exist today.
-if(DEFINED BUCKYBALL_WORKLOAD_CHIP)
-  set(BUCKYBALL_ARCH "${BUCKYBALL_WORKLOAD_CHIP}")
+if(DEFINED BUCKYBALL_WORKLOAD_SOURCE_CHIP)
+  set(BUCKYBALL_ARCH "${BUCKYBALL_WORKLOAD_SOURCE_CHIP}")
 else()
   set(BUCKYBALL_ARCH "" CACHE STRING
       "Buckyball chip layout directory under archs/buckyball/")

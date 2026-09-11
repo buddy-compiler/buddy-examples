@@ -88,6 +88,9 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
           ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=${BUCKYBALL_RISCV_MATTR} -float-abi=hard -o subgraph0.o
   DEPENDS ${MODEL_YOLO26_GENERATED_DIR}/subgraph0.mlir
+          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${BUDDY_BINARY_DIR}/buddy-translate
+          ${BUDDY_BINARY_DIR}/buddy-llc
   COMMENT "Building subgraph0.o"
   VERBATIM)
 

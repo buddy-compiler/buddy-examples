@@ -42,7 +42,7 @@ function(add_buddynext_nv_target target_name mlir_file object_name)
               -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
             ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
             ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-            ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+            ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
               -o ${CMAKE_CURRENT_BINARY_DIR}/${object_name}
     DEPENDS ${mlir_file} ${BUDDY_BINARY_DIR}/buddy-opt
     COMMENT "Building NV ${target_name} object"

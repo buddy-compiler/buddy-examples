@@ -24,7 +24,7 @@ add_custom_command(
             -convert-func-to-llvm
             -reconcile-unrealized-casts |
           ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O0 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
+          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
           DEPENDS ${MODEL_RESNET18_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM)

@@ -14,7 +14,7 @@ add_custom_command(
           -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-cf-to-llvm, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, reconcile-unrealized-casts)" |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_gpu.o
   DEPENDS ${MODEL_BERT_DIR}/forward.mlir
   COMMENT "Building NV forward_gpu.o"
@@ -62,7 +62,7 @@ add_custom_command(
           -reconcile-unrealized-casts |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_gpu.o
   DEPENDS ${MODEL_BERT_DIR}/subgraph0.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt

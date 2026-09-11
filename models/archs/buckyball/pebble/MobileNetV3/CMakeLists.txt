@@ -81,6 +81,7 @@ ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
     COMMAND ${BUDDY_BINARY_DIR}/buddy-opt subgraph0_buckyball.mlir
           --mlir-disable-threading
           -llvm-request-c-wrappers
+          ${MOBILENETV3_TRACE_PASS}
           -expand-strided-metadata
           -convert-linalg-to-loops
           -lower-affine

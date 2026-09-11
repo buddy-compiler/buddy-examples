@@ -6,6 +6,16 @@ set(BUCKYBALL_LENET_DIR ${BUCKYBALL_DIR}/LeNet)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
+option(PEBBLE_LENET_STAGE_TRACE
+       "Materialize and dump LeNet MegaKernel stages" OFF)
+set(LENET_BANK_SSA_PASS -lower-buckyball-to-bank-ssa)
+set(LENET_TRACE_PASS)
+if(PEBBLE_LENET_STAGE_TRACE)
+  set(LENET_BANK_SSA_PASS
+      "--lower-buckyball-to-bank-ssa=trace-mega-stages=true")
+  set(LENET_TRACE_PASS "-convert-trace-to-llvm=tensor-trace")
+endif()
+
 
 add_custom_command(
   OUTPUT  forward.o
@@ -67,7 +77,7 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             # -extend-trace-to-buckyball
-            -lower-buckyball-to-bank-ssa
+            ${LENET_BANK_SSA_PASS}
             ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
             ${BUCKYBALL_LOWER_BUCKYBALL}
@@ -83,10 +93,10 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
             # -extend-trace-to-buckyball
-            -lower-buckyball-to-bank-ssa
+            ${LENET_BANK_SSA_PASS}
             ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
             ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-            # -convert-trace-to-llvm="cycle-trace"
+            ${LENET_TRACE_PASS}
             -expand-strided-metadata
             -convert-linalg-to-loops
             -llvm-request-c-wrappers
@@ -113,11 +123,11 @@ ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
           -convert-linalg-to-tile
 ${BUCKYBALL_CONVERT_TILE_TO_BUCKYBALL}
           # -extend-trace-to-buckyball
-          -lower-buckyball-to-bank-ssa
+          ${LENET_BANK_SSA_PASS}
           ${BUCKYBALL_ASSIGN_PHYSICAL_BANKS}
           -llvm-request-c-wrappers
           ${BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS}
-          # -convert-trace-to-llvm="cycle-trace"
+          ${LENET_TRACE_PASS}
           -expand-strided-metadata
           -convert-linalg-to-loops
           ${BUCKYBALL_LOWER_BUCKYBALL}

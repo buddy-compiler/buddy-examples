@@ -249,7 +249,7 @@ int main(int argc, char **argv) {
     auto labels = loadMnistLabels(opts.dataset);
     size_t correct = 0;
     std::vector<float> buf(MnistPixels);
-    intptr_t inSizes[4] = {1, 28, 28, 1};
+    intptr_t inSizes[4] = {1, 1, 28, 28};
     static float outputData[10] __attribute__((aligned(64)));
     BorrowedBuffer<float, 2> output(outputData, sizesOutput);
     for (size_t i = 0; i < MnistCount; ++i) {
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
   }
 
   static float inputData[MnistPixels] __attribute__((aligned(64)));
-  intptr_t inputSizes[4] = {1, 28, 28, 1};
+  intptr_t inputSizes[4] = {1, 1, 28, 28};
   loadLeNetInput(inputData);
   BorrowedImage input(inputData, inputSizes);
   static float outputData[10] __attribute__((aligned(64)));
