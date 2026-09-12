@@ -7,13 +7,13 @@ set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
 option(PEBBLE_LENET_STAGE_TRACE
-       "Materialize and dump LeNet MegaKernel stages" OFF)
+       "Materialize and dump LeNet MegaKernel stages" ON)
 set(LENET_BANK_SSA_PASS -lower-buckyball-to-bank-ssa)
 set(LENET_TRACE_PASS)
 if(PEBBLE_LENET_STAGE_TRACE)
   set(LENET_BANK_SSA_PASS
       "--lower-buckyball-to-bank-ssa=trace-mega-stages=true")
-  set(LENET_TRACE_PASS "-convert-trace-to-llvm=tensor-trace")
+  set(LENET_TRACE_PASS "-convert-trace-to-llvm=tensor-trace,cycle-trace")
 endif()
 
 
@@ -181,6 +181,7 @@ add_custom_target(buddy-buckyball-lenet-all-run
 add_custom_target(sync-buckyball-lenet-deps
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}/trace/cycle
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${LENET_OUTPUT_DIR}/trace/tensor
   COMMAND ${CMAKE_COMMAND} -E copy_directory
           ${MODEL_LENET_DIR}/images
           ${LENET_OUTPUT_DIR}/images
