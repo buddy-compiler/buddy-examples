@@ -20,6 +20,14 @@ static uint64_t traceLastCycle = 0;
 static uint64_t traceCycleSum = 0;
 static uint64_t traceCycleCount = 0;
 
+static uint64_t fnv1a64(const int8_t *data, size_t size, uint64_t hash) {
+  for (size_t i = 0; i < size; ++i) {
+    hash ^= static_cast<uint8_t>(data[i]);
+    hash *= 1099511628211ULL;
+  }
+  return hash;
+}
+
 static uint64_t readCycle() {
 #if defined(__riscv)
   uint64_t cycle = 0;
@@ -272,7 +280,11 @@ extern "C" void _mlir_ciface_buckyballTraceStageI8Path(
   size_t size = static_cast<size_t>(ref.sizes[0]);
   constexpr size_t chunkSize = 8192;
   int8_t buffer[chunkSize];
+  uint64_t hash = 1469598103934665603ULL;
   for (size_t offset = 0, part = 0; offset < size; ++part) {
+    size_t chunk = std::min(chunkSize, size - offset);
+    memcpy(buffer, ref.data + ref.offset + offset, chunk);
+    hash = fnv1a64(buffer, chunk, hash);
     char path[160];
     snprintf(path, sizeof(path), "trace/tensor/trace-%s-part-%zu.i8", key,
              part);
@@ -282,8 +294,6 @@ extern "C" void _mlir_ciface_buckyballTraceStageI8Path(
               strerror(errno));
       abort();
     }
-    size_t chunk = std::min(chunkSize, size - offset);
-    memcpy(buffer, ref.data + ref.offset + offset, chunk);
     if (fwrite(buffer, 1, chunk, file) != chunk) {
       fprintf(stderr, "failed to write complete stage trace: %s: %s\n", path,
               strerror(errno));
@@ -296,6 +306,9 @@ extern "C" void _mlir_ciface_buckyballTraceStageI8Path(
     }
     offset += chunk;
   }
+  fprintf(stdout, "STAGE_TRACE path=%s size=%zu hash=%016llx\n", key, size,
+          static_cast<unsigned long long>(hash));
+  fflush(stdout);
 }
 
 extern "C" void _mlir_ciface_buddyTraceTensorI32Path(

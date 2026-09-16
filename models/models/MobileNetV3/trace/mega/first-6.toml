@@ -1,0 +1,7 @@
+[lower_buckyball_to_bank_ssa]
+stage_start = 0
+stage_limit = 6
+region = -1
+reload_stages = true
+fence_before_region = false
+input_before_region = false

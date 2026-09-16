@@ -6,17 +6,11 @@ set(BUCKYBALL_MOBILENETV3_DIR ${BUCKYBALL_DIR}/MobileNetV3)
 set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
 set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
 
-option(PEBBLE_MOBILENETV3_STAGE_TRACE
-       "Materialize and dump leading MobileNetV3 MegaKernel stages" OFF)
-set(PEBBLE_MOBILENETV3_STAGE_TRACE_LIMIT 6 CACHE STRING
-    "Number of leading MobileNetV3 MegaKernel stages to dump")
-set(PEBBLE_MOBILENETV3_STAGE_TRACE_START 0 CACHE STRING
-    "First MobileNetV3 MegaKernel stage to dump")
 set(MOBILENETV3_BANK_SSA_PASS -lower-buckyball-to-bank-ssa)
 set(MOBILENETV3_TRACE_PASS)
-if(PEBBLE_MOBILENETV3_STAGE_TRACE)
+if(BUCKYBALL_TRACE_LOWER_OPTIONS)
   set(MOBILENETV3_BANK_SSA_PASS
-      "--lower-buckyball-to-bank-ssa=trace-mega-stages=true trace-mega-stage-start=${PEBBLE_MOBILENETV3_STAGE_TRACE_START} trace-mega-stage-limit=${PEBBLE_MOBILENETV3_STAGE_TRACE_LIMIT}")
+      "--lower-buckyball-to-bank-ssa=${BUCKYBALL_TRACE_LOWER_OPTIONS}")
   set(MOBILENETV3_TRACE_PASS "-convert-trace-to-llvm=tensor-trace")
 endif()
 
