@@ -7,6 +7,16 @@ set(YOLO26_CALIBRATION_IMAGES
   ${MODEL_YOLO26_DIR}/../ResNet18/images/curtain.png)
 
 add_custom_command(
+  OUTPUT ${MODEL_YOLO26_OUTPUT_DIR}/yolo26n.pt
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${MODEL_YOLO26_OUTPUT_DIR}
+  COMMAND ${CMAKE_COMMAND} -E chdir ${MODEL_YOLO26_OUTPUT_DIR}
+          ${Python3_EXECUTABLE} -c
+          "from ultralytics import YOLO; YOLO('yolo26n.pt')"
+  COMMENT "Downloading YOLO26n checkpoint..."
+  VERBATIM
+)
+
+add_custom_command(
   OUTPUT ${MODEL_YOLO26_OUTPUT_DIR}/yolo26.rax
          ${MODEL_YOLO26_OUTPUT_DIR}/yolo26.payload/params.f32
          ${MODEL_YOLO26_OUTPUT_DIR}/yolo26.payload/weights.i8
