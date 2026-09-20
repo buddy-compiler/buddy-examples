@@ -104,7 +104,7 @@ def load_trace_metadata(paths: list[Path]) -> dict[tuple[int, ...], dict]:
     if not path.is_file():
       raise FileNotFoundError(f"trace mlir does not exist: {path}")
     for line in path.read_text(encoding="utf-8").splitlines():
-      if "buddy_trace.start" not in line:
+      if "buddy_trace.start" not in line and "buddy_trace.end" not in line:
         continue
       id_match = ID_PATH_RE.search(line)
       tag_match = TAG_RE.search(line)
