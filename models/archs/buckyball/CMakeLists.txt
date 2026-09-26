@@ -352,6 +352,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
       set(output_binary ${output_dir}/${target_prefix}-rushB-${backend}-run)
       set(output_library ${output_dir}/lib${runtime_name}.so)
       set(bemu_riscv_lib_dir)
+      set(bemu_riscv_library)
       if(backend STREQUAL "bemu")
         get_filename_component(_runtime_manifest_dir ${runtime_manifest} DIRECTORY)
         file(GLOB _bemu_riscv_lib_dirs LIST_DIRECTORIES true
@@ -359,6 +360,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
         list(LENGTH _bemu_riscv_lib_dirs _bemu_riscv_lib_dir_count)
         if(_bemu_riscv_lib_dir_count GREATER 0)
           list(GET _bemu_riscv_lib_dirs 0 bemu_riscv_lib_dir)
+          set(bemu_riscv_library ${bemu_riscv_lib_dir}/libriscv.so)
         endif()
       endif()
       add_custom_command(
@@ -376,7 +378,7 @@ function(add_buckyball_rushb_targets model target_prefix source_dir)
                 ${runner_definitions}
                 ${runner_source} ${runtime_source} ${objects} ${runtime_objects}
                 -L${build_dir} -l${runtime_name}
-                ${bemu_riscv_lib_dir}/libriscv.so
+                ${bemu_riscv_library}
                 -Wl,-rpath,${output_dir}
                 -Wl,-rpath,${bemu_riscv_lib_dir}
                 -o ${binary}
@@ -427,7 +429,7 @@ endfunction()
 if(MODEL_LENET AND EXISTS ${BUCKYBALL_DIR}/LeNet)
   add_subdirectory(${BUCKYBALL_ARCH}/LeNet)
   add_buckyball_rushb_targets(LeNet buddy-buckyball-lenet ${MODEL_DIR}/LeNet
-    forward.mlir subgraph0.mlir)
+    output/forward.mlir output/subgraph0.mlir)
 endif()
 if(MODEL_RESNET18 AND EXISTS ${BUCKYBALL_DIR}/ResNet18)
   add_subdirectory(${BUCKYBALL_ARCH}/ResNet18)
