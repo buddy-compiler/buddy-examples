@@ -15,6 +15,7 @@ add_custom_command(
           --output-dir ${MODEL_RESNET18_OUTPUT_DIR}
           # --trace
           # --trace-config ${RESNET18_TRACE_CONFIG}
+  DEPENDS ${MODEL_RESNET18_DIR}/buddy-resnet-import.py
   COMMENT "Generating forward.mlir, subgraph0.mlir and parameter files"
 )
 
