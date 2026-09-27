@@ -16,7 +16,7 @@ add_custom_command(
           -llvm-request-c-wrappers --gpu-to-llvm |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_text_encoder_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/forward_text_encoder.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -54,7 +54,7 @@ add_custom_command(
           -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_text_encoder_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/subgraph0_text_encoder.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -76,7 +76,7 @@ add_custom_command(
           -llvm-request-c-wrappers --gpu-to-llvm |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_transformer_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/forward_transformer.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -114,7 +114,7 @@ add_custom_command(
           -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_transformer_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/subgraph0_transformer.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -136,7 +136,7 @@ add_custom_command(
           -llvm-request-c-wrappers --gpu-to-llvm |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_visual_vae_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/forward_visual_vae.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -174,7 +174,7 @@ add_custom_command(
           -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_visual_vae_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/subgraph0_visual_vae.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -196,7 +196,7 @@ add_custom_command(
           -llvm-request-c-wrappers --gpu-to-llvm |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_visual_vae_encode_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/forward_visual_vae_encode.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -234,7 +234,7 @@ add_custom_command(
           -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_visual_vae_encode_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/subgraph0_visual_vae_encode.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -256,7 +256,7 @@ add_custom_command(
           -llvm-request-c-wrappers --gpu-to-llvm |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_audio_vae_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/forward_audio_vae.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -294,7 +294,7 @@ add_custom_command(
           -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_audio_vae_gpu.o
   DEPENDS ${MODEL_MINIMAX_H3_REF2VA_DIR}/subgraph0_audio_vae.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt

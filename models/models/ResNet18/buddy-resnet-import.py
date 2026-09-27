@@ -78,6 +78,9 @@ model_path = str(model_dir)
 
 model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model = model.eval()
+for layer in model.modules():
+    if isinstance(layer, torch.nn.ReLU):
+        layer.inplace = False
 fold_batch_norms(model)
 
 # Remove the num_batches_tracked attribute.

@@ -19,7 +19,7 @@ add_custom_command(
           -llvm-request-c-wrappers --gpu-to-llvm |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/forward_gpu.o
   DEPENDS ${MODEL_DEEPSEEKR1_DIR}/forward.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt
@@ -63,7 +63,7 @@ add_custom_command(
           -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
           ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
           ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O0
+          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
           -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_gpu.o
   DEPENDS ${MODEL_DEEPSEEKR1_DIR}/subgraph0.mlir
           ${BUDDY_BINARY_DIR}/buddy-opt

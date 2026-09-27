@@ -2,16 +2,18 @@ set(IMG_PATH ${MODEL_LENET_DIR}/images)
 set(MODEL_LENET_OUTPUT_DIR ${MODEL_LENET_DIR}/output)
 
 
-add_custom_command(
-  OUTPUT ${MODEL_LENET_OUTPUT_DIR}/lenet-model.pth
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${MODEL_LENET_OUTPUT_DIR}
-  COMMAND export LENET_MODEL_PATH=${MODEL_LENET_OUTPUT_DIR} &&
-          cd ${MODEL_LENET_OUTPUT_DIR} &&
-          ${Python3_EXECUTABLE} ${MODEL_LENET_DIR}/pytorch-lenet-train.py
-  DEPENDS pytorch-lenet-train.py model.py
-  COMMENT "Generating lenet-model.pth"
-  USES_TERMINAL
-)
+if(NOT EXISTS ${MODEL_LENET_OUTPUT_DIR}/lenet-model.pth)
+  add_custom_command(
+    OUTPUT ${MODEL_LENET_OUTPUT_DIR}/lenet-model.pth
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${MODEL_LENET_OUTPUT_DIR}
+    COMMAND export LENET_MODEL_PATH=${MODEL_LENET_OUTPUT_DIR} &&
+            cd ${MODEL_LENET_OUTPUT_DIR} &&
+            ${Python3_EXECUTABLE} ${MODEL_LENET_DIR}/pytorch-lenet-train.py
+    DEPENDS pytorch-lenet-train.py model.py
+    COMMENT "Generating lenet-model.pth"
+    USES_TERMINAL
+  )
+endif()
 
 
 add_custom_command(

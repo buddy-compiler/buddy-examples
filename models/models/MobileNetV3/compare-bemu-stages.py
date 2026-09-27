@@ -45,6 +45,7 @@ def parse_stages(mlir: str) -> tuple[str, np.float32, list[dict]]:
     quant_result = None
     input_multiplier = None
     stages: list[dict] = []
+    regions: list[dict] = []
     for line in mlir.splitlines():
         if "buckyball.quant_f32_to_i8" in line:
             result = re.match(r"\s*(%\d+) = linalg\.generic", line)
@@ -53,17 +54,49 @@ def parse_stages(mlir: str) -> tuple[str, np.float32, list[dict]]:
                 raise ValueError("expected one well-formed input quantization op")
             quant_result = result.group(1)
             input_multiplier = np.float32(scale.group(1))
-        if "mega_kernel_size = 77 : i64" not in line:
+        if "buckyball.mega_kernel = true" not in line:
             continue
+        region_id = re.search(r'mega_kernel_id = "([^"]+)"', line)
+        region_size = re.search(r"mega_kernel_size = (\d+) : i64", line)
+        stage_number = re.search(r"mega_kernel_stage = (\d+) : i64", line)
+        if not region_id or not region_size or not stage_number:
+            raise ValueError(f"missing MegaKernel metadata: {line}")
+        name = region_id.group(1)
+        size = int(region_size.group(1))
+        local_stage = int(stage_number.group(1))
+        if not regions or regions[-1]["id"] != name:
+            if regions and regions[-1]["count"] != regions[-1]["size"]:
+                raise ValueError(f"incomplete MegaKernel region: {regions[-1]}")
+            if any(region["id"] == name for region in regions):
+                raise ValueError(f"noncontiguous MegaKernel region: {name}")
+            regions.append({"id": name, "size": size, "count": 0})
+        region = regions[-1]
+        if (
+            size <= 0
+            or size != region["size"]
+            or local_stage != region["count"]
+            or local_stage >= size
+        ):
+            raise ValueError(
+                f"invalid MegaKernel stage metadata: {name}, "
+                f"size={size}, stage={local_stage}"
+            )
+        region["count"] += 1
+        if "buckyball.mega_matmul" in line:
+            if len(regions) != 17 or size != 2 or len(stages) != 77:
+                raise ValueError(
+                    "expected one final two-stage classifier after "
+                    "77 convolution stages"
+                )
+            continue
+        if len(regions) > 16:
+            raise ValueError("expected only classifier stages in region 17")
         result = re.match(r"\s*(%\d+) = linalg\.generic", line)
         inputs = re.search(r" ins\((.*?) : tensor<", line)
         output = re.search(r" outs\(.*?tensor<([0-9x]+)xi8>", line)
-        stage_number = re.search(r"mega_kernel_stage = (\d+) : i64", line)
-        if not result or not inputs or not output or not stage_number:
+        if not result or not inputs or not output:
             raise ValueError(f"malformed MegaKernel stage: {line}")
-        stage = int(stage_number.group(1))
-        if stage != len(stages):
-            raise ValueError(f"expected stage {len(stages)}, found {stage}")
+        stage = len(stages)
         if "buckyball.mega_conv2d_depthwise" in line:
             kind = "depthwise"
         elif "buckyball.mega_conv2d" in line:
@@ -102,6 +135,8 @@ def parse_stages(mlir: str) -> tuple[str, np.float32, list[dict]]:
         )
     if quant_result is None or input_multiplier is None:
         raise ValueError("missing input quantization op")
+    if len(regions) != 17 or regions[-1]["count"] != regions[-1]["size"]:
+        raise ValueError("expected 17 complete MegaKernel regions")
     if len(stages) != 77:
         raise ValueError(f"expected 77 convolution stages, found {len(stages)}")
     return quant_result, input_multiplier, stages
@@ -182,6 +217,10 @@ def main() -> None:
     mlir = args.mlir.read_text()
     constants = parse_dense_constants(mlir)
     quant_result, input_multiplier, stages = parse_stages(mlir)
+    if not 0 <= args.start_stage < len(stages):
+        raise ValueError(f"start stage out of range: {args.start_stage}")
+    if args.classifier_trace_id is not None and args.classifier_trace_id < len(stages):
+        raise ValueError("classifier trace ID must not overlap convolution stages")
     index = json.loads((args.payload_dir / "quant-index.json").read_text())
     weights = [item for item in index["tensors"] if item["storage"] == "i8"]
     if len(weights) != 54:
@@ -195,6 +234,8 @@ def main() -> None:
         stage, part = (int(value) for value in match.groups())
         if stage == args.classifier_trace_id:
             continue
+        if not 0 <= stage < len(stages):
+            raise ValueError(f"stage trace ID out of range: {stage}")
         if stage < args.start_stage:
             continue
         if part in parts.setdefault(stage, {}):
@@ -206,11 +247,6 @@ def main() -> None:
             f"{args.trace_dir}"
         )
     trace_numbers = list(range(77)) if args.reference_only else sorted(parts)
-    if trace_numbers != list(range(args.start_stage, trace_numbers[-1] + 1)):
-        raise ValueError(
-            f"stage traces must be contiguous from {args.start_stage}: "
-            f"{trace_numbers}"
-        )
     traces: dict[int, np.ndarray] = {}
     if not args.reference_only:
         for stage in trace_numbers:
@@ -225,6 +261,12 @@ def main() -> None:
                     for part in part_numbers
                 ]
             )
+            expected_size = int(np.prod(stages[stage]["shape"]))
+            if traces[stage].size != expected_size:
+                raise ValueError(
+                    f"stage {stage} size mismatch: BEMU={traces[stage].size}, "
+                    f"expected={expected_size}"
+                )
 
     pixels = np.asarray(Image.open(args.image).convert("RGB"), dtype=np.float32)
     if pixels.shape != (224, 224, 3):
@@ -236,7 +278,12 @@ def main() -> None:
 
     print("stage  op          shape              corr       exact       mae   max")
     first_mismatch = None
-    for stage in stages[: trace_numbers[-1] + 1]:
+    last_reference_stage = (
+        len(stages) - 1
+        if args.classifier_trace_id is not None or args.classifier_output_trace is not None
+        else trace_numbers[-1]
+    )
+    for stage in stages[: last_reference_stage + 1]:
         number = stage["number"]
         kind = stage["kind"]
         operands = [values[name] for name in stage["inputs"] if name in values]
@@ -340,7 +387,7 @@ def main() -> None:
                     args.reference_output_dir / f"trace-{number}-part-0.i8"
                 )
             continue
-        if number < args.start_stage:
+        if number not in traces:
             continue
         actual = traces[number]
         if actual.size != reference.size:

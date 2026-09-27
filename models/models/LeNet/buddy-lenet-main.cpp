@@ -33,7 +33,7 @@
 #include <vector>
 
 constexpr size_t ParamsSize = 236;
-constexpr size_t WeightsSize = 44190;
+constexpr size_t WeightsSize = 45224;
 constexpr size_t MnistCount = 10000;
 constexpr size_t MnistPixels = 28 * 28;
 const std::string ImgName = "8.bmp";
@@ -159,8 +159,15 @@ void loadBinary(const std::string &path, T *data, size_t count) {
   printLogLabel();
   std::cout << "Loading " << path << std::endl;
   const size_t bytes = sizeof(T) * count;
-  if (read(fd, data, bytes) != static_cast<ssize_t>(bytes))
+  if (read(fd, data, bytes) != static_cast<ssize_t>(bytes)) {
+    close(fd);
     throw std::runtime_error("short binary file: " + path);
+  }
+  uint8_t extra;
+  if (read(fd, &extra, 1) != 0) {
+    close(fd);
+    throw std::runtime_error("binary size mismatch: " + path);
+  }
   close(fd);
   const auto loadEnd = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double, std::milli> loadTime =
@@ -242,7 +249,7 @@ int main(int argc, char **argv) {
     auto labels = loadMnistLabels(opts.dataset);
     size_t correct = 0;
     std::vector<float> buf(MnistPixels);
-    intptr_t inSizes[4] = {1, 28, 28, 1};
+    intptr_t inSizes[4] = {1, 1, 28, 28};
     static float outputData[10] __attribute__((aligned(64)));
     BorrowedBuffer<float, 2> output(outputData, sizesOutput);
     for (size_t i = 0; i < MnistCount; ++i) {
@@ -258,7 +265,7 @@ int main(int argc, char **argv) {
   }
 
   static float inputData[MnistPixels] __attribute__((aligned(64)));
-  intptr_t inputSizes[4] = {1, 28, 28, 1};
+  intptr_t inputSizes[4] = {1, 1, 28, 28};
   loadLeNetInput(inputData);
   BorrowedImage input(inputData, inputSizes);
   static float outputData[10] __attribute__((aligned(64)));

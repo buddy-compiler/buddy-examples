@@ -22,6 +22,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstring>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -29,11 +30,12 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 #include "testutils.h"
 
-constexpr size_t ParamsSize = 64840;
-constexpr size_t WeightsSize = 2552208;
+constexpr size_t ParamsSize = 187536;
+constexpr size_t WeightsSize = 21699632;
 constexpr int InputSize = 640;
 constexpr int MaxDetections = 300;
 constexpr float PadValue = 114.0f / 255.0f;
@@ -73,12 +75,20 @@ public:
 
 template <typename T>
 void loadBinary(const std::string &path, T *data, size_t count) {
-  std::ifstream file(path, std::ios::binary);
-  if (!file.is_open())
+  const size_t bytes = sizeof(T) * count;
+  const int fd = open(path.c_str(), O_RDONLY);
+  if (fd < 0)
     throw std::runtime_error("failed to open binary file: " + path);
-  file.read(reinterpret_cast<char *>(data), sizeof(T) * count);
-  if (file.gcount() != static_cast<std::streamsize>(sizeof(T) * count))
+  if (read(fd, data, bytes) != static_cast<ssize_t>(bytes)) {
+    close(fd);
     throw std::runtime_error("short binary file: " + path);
+  }
+  uint8_t extra;
+  if (read(fd, &extra, 1) != 0) {
+    close(fd);
+    throw std::runtime_error("binary size mismatch: " + path);
+  }
+  close(fd);
 }
 
 void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }

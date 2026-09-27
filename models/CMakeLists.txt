@@ -8,13 +8,15 @@ if(NOT DEFINED ENV{BUDDY_MLIR_BUILD_DIR})
     "BUDDY_MLIR_BUILD_DIR is not set. Enter the nix develop shell so "
     "sourceme.sh is loaded, then re-run cmake.")
 endif()
-set(BUDDY_MLIR_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/..)
+if(NOT DEFINED BUDDY_MLIR_DIR)
+  message(FATAL_ERROR "BUDDY_MLIR_DIR is not set")
+endif()
 set(BUDDY_BINARY_DIR $ENV{BUDDY_MLIR_BUILD_DIR}/bin)
 set(RISCV_GNU_TOOLCHAIN $ENV{RISCV})
 
 option(BUCKYBALL_STABLE "Use stable LLVM Buckyball extensions" OFF)
 if(BUCKYBALL_STABLE)
-  set(BUCKYBALL_RISCV_MATTR "+xbbpebble,+xbuckyball,+D")
+  set(BUCKYBALL_RISCV_MATTR "+xbbpebble,+xbuckyball,+m,+D")
   set(BUCKYBALL_LOWER_BUCKYBALL "--lower-buckyball=stable=true")
   set(BUCKYBALL_LOWER_BUCKYBALL_RUSHB
       "--lower-buckyball=stable=true rushb=true")
@@ -23,7 +25,7 @@ if(BUCKYBALL_STABLE)
   set(BUCKYBALL_LOWER_BANK_SSA_TO_RUSHB_INTRINSICS
       "--lower-bank-ssa-to-intrinsics=stable=true rushb=true")
 else()
-  set(BUCKYBALL_RISCV_MATTR "+xbuckyball,+D")
+  set(BUCKYBALL_RISCV_MATTR "+xbuckyball,+m,+D")
   set(BUCKYBALL_LOWER_BUCKYBALL -lower-buckyball)
   set(BUCKYBALL_LOWER_BUCKYBALL_RUSHB "--lower-buckyball=rushb=true")
   set(BUCKYBALL_LOWER_BANK_SSA_TO_INTRINSICS
