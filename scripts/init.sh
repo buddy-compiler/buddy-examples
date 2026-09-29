@@ -89,19 +89,18 @@ fi
 if run_step "1"; then
   begin_step "1" "submodules init"
   git submodule update --init \
-    thirdparty/buddy-mlir \
-    thirdparty/chipyard \
-    thirdparty/buckyball
-  replace_content ${ROOT}/thirdparty/chipyard/env.sh base-conda-setup "source $(conda info --base)/etc/profile.d/conda.sh"
+    compiler/thirdparty/buddy-mlir \
+    platforms/thirdparty/chipyard
+  replace_content ${ROOT}/platforms/thirdparty/chipyard/env.sh base-conda-setup "source $(conda info --base)/etc/profile.d/conda.sh"
 fi
 
 # setup and install chipyard environment
 if run_step "2"; then
   begin_step "2" "Chipyard environment setup"
-  cd ${ROOT}/thirdparty/chipyard && ./build-setup.sh --conda-env-name ${CONDA_ENV_NAME}
-  cp ${ROOT}/thirdparty/chipyard/env.sh ${ROOT}/env.sh
+  cd ${ROOT}/platforms/thirdparty/chipyard && ./build-setup.sh --conda-env-name ${CONDA_ENV_NAME}
+  cp ${ROOT}/platforms/thirdparty/chipyard/env.sh ${ROOT}/env.sh
   replace_content ${ROOT}/env.sh build-setup-conda "conda activate ${CONDA_ENV_NAME}
-source ${ROOT}/thirdparty/chipyard/scripts/fix-open-files.sh"
+source ${ROOT}/platforms/thirdparty/chipyard/scripts/fix-open-files.sh"
   replace_content ${ROOT}/env.sh bb-dir-helper "ROOT=${ROOT}"
 fi
 

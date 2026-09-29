@@ -27,7 +27,7 @@ cd buddy-examples
 source ./env.sh
 
 # firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -79,7 +79,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -123,7 +123,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -166,7 +166,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -213,7 +213,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -255,7 +255,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -297,7 +297,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -340,7 +340,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -380,7 +380,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh
@@ -420,7 +420,7 @@ source ./env.sh
 
 ```bash
 # activate firesim environment
-cd buddy-examples/thirdparty/chipyard/sims/firesim
+cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
 source ./env.sh
 source ./sourceme-manager.sh --skip-ssh-setup
 cd ~/.ssh

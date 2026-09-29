@@ -14,8 +14,8 @@ import gemmini.CapacityInKilobytes
 
 class WithBootROM extends Config((site, here, up) => {
   case BootROMLocated(x) => {
-    val chipyardBootROM = new File(s"../thirdparty/chipyard/generators/testchipip/bootrom/bootrom.rv${site(MaxXLen)}.img")
-    val firesimBootROM = new File(s"../thirdparty/chipyard/target-rtl/chipyard/generators/testchipip/bootrom/bootrom.rv${site(MaxXLen)}.img")
+    val chipyardBootROM = new File(s"thirdparty/chipyard/generators/testchipip/bootrom/bootrom.rv${site(MaxXLen)}.img")
+    val firesimBootROM = new File(s"thirdparty/chipyard/target-rtl/chipyard/generators/testchipip/bootrom/bootrom.rv${site(MaxXLen)}.img")
 
     val bootROMPath = if (chipyardBootROM.exists()) {
       chipyardBootROM.getAbsolutePath()
