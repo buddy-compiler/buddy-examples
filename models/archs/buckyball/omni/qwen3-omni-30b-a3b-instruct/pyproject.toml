@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omni-qwen3-omni-30b-a3b-instruct"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[project.entry-points."vllm.general_plugins"]
+omni_qwen3 = "omni_qwen3:register"
+
+[tool.setuptools]
+py-modules = ["omni_qwen3"]
+packages = ["examples.models.omni.qwen3-omni-30b-a3b-instruct"]
+package-dir = {"" = ".", "examples.models.omni.qwen3-omni-30b-a3b-instruct" = "."}

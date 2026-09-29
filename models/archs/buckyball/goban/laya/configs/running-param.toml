@@ -1,0 +1,5 @@
+inputs = ["../trace/requests.json"]
+tile_indices = [0]
+timeout = 7200
+memory_mib = 3072
+record_io = false

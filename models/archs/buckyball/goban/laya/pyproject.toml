@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goban-laya"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+packages = ["examples.models.goban.laya", "examples.models.goban.laya.quant", "examples.models.goban.laya.permute", "examples.models.goban.laya.trace"]
+package-dir = {"examples.models.goban.laya" = "."}

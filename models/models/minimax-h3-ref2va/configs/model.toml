@@ -1,0 +1,19 @@
+[parameters]
+duration_s = 4
+fps = 24
+height = 768
+width = 1344
+latent_c = 24
+audio_latent_c = 32
+text_dim = 5120
+text_len = 512
+sample_rate = 32000
+denoise_steps = 30
+video_shift = 12.0
+
+[derived]
+frames = "duration_s * fps"
+latent_t = "frames // 4"
+latent_h = "height // 16"
+latent_w = "width // 16"
+audio_latent_t = "duration_s * 40"

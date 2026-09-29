@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "poly-laya"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+packages = ["examples.models.poly.laya", "examples.models.poly.laya.quant", "examples.models.poly.laya.permute", "examples.models.poly.laya.trace"]
+package-dir = {"examples.models.poly.laya" = "."}

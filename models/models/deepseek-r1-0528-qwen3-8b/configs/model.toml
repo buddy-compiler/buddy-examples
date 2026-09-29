@@ -1,0 +1,5 @@
+[parameters]
+checkpoint = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"
+prefill_length = 8
+cache_length = 16
+parts = 4

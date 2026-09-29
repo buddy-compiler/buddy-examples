@@ -1,0 +1,8 @@
+inputs = ["Say hello in one short sentence."]
+max_tokens = 32
+temperature = 0.0
+memory_mib = 16384
+memory_utilization = 0.1
+max_num_seqs = 1
+threads = 4
+timeout = 7200

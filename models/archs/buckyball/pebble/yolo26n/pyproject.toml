@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "pebble-yolo26n"
+version = "0.1.0"
+requires-python = ">=3.12"
+[tool.setuptools]
+packages = ["examples.models.pebble.yolo26n", "examples.models.pebble.yolo26n.permute", "examples.models.pebble.yolo26n.quant"]
+package-dir = {"examples.models.pebble.yolo26n" = "."}

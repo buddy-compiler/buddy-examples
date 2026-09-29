@@ -1,0 +1,3 @@
+inputs = ["The capital of France is"]
+core_index = 0
+timeout = 7200

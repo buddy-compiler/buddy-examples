@@ -1,0 +1,3 @@
+inputs = ["../../../../../models/resnet18/images/dog-32bit_224x224.bmp"]
+core_index = 0
+timeout = 7200
