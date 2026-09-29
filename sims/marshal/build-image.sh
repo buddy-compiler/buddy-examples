@@ -8,7 +8,7 @@ if [ -z "$1" ]; then
   echo "Usage: $0 <workload-name>"
   echo "Valid workload-names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
        bert-gemmini, stable-diffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
-       qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
+       qwen3-gemmini, yolo26-gemmini, cnn-gemmini"
   exit 1
 fi
 
@@ -76,7 +76,7 @@ elif [ $WORKLOAD == "qwen3-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
   cmake -G Ninja .. \
-    -DMODEL="qwen3" \
+    -DMODEL="qwen3-8b" \
     -DARCH="gemmini"
   ninja buddy-gemmini-qwen3-run
 elif [ $WORKLOAD == "yolo26-gemmini" ]; then
@@ -86,13 +86,6 @@ elif [ $WORKLOAD == "yolo26-gemmini" ]; then
     -DMODEL="yolo26" \
     -DARCH="gemmini"
   ninja buddy-gemmini-yolo26-run
-elif [ $WORKLOAD == "buddynext-gemmini" ]; then
-  cd $ROOT/models
-  mkdir -p build && cd build
-  cmake -G Ninja .. \
-    -DMODEL="buddynext" \
-    -DARCH="gemmini"
-  ninja buddy-gemmini-buddynext-all-run
 elif [ $WORKLOAD == "cnn-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
@@ -104,7 +97,7 @@ else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
        bert-gemmini, stable-diffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
-       qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
+       qwen3-gemmini, yolo26-gemmini, cnn-gemmini"
   exit 1
 fi
 
@@ -112,58 +105,58 @@ fi
 if [ $WORKLOAD == "lenet-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/LeNet/buddy-gemmini-lenet-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/lenet/buddy-gemmini-lenet-run ]; then
     echo "Error: buddy-gemmini-lenet-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/LeNet/buddy-gemmini-lenet-run ./
-  cp $ROOT/models/models/LeNet/arg0.data ./
-  cp -r $ROOT/models/models/LeNet/images ./
+  cp $ROOT/models/build/archs/gemmini/lenet/buddy-gemmini-lenet-run ./
+  cp $ROOT/models/models/lenet/arg0.data ./
+  cp -r $ROOT/models/models/lenet/images ./
 elif [ $WORKLOAD == "resnet-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/resnet18/buddy-gemmini-resnet-run ]; then
     echo "Error: buddy-gemmini-resnet-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ./
-  cp $ROOT/models/models/ResNet18/arg0.data ./
-  cp -r $ROOT/models/models/ResNet18/images ./
-  cp $ROOT/models/models/ResNet18/Labels.txt ./
+  cp $ROOT/models/build/archs/gemmini/resnet18/buddy-gemmini-resnet-run ./
+  cp $ROOT/models/models/resnet18/arg0.data ./
+  cp -r $ROOT/models/models/resnet18/images ./
+  cp $ROOT/models/models/resnet18/Labels.txt ./
 elif [ $WORKLOAD == "mobilenetv3-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/mobilenet-v3-small/buddy-gemmini-mobilenetv3-run ]; then
     echo "Error: buddy-gemmini-mobilenetv3-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ./
-  cp $ROOT/models/models/MobileNetV3/arg0.data ./
-  cp -r $ROOT/models/models/MobileNetV3/images ./
-  cp $ROOT/models/models/MobileNetV3/Labels.txt ./
+  cp $ROOT/models/build/archs/gemmini/mobilenet-v3-small/buddy-gemmini-mobilenetv3-run ./
+  cp $ROOT/models/models/mobilenet-v3-small/arg0.data ./
+  cp -r $ROOT/models/models/mobilenet-v3-small/images ./
+  cp $ROOT/models/models/mobilenet-v3-small/Labels.txt ./
 elif [ $WORKLOAD == "bert-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/Bert/buddy-gemmini-bert-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/bert/buddy-gemmini-bert-run ]; then
     echo "Error: buddy-gemmini-bert-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/Bert/buddy-gemmini-bert-run ./
-  cp $ROOT/models/models/Bert/arg0.data ./
-  cp $ROOT/models/models/Bert/arg1.data ./
-  cp $ROOT/models/models/Bert/vocab.txt ./
+  cp $ROOT/models/build/archs/gemmini/bert/buddy-gemmini-bert-run ./
+  cp $ROOT/models/models/bert/arg0.data ./
+  cp $ROOT/models/models/bert/arg1.data ./
+  cp $ROOT/models/models/bert/vocab.txt ./
 elif [ $WORKLOAD == "stable-diffusion-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/StableDiffusion/buddy-gemmini-stable-diffusion-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/stable-diffusion/buddy-gemmini-stable-diffusion-run ]; then
     echo "Error: buddy-gemmini-stable-diffusion-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/StableDiffusion/buddy-gemmini-stable-diffusion-run ./
-  cp $ROOT/models/models/StableDiffusion/arg0_text_encoder.data ./
-  cp $ROOT/models/models/StableDiffusion/arg1_text_encoder.data ./
-  cp $ROOT/models/models/StableDiffusion/arg0_unet.data ./
-  cp $ROOT/models/models/StableDiffusion/arg0_vae.data ./
+  cp $ROOT/models/build/archs/gemmini/stable-diffusion/buddy-gemmini-stable-diffusion-run ./
+  cp $ROOT/models/models/stable-diffusion/arg0_text_encoder.data ./
+  cp $ROOT/models/models/stable-diffusion/arg1_text_encoder.data ./
+  cp $ROOT/models/models/stable-diffusion/arg0_unet.data ./
+  cp $ROOT/models/models/stable-diffusion/arg0_vae.data ./
 elif [ $WORKLOAD == "llama2-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
@@ -177,90 +170,69 @@ elif [ $WORKLOAD == "llama2-gemmini" ]; then
 elif [ $WORKLOAD == "deepseekr1-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/DeepSeekR1/buddy-gemmini-deepseekr1-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/deepseek-r1-distill-qwen-1.5b/buddy-gemmini-deepseekr1-run ]; then
     echo "Error: buddy-gemmini-deepseekr1-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/DeepSeekR1/buddy-gemmini-deepseekr1-run ./
-  cp $ROOT/models/models/DeepSeekR1/arg0.data ./
-  cp $ROOT/models/models/DeepSeekR1/vocab.txt ./
+  cp $ROOT/models/build/archs/gemmini/deepseek-r1-distill-qwen-1.5b/buddy-gemmini-deepseekr1-run ./
+  cp $ROOT/models/models/deepseek-r1-distill-qwen-1.5b/arg0.data ./
+  cp $ROOT/models/models/deepseek-r1-distill-qwen-1.5b/vocab.txt ./
 elif [ $WORKLOAD == "qwen3-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/Qwen3/buddy-gemmini-qwen3-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/qwen3-8b/buddy-gemmini-qwen3-run ]; then
     echo "Error: buddy-gemmini-qwen3-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/Qwen3/buddy-gemmini-qwen3-run ./
-  cp $ROOT/models/models/Qwen3/arg0_0_6b.data ./
-  cp $ROOT/models/models/Qwen3/vocab.txt ./
+  cp $ROOT/models/build/archs/gemmini/qwen3-8b/buddy-gemmini-qwen3-run ./
+  cp $ROOT/models/models/qwen3-8b/arg0_0_6b.data ./
+  cp $ROOT/models/models/qwen3-8b/vocab.txt ./
 elif [ $WORKLOAD == "yolo26-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/YOLO26/buddy-gemmini-yolo26-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/yolo26n/buddy-gemmini-yolo26-run ]; then
     echo "Error: buddy-gemmini-yolo26-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/YOLO26/buddy-gemmini-yolo26-run ./
-  cp $ROOT/models/models/YOLO26/arg0.data ./
-  cp $ROOT/models/models/YOLO26/labels.txt ./
-  cp -r $ROOT/models/models/YOLO26/images ./
-elif [ $WORKLOAD == "buddynext-gemmini" ]; then
-  rm -r $ROOT/models/bin/* 2>/dev/null || true
-  BUDDYNEXT_BUILD=$ROOT/models/build/archs/gemmini/BuddyNext
-  for kernel in next-embedding next-mhsa-qkv next-mhsa-core next-mhsa-context next-output; do
-    binary="buddy-gemmini-buddynext-prefill-${kernel}-run"
-    if [ ! -f $BUDDYNEXT_BUILD/$binary ]; then
-      echo "Error: $binary not found"
-      exit 1
-    fi
-    mkdir -p $ROOT/models/bin/prefill/$kernel
-    cp $BUDDYNEXT_BUILD/$binary $ROOT/models/bin/prefill/$kernel/
-  done
-  for kernel in next-ffn next-norm next-rope next-gqa-attention next-gqa-attention-fusion next-linalg-matmul next-tosa-matmul; do
-    binary="buddy-gemmini-buddynext-decode-${kernel}-run"
-    if [ ! -f $BUDDYNEXT_BUILD/$binary ]; then
-      echo "Error: $binary not found"
-      exit 1
-    fi
-    mkdir -p $ROOT/models/bin/decode/$kernel
-    cp $BUDDYNEXT_BUILD/$binary $ROOT/models/bin/decode/$kernel/
-  done
+  cp $ROOT/models/build/archs/gemmini/yolo26n/buddy-gemmini-yolo26-run ./
+  cp $ROOT/models/models/yolo26n/arg0.data ./
+  cp $ROOT/models/models/yolo26n/labels.txt ./
+  cp -r $ROOT/models/models/yolo26n/images ./
 elif [ $WORKLOAD == "cnn-gemmini" ]; then
   rm -r $ROOT/models/bin/* 2>/dev/null || true
   mkdir -p $ROOT/models/bin/lenet && cd $ROOT/models/bin/lenet
-  if [ ! -f $ROOT/models/build/archs/gemmini/LeNet/buddy-gemmini-lenet-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/lenet/buddy-gemmini-lenet-run ]; then
     echo "Error: buddy-gemmini-lenet-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/LeNet/buddy-gemmini-lenet-run ./
-  cp $ROOT/models/models/LeNet/arg0.data ./
-  cp -r $ROOT/models/models/LeNet/images ./
+  cp $ROOT/models/build/archs/gemmini/lenet/buddy-gemmini-lenet-run ./
+  cp $ROOT/models/models/lenet/arg0.data ./
+  cp -r $ROOT/models/models/lenet/images ./
 
   mkdir -p $ROOT/models/bin/resnet18 && cd $ROOT/models/bin/resnet18
-  if [ ! -f $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/resnet18/buddy-gemmini-resnet-run ]; then
     echo "Error: buddy-gemmini-resnet-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/ResNet18/buddy-gemmini-resnet-run ./
-  cp $ROOT/models/models/ResNet18/arg0.data ./
-  cp -r $ROOT/models/models/ResNet18/images ./
-  cp $ROOT/models/models/ResNet18/Labels.txt ./
+  cp $ROOT/models/build/archs/gemmini/resnet18/buddy-gemmini-resnet-run ./
+  cp $ROOT/models/models/resnet18/arg0.data ./
+  cp -r $ROOT/models/models/resnet18/images ./
+  cp $ROOT/models/models/resnet18/Labels.txt ./
   
   mkdir -p $ROOT/models/bin/mobilenetv3 && cd $ROOT/models/bin/mobilenetv3
-  if [ ! -f $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/mobilenet-v3-small/buddy-gemmini-mobilenetv3-run ]; then
     echo "Error: buddy-gemmini-mobilenetv3-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/MobileNetV3/buddy-gemmini-mobilenetv3-run ./
-  cp $ROOT/models/models/MobileNetV3/arg0.data ./
-  cp -r $ROOT/models/models/MobileNetV3/images ./
-  cp $ROOT/models/models/MobileNetV3/Labels.txt ./
+  cp $ROOT/models/build/archs/gemmini/mobilenet-v3-small/buddy-gemmini-mobilenetv3-run ./
+  cp $ROOT/models/models/mobilenet-v3-small/arg0.data ./
+  cp -r $ROOT/models/models/mobilenet-v3-small/images ./
+  cp $ROOT/models/models/mobilenet-v3-small/Labels.txt ./
 else
   echo "Invalid workload name: $WORKLOAD"
   echo "Valid workload names: lenet-gemmini, resnet-gemmini, mobilenetv3-gemmini, \
        bert-gemmini, stable-diffusion-gemmini, llama2-gemmini, deepseekr1-gemmini, \
-       qwen3-gemmini, yolo26-gemmini, buddynext-gemmini, cnn-gemmini"
+       qwen3-gemmini, yolo26-gemmini, cnn-gemmini"
   exit 1
 fi
 

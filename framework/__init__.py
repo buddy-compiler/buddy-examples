@@ -1,1 +1,0 @@
-"""Shared model workload tooling."""

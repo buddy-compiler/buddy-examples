@@ -1,0 +1,3 @@
+inputs = ["../../../../../models/mobilenet-v3-small/images/dog-32bit_224x224.bmp"]
+core_index = 0
+timeout = 7200

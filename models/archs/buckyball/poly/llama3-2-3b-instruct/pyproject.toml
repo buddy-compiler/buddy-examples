@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "poly-llama3-2-3b-instruct"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[project.entry-points."vllm.general_plugins"]
+poly_llama_3_2_3b_instruct = "poly_llama_3_2_3b_instruct:register"
+
+[tool.setuptools]
+py-modules = ["poly_llama_3_2_3b_instruct"]
+packages = ["examples.models.poly.llama3-2-3b-instruct", "examples.models.poly.llama3-2-3b-instruct.permute", "examples.models.poly.llama3-2-3b-instruct.quant", "examples.models.poly.llama3-2-3b-instruct.trace"]
+package-dir = {"" = ".", "examples.models.poly.llama3-2-3b-instruct" = "."}

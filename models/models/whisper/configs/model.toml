@@ -1,0 +1,2 @@
+[parameters]
+checkpoint = "openai/whisper-tiny"

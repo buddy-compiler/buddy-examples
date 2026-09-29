@@ -8,18 +8,18 @@ tosa → linalg → bufferize → parallel-loops → gpu → nvvm (sm_*) → hos
 
 ## Models
 
-Same set as `archs/buckyball`: LeNet, ResNet18, MobileNetV3, YOLO26, Bert, llama2, DeepSeekR1, Qwen3, Gemma4, StableDiffusion, BuddyNext, Whisper, plus MiniMaxH3FL2VA / MiniMaxH3Ref2VA (NV-only).
+Model directories: lenet, resnet18, mobilenet-v3-small, yolo26n, bert, llama2, deepseek-r1, qwen3, gemma4, stable-diffusion, whisper, plus minimax-h3-fl2va / minimax-h3-ref2va (NV-only).
 
-Each model has its own `CMakeLists.txt` (LeNet GPU template, adapted). Targets look like `buddy-nv-<model>-run` (BuddyNext: per-kernel `buddy-nv-buddynext-*-run`).
+Each model has its own `CMakeLists.txt` (lenet GPU template, adapted). Targets look like `buddy-nv-<model>-run`.
 
 ## Prerequisites
 
-Rebuild LLVM/MLIR with CUDA runner (`NVPTX` + `MLIR_ENABLE_CUDA_RUNNER=ON`), then buddy-mlir. Vision models also need `BuddyLibDIP` / Whisper needs `BuddyLibDAP` in the buddy-mlir build.
+Rebuild LLVM/MLIR with CUDA runner (`NVPTX` + `MLIR_ENABLE_CUDA_RUNNER=ON`), then buddy-mlir. Vision models also need `BuddyLibDIP` / whisper needs `BuddyLibDAP` in the buddy-mlir build.
 
 ## Build
 
 ```bash
-cd bb-tests/workloads/src/ModelTest/e2e/models
+cd stack/models
 mkdir -p build && cd build
 cmake -G Ninja .. -DMODEL=lenet,resnet18 -DARCH=nv
 ninja buddy-nv-lenet-run

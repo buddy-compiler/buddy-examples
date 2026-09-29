@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "buckyball-serving"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["vllm==0.30.0", "numpy"]
+
+[tool.setuptools.packages.find]
+where = ["../.."]
+include = ["stack", "stack.serving*", "stack.compiler*"]
+exclude = ["stack.serving.thirdparty*", "stack.serving.build*", "stack.compiler.thirdparty*"]
+namespaces = true

@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "pebble-mobilenet-v3-small"
+version = "0.1.0"
+requires-python = ">=3.12"
+[tool.setuptools]
+packages = ["examples.models.pebble.mobilenet-v3-small", "examples.models.pebble.mobilenet-v3-small.permute", "examples.models.pebble.mobilenet-v3-small.quant"]
+package-dir = {"examples.models.pebble.mobilenet-v3-small" = "."}

@@ -1,0 +1,3 @@
+[parameters]
+partitions = 4
+sequence_length = 32

@@ -1,0 +1,31 @@
+[
+  {
+    "state": "I was billed twice. Please refund the duplicate payment.",
+    "type": "choice",
+    "instructions": "Which department should handle this?",
+    "criteria": {
+      "billing": "invoices and refunds",
+      "technical": "bugs and outages",
+      "other": "everything else"
+    }
+  },
+  {
+    "state": "Our production service is unavailable.",
+    "type": "score",
+    "instructions": "How urgent is this?",
+    "criteria": [
+      "not urgent",
+      "soon",
+      "critical"
+    ]
+  },
+  {
+    "state": "I want to cancel my plan.",
+    "type": "noul",
+    "instructions": "Does the user want to cancel?",
+    "criteria": {
+      "false": "the user does not want to cancel",
+      "true": "the user wants to cancel"
+    }
+  }
+]

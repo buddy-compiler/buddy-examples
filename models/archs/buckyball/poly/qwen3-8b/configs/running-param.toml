@@ -1,0 +1,10 @@
+inputs = ["The capital of France is"]
+tile_indices = [0, 1, 2, 3]
+max_num_seqs = 1
+max_tokens = 2
+temperature = 0.0
+memory_mib = 3072
+memory_utilization = 0.1
+timeout = 7200
+threads = 4
+record_io = false

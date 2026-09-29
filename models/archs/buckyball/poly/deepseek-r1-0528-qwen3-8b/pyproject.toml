@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "poly-deepseek-r1-0528-qwen3-8b"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[project.entry-points."vllm.general_plugins"]
+poly_deepseek_r1_0528_qwen3_8b = "poly_deepseek_r1_0528_qwen3_8b:register"
+
+[tool.setuptools]
+py-modules = ["poly_deepseek_r1_0528_qwen3_8b"]
+packages = ["examples.models.poly.deepseek-r1-0528-qwen3-8b", "examples.models.poly.deepseek-r1-0528-qwen3-8b.permute", "examples.models.poly.deepseek-r1-0528-qwen3-8b.quant", "examples.models.poly.deepseek-r1-0528-qwen3-8b.trace"]
+package-dir = {"" = ".", "examples.models.poly.deepseek-r1-0528-qwen3-8b" = "."}

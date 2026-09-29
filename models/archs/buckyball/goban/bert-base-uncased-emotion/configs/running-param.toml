@@ -1,0 +1,8 @@
+inputs = ["I am happy today."]
+tile_indices = [0]
+max_num_seqs = 1
+memory_mib = 3072
+memory_utilization = 0.1
+timeout = 7200
+threads = 4
+record_io = false
