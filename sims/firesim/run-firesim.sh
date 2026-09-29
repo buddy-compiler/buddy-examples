@@ -4,7 +4,7 @@ set -e
 
 ROOT=$(git rev-parse --show-toplevel)
 FIRESIM_CONFIG_DIR=$ROOT/sims/firesim/yaml
-FIRESIM_DEPLOY_DIR=$ROOT/thirdparty/chipyard/sims/firesim/deploy
+FIRESIM_DEPLOY_DIR=$ROOT/platforms/thirdparty/chipyard/sims/firesim/deploy
 
 firesim infrasetup \
   -a $FIRESIM_CONFIG_DIR/config_hwdb.yaml \

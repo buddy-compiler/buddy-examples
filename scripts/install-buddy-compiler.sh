@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(git rev-parse --show-toplevel)
-BUDDY=${ROOT}/thirdparty/buddy-mlir
+BUDDY=${ROOT}/compiler/thirdparty/buddy-mlir
 WITH_NV=0
 
 while [ "${1:-}" != "" ]; do

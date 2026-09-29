@@ -4,7 +4,7 @@
 # Only used in this projects makefrags
 makefile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 makefile_dir := $(patsubst %/,%,$(dir $(makefile_path)))
-chipyard_dir := $(abspath $(makefile_dir)/../../../../thirdparty/chipyard)
+chipyard_dir := $(abspath $(makefile_dir)/../../../../platforms/thirdparty/chipyard)
 
 # These point at the main class of the target's Chisel generator
 DESIGN_PACKAGE ?= firechip.chip

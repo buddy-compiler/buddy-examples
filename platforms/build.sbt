@@ -32,8 +32,8 @@ lazy val scalaTestSettings =  Seq(
 // ------------------------------------------------------------------------------
 // Dependencies 
 // ------------------------------------------------------------------------------
-lazy val chipyard = ProjectRef(file("../thirdparty/chipyard"), "chipyard")
-lazy val firechip = ProjectRef(file("../thirdparty/chipyard"), "firechip")
+lazy val chipyard = ProjectRef(file("thirdparty/chipyard"), "chipyard")
+lazy val firechip = ProjectRef(file("thirdparty/chipyard"), "firechip")
 
 // ------------------------------------------------------------------------------
 // Project Settings 
