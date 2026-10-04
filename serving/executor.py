@@ -141,6 +141,6 @@ def run_program(package, args, arguments):
     with (directory / "simulator.log").open("wb") as log:
         subprocess.run([str(args.simulator.resolve()), "--elf", str(program),
                         "--log-dir", str(directory), *working_directory,
-                        "--pk", "--itrace",
+                        "--pk",
                         selector, str(index),
                         "--", *arguments], stderr=log, cwd=directory, check=True, timeout=args.timeout)
