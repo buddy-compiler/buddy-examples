@@ -18,6 +18,7 @@
 #include <runtime.h>
 #include <buddy/Core/Container.h>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -40,8 +41,9 @@ void readTensor(const std::filesystem::path &path, MemRef<T, Rank> &tensor) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    std::cerr << "usage: bert-run MODEL_DIRECTORY\n";
+  const bool single = argc == 4 && std::string(argv[2]) == "--input";
+  if (argc != 2 && !single) {
+    std::cerr << "usage: bert-run MODEL_DIRECTORY [--input REQUEST_FILE]\n";
     return 1;
   }
   runtime_init(1024 * 1024);
@@ -55,36 +57,61 @@ int main(int argc, char **argv) {
   MemRef<int64_t, 2> tokenTypes({1, BERT_SEQUENCE_LENGTH});
   MemRef<int64_t, 2> attentionMask({1, BERT_SEQUENCE_LENGTH});
   MemRef<int64_t, 2> positions({1, BERT_SEQUENCE_LENGTH});
-  constexpr size_t workspaceBytes = size_t(1) << 30;
+  constexpr size_t workspaceBytes = size_t(1) << 27;
   void *workspace = aligned_alloc(64, workspaceBytes);
   if (!workspace)
     throw std::bad_alloc();
+  workspace_init(workspace, workspaceBytes);
   std::cout.exceptions(std::ios::failbit | std::ios::badbit);
+  std::ifstream requestFile;
+  if (single) {
+    requestFile.exceptions(std::ios::badbit);
+    requestFile.open(argv[3], std::ios::binary);
+    if (!requestFile) throw std::runtime_error("cannot open BERT request");
+  }
+  std::istream &input = single ? static_cast<std::istream &>(requestFile) : std::cin;
   size_t request = 0;
   for (;;) {
-    std::cin.read(reinterpret_cast<char *>(inputIds.getData()),
+    input.read(reinterpret_cast<char *>(inputIds.getData()),
                   BERT_SEQUENCE_LENGTH * sizeof(int64_t));
-    if (std::cin.eof() && std::cin.gcount() == 0)
+    if (input.eof() && input.gcount() == 0)
       break;
-    if (!std::cin)
+    if (!input)
       throw std::runtime_error("incomplete BERT input IDs");
     for (auto *tensor : {&tokenTypes, &attentionMask, &positions}) {
-      std::cin.read(reinterpret_cast<char *>(tensor->getData()),
+      input.read(reinterpret_cast<char *>(tensor->getData()),
                     BERT_SEQUENCE_LENGTH * sizeof(int64_t));
-      if (!std::cin)
+      if (!input)
         throw std::runtime_error("incomplete BERT request");
     }
     workspace_begin(workspace, workspaceBytes);
     MemRef<float, 2> result({1, BERT_NUM_LABELS}, false, 0);
+    uint64_t started;
+    asm volatile("rdcycle %0" : "=r"(started) :: "memory");
     _mlir_ciface_forward(&result, &parameters, &weights, &inputIds, &tokenTypes,
                          &attentionMask, &positions);
-    std::cout.write(reinterpret_cast<const char *>(result.getData()),
-                    BERT_NUM_LABELS * sizeof(float));
+    uint64_t finished;
+    asm volatile("rdcycle %0" : "=r"(finished) :: "memory");
+    if (single) {
+      std::cout << "Cycle count: " << finished-started << "\nLOGITS_F32_BEGIN\n";
+      for (unsigned i=0;i<BERT_NUM_LABELS;++i) {
+        uint32_t bits;
+        std::memcpy(&bits, &result.getData()[i], sizeof(bits));
+        std::cout << std::hex << bits << '\n';
+      }
+      std::cout << std::dec << "LOGITS_F32_END\n";
+      for (size_t core=1;core<=core_count();++core)
+        std::cout << "Core " << core << " tasks: " << core_submissions(core) << '\n';
+    } else {
+      std::cout.write(reinterpret_cast<const char *>(result.getData()),
+                      BERT_NUM_LABELS * sizeof(float));
+    }
     std::cout.flush();
     std::cerr << "request=" << request++
               << " workspace_peak_bytes=" << workspace_peak() << '\n';
     workspace_free(result.release());
   }
+  if (single && request != 1) throw std::runtime_error("expected exactly one BERT request");
   free(workspace);
   return 0;
 }

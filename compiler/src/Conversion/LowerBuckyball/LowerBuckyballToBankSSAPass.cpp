@@ -8,6 +8,7 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/Utils/StructuredOpsUtils.h"
 #include "mlir/IR/AffineMap.h"
@@ -81,7 +82,7 @@ public:
 
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<::buddy::trace::BuddyTraceDialect, arith::ArithDialect,
-                    linalg::LinalgDialect, memref::MemRefDialect,
+                    linalg::LinalgDialect, memref::MemRefDialect, LLVM::LLVMDialect,
                     scf::SCFDialect, ::buddy::buckyball::BuckyballDialect>();
   }
 
@@ -94,7 +95,6 @@ public:
 #include "BuckyballBallLoweringHooks.inc"
 #undef BUCKYBALL_BANK_SSA_HOOK
     }
-    mlir::buddy::populateMatmulRegionToBankSSAPatterns(patterns, false, 0, -1);
     mlir::buddy::populateQuantizeTensorToBankSSAPatterns(patterns);
     patterns.add<MemTransposeToLinalgPattern>(&getContext());
     if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))))

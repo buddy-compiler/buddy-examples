@@ -44,7 +44,10 @@ add_dependencies(gemma4_kernels gemma4-model-build)
 add_executable(gemma4-e2b-it-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(gemma4-e2b-it-run model-loader)
 target_include_directories(gemma4-e2b-it-run PRIVATE ${BUDDY_SOURCE}/frontend/Interfaces)
-target_link_libraries(gemma4-e2b-it-run PRIVATE -static gemma4_kernels runtime)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
+target_link_libraries(gemma4-e2b-it-run PRIVATE -static gemma4_kernels runtime rvv_kernels mxfp8_pack mxquant_backend)
 add_custom_command(TARGET gemma4-e2b-it-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:gemma4-e2b-it-run> ${ARTIFACT_DIR}/gemma4-e2b-it-run

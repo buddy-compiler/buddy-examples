@@ -6,16 +6,18 @@
 #include <algorithm>
 #include <alloca.h>
 #include <cerrno>
-#include <cstdlib>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <malloc.h>
 #include <string.h>
 
 static constexpr int64_t kTraceMaxId = 4096;
 static constexpr int64_t kTraceMaxPathDepth = 4;
 static uint64_t traceCycleStart[kTraceMaxId];
+static bool traceCycleWritten[kTraceMaxId];
 static uint64_t traceFirstCycle = 0;
+static bool traceHasStarted = false;
 static uint64_t traceLastCycle = 0;
 static uint64_t traceCycleSum = 0;
 static uint64_t traceCycleCount = 0;
@@ -53,8 +55,7 @@ static void writeTracePath(char *buffer, size_t size, int64_t depth,
     abort();
   }
 
-  int written = snprintf(buffer, size, "%lld",
-                         static_cast<long long>(path[0]));
+  int written = snprintf(buffer, size, "%lld", static_cast<long long>(path[0]));
   if (written < 0 || static_cast<size_t>(written) >= size) {
     fprintf(stderr, "trace path is too long\n");
     abort();
@@ -78,13 +79,14 @@ static void writeTracePath(char *buffer, size_t size, int64_t depth,
 }
 
 static FILE *openTraceFilePath(const char *kind, int64_t depth, int64_t path0,
-                               int64_t path1, int64_t path2, int64_t path3) {
+                               int64_t path1, int64_t path2, int64_t path3,
+                               const char *mode = "w") {
   char key[64];
   writeTracePath(key, sizeof(key), depth, path0, path1, path2, path3);
 
   char path[128];
   snprintf(path, sizeof(path), "trace/%s/trace-%s.txt", kind, key);
-  FILE *file = fopen(path, "w");
+  FILE *file = fopen(path, mode);
   if (!file) {
     fprintf(stderr, "failed to open trace file: %s\n", path);
     abort();
@@ -152,6 +154,18 @@ extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
     return;
   }
 
+  int64_t contiguous = elemSize;
+  while (rank > 0 && (src.sizes[rank - 1] == 1 ||
+                      (src.strides[rank - 1] * elemSize == contiguous &&
+                       dst.strides[rank - 1] * elemSize == contiguous))) {
+    contiguous *= src.sizes[rank - 1];
+    --rank;
+  }
+  if (rank == 0) {
+    memcpy(dstPtr, srcPtr, contiguous);
+    return;
+  }
+
   int64_t *indices = static_cast<int64_t *>(alloca(sizeof(int64_t) * rank));
   int64_t *srcStrides = static_cast<int64_t *>(alloca(sizeof(int64_t) * rank));
   int64_t *dstStrides = static_cast<int64_t *>(alloca(sizeof(int64_t) * rank));
@@ -165,8 +179,7 @@ extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,
 
   int64_t readIndex = 0, writeIndex = 0;
   for (;;) {
-    // Copy over the element, byte by byte.
-    memcpy(dstPtr + writeIndex, srcPtr + readIndex, elemSize);
+    memcpy(dstPtr + writeIndex, srcPtr + readIndex, contiguous);
     // Advance index and read position.
     for (int64_t axis = rank - 1; axis >= 0; --axis) {
       // Advance at current axis.
@@ -250,16 +263,18 @@ extern "C" void _mlir_ciface_buddyTraceTensorBF16Path(
   fclose(file);
 }
 
-extern "C" void _mlir_ciface_buddyTraceTensorI8Path(
-    int64_t id, int64_t depth, int64_t path0, int64_t path1, int64_t path2,
-    int64_t path3, StridedMemRefType<int8_t, 1> *tensor) {
+extern "C" void
+_mlir_ciface_buddyTraceTensorI8Path(int64_t id, int64_t depth, int64_t path0,
+                                    int64_t path1, int64_t path2, int64_t path3,
+                                    StridedMemRefType<int8_t, 1> *tensor) {
   (void)id;
   checkTraceTensor(tensor);
 
   DynamicMemRefType<int8_t> ref(*tensor);
   FILE *file = openTraceFilePath("tensor", depth, path0, path1, path2, path3);
   for (int64_t i = 0; i < ref.sizes[0]; ++i)
-    fprintf(file, "%d\n", static_cast<int>(ref.data[ref.offset + i * ref.strides[0]]));
+    fprintf(file, "%d\n",
+            static_cast<int>(ref.data[ref.offset + i * ref.strides[0]]));
   fclose(file);
 }
 
@@ -320,7 +335,8 @@ extern "C" void _mlir_ciface_buddyTraceTensorI32Path(
   DynamicMemRefType<int32_t> ref(*tensor);
   FILE *file = openTraceFilePath("tensor", depth, path0, path1, path2, path3);
   for (int64_t i = 0; i < ref.sizes[0]; ++i)
-    fprintf(file, "%d\n", static_cast<int>(ref.data[ref.offset + i * ref.strides[0]]));
+    fprintf(file, "%d\n",
+            static_cast<int>(ref.data[ref.offset + i * ref.strides[0]]));
   fclose(file);
 }
 
@@ -331,14 +347,18 @@ extern "C" void _mlir_ciface_buddyTraceCycleStart(int64_t id) {
     abort();
   }
   uint64_t start = readCycle();
-  if (traceCycleCount == 0)
+  if (!traceHasStarted) {
     traceFirstCycle = start;
+    traceHasStarted = true;
+  }
   traceCycleStart[id] = start;
 }
 
-extern "C" void _mlir_ciface_buddyTraceCycleStartPath(
-    int64_t id, int64_t depth, int64_t path0, int64_t path1, int64_t path2,
-    int64_t path3) {
+extern "C" void _mlir_ciface_buddyTraceCycleStartPath(int64_t id, int64_t depth,
+                                                      int64_t path0,
+                                                      int64_t path1,
+                                                      int64_t path2,
+                                                      int64_t path3) {
   (void)depth;
   (void)path0;
   (void)path1;
@@ -359,7 +379,9 @@ extern "C" void _mlir_ciface_buddyTraceCycleEnd(int64_t id) {
   traceCycleSum += cycle;
   traceCycleCount += 1;
 
-  FILE *file = openTraceFile("cycle", id);
+  FILE *file = openTraceFilePath("cycle", 1, id, -1, -1, -1,
+                                 traceCycleWritten[id] ? "a" : "w");
+  traceCycleWritten[id] = true;
   fprintf(file, "start %llu\n",
           static_cast<unsigned long long>(traceCycleStart[id]));
   fprintf(file, "end %llu\n", static_cast<unsigned long long>(end));
@@ -368,9 +390,11 @@ extern "C" void _mlir_ciface_buddyTraceCycleEnd(int64_t id) {
   writeCycleSummary();
 }
 
-extern "C" void _mlir_ciface_buddyTraceCycleEndPath(
-    int64_t id, int64_t depth, int64_t path0, int64_t path1, int64_t path2,
-    int64_t path3) {
+extern "C" void _mlir_ciface_buddyTraceCycleEndPath(int64_t id, int64_t depth,
+                                                    int64_t path0,
+                                                    int64_t path1,
+                                                    int64_t path2,
+                                                    int64_t path3) {
   if (id < 0 || id >= kTraceMaxId) {
     fprintf(stderr, "trace id out of range: %lld\n",
             static_cast<long long>(id));
@@ -379,10 +403,13 @@ extern "C" void _mlir_ciface_buddyTraceCycleEndPath(
   uint64_t end = readCycle();
   uint64_t cycle = end - traceCycleStart[id];
   traceLastCycle = end;
-  traceCycleSum += cycle;
+  if (depth == 1)
+    traceCycleSum += cycle;
   traceCycleCount += 1;
 
-  FILE *file = openTraceFilePath("cycle", depth, path0, path1, path2, path3);
+  FILE *file = openTraceFilePath("cycle", depth, path0, path1, path2, path3,
+                                 traceCycleWritten[id] ? "a" : "w");
+  traceCycleWritten[id] = true;
   fprintf(file, "start %llu\n",
           static_cast<unsigned long long>(traceCycleStart[id]));
   fprintf(file, "end %llu\n", static_cast<unsigned long long>(end));

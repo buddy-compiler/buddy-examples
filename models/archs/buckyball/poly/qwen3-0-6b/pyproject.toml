@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "poly-qwen3-0-6b"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[project.entry-points."vllm.general_plugins"]
+poly_qwen3_06b = "poly_qwen3_06b:register"
+
+[tool.setuptools]
+py-modules = ["poly_qwen3_06b"]
+packages = ["examples.models.poly.qwen3-0-6b", "examples.models.poly.qwen3-0-6b.permute", "examples.models.poly.qwen3-0-6b.quant", "examples.models.poly.qwen3-0-6b.trace"]
+package-dir = {"" = ".", "examples.models.poly.qwen3-0-6b" = "."}

@@ -1,0 +1,249 @@
+[[trace.node]]
+node = "addmm"
+id = 1
+tag = "addmm"
+
+[[trace.node]]
+node = "addmm_1"
+id = 2
+tag = "addmm_1"
+
+[[trace.node]]
+node = "addmm_2"
+id = 3
+tag = "addmm_2"
+
+[[trace.node]]
+node = "addmm_3"
+id = 4
+tag = "addmm_3"
+
+[[trace.node]]
+node = "addmm_4"
+id = 5
+tag = "addmm_4"
+
+[[trace.node]]
+node = "addmm_5"
+id = 6
+tag = "addmm_5"
+
+[[trace.node]]
+node = "addmm_6"
+id = 7
+tag = "addmm_6"
+
+[[trace.node]]
+node = "addmm_7"
+id = 8
+tag = "addmm_7"
+
+[[trace.node]]
+node = "addmm_8"
+id = 9
+tag = "addmm_8"
+
+[[trace.node]]
+node = "addmm_9"
+id = 10
+tag = "addmm_9"
+
+[[trace.node]]
+node = "addmm_10"
+id = 11
+tag = "addmm_10"
+
+[[trace.node]]
+node = "addmm_11"
+id = 12
+tag = "addmm_11"
+
+[[trace.node]]
+node = "addmm_12"
+id = 13
+tag = "addmm_12"
+
+[[trace.node]]
+node = "addmm_13"
+id = 14
+tag = "addmm_13"
+
+[[trace.node]]
+node = "addmm_14"
+id = 15
+tag = "addmm_14"
+
+[[trace.node]]
+node = "addmm_15"
+id = 16
+tag = "addmm_15"
+
+[[trace.node]]
+node = "addmm_16"
+id = 17
+tag = "addmm_16"
+
+[[trace.node]]
+node = "addmm_17"
+id = 18
+tag = "addmm_17"
+
+[[trace.node]]
+node = "addmm_18"
+id = 19
+tag = "addmm_18"
+
+[[trace.node]]
+node = "addmm_19"
+id = 20
+tag = "addmm_19"
+
+[[trace.node]]
+node = "addmm_20"
+id = 21
+tag = "addmm_20"
+
+[[trace.node]]
+node = "addmm_21"
+id = 22
+tag = "addmm_21"
+
+[[trace.node]]
+node = "addmm_22"
+id = 23
+tag = "addmm_22"
+
+[[trace.node]]
+node = "addmm_23"
+id = 24
+tag = "addmm_23"
+
+[[trace.node]]
+node = "addmm_24"
+id = 25
+tag = "addmm_24"
+
+[[trace.node]]
+node = "addmm_25"
+id = 26
+tag = "addmm_25"
+
+[[trace.node]]
+node = "addmm_26"
+id = 27
+tag = "addmm_26"
+
+[[trace.node]]
+node = "addmm_27"
+id = 28
+tag = "addmm_27"
+
+[[trace.node]]
+node = "addmm_28"
+id = 29
+tag = "addmm_28"
+
+[[trace.node]]
+node = "addmm_29"
+id = 30
+tag = "addmm_29"
+
+[[trace.node]]
+node = "addmm_30"
+id = 31
+tag = "addmm_30"
+
+[[trace.node]]
+node = "addmm_31"
+id = 32
+tag = "addmm_31"
+
+[[trace.node]]
+node = "addmm_32"
+id = 33
+tag = "addmm_32"
+
+[[trace.node]]
+node = "addmm_33"
+id = 34
+tag = "addmm_33"
+
+[[trace.node]]
+node = "addmm_34"
+id = 35
+tag = "addmm_34"
+
+[[trace.node]]
+node = "addmm_35"
+id = 36
+tag = "addmm_35"
+
+[[trace.node]]
+node = "addmm_36"
+id = 37
+tag = "addmm_36"
+
+[[trace.node]]
+node = "addmm_37"
+id = 38
+tag = "addmm_37"
+
+[[trace.node]]
+node = "addmm_38"
+id = 39
+tag = "addmm_38"
+
+[[trace.node]]
+node = "addmm_39"
+id = 40
+tag = "addmm_39"
+
+[[trace.node]]
+node = "addmm_40"
+id = 41
+tag = "addmm_40"
+
+[[trace.node]]
+node = "addmm_41"
+id = 42
+tag = "addmm_41"
+
+[[trace.node]]
+node = "addmm_42"
+id = 43
+tag = "addmm_42"
+
+[[trace.node]]
+node = "addmm_43"
+id = 44
+tag = "addmm_43"
+
+[[trace.node]]
+node = "addmm_44"
+id = 45
+tag = "addmm_44"
+
+[[trace.node]]
+node = "addmm_45"
+id = 46
+tag = "addmm_45"
+
+[[trace.node]]
+node = "addmm_46"
+id = 47
+tag = "addmm_46"
+
+[[trace.node]]
+node = "addmm_47"
+id = 48
+tag = "addmm_47"
+
+[[trace.node]]
+node = "addmm_48"
+id = 49
+tag = "addmm_48"
+
+[[trace.node]]
+node = "addmm_49"
+id = 50
+tag = "addmm_49"

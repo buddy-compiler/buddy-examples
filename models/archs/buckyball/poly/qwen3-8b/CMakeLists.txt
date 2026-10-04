@@ -10,19 +10,27 @@ set(PREFILL_LENGTH 8 CACHE STRING "Compiled prefill capacity")
 set(CACHE_LENGTH 16 CACHE STRING "Compiled KV capacity")
 set(PARTS 4 CACHE STRING "Tensor parallel tile count")
 execute_process(COMMAND ${PYTHON} -c
-  "import json,sys; from huggingface_hub import hf_hub_download; print(json.load(open(hf_hub_download(sys.argv[1], 'config.json')))['num_hidden_layers'])"
-  "${CHECKPOINT}" OUTPUT_VARIABLE LAYERS OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
-math(EXPR LAST_LAYER "${LAYERS} - 1")
-math(EXPR LAST_RANK "${PARTS} - 1")
-set(STAGES)
+  "import json,sys; from huggingface_hub import hf_hub_download; c=json.load(open(hf_hub_download(sys.argv[1], 'config.json'))); print(';'.join(str(c[k]) for k in ('hidden_size','intermediate_size')))"
+  "${CHECKPOINT}" OUTPUT_VARIABLE MODEL_DIMENSIONS OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+list(GET MODEL_DIMENSIONS 0 HIDDEN_SIZE)
+list(GET MODEL_DIMENSIONS 1 INTERMEDIATE_SIZE)
+set(STAGES prefill_embedding decode_embedding
+  prefill_attention_body prefill_attention_projection
+  decode_attention_body decode_attention_projection)
+math(EXPR FFN_INTERMEDIATE "${INTERMEDIATE_SIZE} / ${PARTS}")
+math(EXPR FFN_EXPAND_WIDTH "((${FFN_INTERMEDIATE} / 2 / 32 + 2) / 3) * 32")
+math(EXPR FFN_EXPAND_LAST "${FFN_INTERMEDIATE} / 2 - 2 * ${FFN_EXPAND_WIDTH}")
+math(EXPR FFN_DOWN_WIDTH "((${HIDDEN_SIZE} / 2 / 16 + 2) / 3) * 16")
+math(EXPR FFN_DOWN_LAST "${HIDDEN_SIZE} / 2 - 2 * ${FFN_DOWN_WIDTH}")
 foreach(PHASE prefill decode)
-  list(APPEND STAGES ${PHASE}_embedding)
-  foreach(RANK RANGE 0 ${LAST_RANK})
-    foreach(LAYER RANGE 0 ${LAST_LAYER})
-      list(APPEND STAGES ${PHASE}_attention_${LAYER}_rank_${RANK} ${PHASE}_ffn_${LAYER}_rank_${RANK})
-    endforeach()
+  foreach(WIDTH ${FFN_EXPAND_WIDTH} ${FFN_EXPAND_LAST})
+    list(APPEND STAGES ${PHASE}_ffn_expand_${WIDTH})
+  endforeach()
+  foreach(WIDTH ${FFN_DOWN_WIDTH} ${FFN_DOWN_LAST})
+    list(APPEND STAGES ${PHASE}_ffn_down_${WIDTH})
   endforeach()
 endforeach()
+list(REMOVE_DUPLICATES STAGES)
 list(APPEND STAGES output)
 foreach(TARGET attention ffn)
   if(NOT "${TARGET}" IN_LIST TARGETS)
@@ -35,11 +43,15 @@ foreach(STAGE IN LISTS STAGES)
                         ${GENERATED_DIR}/${STAGE}-forward.mlir)
 endforeach()
 file(GLOB_RECURSE DESIGN_FILES CONFIGURE_DEPENDS
-  "${DESIGN_DIR}/quant/*" "${DESIGN_DIR}/trace/*"
-  "${DESIGN_DIR}/permute/*")
+  "${DESIGN_DIR}/quant/*.py" "${DESIGN_DIR}/trace/*.py"
+  "${DESIGN_DIR}/permute/*.py" "${DESIGN_DIR}/trace/*.toml")
 set(DESIGN_DEPENDS ${DESIGN_DIR}/__init__.py ${DESIGN_FILES}
+  ${BUDDY_SOURCE}/frontend/Python/ops/linalg.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/convolution.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/matrix.py
+  ${REPO_ROOT}/examples/balls/mxmm/compiler/python/grouped_attention.py
+  ${REPO_ROOT}/examples/balls/mxmm/compiler/python/fp32.py
+  ${REPO_ROOT}/examples/balls/mxmm/compiler/python/layout.py
   ${REPO_ROOT}/stack/compiler/quant/mxfp8_graph.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/mxfp8.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/activation.py
@@ -57,7 +69,12 @@ set(FORWARD_PASSES
   -lower-tile-runtime)
 set(KERNEL_PASSES
   -eliminate-empty-tensors -convert-elementwise-to-linalg
-  -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries
+  -convert-tensor-to-linalg -fuse-pointwise
+  -outline-rvv-kernels -fold-unit-transpose -canonicalize
+  -canonicalize -cse
+  -one-shot-bufferize=bufferize-function-boundaries -lower-rvv-kernels
+  -lower-gather-rows -fuse-norm-quant-window
+  -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
   -convert-linalg-to-tile=quantized-only -convert-tile-to-buckyball
   -lower-buckyball-to-bank-ssa -assign-physical-banks
   -llvm-request-c-wrappers -lower-bank-ssa-to-intrinsics
@@ -84,10 +101,16 @@ endforeach()
 add_library(qwen_kernels STATIC ${OBJECTS})
 set_target_properties(qwen_kernels PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(qwen_kernels qwen-model-build)
-add_executable(qwen-run ${MODEL_SOURCE}/main.cpp)
+add_executable(qwen-run ${MODEL_SOURCE}/main.cpp ${MODEL_SOURCE}/ffn.cpp ${MODEL_SOURCE}/attention.cpp)
+target_compile_options(qwen-run PRIVATE -O2)
 add_dependencies(qwen-run model-loader)
 target_include_directories(qwen-run PRIVATE ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
-target_link_libraries(qwen-run PRIVATE -static qwen_kernels runtime)
+set_source_files_properties(${MODEL_SOURCE}/ffn.cpp PROPERTIES INCLUDE_DIRECTORIES "${ISA_DIR}/ffn")
+set_source_files_properties(${MODEL_SOURCE}/attention.cpp PROPERTIES INCLUDE_DIRECTORIES "${ISA_DIR}/attention")
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
+target_link_libraries(qwen-run PRIVATE -static qwen_kernels runtime rvv_kernels mxfp8_pack mxquant_backend)
 add_custom_command(TARGET qwen-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:qwen-run> ${ARTIFACT_DIR}/qwen-run

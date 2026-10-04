@@ -29,11 +29,22 @@ def main():
     metadata = {}
     for name, start, count in (("prefill", 0, 3), ("decode", 3, 1)):
         slots = torch.arange(start, start + count)
-        inputs = {"hidden": torch.randn(1, count, weights.config["hidden_size"]),
-                  "keys": keys, "values": values, "cache_positions": slots,
-                  "positions": torch.stack((slots, slots * 2 + 7, slots * 3 + 15))}
-        metadata[name] = emit(name, stage, inputs, "attention", {"weights.q", "weights.k", "weights.v", "weights.o"},
-                              args.output, args.compiler_build)
+        inputs = {
+            "hidden": torch.randn(1, count, weights.config["hidden_size"]),
+            "keys": keys,
+            "values": values,
+            "cache_positions": slots,
+            "positions": torch.stack((slots, slots * 2 + 7, slots * 3 + 15)),
+        }
+        metadata[name] = emit(
+            name,
+            stage,
+            inputs,
+            "attention",
+            {"weights.q", "weights.k", "weights.v", "weights.o"},
+            args.output,
+            args.compiler_build,
+        )
         for key, tensor in inputs.items():
             tensor.numpy().tofile(args.output / name / f"{key}.bin")
         with torch.no_grad(), patch("torch.nn.functional.linear", linear):
@@ -42,10 +53,14 @@ def main():
             tensor.numpy().tofile(args.output / name / f"expected-{key}.bin")
     (args.output / "attention.json").write_text(json.dumps(metadata, indent=2) + "\n")
     (args.output / "attention-parameters.h").write_text(
+        "#pragma once\n#include <cstddef>\n"
         f"constexpr size_t hiddenSize = {weights.config['hidden_size']};\n"
         f"constexpr size_t kvHeads = {stage.kv_heads}, headSize = {stage.head_dim}, capacity = 8;\n"
-        f"constexpr size_t prefillFloats = {metadata['prefill']['floats']}, prefillBytes = {metadata['prefill']['bytes']};\n"
-        f"constexpr size_t decodeFloats = {metadata['decode']['floats']}, decodeBytes = {metadata['decode']['bytes']};\n")
+        f"constexpr size_t prefillFloats = {metadata['prefill']['floats']}, "
+        f"prefillBytes = {metadata['prefill']['bytes']};\n"
+        f"constexpr size_t decodeFloats = {metadata['decode']['floats']}, "
+        f"decodeBytes = {metadata['decode']['bytes']};\n"
+    )
 
 
 if __name__ == "__main__":

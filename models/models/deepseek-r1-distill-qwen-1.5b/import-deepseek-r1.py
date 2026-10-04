@@ -1,3 +1,4 @@
+from importlib import import_module
 # ===- import-deepseek-r1.py ---------------------------------------------------
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +49,7 @@ parser.add_argument(
     default=False,
     help="Import with trace/trace.toml.",
 )
+import_module("configs.importer-param").add_arguments(parser)
 args = parser.parse_args()
 
 # Ensure the output directory exists.
@@ -65,7 +67,7 @@ else:
     if os.path.exists(verbose_path):
         os.remove(verbose_path)
 
-model_path = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+model_path = args.checkpoint
 
 # Initialize the model from the specified model path.
 model = AutoModelForCausalLM.from_pretrained(

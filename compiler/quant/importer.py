@@ -576,6 +576,11 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 "scale_w": output_shape[3] // input_shape[3],
             }
         elif isinstance(node, MaxPool2dOp):
+            # Pooling can sit beyond an FP32 reshape/transpose boundary.
+            # Only a quantized producer supplies an INT8 scale for fusion.
+            input_name = renamed.get(str(node.args[0]), str(node.args[0]))
+            if input_name not in quantized_values:
+                continue
             if (
                 len(node.args) not in (3, 4)
                 or len(node.args[1]) != 2

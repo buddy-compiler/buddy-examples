@@ -1,9 +1,13 @@
 #pragma once
-#include <buddy/Core/Container.h>
 #include <array>
+#include <buddy/Core/Container.h>
+#include <cstdint>
 
-template <typename T, size_t Rank>
-struct View : MemRef<T, Rank> {
+struct Region {
+  uint64_t float_offset, float_count, byte_offset, byte_count;
+};
+
+template <typename T, size_t Rank> struct View : MemRef<T, Rank> {
   View(T *data, std::array<size_t, Rank> shape) {
     this->aligned = data;
     std::copy(shape.begin(), shape.end(), this->sizes);
@@ -19,5 +23,12 @@ using Cache = MemRef<float, 4>;
 using Tokens = MemRef<int64_t, 2>;
 using Slots = MemRef<int64_t, 1>;
 using Positions = MemRef<int64_t, 2>;
-struct AttentionResult { Hidden hidden; Cache keys, values; };
-struct RouterResult { Matrix hidden; Tokens experts; Matrix scores; };
+struct AttentionResult {
+  Hidden hidden;
+  Cache keys, values;
+};
+struct RouterResult {
+  Matrix hidden;
+  Tokens experts;
+  Matrix scores;
+};

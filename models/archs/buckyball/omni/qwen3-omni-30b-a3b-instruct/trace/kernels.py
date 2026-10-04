@@ -27,44 +27,126 @@ def main():
     weights = Weights(args.checkpoint)
     config = weights.config
     hidden = config["hidden_size"]
-    cache_shape = (1, config["num_key_value_heads"] // parts, settings["cache_length"], config["head_dim"])
+    cache_shape = (
+        1,
+        config["num_key_value_heads"] // parts,
+        settings["cache_length"],
+        config["head_dim"],
+    )
     torch.set_num_threads(4)
     torch.manual_seed(42)
     args.output.mkdir(parents=True, exist_ok=True)
     metadata = {"stages": {}, "config": config, "system": system, **settings}
     for phase, count in (("prefill", settings["prefill_length"]), ("decode", 1)):
         name = f"{phase}_attention"
-        inputs = {"hidden": torch.randn(1, count, hidden), "keys": torch.zeros(cache_shape),
-                  "values": torch.zeros(cache_shape), "cache_positions": torch.arange(count),
-                  "positions": torch.arange(count).repeat(3, 1)}
-        metadata["stages"][name] = emit(name, weights.attention(0, 0, parts), inputs, "attention",
-            {"weights.q", "weights.k", "weights.v", "weights.o"}, args.output, args.compiler_build)
+        inputs = {
+            "hidden": torch.randn(1, count, hidden),
+            "keys": torch.zeros(cache_shape),
+            "values": torch.zeros(cache_shape),
+            "cache_positions": torch.arange(count),
+            "positions": torch.arange(count).repeat(3, 1),
+        }
+        metadata["stages"][name] = emit(
+            name,
+            weights.attention(0, 0, parts),
+            inputs,
+            "attention",
+            {"weights.q", "weights.k", "weights.v", "weights.o"},
+            args.output,
+            args.compiler_build,
+        )
         name = f"{phase}_router"
-        metadata["stages"][name] = emit(name, weights.router(0), {"hidden": torch.randn(count, hidden)},
-            "attention", set(), args.output, args.compiler_build)
+        metadata["stages"][name] = emit(
+            name,
+            weights.router(0),
+            {"hidden": torch.randn(count, hidden)},
+            "attention",
+            set(),
+            args.output,
+            args.compiler_build,
+        )
         name = f"{phase}_embedding"
-        metadata["stages"][name] = emit(name, weights.embedding(0, parts),
-            {"tokens": torch.zeros(1, count, dtype=torch.int64), "begin": torch.zeros(1, dtype=torch.int64)},
-            "attention", set(), args.output, args.compiler_build)
+        metadata["stages"][name] = emit(
+            name,
+            weights.embedding(0, parts),
+            {
+                "tokens": torch.zeros(1, count, dtype=torch.int64),
+                "begin": torch.zeros(1, dtype=torch.int64),
+            },
+            "attention",
+            set(),
+            args.output,
+            args.compiler_build,
+        )
         name = f"{phase}_norm"
-        metadata["stages"][name] = emit(name, weights.norm(), {"hidden": torch.randn(count, hidden)},
-            "attention", set(), args.output, args.compiler_build)
-    metadata["stages"]["expert"] = emit("expert", weights.expert(0, 0, 0, parts),
-        {"hidden": torch.randn(1, hidden)}, "ffn", {"gate", "up", "down"}, args.output, args.compiler_build)
-    metadata["stages"]["output"] = emit("output", weights.output(0, parts),
-        {"hidden": torch.randn(1, hidden)}, "ffn", {"weight"}, args.output, args.compiler_build)
+        metadata["stages"][name] = emit(
+            name,
+            weights.norm(),
+            {"hidden": torch.randn(count, hidden)},
+            "attention",
+            set(),
+            args.output,
+            args.compiler_build,
+        )
+    metadata["stages"]["expert"] = emit(
+        "expert",
+        weights.expert(0, 0, 0, parts),
+        {"hidden": torch.randn(1, hidden)},
+        "ffn",
+        {"gate", "up", "down"},
+        args.output,
+        args.compiler_build,
+    )
+    for name, count in (
+        ("expert_2", 2),
+        ("expert_4", 4),
+        ("expert_8", 8),
+        ("expert_prefill", settings["prefill_length"]),
+    ):
+        metadata["stages"][name] = emit(
+            name,
+            weights.expert(0, 0, 0, parts),
+            {"hidden": torch.randn(count, hidden)},
+            "ffn",
+            {"gate", "up", "down"},
+            args.output,
+            args.compiler_build,
+        )
+    metadata["stages"]["output"] = emit(
+        "output",
+        weights.output(0, parts),
+        {"hidden": torch.randn(1, hidden)},
+        "ffn",
+        {"weight"},
+        args.output,
+        args.compiler_build,
+    )
     manifest = args.output / "kernels.json"
     contents = json.dumps(metadata, indent=2) + "\n"
     if not manifest.exists() or manifest.read_text() != contents:
         manifest.write_text(contents)
-    constants = {"hiddenSize": hidden, "layers": config["num_hidden_layers"],
-                 "expertsCount": config["num_experts"], "topK": config["num_experts_per_tok"],
-                 "parts": parts, "kvHeads": cache_shape[1], "headSize": config["head_dim"],
-                 "vocabulary": config["vocab_size"], "vocabularyPart": config["vocab_size"] // parts,
-                 "prefillLength": settings["prefill_length"], "cacheLength": settings["cache_length"],
-                 "workspaceBytes": 64 * 1024 * 1024}
-    (args.output / "model-parameters.h").write_text("".join(
-        f"constexpr size_t {name} = {value};\n" for name, value in constants.items()))
+    constants = {
+        "expertWeight0": metadata["stages"]["expert"]["weight_bytes"][0],
+        "expertWeight1": metadata["stages"]["expert"]["weight_bytes"][1],
+        "expertWeight2": metadata["stages"]["expert"]["weight_bytes"][2],
+        "hiddenSize": hidden,
+        "layers": config["num_hidden_layers"],
+        "expertsCount": config["num_experts"],
+        "topK": config["num_experts_per_tok"],
+        "parts": parts,
+        "kvHeads": cache_shape[1],
+        "headSize": config["head_dim"],
+        "vocabulary": config["vocab_size"],
+        "vocabularyPart": config["vocab_size"] // parts,
+        "prefillLength": settings["prefill_length"],
+        "cacheLength": settings["cache_length"],
+        "workspaceBytes": 64 * 1024 * 1024,
+    }
+    (args.output / "model-parameters.h").write_text(
+        "".join(
+            f"constexpr size_t {name} = {value};\n" for name, value in constants.items()
+        )
+    )
 
 
 if __name__ == "__main__":

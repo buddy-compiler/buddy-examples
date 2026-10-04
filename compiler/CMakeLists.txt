@@ -14,6 +14,8 @@ set(BB_TARGET_REGISTRY_INC "${CMAKE_CURRENT_BINARY_DIR}/BuckyballTargetRegistry.
 set(BB_BUCKYBALL_DIALECT_TD "${CMAKE_CURRENT_BINARY_DIR}/BuckyballUnion.td")
 set(BB_BALL_LOWERING_HOOKS
   "${CMAKE_CURRENT_BINARY_DIR}/BuckyballBallLoweringHooks.inc")
+set(BB_BALL_PASS_DECLS "${CMAKE_CURRENT_BINARY_DIR}/BuckyballBallPassesDecl.inc")
+set(BB_BALL_PASS_REGISTRATION "${CMAKE_CURRENT_BINARY_DIR}/BuckyballBallPassesRegistration.inc")
 set(BB_TARGET_REGISTRY_SOURCE
   "${BB_COMPILER_COMMON_DIR}/Target/BuckyballTargetRegistry.cpp")
 set(BB_TARGET_REGISTRY_GENERATOR
@@ -37,6 +39,8 @@ execute_process(
     --repo "${BB_REPO_ROOT}"
     --chip-pb "${BUCKYBALL_CHIP_PB}"
     --lowering-hooks-out "${BB_BALL_LOWERING_HOOKS}"
+    --pass-decls-out "${BB_BALL_PASS_DECLS}"
+    --pass-registration-out "${BB_BALL_PASS_REGISTRATION}"
   RESULT_VARIABLE BB_BALL_HOOKS_RESULT
   OUTPUT_VARIABLE BB_BALL_HOOKS_OUTPUT
   ERROR_VARIABLE BB_BALL_HOOKS_ERROR)
@@ -103,7 +107,7 @@ endif()
 string(STRIP "${BB_ASSIGN_SOURCES_RAW}" BB_ASSIGN_SOURCES_RAW)
 string(REPLACE "\n" ";" BB_assign_SOURCES "${BB_ASSIGN_SOURCES_RAW}")
 
-foreach(BB_BALL_SOURCE_KIND legalize bank_ssa tile)
+foreach(BB_BALL_SOURCE_KIND legalize bank_ssa tile passes)
   execute_process(
     COMMAND "${Python3_EXECUTABLE}" "${BB_TARGET_REGISTRY_GENERATOR}"
       --repo "${BB_REPO_ROOT}"
@@ -174,7 +178,13 @@ else()
     LINK_LIBS PUBLIC BuddyBuckyball MLIRIR MLIRLLVMCommonConversion MLIRLLVMDialect)
 
   add_mlir_library(LowerBuckyballPass
-    "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/MegaKernelToBankSSAPatterns.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/FusePointwise.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/UnitTranspose.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/GatherRows.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/FoldGather.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/RVVKernels.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/RVVTensorKernels.cpp"
+    "${BB_COMPILER_COMMON_DIR}/Transforms/RVVMatmul.cpp"
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/QuantizeTensorToBankSSAPatterns.cpp"
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/RuntimeLowering.cpp"
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/BaseAssignPhysicalBankPatterns.cpp"
@@ -182,10 +192,11 @@ else()
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/ReportBankUsagePass.cpp"
     ${BB_assign_SOURCES}
     ${BB_bank_ssa_SOURCES}
+    ${BB_passes_SOURCES}
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/AssignPhysicalBanksPass.cpp"
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/LowerBuckyballPass.cpp"
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerBuckyball/LowerBuckyballToBankSSAPass.cpp"
-    LINK_LIBS PUBLIC BuddyBuckyballTransforms MLIRLinalgDialect)
+    LINK_LIBS PUBLIC BuddyBuckyballTransforms MLIRLinalgDialect MLIRLinalgTransforms MLIRTosaDialect)
 
   add_mlir_library(LowerTileToBuckyballPass
     "${BB_COMPILER_COMMON_DIR}/Conversion/LowerTileToBuckyball/QuantizedKernelPatterns.cpp"

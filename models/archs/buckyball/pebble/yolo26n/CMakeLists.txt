@@ -83,7 +83,8 @@ add_executable(yolo26-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(yolo26-run model-loader)
 target_include_directories(yolo26-run PRIVATE ${GENERATED_DIR}
   ${BUDDY_SOURCE}/frontend/Interfaces ${REPO_ROOT}/stack/models/lib)
-target_link_libraries(yolo26-run PRIVATE -static yolo26_kernels runtime model_image)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels" software)
+target_link_libraries(yolo26-run PRIVATE -static yolo26_kernels runtime scalar_kernels model_image)
 add_custom_command(TARGET yolo26-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:yolo26-run> ${ARTIFACT_DIR}/yolo26-run

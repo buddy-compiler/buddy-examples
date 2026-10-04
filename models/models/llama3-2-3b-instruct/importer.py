@@ -134,6 +134,7 @@ def export(name, kind, stage, sample, shared=None):
     graph._inputs = [order[value.data_ptr()] for value in sample.values()]
     graph._runtime_inputs_ref = list(sample.values())
     graph.fuse_ops([simply_fuse])
+    graph.packing_rows = args.prefill_len
     output = directory / name
     quant.quantize(graph, params, [names[value.data_ptr()] for value in params],
                     output, name, args.compiler_build / "bin/rax-pack", kind=kind)

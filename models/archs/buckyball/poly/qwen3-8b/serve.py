@@ -30,8 +30,10 @@ class Model(nn.Module):
             if self.metadata[key] != getattr(hf, key):
                 raise ValueError(f"compiled model disagrees with checkpoint: {key}")
         self.parts = self.metadata["parts"]
-        if len(options["tile_indices"]) != self.parts:
-            raise ValueError("selected tile count differs from the compiled head partition")
+        self.execution_tiles = self.metadata["execution_tiles"]
+        if len(options["tile_indices"]) != self.execution_tiles:
+            raise ValueError("selected tile count differs from the compiled execution plan")
+        self.ffn_channels = self.metadata["ffn"]["intermediate"]
         head_dim = hf.head_dim
         if head_dim != self.metadata["head_dim"]:
             raise ValueError("compiled attention head dimension differs from checkpoint")
@@ -43,7 +45,7 @@ class Model(nn.Module):
         if (hf.num_hidden_layers != self.layers or hf.num_key_value_heads != self.heads
                 or hf.num_attention_heads != self.metadata["num_attention_heads"]):
             raise ValueError("compiled Qwen attention topology differs from checkpoint")
-        if config.max_model_len > min(self.metadata["cache_length"], self.metadata["prefill_length"]):
+        if config.max_model_len > self.metadata["cache_length"]:
             raise ValueError("requested context exceeds the compiled capacity")
         if config.dtype != torch.float32 or not config.enforce_eager or config.enable_prompt_embeds:
             raise ValueError("compiled Qwen requires eager float32 token-ID execution")
@@ -82,8 +84,8 @@ class Model(nn.Module):
             Path(self.options["simulator"]).resolve(),
             self.artifact,
             Path(self.options["log_dir"]).resolve(), self.options["tile_indices"],
-            self.options.get("record_io", False), [(str(rank),) for rank in range(self.parts)],
-            self.options["memory_mib"],
+            self.options.get("record_io", False), [(str(rank),) for rank in range(self.execution_tiles)],
+            self.options["memory_mib"], p2e=self.options.get("p2e"),
         )
         return seen
 
@@ -98,13 +100,16 @@ class Model(nn.Module):
         first = metadata[self.cache_names[0]]
         boundaries = first.query_start_loc.tolist()
         result = torch.zeros((input_ids.numel(), self.hidden_size), dtype=torch.float32)
-        local_heads = self.heads // self.parts
+        local_heads = self.heads // self.execution_tiles
+        context_width = self.metadata["num_attention_heads"] // self.execution_tiles * self.head_size
         for sequence, (begin, end) in enumerate(zip(boundaries, boundaries[1:])):
             count = end - begin
             start = int(positions[begin])
             if not torch.equal(positions[begin:end].cpu(), torch.arange(start, start + count)):
                 raise ValueError("non-contiguous positions in a Qwen request")
-            if start + count > self.metadata["cache_length"] or (start and count != 1):
+            if (start + count > self.metadata["cache_length"]
+                    or (start == 0 and count > self.metadata["prefill_length"])
+                    or (start and count != 1)):
                 raise ValueError("request does not fit the compiled Qwen phase")
             hidden_bytes = count * self.hidden_size * 4
             request = struct.pack("<QQQQ", 0, count, start, 0)
@@ -123,31 +128,57 @@ class Model(nn.Module):
                     raise ValueError("request has an unmapped KV cache slot")
                 block_ids, offsets = slots // block_size, slots % block_size
                 pending = []
-                for rank in range(self.parts):
-                    lo, hi = rank * local_heads, (rank + 1) * local_heads
-                    request = bytearray(struct.pack("<QQQQ", 2, count, start, layer_index))
+                for rank in range(self.execution_tiles):
+                    lo = ((rank % self.parts) * 2 + rank // self.parts) * local_heads
+                    hi = lo + local_heads
+                    request = bytearray(struct.pack("<QQQQ", 6, count, start, layer_index))
                     request.extend(hidden.tobytes())
                     for cache in (key, value):
                         request.extend(cache[old_blocks, lo:hi, old_offsets].permute(1, 0, 2).contiguous().numpy().tobytes())
-                    size = hidden_bytes + 2 * local_heads * count * self.head_size * 4
+                    size = count * context_width * 4 + 2 * local_heads * count * self.head_size * 4
                     pending.append(self.pool.submit_to(rank, bytes(request), size))
-                reduced = np.zeros_like(hidden)
+                contexts = []
                 for rank, future in enumerate(pending):
                     data = future.result()
                     values = np.frombuffer(data, dtype="<f4").copy()
                     if not np.isfinite(values).all():
                         raise RuntimeError("compiled attention shard produced non-finite values")
-                    reduced += values[:count * self.hidden_size].reshape(hidden.shape)
-                    updated = values[count * self.hidden_size:].reshape(2, local_heads, count, self.head_size)
-                    lo, hi = rank * local_heads, (rank + 1) * local_heads
+                    contexts.append(values[:count * context_width].reshape(count, context_width))
+                    updated = values[count * context_width:].reshape(2, local_heads, count, self.head_size)
+                    lo = ((rank % self.parts) * 2 + rank // self.parts) * local_heads
+                    hi = lo + local_heads
                     key[block_ids, lo:hi, offsets] = torch.from_numpy(updated[0]).permute(1, 0, 2)
                     value[block_ids, lo:hi, offsets] = torch.from_numpy(updated[1]).permute(1, 0, 2)
-                hidden += reduced
-                request = struct.pack("<QQQQ", 3, count, start, layer_index) + hidden.tobytes()
-                pending = [self.pool.submit_to(rank, request, hidden_bytes) for rank in range(self.parts)]
+                pending = []
+                for rank in range(self.parts):
+                    context_values = np.concatenate((contexts[rank], contexts[rank + self.parts]), axis=1)
+                    request = struct.pack("<QQQQ", 7, count, start, layer_index) + context_values.tobytes()
+                    pending.append((self.pool.submit_to(rank, request, hidden_bytes // 2),
+                                    self.pool.submit_to(rank + self.parts, request, hidden_bytes // 2)))
                 reduced = np.zeros_like(hidden)
-                for future in pending:
-                    partial = np.frombuffer(future.result(), dtype="<f4").reshape(hidden.shape)
+                for first, second in pending:
+                    partial = np.concatenate((np.frombuffer(first.result(), dtype="<f4").reshape(count, self.hidden_size // 2),
+                                              np.frombuffer(second.result(), dtype="<f4").reshape(count, self.hidden_size // 2)), axis=1)
+                    if not np.isfinite(partial).all():
+                        raise RuntimeError("compiled attention projection produced non-finite values")
+                    reduced += partial
+                hidden += reduced
+                request = struct.pack("<QQQQ", 4, count, start, layer_index) + hidden.tobytes()
+                half_channels = self.ffn_channels // 2
+                pending = [self.pool.submit_to(rank, request, count * half_channels * 4)
+                           for rank in range(self.execution_tiles)]
+                expanded = [np.frombuffer(future.result(), dtype="<f4").reshape(count, half_channels)
+                            for future in pending]
+                pending = []
+                for rank in range(self.parts):
+                    intermediate = np.concatenate((expanded[rank], expanded[rank + self.parts]), axis=1)
+                    request = struct.pack("<QQQQ", 5, count, start, layer_index) + intermediate.tobytes()
+                    pending.append((self.pool.submit_to(rank, request, hidden_bytes // 2),
+                                    self.pool.submit_to(rank + self.parts, request, hidden_bytes // 2)))
+                reduced = np.zeros_like(hidden)
+                for first, second in pending:
+                    partial = np.concatenate((np.frombuffer(first.result(), dtype="<f4").reshape(count, self.hidden_size // 2),
+                                              np.frombuffer(second.result(), dtype="<f4").reshape(count, self.hidden_size // 2)), axis=1)
                     if not np.isfinite(partial).all():
                         raise RuntimeError("compiled FFN shard produced non-finite values")
                     reduced += partial
@@ -157,13 +188,14 @@ class Model(nn.Module):
 
     def compute_logits(self, hidden_states: torch.Tensor) -> torch.Tensor:
         pending = []
+        local_vocabulary = self.vocabulary // self.execution_tiles
         for hidden in hidden_states:
             request = struct.pack("<QQQQ", 1, 1, 0, 0) + hidden.cpu().contiguous().numpy().tobytes()
-            pending.append(self.pool.submit_to(0, request, self.vocabulary * 4))
+            pending.append([self.pool.submit_to(rank, request, local_vocabulary * 4)
+                            for rank in range(self.execution_tiles)])
         outputs = []
-        for future in pending:
-            data = future.result()
-            logits = np.frombuffer(data, dtype="<f4").copy()
+        for shards in pending:
+            logits = np.concatenate([np.frombuffer(future.result(), dtype="<f4") for future in shards])
             if not np.isfinite(logits).all():
                 raise RuntimeError("compiled Qwen produced non-finite logits")
             outputs.append(torch.from_numpy(logits))
@@ -194,7 +226,7 @@ def run_model(package, args, architecture):
         runner="generate",
         dtype="float32",
         enforce_eager=True,
-        max_model_len=min(metadata["cache_length"], metadata["prefill_length"]),
+        max_model_len=metadata["cache_length"],
         max_num_seqs=args.max_num_seqs,
         gpu_memory_utilization=args.memory_utilization,
         enable_prefix_caching=False,
@@ -207,6 +239,7 @@ def run_model(package, args, architecture):
             "tile_indices": args.tile_indices,
             "record_io": args.record_io,
             "memory_mib": args.memory_mib,
+            "p2e": getattr(args, "p2e", None),
         }},
         **options,
     )

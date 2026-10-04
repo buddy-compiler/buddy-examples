@@ -1,5 +1,5 @@
 from stack.compiler.quant.mxfp8_graph import quantize_graph
-from ..permute.layout import reorder, TILE_ROWS, TILE_K
+from examples.balls.mxmm.compiler.python.layout import bank_bytes
 
 
 def quantize(graph, params, names, output, name, packer, *, kind):
@@ -10,4 +10,5 @@ def quantize(graph, params, names, output, name, packer, *, kind):
         name for name, param in zip(names, params) if param.ndim == 2
     }
     quantize_graph(graph, params, names, output, name, packer, weights=weights,
-                   reorder=reorder, tile_rows=TILE_ROWS, tile_k=TILE_K)
+                   bank_bytes=bank_bytes(packer.parent.parent, "attention" if kind in {"embedding", "attention"} else "ffn"),
+                   rows_hint=graph.packing_rows)

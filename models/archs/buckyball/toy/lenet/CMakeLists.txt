@@ -59,7 +59,8 @@ add_executable(lenet-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(lenet-run model-loader)
 target_include_directories(lenet-run PRIVATE ${GENERATED_DIR}
   ${BUDDY_SOURCE}/frontend/Interfaces ${REPO_ROOT}/stack/models/lib)
-target_link_libraries(lenet-run PRIVATE -static lenet_kernels gemmini_runtime runtime model_image)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels" software)
+target_link_libraries(lenet-run PRIVATE -static lenet_kernels gemmini_runtime runtime scalar_kernels model_image)
 add_custom_command(TARGET lenet-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:lenet-run> ${ARTIFACT_DIR}/lenet-run

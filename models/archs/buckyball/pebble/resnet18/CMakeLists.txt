@@ -75,7 +75,8 @@ add_executable(resnet18-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(resnet18-run model-loader)
 target_include_directories(resnet18-run PRIVATE ${GENERATED_DIR}
   ${BUDDY_SOURCE}/frontend/Interfaces ${REPO_ROOT}/stack/models/lib)
-target_link_libraries(resnet18-run PRIVATE -static resnet18_kernels runtime model_image)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels" software)
+target_link_libraries(resnet18-run PRIVATE -static resnet18_kernels runtime scalar_kernels model_image)
 add_custom_command(TARGET resnet18-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:resnet18-run> ${ARTIFACT_DIR}/resnet18-run

@@ -1,0 +1,5 @@
+[parameters]
+checkpoint = "convaiinnovations/laya"
+revision = "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851"
+sequence_length = 128
+options = 16

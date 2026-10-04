@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
   void *workspace = aligned_alloc(64, workspaceBytes);
   if (!workspace)
     throw std::bad_alloc();
+  workspace_init(workspace, workspaceBytes);
   Context ctx(length, width, options, actions);
   std::cout.exceptions(std::ios::badbit | std::ios::failbit);
   size_t request = 0;

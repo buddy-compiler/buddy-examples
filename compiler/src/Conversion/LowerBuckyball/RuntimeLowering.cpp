@@ -35,6 +35,8 @@ public:
           function.setResultAttr(0, "llvm.noalias", UnitAttr::get(context));
       }
     }
+    if (module->getAttrOfType<UnitAttr>("buckyball.local"))
+      return;
     SmallVector<LLVM::CallOp> calls;
     module.walk([&](LLVM::CallOp call) {
       auto callee = call.getCallee();
@@ -56,6 +58,7 @@ public:
         module.getLoc(), "task_run",
         LLVM::LLVMFunctionType::get(voidType,
                                     {b.getI64Type(), pointer, pointer}));
+    LLVM::LLVMFuncOp placedRuntime;
     unsigned index = 0;
     for (LLVM::CallOp call : calls) {
       Location loc = call.getLoc();
@@ -106,7 +109,22 @@ public:
                                               b.getI64IntegerAttr(target.signature));
       Value code =
           b.create<LLVM::AddressOfOp>(loc, pointer, callback.getSymName());
-      b.create<LLVM::CallOp>(loc, runtime, ValueRange{kind, code, frame});
+      if (auto core = function->getAttrOfType<IntegerAttr>("buckyball.core")) {
+        if (core.getInt() < 1 || core.getInt() > 255) {
+          function.emitError("logical compute core must be in [1, 255]");
+          return signalPassFailure();
+        }
+        if (!placedRuntime) {
+          OpBuilder::InsertionGuard guard(b);
+          b.setInsertionPointToStart(module.getBody());
+          placedRuntime = b.create<LLVM::LLVMFuncOp>(module.getLoc(), "task_run_on",
+              LLVM::LLVMFunctionType::get(voidType, {b.getI64Type(), b.getI64Type(), pointer, pointer}));
+        }
+        Value destination = b.create<LLVM::ConstantOp>(loc, b.getI64Type(), b.getI64IntegerAttr(core.getInt()));
+        b.create<LLVM::CallOp>(loc, placedRuntime, ValueRange{destination, kind, code, frame});
+      } else {
+        b.create<LLVM::CallOp>(loc, runtime, ValueRange{kind, code, frame});
+      }
       if (call.getNumResults()) {
         Value result = b.create<LLVM::GEPOp>(
             loc, pointer, frameType, frame,

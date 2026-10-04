@@ -1,5 +1,7 @@
 #include "Conversion/LowerBuckyball/LowerBuckyball.h"
 #include "Target/BuckyballTargetRegistry.h"
+#include "Transforms/Passes.h"
+#include "BuckyballBallPassesDecl.inc"
 
 #include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
 #include "mlir/Conversion/LLVMCommon/TypeConverter.h"
@@ -36,7 +38,7 @@ public:
 
   void getDependentDialects(DialectRegistry &registry) const override {
     registry
-        .insert<LLVM::LLVMDialect, arith::ArithDialect, memref::MemRefDialect,
+        .insert<cf::ControlFlowDialect, LLVM::LLVMDialect, arith::ArithDialect, memref::MemRefDialect,
                 scf::SCFDialect, ::buddy::buckyball::BuckyballDialect>();
   }
 
@@ -80,7 +82,7 @@ public:
 
   void getDependentDialects(DialectRegistry &registry) const override {
     registry
-        .insert<LLVM::LLVMDialect, arith::ArithDialect, memref::MemRefDialect,
+        .insert<cf::ControlFlowDialect, LLVM::LLVMDialect, arith::ArithDialect, memref::MemRefDialect,
                 scf::SCFDialect, ::buddy::buckyball::BuckyballDialect>();
   }
 
@@ -106,7 +108,13 @@ public:
 } // namespace
 
 void mlir::buddy::registerLowerBuckyballPass() {
+#include "BuckyballBallPassesRegistration.inc"
   registerTileRuntimePass();
+  registerFusePointwisePass();
+  registerFoldUnitTransposePass();
+  registerGatherRowsPass();
+  registerRVVKernelsPasses();
+  registerRVVMatmulPass();
   PassRegistration<LowerBuckyballToLLVMPass>();
 }
 

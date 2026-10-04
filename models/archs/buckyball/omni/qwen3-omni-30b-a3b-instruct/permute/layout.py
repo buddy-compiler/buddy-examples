@@ -10,9 +10,16 @@ def reorder(codes, scales):
     if width % 32 or scales.shape != (rows, width // 32):
         raise ValueError("MXFP8 matrix and block scales disagree")
     padded_rows = (rows + TILE_ROWS - 1) // TILE_ROWS * TILE_ROWS
-    padded_k = (width + TILE_K - 1) // TILE_K * TILE_K
+    tile_k = min(width, TILE_K)
+    padded_k = (width + tile_k - 1) // tile_k * tile_k
     codes = np.pad(codes, ((0, padded_rows - rows), (0, padded_k - width)))
-    scales = np.pad(scales, ((0, padded_rows - rows), (0, (padded_k - width) // 32)), constant_values=127)
-    codes = matrix_tiles(codes, TILE_ROWS, TILE_K).reshape(-1, TILE_ROWS * TILE_K)
-    scales = matrix_tiles(scales, TILE_ROWS, TILE_K // 32).reshape(-1, TILE_ROWS * TILE_K // 32)
+    scales = np.pad(
+        scales,
+        ((0, padded_rows - rows), (0, (padded_k - width) // 32)),
+        constant_values=127,
+    )
+    codes = matrix_tiles(codes, TILE_ROWS, tile_k).reshape(-1, TILE_ROWS * tile_k)
+    scales = matrix_tiles(scales, TILE_ROWS, tile_k // 32).reshape(
+        -1, TILE_ROWS * tile_k // 32
+    )
     return np.concatenate((codes, scales), axis=1).ravel()

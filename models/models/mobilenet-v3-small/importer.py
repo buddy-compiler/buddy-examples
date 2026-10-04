@@ -46,6 +46,7 @@ parser.add_argument(
 )
 parser.add_argument("--compiler-build", type=Path, required=True)
 parser.add_argument("--design", required=True)
+import_module(".configs.importer-param", __package__).add_arguments(parser)
 args = parser.parse_args()
 args.compiler_build = args.compiler_build.resolve()
 sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
@@ -80,7 +81,7 @@ else:
 model_path = str(model_dir)
 
 model = models.mobilenet_v3_small(
-    weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1, pretrained=True
+    weights=models.MobileNet_V3_Small_Weights[args.weights]
 )
 model = model.eval()
 fold_batch_norms(model)

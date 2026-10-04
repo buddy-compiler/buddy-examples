@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "toy-alexnet"
+version = "0.1.0"
+requires-python = ">=3.12"
+[tool.setuptools]
+packages = ["examples.models.toy.alexnet", "examples.models.toy.alexnet.permute", "examples.models.toy.alexnet.quant"]
+package-dir = {"examples.models.toy.alexnet" = "."}
