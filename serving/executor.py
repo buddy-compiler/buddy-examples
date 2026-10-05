@@ -26,7 +26,7 @@ class Executor:
         self.rank = rank
         self.process = None if transport is not None else subprocess.Popen(
             [str(simulator), "--elf", str(program), "--log-dir", str(self.log_dir),
-             "--pk", "--tile-index", str(tile_index),
+             "--tile-index", str(tile_index),
              "--memory-mib", str(memory_mib),
              "--", str(model_dir), *arguments],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log,
@@ -141,6 +141,5 @@ def run_program(package, args, arguments):
     with (directory / "simulator.log").open("wb") as log:
         subprocess.run([str(args.simulator.resolve()), "--elf", str(program),
                         "--log-dir", str(directory), *working_directory,
-                        "--pk",
                         selector, str(index),
                         "--", *arguments], stderr=log, cwd=directory, check=True, timeout=args.timeout)
