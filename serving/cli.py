@@ -15,6 +15,8 @@ def main():
     parser.add_argument("--simulator", type=Path, required=True)
     parser.add_argument("--log-dir", type=Path, required=True)
     parser.add_argument("--run-config", type=Path, required=True)
+    parser.add_argument("--itrace", action="store_true")
+    parser.add_argument("--mtrace", action="store_true")
     paths = parser.parse_args()
     config_path = paths.run_config.resolve(strict=True)
     with config_path.open("rb") as source:
@@ -54,6 +56,8 @@ def main():
         Package(args.model.resolve(), args.loader.resolve(), args.log_dir.resolve())
     ) as package:
         execution = package.execution
+        if (args.itrace or args.mtrace) and execution["kind"] != "native":
+            raise ValueError("itrace and mtrace require native model execution")
         if "p2e" in settings:
             endpoint = execution.get("p2e", {})
             if (execution["kind"] != "python" or endpoint.get("kind") != "host-worker"

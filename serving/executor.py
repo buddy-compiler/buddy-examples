@@ -142,4 +142,6 @@ def run_program(package, args, arguments):
         subprocess.run([str(args.simulator.resolve()), "--elf", str(program),
                         "--log-dir", str(directory), *working_directory,
                         selector, str(index),
+                        *(["--itrace"] if args.itrace else []),
+                        *(["--mtrace"] if args.mtrace else []),
                         "--", *arguments], stderr=log, cwd=directory, check=True, timeout=args.timeout)
