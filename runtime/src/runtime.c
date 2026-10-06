@@ -1,6 +1,7 @@
 #include "runtime.h"
 #include "workspace_internal.h"
 #include <stdatomic.h>
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -107,9 +108,7 @@ static task *submit(size_t required, uint64_t signature, task_entry entry, void 
     }
     if (selected != num_cores)
       break;
-    uint64_t status = COMMAND(1, required, signature);
-    if (required == num_cores && status) abort();
-    if (required != num_cores && status != 1) abort();
+    if (sched_yield()) abort();
   }
   task *task = malloc(sizeof(*task));
   if (!task)
@@ -145,7 +144,8 @@ task *task_submit_on(size_t core, uint64_t signature, task_entry entry, void *ar
 int task_wait(task *task) {
   uint64_t status;
   if (!(status = atomic_load_explicit(&task->status, memory_order_acquire))) {
-    status = COMMAND(1, task->core, 0);
+    while (!(status = COMMAND(10, task->core, 0)))
+      if (sched_yield()) abort();
     __asm__ volatile("fence rw, rw" ::: "memory");
     atomic_store_explicit(&task->status, status, memory_order_release);
   }
