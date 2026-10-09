@@ -32,6 +32,7 @@ Thinker::Thinker(const std::filesystem::path &directory) {
   runtime_init(1024 * 1024);
   workspace = aligned_alloc(64, workspaceBytes);
   if (!workspace) throw std::bad_alloc();
+  workspace_init(workspace, workspaceBytes);
   std::cerr << "Thinker ready: layers=" << first << ':' << last << " rank=" << rank
             << " weight_bytes=" << float_count * 4 + byte_count << '\n';
 }

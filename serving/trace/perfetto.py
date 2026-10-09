@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from bisect import bisect_right
 import json
 import re
 from pathlib import Path
@@ -63,7 +64,7 @@ def load_trace_config(path: Path) -> list[dict]:
   for node in nodes:
     if not isinstance(node, dict):
       raise ValueError("each trace.node entry must be a table")
-    extra_keys = set(node) - {"node", "id", "tag"}
+    extra_keys = set(node) - {"node", "id", "tag", "extend"}
     if extra_keys:
       names = ", ".join(sorted(extra_keys))
       raise ValueError(f"unsupported trace.node fields: {names}")
@@ -128,7 +129,7 @@ def load_trace_metadata(paths: list[Path]) -> dict[tuple[int, ...], dict]:
   return result
 
 
-def read_cycle(path: Path) -> dict[str, int]:
+def read_cycle(path: Path) -> list[dict[str, int]]:
   if not path.is_file():
     raise FileNotFoundError(f"missing cycle trace file: {path}")
   text = path.read_text(encoding="utf-8").strip()
@@ -143,8 +144,9 @@ def read_cycle(path: Path) -> dict[str, int]:
       raise ValueError(f"invalid cycle trace file: {path}") from exc
     if elapsed < 0:
       raise ValueError(f"negative cycle value in: {path}")
-    return {"elapsed": elapsed}
+    return [{"elapsed": elapsed}]
 
+  records = []
   cycle: dict[str, int] = {}
   for line in lines:
     parts = line.split()
@@ -153,20 +155,24 @@ def read_cycle(path: Path) -> dict[str, int]:
     key, value = parts
     if key not in ("start", "end", "elapsed"):
       raise ValueError(f"unknown cycle trace key in {path}: {key}")
+    if key in cycle:
+      raise ValueError(f"duplicate cycle trace key in {path}: {key}")
     try:
       cycle[key] = int(value)
     except ValueError as exc:
       raise ValueError(f"invalid cycle trace value in {path}: {line}") from exc
     if cycle[key] < 0:
       raise ValueError(f"negative cycle trace value in {path}: {line}")
-
-  if "elapsed" not in cycle:
+    if key == "elapsed":
+      if ("start" in cycle) != ("end" in cycle):
+        raise ValueError(f"cycle trace must contain both start and end: {path}")
+      if "start" in cycle and cycle["end"] - cycle["start"] != cycle["elapsed"]:
+        raise ValueError(f"cycle trace elapsed does not match start/end: {path}")
+      records.append(cycle)
+      cycle = {}
+  if cycle or not records:
     raise ValueError(f"cycle trace missing elapsed value: {path}")
-  if ("start" in cycle) != ("end" in cycle):
-    raise ValueError(f"cycle trace must contain both start and end: {path}")
-  if "start" in cycle and cycle["end"] - cycle["start"] != cycle["elapsed"]:
-    raise ValueError(f"cycle trace elapsed does not match start/end: {path}")
-  return cycle
+  return records
 
 
 def count_lines(path: Path) -> int | None:
@@ -220,7 +226,7 @@ def trace_level(trace: dict) -> int:
 
 def level_name(level: int) -> str:
   if level == 0:
-    return "L0 graph"
+    return "L0 buddy"
   if level == 1:
     return "L1 linalg"
   if level == 2:
@@ -241,6 +247,7 @@ def build_perfetto(trace_dir: Path, trace_toml: Path,
     if id_path not in trace_by_path:
       trace_by_path[id_path] = trace
   entries = []
+  intervals = {}
   base_ts = None
   serial_ts = 0
 
@@ -249,10 +256,28 @@ def build_perfetto(trace_dir: Path, trace_toml: Path,
     if trace is None:
       raise ValueError(f"missing trace metadata for id_path: {list(id_path)}")
     tensor_path = trace_dir / "tensor" / f"trace-{path_key(trace['id_path'])}.txt"
-    cycle = read_cycle(cycle_path)
-    if "start" in cycle:
-      base_ts = cycle["start"] if base_ts is None else min(base_ts, cycle["start"])
-    entries.append((trace, cycle_path, tensor_path, cycle))
+    for cycle in read_cycle(cycle_path):
+      if has_nested_trace and "start" not in cycle:
+        raise ValueError("multi-level trace requires absolute start/end cycles")
+      if "start" in cycle:
+        base_ts = cycle["start"] if base_ts is None else min(base_ts, cycle["start"])
+        intervals.setdefault(id_path, []).append((cycle["start"], cycle["end"]))
+      entries.append((trace, cycle_path, tensor_path, cycle))
+
+  starts = {}
+  for id_path, records in intervals.items():
+    records.sort()
+    starts[id_path] = [start for start, _ in records]
+    if any(previous[1] > current[0] for previous, current in zip(records, records[1:])):
+      raise ValueError(f"overlapping calls of trace {list(id_path)}")
+  for id_path, records in intervals.items():
+    if len(id_path) == 1:
+      continue
+    parent = id_path[:-1]
+    for start, end in records:
+      index = bisect_right(starts[parent], start) - 1
+      if index < 0 or end > intervals[parent][index][1]:
+        raise ValueError(f"nested trace outside parent: {list(id_path)}")
 
   events = []
   levels = sorted({trace_level(trace) for trace, _, _, _ in entries})

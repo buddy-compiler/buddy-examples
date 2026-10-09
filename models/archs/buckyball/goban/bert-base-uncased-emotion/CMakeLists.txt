@@ -79,7 +79,8 @@ add_dependencies(bert_kernels bert-model-build)
 add_executable(bert-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(bert-run model-loader)
 target_include_directories(bert-run PRIVATE ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
-target_link_libraries(bert-run PRIVATE -static bert_kernels runtime)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
+target_link_libraries(bert-run PRIVATE -static bert_kernels runtime rvv_kernels)
 add_custom_command(TARGET bert-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:bert-run> ${ARTIFACT_DIR}/bert-run

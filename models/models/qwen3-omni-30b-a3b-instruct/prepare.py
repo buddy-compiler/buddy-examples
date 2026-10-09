@@ -1,22 +1,21 @@
+from importlib import import_module
 import argparse
 import json
 from pathlib import Path
 
 from huggingface_hub import snapshot_download
 
-MODEL = "Qwen/Qwen3-Omni-30B-A3B-Instruct"
-REVISION = "26291f793822fb6be9555850f06dfe95f2d7e695"
-
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
+    import_module(".configs.importer-param", __package__).add_arguments(parser)
     args = parser.parse_args()
-    checkpoint = snapshot_download(MODEL, revision=REVISION,
+    checkpoint = snapshot_download(args.checkpoint, revision=args.revision,
         allow_patterns=["*.safetensors", "*.json", "*.txt"])
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "checkpoint.json").write_text(json.dumps({
-        "model": MODEL, "revision": REVISION, "path": checkpoint
+        "model": args.checkpoint, "revision": args.revision, "path": checkpoint
     }, indent=2) + "\n")
     print(checkpoint)
 

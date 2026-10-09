@@ -49,7 +49,7 @@ class System:
         self.log = (self.directory / "simulator.log").open("wb")
         self.timeout = timeout
         self.process = subprocess.Popen(
-            [str(simulator), "--elf", str(program), "--pk", "--host-io",
+            [str(simulator), "--elf", str(program),
              "--memory-mib", str(memory_mib), "--log-dir", str(self.directory),
              "--", str(model_dir)],
             stdin=subprocess.DEVNULL, stdout=self.log, stderr=self.log,

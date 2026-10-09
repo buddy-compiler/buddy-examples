@@ -1,3 +1,4 @@
+from importlib import import_module
 #!/usr/bin/env python3
 # ===- import-gemma4.py ---------------------------------------------------
 #
@@ -43,6 +44,7 @@ parser.add_argument(
 )
 parser.add_argument("--compiler-build", type=Path, required=True)
 parser.add_argument("--trace-config", type=Path)
+import_module(".configs.importer-param", __package__).add_arguments(parser)
 args = parser.parse_args()
 sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 
@@ -85,7 +87,7 @@ else:
     if os.path.exists(verbose_path):
         os.remove(verbose_path)
 
-model_path = "google/gemma-4-E2B-it"
+model_path = args.checkpoint
 
 MaxTokenLength = 512
 

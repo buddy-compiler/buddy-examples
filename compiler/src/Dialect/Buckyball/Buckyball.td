@@ -39,6 +39,15 @@ def Buckyball_Dialect : Dialect {
 class Buckyball_Op<string mnemonic, list<Trait> traits = []> :
   Op<Buckyball_Dialect, mnemonic, traits> {}
 
+def MvoverOp : Buckyball_Op<"mvover"> {
+  let summary = "Move contiguous rows between logical Core-local Banks";
+  let arguments = (ins I64:$sourceCore, I64:$sourceBank, I64:$sourceRow,
+                       I64:$targetCore, I64:$targetBank, I64:$targetRow,
+                       I64:$rows);
+  let assemblyFormat = "$sourceCore $sourceBank $sourceRow $targetCore "
+                       "$targetBank $targetRow $rows attr-dict";
+}
+
 def MvinOp : Buckyball_Op<"mvin"> {
   let summary = "Load data from memory to scratchpad bank";
   let description = [{
@@ -96,7 +105,7 @@ def MsetOp : Buckyball_Op<"mset"> {
   let assemblyFormat = "$bankId attr-dict `:` type($bankId)";
 }
 
-def FenceOp : Buckyball_Op<"fence"> {
+def FenceOp : Buckyball_Op<"fence", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Memory fence for synchronization";
   let description = [{
     Ensures all previous memory operations complete before proceeding.
@@ -110,7 +119,7 @@ def FenceOp : Buckyball_Op<"fence"> {
 // Bank SSA operations
 //===----------------------------------------------------------------------===//
 
-def BankAllocOp : Buckyball_Op<"bank_alloc"> {
+def BankAllocOp : Buckyball_Op<"bank_alloc", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Allocate a virtual on-chip bank resource";
   let description = [{
     Create a virtual bank handle in SSA form.
@@ -124,13 +133,32 @@ def BankAllocOp : Buckyball_Op<"bank_alloc"> {
   let assemblyFormat = "attr-dict";
 }
 
-def BankReleaseOp : Buckyball_Op<"bank_release"> {
+def BankReleaseOp : Buckyball_Op<"bank_release", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Release a virtual bank handle";
   let arguments = (ins I64:$bank);
   let assemblyFormat = "$bank attr-dict `:` type($bank)";
 }
 
-def BankMvinOp : Buckyball_Op<"bank_mvin"> {
+def BankNormOp : Buckyball_Op<"bank_norm", [MemoryEffects<[MemRead, MemWrite]>]> {
+  let summary = "Ordered full-row Norm in caller-owned private banks";
+  let arguments = (ins I64:$descriptorBank, I64:$outputBank,
+    I64:$inputBank, I64:$weightBank, I64:$width, I64:$bankBytes,
+    I32:$meanBits, I32:$epsilonBits);
+  let results = (outs I64:$descriptorOut, I64:$outputOut);
+  let assemblyFormat = "$descriptorBank $outputBank $inputBank $weightBank "
+    "$width $bankBytes $meanBits $epsilonBits attr-dict `:` type($descriptorBank)";
+}
+
+def BankPackFP32Op : Buckyball_Op<"bank_pack_fp32", [MemoryEffects<[MemRead, MemWrite]>]> {
+  let summary = "Pack a private-bank FP32 matrix panel";
+  let arguments = (ins I64:$descriptorBank, I64:$outputBank, I64:$inputBank,
+    I64:$fullK, I64:$fullN, I64:$startK, I64:$startN, I64:$countK, I64:$columns);
+  let results = (outs I64:$descriptorOut, I64:$outputOut);
+  let assemblyFormat = "$descriptorBank $outputBank $inputBank $fullK $fullN "
+    "$startK $startN $countK $columns attr-dict `:` type($descriptorBank)";
+}
+
+def BankMvinOp : Buckyball_Op<"bank_mvin", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Load into a virtual bank handle";
   let arguments = (ins MemRefRankOf<[AnyType], [2]>:$input, I64:$bank, I64:$depth,
                        I64:$stride);
@@ -152,7 +180,7 @@ def BankMvin2dOp : Buckyball_Op<"bank_mvin_2d"> {
                        "type($dstBase) type($width) type($validBytes)";
 }
 
-def BankMvoutOp : Buckyball_Op<"bank_mvout"> {
+def BankMvoutOp : Buckyball_Op<"bank_mvout", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Store from a virtual bank handle";
   let arguments = (ins MemRefRankOf<[AnyType], [2]>:$output, I64:$bank, I64:$depth,
                        I64:$stride);

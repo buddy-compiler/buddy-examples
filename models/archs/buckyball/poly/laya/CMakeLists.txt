@@ -20,7 +20,9 @@ set(FORWARD_PASSES
   -convert-func-to-llvm -reconcile-unrealized-casts -canonicalize -cse -lower-tile-runtime)
 set(KERNEL_PASSES
   -eliminate-empty-tensors -convert-elementwise-to-linalg
-  -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries
+  -convert-tensor-to-linalg -canonicalize -cse
+  -one-shot-bufferize=bufferize-function-boundaries
+  -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
   -convert-linalg-to-tile=quantized-only
   -convert-tile-to-buckyball
   -lower-buckyball-to-bank-ssa -assign-physical-banks
@@ -48,7 +50,10 @@ add_dependencies(laya_kernels laya-model-build)
 add_executable(laya-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(laya-run model-loader)
 target_include_directories(laya-run PRIVATE ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
-target_link_libraries(laya-run PRIVATE -static laya_kernels runtime)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
+target_link_libraries(laya-run PRIVATE -static laya_kernels runtime rvv_kernels mxfp8_pack mxquant_backend)
 target_compile_options(laya-run PRIVATE -O${LLVM_OPT_LEVEL})
 target_compile_options(runtime PRIVATE -O${LLVM_OPT_LEVEL})
 if(CTRACE)

@@ -5,4 +5,4 @@ memory_mib = 16384
 memory_utilization = 0.1
 max_num_seqs = 1
 threads = 4
-timeout = 7200
+timeout = 21600

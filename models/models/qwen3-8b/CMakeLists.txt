@@ -12,7 +12,7 @@ add_custom_command(
           --max-cache-len ${CACHE_LENGTH}
           --parts ${PARTS}
           --model ${CHECKPOINT}
-  DEPENDS ${DESIGN_DEPENDS} ${MODEL_SOURCE}/importer.py ${MODEL_SOURCE}/configs/importer-param.py ${MODEL_SOURCE}/stages.py
+  DEPENDS ${DESIGN_DEPENDS} ${MODEL_SOURCE}/importer.py ${MODEL_SOURCE}/configs/importer-param.py ${MODEL_SOURCE}/stages.py ${MODEL_SOURCE}/ffn.py ${MODEL_SOURCE}/output.py ${MODEL_SOURCE}/attention.py ${MODEL_SOURCE}/parameters.py
   WORKING_DIRECTORY ${REPO_ROOT}
   VERBATIM)
 add_custom_target(qwen-model-build DEPENDS ${QWEN_MLIR}

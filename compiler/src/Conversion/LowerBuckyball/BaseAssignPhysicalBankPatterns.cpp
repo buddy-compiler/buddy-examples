@@ -4,6 +4,7 @@
 
 #include "Buckyball/BuckyballOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/PatternMatch.h"
 
 using namespace mlir;
@@ -68,6 +69,61 @@ public:
 
 private:
   PhysicalBankState &state;
+};
+
+class BankNormPattern : public OpRewritePattern<BankNormOp> {
+public:
+  using OpRewritePattern::OpRewritePattern;
+  LogicalResult matchAndRewrite(BankNormOp op,
+                                PatternRewriter &rewriter) const override {
+    auto module = op->getParentOfType<ModuleOp>();
+    StringRef name = "rvv_norm_banks";
+    if (!module.lookupSymbol<func::FuncOp>(name)) {
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToStart(module.getBody());
+      SmallVector<Type> types(6, rewriter.getI64Type());
+      types.append(2, rewriter.getI32Type());
+      auto function = rewriter.create<func::FuncOp>(
+          op.getLoc(), name, rewriter.getFunctionType(types, TypeRange{}));
+      function.setPrivate();
+      function->setAttr("llvm.emit_c_interface", rewriter.getUnitAttr());
+    }
+    rewriter.create<func::CallOp>(
+        op.getLoc(), name, TypeRange{},
+        ValueRange{op.getDescriptorBank(), op.getOutputBank(),
+                   op.getInputBank(), op.getWeightBank(), op.getWidth(),
+                   op.getBankBytes(), op.getMeanBits(), op.getEpsilonBits()});
+    rewriter.replaceOp(op,
+                       ValueRange{op.getDescriptorBank(), op.getOutputBank()});
+    return success();
+  }
+};
+
+class BankPackFP32Pattern : public OpRewritePattern<BankPackFP32Op> {
+public:
+  using OpRewritePattern::OpRewritePattern;
+  LogicalResult matchAndRewrite(BankPackFP32Op op,
+                                PatternRewriter &rewriter) const override {
+    auto module = op->getParentOfType<ModuleOp>();
+    StringRef name = "rvv_pack_banks";
+    bool declared =
+        llvm::any_of(module.getOps<func::FuncOp>(),
+                     [&](func::FuncOp f) { return f.getSymName() == name; });
+    if (!declared) {
+      OpBuilder::InsertionGuard guard(rewriter);
+      rewriter.setInsertionPointToStart(module.getBody());
+      SmallVector<Type> types(9, rewriter.getI64Type());
+      auto function = rewriter.create<func::FuncOp>(
+          op.getLoc(), name, rewriter.getFunctionType(types, TypeRange{}));
+      function.setPrivate();
+      function->setAttr("llvm.emit_c_interface", rewriter.getUnitAttr());
+    }
+    rewriter.create<func::CallOp>(op.getLoc(), name, TypeRange{},
+                                  op.getOperands());
+    rewriter.replaceOp(op,
+                       ValueRange{op.getDescriptorBank(), op.getOutputBank()});
+    return success();
+  }
 };
 
 class BankMvinPattern : public OpRewritePattern<BankMvinOp> {
@@ -135,8 +191,8 @@ void addBaseAssignPhysicalBankPatterns(RewritePatternSet &patterns,
                                        PhysicalBankState &state) {
   patterns.add<BankAllocPattern, BankReleasePattern>(patterns.getContext(),
                                                      state);
-  patterns.add<BankMvinPattern, BankMvin2dPattern, BankMvoutPattern>(
-      patterns.getContext());
+  patterns.add<BankNormPattern, BankPackFP32Pattern, BankMvinPattern,
+               BankMvin2dPattern, BankMvoutPattern>(patterns.getContext());
 }
 
 } // namespace mlir::buddy

@@ -1,0 +1,3 @@
+[parameters]
+checkpoint = "timm/mixer_b16_224.goog_in21k_ft_in1k"
+revision = "0006300d604941f96f16cb7d229137363e1b2ac6"

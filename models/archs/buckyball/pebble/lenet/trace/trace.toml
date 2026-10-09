@@ -1,3 +1,11 @@
+[[trace.extend]]
+dialect = "linalg"
+include = ["generic"]
+
+[[trace.extend]]
+dialect = "buckyball"
+include = ["bank_mvin", "bank_mvin_2d", "bank_mvout", "bank_smatmul", "bank_smatmul_bias", "bank_im2col", "bank_transpose", "bank_quant_f32_to_i8", "bank_quant_i32_to_i8", "bank_int32_to_fp32", "bank_relu", "bank_maxpool", "bank_matadd"]
+
 [[trace.node]]
 node = "convolution"
 id = 0
@@ -22,6 +30,7 @@ tag = "relu_1"
 node = "view"
 id = 4
 tag = "view"
+extend = []
 
 [[trace.node]]
 node = "addmm"

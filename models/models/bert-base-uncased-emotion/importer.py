@@ -24,6 +24,7 @@ import os
 import sys
 import hashlib
 import json
+import tomllib
 from pathlib import Path
 import numpy as np
 import torch
@@ -142,10 +143,24 @@ metadata = {
         for name, value in model.named_parameters()
     },
 }
+running = tomllib.loads((design_dir / "configs/running-param.toml").read_text())
+validation = []
+validation_assets = {}
+for index, text in enumerate(running["inputs"]):
+    request = dict(tokenizer(text, padding="max_length", truncation=True,
+                             max_length=args.sequence_length, return_tensors="pt"))
+    request["position_ids"] = torch.arange(args.sequence_length).reshape(1, -1)
+    with torch.no_grad():
+        reference = model(**request).reshape(-1).tolist()
+    name = f"input{index}.bin"
+    validation_assets[name] = np.stack([request[key].numpy()[0] for key in
+        ("input_ids", "token_type_ids", "attention_mask", "position_ids")]).astype("<i8").tobytes()
+    validation.append({"text": text, "resource": f"bert.payload/{name}", "reference_logits": reference})
+metadata["validation_inputs"] = validation
 quant.quantize(
     graph, params, [parameter_names[parameter.data_ptr()] for parameter in params],
     output_dir, "bert", calibration, args.compiler_build / "bin/rax-pack",
-    assets={"model.json": json.dumps(metadata, sort_keys=True).encode()},
+    assets={"model.json": json.dumps(metadata, sort_keys=True).encode(), **validation_assets},
 )
 fused_ops = graph.op_groups.pop("subgraph0")
 body_order = {node.name: index for index, node in enumerate(graph.body)}

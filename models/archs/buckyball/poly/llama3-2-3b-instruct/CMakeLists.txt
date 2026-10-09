@@ -35,8 +35,8 @@ foreach(STAGE IN LISTS STAGES)
                         ${GENERATED_DIR}/${STAGE}-forward.mlir)
 endforeach()
 file(GLOB_RECURSE DESIGN_FILES CONFIGURE_DEPENDS
-  "${DESIGN_DIR}/quant/*" "${DESIGN_DIR}/trace/*"
-  "${DESIGN_DIR}/permute/*")
+  "${DESIGN_DIR}/quant/*.py" "${DESIGN_DIR}/trace/*.py"
+  "${DESIGN_DIR}/trace/*.toml" "${DESIGN_DIR}/permute/*.py")
 set(DESIGN_DEPENDS ${DESIGN_DIR}/__init__.py ${DESIGN_FILES}
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/convolution.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/matrix.py
@@ -57,7 +57,9 @@ set(FORWARD_PASSES
   -lower-tile-runtime)
 set(KERNEL_PASSES
   -eliminate-empty-tensors -convert-elementwise-to-linalg
-  -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries
+  -convert-tensor-to-linalg -canonicalize -cse
+  -one-shot-bufferize=bufferize-function-boundaries
+  -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
   -convert-linalg-to-tile=quantized-only -convert-tile-to-buckyball
   -lower-buckyball-to-bank-ssa -assign-physical-banks
   -llvm-request-c-wrappers -lower-bank-ssa-to-intrinsics
@@ -87,7 +89,10 @@ add_dependencies(llama_kernels llama-model-build)
 add_executable(llama-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(llama-run model-loader)
 target_include_directories(llama-run PRIVATE ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
-target_link_libraries(llama-run PRIVATE -static llama_kernels runtime)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
+target_link_libraries(llama-run PRIVATE -static llama_kernels runtime rvv_kernels mxfp8_pack mxquant_backend)
 add_custom_command(TARGET llama-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:llama-run> ${ARTIFACT_DIR}/llama-run

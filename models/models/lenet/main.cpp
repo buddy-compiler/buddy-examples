@@ -20,26 +20,26 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <filesystem>
 #include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 constexpr size_t MnistCount = 10000;
 constexpr size_t MnistPixels = 28 * 28;
-
 
 struct Opts {
   std::string params = "./lenet.payload/params.f32";
   std::string weights = "./lenet.payload/weights.bin";
   std::string dataset;
   std::string image;
+  size_t repeat = 1;
 };
 
 static Opts parseArgs(int argc, char **argv) {
@@ -55,12 +55,19 @@ static Opts parseArgs(int argc, char **argv) {
         throw std::runtime_error("--weights needs a path");
       o.weights = argv[i];
     } else if (a == "--image") {
-      if (++i >= argc) throw std::runtime_error("--image needs a path");
+      if (++i >= argc)
+        throw std::runtime_error("--image needs a path");
       o.image = argv[i];
     } else if (a == "--dataset") {
       if (++i >= argc)
         throw std::runtime_error("--dataset needs a path");
       o.dataset = argv[i];
+    } else if (a == "--repeat") {
+      if (++i >= argc)
+        throw std::runtime_error("--repeat needs a count");
+      o.repeat = std::stoul(argv[i]);
+      if (o.repeat == 0)
+        throw std::runtime_error("--repeat must be positive");
     } else {
       throw std::runtime_error("unknown arg: " + a);
     }
@@ -138,8 +145,7 @@ public:
   ~BorrowedImage() { allocated = aligned = nullptr; }
 };
 
-template <typename T, size_t N>
-class BorrowedBuffer : public MemRef<T, N> {
+template <typename T, size_t N> class BorrowedBuffer : public MemRef<T, N> {
 public:
   BorrowedBuffer(T *data, intptr_t sizes[N]) : MemRef<T, N>(sizes, false, 0) {
     this->allocated = this->aligned = data;
@@ -150,8 +156,7 @@ public:
 /// Print [Log] label in bold blue format.
 void printLogLabel() { std::cout << "\033[34;1m[Log] \033[0m"; }
 
-template <typename T>
-MemRef<T, 1> loadBinary(const std::string &path) {
+template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   std::cout << "\033[34;1m[Log] \033[0mLoading " << path << std::endl;
   const auto loadStart = std::chrono::steady_clock::now();
   std::ifstream input(path, std::ios::binary | std::ios::ate);
@@ -164,8 +169,8 @@ MemRef<T, 1> loadBinary(const std::string &path) {
   input.read(reinterpret_cast<char *>(tensor.getData()), bytes);
   const std::chrono::duration<double> loadTime =
       std::chrono::steady_clock::now() - loadStart;
-  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count()
-            << "s" << std::endl;
+  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count() << "s"
+            << std::endl;
   return tensor;
 }
 
@@ -188,8 +193,8 @@ void softmax(float *input, size_t size) {
 }
 
 static uint32_t le32(const uint8_t *p) {
-  return uint32_t(p[0]) | (uint32_t(p[1]) << 8) |
-         (uint32_t(p[2]) << 16) | (uint32_t(p[3]) << 24);
+  return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) |
+         (uint32_t(p[3]) << 24);
 }
 
 static void loadLeNetInput(float *out, const std::string &path) {
@@ -198,13 +203,14 @@ static void loadLeNetInput(float *out, const std::string &path) {
   if (fd < 0 || read(fd, bmp, sizeof(bmp)) != sizeof(bmp))
     throw std::runtime_error("failed to read LeNet image");
   close(fd);
-  if (le32(bmp + 10) != 54 || le32(bmp + 18) != 28 ||
-      le32(bmp + 22) != 28 || bmp[28] != 32)
+  if (le32(bmp + 10) != 54 || le32(bmp + 18) != 28 || le32(bmp + 22) != 28 ||
+      bmp[28] != 32)
     throw std::runtime_error("invalid LeNet BMP");
   for (size_t y = 0; y < 28; ++y)
     for (size_t x = 0; x < 28; ++x) {
       const uint8_t *pixel = bmp + 54 + ((27 - y) * 28 + x) * 4;
-      float gray = (0.114f * pixel[0] + 0.587f * pixel[1] + 0.299f * pixel[2]) / 255.0f;
+      float gray =
+          (0.114f * pixel[0] + 0.587f * pixel[1] + 0.299f * pixel[2]) / 255.0f;
       out[y * 28 + x] = gray * 2.0f - 1.0f;
     }
 }
@@ -231,7 +237,10 @@ int main(int argc, char **argv) {
     intptr_t inSizes[4] = {1, 1, 28, 28};
     static float outputData[10] __attribute__((aligned(64)));
     BorrowedBuffer<float, 2> output(outputData, sizesOutput);
-    std::cout << "\033[34;1m[Log] \033[0mStarting inference on MNIST dataset..." << std::endl;
+    std::cout << "\033[34;1m[Log] \033[0mStarting inference on MNIST dataset..."
+              << std::endl;
+    auto benchmarkStart = std::chrono::steady_clock::now();
+    unsigned long cycleStart = read_cycles();
     for (size_t i = 0; i < MnistCount; ++i) {
       fillMnistImage(buf.data(), images.data() + i * MnistPixels);
       dip::Image<float, 4> input(buf.data(), inSizes);
@@ -241,6 +250,15 @@ int main(int argc, char **argv) {
         ++correct;
     }
     std::cout << "top1=" << correct << "/10000" << std::endl;
+    auto elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now() - benchmarkStart)
+                         .count();
+    std::cout
+        << "@BBPERF {\"model\":\"lenet\",\"samples\":" << MnistCount
+        << ",\"correct\":" << correct
+        << ",\"accuracy_metric\":\"top1\",\"unit\":\"images/s\",\"elapsed_ns\":"
+        << elapsedNs << ",\"cycles\":" << read_cycles() - cycleStart << "}"
+        << std::endl;
     return 0;
   }
 
@@ -253,7 +271,15 @@ int main(int argc, char **argv) {
 
   std::cout << "\033[34;1m[Log] \033[0mStarting inference..." << std::endl;
   unsigned long start = read_cycles();
-  _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer, &input);
+  auto benchmarkStart = std::chrono::steady_clock::now();
+  size_t predictions[10] = {};
+  for (size_t iteration = 0; iteration < opts.repeat; ++iteration) {
+    _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer, &input);
+    ++predictions[argmax(output.getData(), 10)];
+  }
+  auto elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                       std::chrono::steady_clock::now() - benchmarkStart)
+                       .count();
   unsigned long end = read_cycles();
 
   auto out = output.getData();
@@ -274,6 +300,19 @@ int main(int argc, char **argv) {
   std::cout << "Results: " << std::endl;
   std::cout << "Classification: " << maxIdx << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
+  std::cout << "@BBPERF {\"model\":\"lenet\",\"samples\":" << opts.repeat
+            << ",\"elapsed_ns\":" << elapsedNs << ",\"cycles\":" << end - start
+            << ",\"unit\":\"images/s\",\"predictions\":{";
+  bool first = true;
+  for (size_t label = 0; label < 10; ++label) {
+    if (!predictions[label])
+      continue;
+    if (!first)
+      std::cout << ",";
+    first = false;
+    std::cout << "\"" << label << "\":" << predictions[label];
+  }
+  std::cout << "}}" << std::endl;
 
   return 0;
 }

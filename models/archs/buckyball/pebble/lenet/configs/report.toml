@@ -1,0 +1,9 @@
+accuracy_metric = "single_image"
+expected_classes = [8]
+
+[p2e]
+clock_hz = 5000000
+
+[operator_categories]
+convolution = "Conv"
+addmm = "MatMul"

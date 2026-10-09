@@ -8,9 +8,6 @@ from torch import nn
 from safetensors.torch import load_file
 from transformers import AutoConfig, ModernBertModel
 
-CHECKPOINT = "convaiinnovations/laya"
-REVISION = "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851"
-
 
 class Linear(nn.Linear):
     def forward(self, x):

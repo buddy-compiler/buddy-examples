@@ -1,18 +1,17 @@
 #pragma once
-#include "view.h"
 #include "io.h"
 #include "model-parameters.h"
+#include "view.h"
 #include <filesystem>
 #include <memory>
 #include <vector>
-
-struct Region { uint64_t float_offset, float_count, byte_offset, byte_count; };
 
 class Thinker {
 public:
   explicit Thinker(const std::filesystem::path &directory);
   ~Thinker();
   void execute(const Command &command);
+
 private:
   size_t first, last, rank;
   std::unique_ptr<float[]> floats;

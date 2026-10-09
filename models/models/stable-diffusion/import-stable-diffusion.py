@@ -1,3 +1,4 @@
+from importlib import import_module
 # ===- import-stable-diffusion.py ----------------------------------------------
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,6 +50,7 @@ parser.add_argument(
     default=False,
     help="Import with trace/trace.toml.",
 )
+import_module("configs.importer-param").add_arguments(parser)
 args = parser.parse_args()
 output_dir = Path(args.output_dir).resolve()
 
@@ -86,7 +88,7 @@ else:
             os.remove(verbose_path)
 
 device = torch.device("cpu")
-model_id = "borno1/stable_diffusion_2_base"
+model_id = args.checkpoint
 
 pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float32)
 pipe = pipe.to(device)

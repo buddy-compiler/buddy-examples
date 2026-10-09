@@ -77,7 +77,8 @@ add_executable(mobilenetv3-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(mobilenetv3-run model-loader)
 target_include_directories(mobilenetv3-run PRIVATE ${GENERATED_DIR}
   ${BUDDY_SOURCE}/frontend/Interfaces ${REPO_ROOT}/stack/models/lib)
-target_link_libraries(mobilenetv3-run PRIVATE -static mobilenetv3_kernels runtime model_image)
+add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels" software)
+target_link_libraries(mobilenetv3-run PRIVATE -static mobilenetv3_kernels runtime scalar_kernels model_image)
 add_custom_command(TARGET mobilenetv3-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:mobilenetv3-run> ${ARTIFACT_DIR}/mobilenetv3-run

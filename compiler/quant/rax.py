@@ -130,9 +130,10 @@ def validate_rax_quant(pkg: RaxQuantPackage) -> None:
         elif tensor.storage == "mxfp8":
             if len(tensor.shape) != 2 or tensor.shape[1] % 32 or tensor.axes != [1]:
                 raise ValueError(f"invalid MXFP8 shape or block axis: {tensor.name}")
-            rows, k = tensor.layout["tile_rows"], tensor.layout["tile_k"]
-            expected = ((tensor.shape[0] + rows - 1) // rows) * ((tensor.shape[1] + k - 1) // k) * rows * k * 33 // 32
-            if k % 32 or tensor.payload_len != expected or payload_numel != expected:
+            rows, k = tensor.layout["tile_n"], tensor.layout["tile_k"]
+            stride = tensor.layout["panel_stride"]
+            expected = ((tensor.shape[0] + rows - 1) // rows) * ((tensor.shape[1] + k - 1) // k) * stride
+            if rows % 16 or k % 32 or stride != tensor.layout["bank_bytes"] or rows * k * 33 // 32 > stride or tensor.payload_len != expected or payload_numel != expected:
                 raise ValueError(f"invalid MXFP8 packed layout: {tensor.name}")
             if tensor.payload_off != weight_end or weight_end + expected > len(pkg.weights):
                 raise ValueError(f"invalid MXFP8 weight range: {tensor.name}")

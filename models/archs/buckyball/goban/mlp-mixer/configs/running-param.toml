@@ -1,0 +1,3 @@
+inputs = ["../../../../../build/goban/mlp-mixer/generated/input.f32"]
+tile_indices = [0]
+timeout = 7200

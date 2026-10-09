@@ -30,9 +30,13 @@ execute_process(COMMAND "${PYTHON}" "${REPO_ROOT}/stack/compiler/scripts/pb_to_t
   --repo "${REPO_ROOT}" --chip-pb "${CHIP_PB}" --isa-dir "${ISA_DIR}" --print-targets
   OUTPUT_VARIABLE TARGETS OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
 string(REPLACE "\n" ";" TARGETS "${TARGETS}")
-list(GET TARGETS 0 PARAMS_TARGET)
+execute_process(COMMAND "${PYTHON}" "${REPO_ROOT}/stack/compiler/scripts/pb_to_target_registry.py"
+  --repo "${REPO_ROOT}" --chip-pb "${CHIP_PB}" --print-runtime-targets
+  OUTPUT_VARIABLE RUNTIME_TARGETS OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+string(REPLACE "\n" ";" RUNTIME_TARGETS "${RUNTIME_TARGETS}")
+list(GET RUNTIME_TARGETS 0 PARAMS_TARGET)
 file(STRINGS "${ISA_DIR}/${PARAMS_TARGET}/params.h" MEMORY_PARAMS REGEX "^#define (BANK_WIDTH|VIRTUAL_BANK_NUM) ")
-foreach(PROFILE IN LISTS TARGETS)
+foreach(PROFILE IN LISTS RUNTIME_TARGETS)
   file(STRINGS "${ISA_DIR}/${PROFILE}/params.h" PARAMS REGEX "^#define (BANK_WIDTH|VIRTUAL_BANK_NUM) ")
   if(NOT PARAMS STREQUAL MEMORY_PARAMS)
     message(FATAL_ERROR "DMA runtime requires matching bank width and virtual bank count")
@@ -44,25 +48,45 @@ set(ARTIFACT_DIR "${CMAKE_CURRENT_BINARY_DIR}/artifact" CACHE PATH "Compiled mod
 set(TOOLS "${COMPILER_BUILD}/bin/buddy-opt" "${COMPILER_BUILD}/bin/buddy-translate"
           "${COMPILER_BUILD}/bin/buddy-llc" "${BUDDY_SOURCE}/llvm/build/bin/opt")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CHIP_PB}")
-add_subdirectory("${REPO_ROOT}/stack/runtime" runtime)
 function(compile_graph NAME SOURCE TARGET KIND)
   if(KIND STREQUAL "kernel")
     string(JOIN " " PASSES ${KERNEL_PASSES})
-    set(LOWER "\"${COMPILER_BUILD}/bin/buddy-opt\" \"${SOURCE}\" -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))' | \"${COMPILER_BUILD}/bin/buddy-opt\" --target=${TARGET} ${PASSES}")
+    set(IMPORT "\"${COMPILER_BUILD}/bin/buddy-opt\" \"${SOURCE}\" -pass-pipeline 'builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))'")
+    if(KERNEL_TRACE_PASSES)
+      string(JOIN " " TRACE_PASSES ${KERNEL_TRACE_PASSES})
+      add_custom_command(OUTPUT ${NAME}.trace.mlir
+        COMMAND bash -o pipefail -c
+          "${IMPORT} | \"${COMPILER_BUILD}/bin/buddy-opt\" --target=${TARGET} ${TRACE_PASSES} -o ${NAME}.trace.mlir"
+        DEPENDS ${SOURCE} ${COMPILER_BUILD}/bin/buddy-opt
+        VERBATIM)
+      set(LOWER_SOURCE ${NAME}.trace.mlir)
+      set(LOWER "\"${COMPILER_BUILD}/bin/buddy-opt\" \"${LOWER_SOURCE}\" --target=${TARGET} ${PASSES}")
+    else()
+      set(LOWER_SOURCE ${SOURCE})
+      set(LOWER "${IMPORT} | \"${COMPILER_BUILD}/bin/buddy-opt\" --target=${TARGET} ${PASSES}")
+    endif()
   elseif(KIND STREQUAL "forward")
     string(JOIN " " PASSES ${FORWARD_PASSES})
     set(LOWER "\"${COMPILER_BUILD}/bin/buddy-opt\" \"${SOURCE}\" --target=${TARGET} ${PASSES}")
+    set(LOWER_SOURCE ${SOURCE})
   else()
     message(FATAL_ERROR "Unknown graph kind: ${KIND}")
   endif()
-  add_custom_command(OUTPUT ${NAME}.o
+  add_custom_command(OUTPUT ${NAME}.ll
     COMMAND bash -o pipefail -c
-      "${LOWER} | \"${COMPILER_BUILD}/bin/buddy-translate\" --buddy-to-llvmir | \"${BUDDY_SOURCE}/llvm/build/bin/opt\" -passes='${LLVM_PASSES}' | \"${COMPILER_BUILD}/bin/buddy-llc\" -filetype=obj -mtriple=riscv64 -O${LLVM_OPT_LEVEL} -mattr=${MATTR} -float-abi=hard -o ${NAME}.o"
-    DEPENDS ${SOURCE} ${TOOLS}
+      "${LOWER} | \"${COMPILER_BUILD}/bin/buddy-translate\" --buddy-to-llvmir | \"${BUDDY_SOURCE}/llvm/build/bin/opt\" -passes='${LLVM_PASSES}' -o ${NAME}.ll -S"
+    DEPENDS ${LOWER_SOURCE} ${TOOLS}
+    VERBATIM)
+  add_custom_command(OUTPUT ${NAME}.o
+    COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${NAME}.ll
+      -filetype=obj -mtriple=riscv64 -O${LLVM_OPT_LEVEL}
+      -mattr=${MATTR} -float-abi=hard -o ${NAME}.o
+    DEPENDS ${NAME}.ll ${COMPILER_BUILD}/bin/buddy-llc
     VERBATIM)
 endfunction()
 set(TRACE_SUPPORTED FALSE)
 add_subdirectory("${MODEL_RECIPE}" "models/${MODEL}")
+add_subdirectory("${REPO_ROOT}/stack/runtime" runtime)
 if((CTRACE OR DTRACE) AND NOT TRACE_SUPPORTED)
   message(FATAL_ERROR "The selected model design does not support trace")
 endif()

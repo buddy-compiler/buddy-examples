@@ -17,3 +17,9 @@ def reorder(codes, scales):
     codes = matrix_tiles(codes, TILE_ROWS, TILE_K).reshape(-1, TILE_ROWS * TILE_K)
     scales = matrix_tiles(scales, TILE_ROWS, TILE_K // 32).reshape(-1, TILE_ROWS * TILE_K // 32)
     return np.concatenate((codes, scales), axis=1).ravel()
+
+
+def apply(graph, *, kind):
+    if kind == "attention":
+        from examples.balls.mxmm.compiler.python import fp32
+        fp32.apply(graph, fused=False)

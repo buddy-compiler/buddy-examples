@@ -50,12 +50,6 @@ parser.add_argument(
     help="Directory to save output files.",
 )
 parser.add_argument(
-    "--img-size",
-    type=int,
-    default=640,
-    help="Input image size for model import.",
-)
-parser.add_argument(
     "--trace",
     action="store_true",
     default=False,
@@ -64,6 +58,7 @@ parser.add_argument(
 parser.add_argument("--checkpoint", type=Path, required=True)
 parser.add_argument("--compiler-build", type=Path, required=True)
 parser.add_argument("--design", required=True)
+import_module(".configs.importer-param", __package__).add_arguments(parser)
 args = parser.parse_args()
 args.compiler_build = args.compiler_build.resolve()
 sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))

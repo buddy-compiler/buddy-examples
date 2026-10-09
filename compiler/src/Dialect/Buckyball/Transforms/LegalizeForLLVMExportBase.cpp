@@ -17,8 +17,10 @@
 #include "Dialect/Buckyball/Transforms/LegalizeForLLVMExportBase.h"
 
 #include "mlir/Conversion/LLVMCommon/Pattern.h"
+#include "mlir/Conversion/LLVMCommon/MemRefBuilder.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -145,21 +147,13 @@ void emitMset(OpBuilder &b, Location loc, uint64_t bankId, uint64_t row,
   b.create<MsetIntrOp>(loc, cstI64(b, loc, rs1), cstI64(b, loc, rs2));
 }
 
-static void emitCacheAsm(OpBuilder &b, Location loc, StringRef assembly) {
+void emitDmaFence(OpBuilder &b, Location loc) {
   auto tail = LLVM::TailCallKindAttr::get(
       b.getContext(), LLVM::tailcallkind::TailCallKind::None);
   LLVM::InlineAsmOp::create(b, loc, Type(), ValueRange{},
-                            b.getStringAttr(assembly),
+                            b.getStringAttr("fence rw, rw"),
                             b.getStringAttr("~{memory}"), b.getUnitAttr(),
                             UnitAttr(), tail, nullptr, nullptr);
-}
-
-void emitDmaCacheFlush(OpBuilder &b, Location loc) {
-  emitCacheAsm(b, loc, "fence.i");
-}
-
-void emitDmaCacheFence(OpBuilder &b, Location loc) {
-  emitCacheAsm(b, loc, "fence rw, rw\n\tfence.i");
 }
 
 static constexpr char kDmaTouchMvoutFn[] = "dma_touch_mvout";
@@ -240,7 +234,7 @@ struct BuckyballFenceLowering : public ConvertOpToLLVMPattern<FenceOp> {
     Location loc = op.getLoc();
     Value zero = cstI64(rewriter, loc, 0);
     rewriter.create<FenceIntrOp>(loc, zero, zero);
-    emitDmaCacheFence(rewriter, loc);
+    emitDmaFence(rewriter, loc);
     rewriter.eraseOp(op);
     return success();
   }
@@ -276,7 +270,7 @@ struct BuckyballMvinLowering : public ConvertOpToLLVMPattern<MvinOp> {
                   ConversionPatternRewriter &rewriter) const override {
     Location loc = op.getLoc();
     MemrefAddress memref = extractMemrefAddress(rewriter, loc, op.getInput());
-    emitDmaCacheFlush(rewriter, loc);
+    emitDmaFence(rewriter, loc);
     Value rs1 = packRs1WriteBankIter(rewriter, loc, adaptor.getAddr(),
                                      adaptor.getDepth());
     Value rs2 =
@@ -324,7 +318,7 @@ struct BuckyballMvin2dLowering : public ConvertOpToLLVMPattern<Mvin2dOp> {
         rewriter.getStringAttr("r,~{memory}"), rewriter.getUnitAttr(),
         UnitAttr(), tail, nullptr, nullptr);
 
-    emitDmaCacheFlush(rewriter, loc);
+    emitDmaFence(rewriter, loc);
     Value rs1 = packRs1WriteBankIter(rewriter, loc, adaptor.getAddr(),
                                      adaptor.getHeight());
     Value address = rewriter.create<arith::ShRUIOp>(loc, memref.address,
@@ -368,7 +362,7 @@ struct BuckyballMvinMmioLowering : public ConvertOpToLLVMPattern<MvinMmioOp> {
                   ConversionPatternRewriter &rewriter) const override {
     Location loc = op.getLoc();
     MemrefAddress memref = extractMemrefAddress(rewriter, loc, op.getInput());
-    emitDmaCacheFlush(rewriter, loc);
+    emitDmaFence(rewriter, loc);
     Value rs1 = rewriter.create<arith::ShLIOp>(loc, adaptor.getRows(),
                                                cstI64(rewriter, loc, 30));
     Value address = rewriter.create<arith::AndIOp>(
@@ -399,13 +393,81 @@ struct BuckyballMvoutLowering : public ConvertOpToLLVMPattern<MvoutOp> {
     MemrefAddress memref = extractMemrefAddress(rewriter, loc, op.getOutput());
     emitBbDmaTouchMvout(rewriter, loc, memref.hostPtr, adaptor.getDepth(),
                         adaptor.getStride(), adaptor.getAddr());
-    emitDmaCacheFlush(rewriter, loc);
+    emitDmaFence(rewriter, loc);
     Value rs1 =
         packRs1BankIter(rewriter, loc, adaptor.getAddr(), adaptor.getDepth());
     Value rs2 =
         packRs2MemStride(rewriter, loc, memref.address, adaptor.getStride());
 
     rewriter.replaceOpWithNewOp<MvoutIntrOp>(op, rs1, rs2);
+    return success();
+  }
+};
+
+struct BuckyballMvoverLowering : public ConvertOpToLLVMPattern<MvoverOp> {
+  using ConvertOpToLLVMPattern<MvoverOp>::ConvertOpToLLVMPattern;
+  LogicalResult matchAndRewrite(MvoverOp op, OpAdaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override {
+    Location loc = op.getLoc();
+    auto bounded = [&](Value value, uint64_t maximum) {
+      Value valid = rewriter.create<arith::CmpIOp>(
+          loc, arith::CmpIPredicate::ule, value, cstI64(rewriter, loc, maximum));
+      rewriter.create<cf::AssertOp>(loc, valid, "mvover operand exceeds ISA range");
+    };
+    bounded(adaptor.getSourceCore(), 255);
+    bounded(adaptor.getTargetCore(), 255);
+    bounded(adaptor.getSourceBank(), 1023);
+    bounded(adaptor.getTargetBank(), 1023);
+    bounded(adaptor.getSourceRow(), 65535);
+    bounded(adaptor.getTargetRow(), 65535);
+    Value count = rewriter.create<arith::SubIOp>(
+        loc, adaptor.getRows(), cstI64(rewriter, loc, 1));
+    bounded(count, 65535);
+    auto shifted = [&](Value value, uint64_t shift) -> Value {
+      return rewriter.create<arith::ShLIOp>(loc, value, cstI64(rewriter, loc, shift));
+    };
+    Value rs1 = rewriter.create<arith::OrIOp>(loc, adaptor.getSourceCore(),
+                                            shifted(adaptor.getTargetCore(), 8));
+    rs1 = rewriter.create<arith::OrIOp>(loc, rs1, shifted(adaptor.getSourceBank(), 16));
+    rs1 = rewriter.create<arith::OrIOp>(loc, rs1, shifted(adaptor.getTargetBank(), 26));
+    Value rs2 = rewriter.create<arith::OrIOp>(loc, adaptor.getSourceRow(),
+                                            shifted(adaptor.getTargetRow(), 16));
+    rs2 = rewriter.create<arith::OrIOp>(loc, rs2, shifted(count, 32));
+    rewriter.replaceOpWithNewOp<CustomIntrOp>(op, rs1, rs2, rewriter.getI32IntegerAttr(13));
+    return success();
+  }
+};
+
+static bool contiguousRankOne(Type type) {
+  auto memref = dyn_cast<MemRefType>(type);
+  if (!memref || memref.getRank() != 1)
+    return false;
+  SmallVector<int64_t> strides;
+  int64_t offset;
+  return succeeded(memref.getStridesAndOffset(strides, offset)) && strides[0] == 1;
+}
+
+struct ContiguousCopyLowering : public ConvertOpToLLVMPattern<memref::CopyOp> {
+  using ConvertOpToLLVMPattern<memref::CopyOp>::ConvertOpToLLVMPattern;
+  LogicalResult matchAndRewrite(memref::CopyOp op, OpAdaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override {
+    if (!contiguousRankOne(op.getSource().getType()) ||
+        !contiguousRankOne(op.getTarget().getType()))
+      return failure();
+    Location loc = op.getLoc();
+    auto sourceType = cast<MemRefType>(op.getSource().getType());
+    auto targetType = cast<MemRefType>(op.getTarget().getType());
+    Value zero = LLVM::ConstantOp::create(rewriter, loc, getIndexType(),
+                                          rewriter.getIndexAttr(0));
+    Value source = getStridedElementPtr(rewriter, loc, sourceType, adaptor.getSource(),
+                                       ValueRange{zero});
+    Value target = getStridedElementPtr(rewriter, loc, targetType, adaptor.getTarget(),
+                                       ValueRange{zero});
+    Value size = MemRefDescriptor(adaptor.getSource()).size(rewriter, loc, 0);
+    Value bytes = LLVM::MulOp::create(
+        rewriter, loc, size, getSizeInBytes(loc, sourceType.getElementType(), rewriter));
+    LLVM::MemcpyOp::create(rewriter, loc, target, source, bytes, false);
+    rewriter.eraseOp(op);
     return success();
   }
 };
@@ -433,6 +495,7 @@ void populateBaseLegalizeForLLVMExportPatterns(
                  ForwardOperands<func::ReturnOp>>(converter,
                                                   &converter.getContext());
   }
+  patterns.add<ContiguousCopyLowering>(converter);
   patterns.add<BuckyballFenceLowering>(converter);
   patterns.add<BuckyballMsetLowering>(converter);
   patterns.add<BuckyballMvinLowering>(converter);
@@ -440,14 +503,19 @@ void populateBaseLegalizeForLLVMExportPatterns(
   patterns.add<BuckyballMvinMmioLowering>(converter);
   patterns.add<BuckyballMvoutLowering>(converter);
   patterns.add<BuckyballInstLowering>(converter);
+  patterns.add<BuckyballMvoverLowering>(converter);
 }
 
 void configureBaseLegalizeForExportTarget(LLVMConversionTarget &target) {
   target.addLegalOp<CustomIntrOp, FenceIntrOp, MsetIntrOp, MvinIntrOp,
                     MvinMmioIntrOp, MvoutIntrOp>();
-  target.addIllegalOp<FenceOp, InstOp, MsetOp, MvinOp, Mvin2dOp, MvinMmioOp,
+  target.addIllegalOp<MvoverOp, FenceOp, InstOp, MsetOp, MvinOp, Mvin2dOp, MvinMmioOp,
                       MvoutOp>();
   target.addLegalDialect<memref::MemRefDialect>();
+  target.addDynamicallyLegalOp<memref::CopyOp>([](memref::CopyOp op) {
+    return !contiguousRankOne(op.getSource().getType()) ||
+           !contiguousRankOne(op.getTarget().getType());
+  });
   target.addLegalDialect<arith::ArithDialect>();
   target.addLegalDialect<LLVM::LLVMDialect>();
 }

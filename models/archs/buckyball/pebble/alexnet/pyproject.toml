@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "pebble-alexnet"
+version = "0.1.0"
+requires-python = ">=3.12"
+[tool.setuptools]
+packages = ["examples.models.pebble.alexnet", "examples.models.pebble.alexnet.permute", "examples.models.pebble.alexnet.quant", "examples.models.pebble.alexnet.trace"]
+package-dir = {"examples.models.pebble.alexnet" = "."}

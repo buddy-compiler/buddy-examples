@@ -1,3 +1,4 @@
+from importlib import import_module
 import argparse
 import importlib
 import json
@@ -12,14 +13,13 @@ from transformers import AutoTokenizer
 from torch._inductor.decomposition import decompositions
 
 from .inputs import encode
-from .model import CHECKPOINT, REVISION, Model, stages
+from .model import Model, stages
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output-dir", type=Path, required=True)
 parser.add_argument("--compiler-build", type=Path, required=True)
 parser.add_argument("--design", required=True)
-parser.add_argument("--sequence-length", type=int, default=128)
-parser.add_argument("--options", type=int, default=16)
+import_module(".configs.importer-param", __package__).add_arguments(parser)
 args = parser.parse_args()
 sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 from buddy.compiler.frontend import DynamoCompiler
@@ -35,8 +35,8 @@ directory = args.output_dir.resolve()
 directory.mkdir(parents=True, exist_ok=True)
 torch.set_num_threads(4)
 checkpoint = snapshot_download(
-    CHECKPOINT,
-    revision=REVISION,
+    args.checkpoint,
+    revision=args.revision,
     allow_patterns=[
         "rl_agent_config.json",
         "model.safetensors",
@@ -65,8 +65,8 @@ input_samples = [
     for encoded in encoded_samples
 ]
 metadata = {
-    "model": CHECKPOINT,
-    "revision": REVISION,
+    "model": args.checkpoint,
+    "revision": args.revision,
     "chip": design.chip,
     "linear_format": quant.FORMAT,
     "calibration_samples": len(requests),
@@ -155,6 +155,7 @@ for name, kind, stage in stages(model, args.sequence_length):
     output.mkdir(exist_ok=True)
     parameter_names = [names[value.data_ptr()] for value in params]
     if kind in quant.STAGES:
+        graph.packing_target = design.targets[kind]
         quant.apply(
             graph,
             params,

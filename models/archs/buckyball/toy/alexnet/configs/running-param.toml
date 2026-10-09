@@ -1,0 +1,3 @@
+inputs = ["../../../../../models/alexnet/images/dog.bmp"]
+core_index = 0
+timeout = 7200
