@@ -22,9 +22,11 @@ def nhwc(value: torch.Tensor) -> np.ndarray:
 
 def load_i8_trace(trace_dir: Path, stage: int) -> np.ndarray:
     parts = sorted(
-        trace_dir.glob(f"trace-{stage}-part-*.i8"),
+        trace_dir.glob(f"controller-*/core-*/tensor/trace-{stage}-part-*.i8"),
         key=lambda path: int(path.stem.split("-")[-1]),
     )
+    if len({path.parent for path in parts}) > 1:
+        raise ValueError(f"trace {stage} spans multiple controller/core scopes")
     numbers = [int(path.stem.split("-")[-1]) for path in parts]
     if not parts or numbers != list(range(len(parts))):
         raise ValueError(f"trace {stage} parts are missing: {numbers}")
@@ -41,15 +43,11 @@ def main() -> None:
     parser.add_argument("--detail-stage", type=int)
     args = parser.parse_args()
 
-    model = mobilenet_v3_small(
-        weights=MobileNet_V3_Small_Weights.IMAGENET1K_V1
-    ).eval()
+    model = mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.IMAGENET1K_V1).eval()
     pixels = np.asarray(Image.open(args.image).convert("RGB"), dtype=np.float32)
     if pixels.shape != (224, 224, 3):
         raise ValueError(f"expected a 224x224 RGB image, got {pixels.shape}")
-    value = torch.from_numpy((pixels / np.float32(255.0)).copy()).permute(2, 0, 1)[
-        None
-    ]
+    value = torch.from_numpy((pixels / np.float32(255.0)).copy()).permute(2, 0, 1)[None]
 
     references: list[tuple[str, np.ndarray]] = []
     with torch.no_grad():
@@ -112,9 +110,7 @@ def main() -> None:
             )
         quantized_actual = load_i8_trace(args.trace_dir, stage).reshape(shape)
         actual = quantized_actual.astype(np.float32)
-        lane_scales = re.search(
-            r"lane_output_scales = array<f32: ([^>]*)>", line
-        )
+        lane_scales = re.search(r"lane_output_scales = array<f32: ([^>]*)>", line)
         if lane_scales:
             scales = np.asarray(
                 [np.float32(value) for value in lane_scales.group(1).split(",")],
@@ -178,7 +174,10 @@ def main() -> None:
         f"max={np.max(difference):.5f}"
     )
 
-    actual_logits = np.loadtxt(args.trace_dir / "trace-1001.txt", dtype=np.float32)
+    logit_files = list(args.trace_dir.glob("controller-*/core-*/tensor/trace-1001.txt"))
+    if len(logit_files) != 1:
+        raise ValueError(f"expected one scoped logits tensor, found {len(logit_files)}")
+    actual_logits = np.loadtxt(logit_files[0], dtype=np.float32)
     if actual_logits.size != 1000:
         raise ValueError(f"expected 1000 logits, found {actual_logits.size}")
     actual_logits = actual_logits.reshape(1, 1000)

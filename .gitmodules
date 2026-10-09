@@ -5,9 +5,3 @@
 	path = compiler/thirdparty/buddy-mlir
 	url = https://github.com/buddy-compiler/buddy-mlir.git
 	branch = examples
-[submodule "serving/thirdparty/vllm"]
-	path = serving/thirdparty/vllm
-	url = https://github.com/vllm-project/vllm.git
-[submodule "serving/thirdparty/vllm-omni"]
-	path = serving/thirdparty/vllm-omni
-	url = https://github.com/vllm-project/vllm-omni.git

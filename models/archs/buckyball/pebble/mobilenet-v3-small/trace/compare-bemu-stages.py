@@ -34,9 +34,7 @@ def parse_dense_constants(mlir: str) -> dict[str, np.ndarray]:
         else:
             value = np.full(count, literal, dtype=dtype)
         if value.size != count:
-            raise ValueError(
-                f"{name} has {value.size} elements, expected {count}"
-            )
+            raise ValueError(f"{name} has {value.size} elements, expected {count}")
         constants[name] = value
     return constants
 
@@ -227,7 +225,8 @@ def main() -> None:
         raise ValueError(f"expected 54 INT8 weights, found {len(weights)}")
 
     parts: dict[int, dict[int, Path]] = {}
-    for path in args.trace_dir.glob("trace-*-part-*.i8"):
+    scopes = {}
+    for path in args.trace_dir.glob("controller-*/core-*/tensor/trace-*-part-*.i8"):
         match = re.fullmatch(r"trace-(\d+)-part-(\d+)\.i8", path.name)
         if not match:
             raise ValueError(f"malformed stage trace name: {path.name}")
@@ -238,6 +237,9 @@ def main() -> None:
             raise ValueError(f"stage trace ID out of range: {stage}")
         if stage < args.start_stage:
             continue
+        if stage in scopes and scopes[stage] != path.parent:
+            raise ValueError(f"stage {stage} spans multiple controller/core scopes")
+        scopes[stage] = path.parent
         if part in parts.setdefault(stage, {}):
             raise ValueError(f"duplicate trace part for stage {stage}: {part}")
         parts[stage][part] = path
@@ -280,7 +282,8 @@ def main() -> None:
     first_mismatch = None
     last_reference_stage = (
         len(stages) - 1
-        if args.classifier_trace_id is not None or args.classifier_output_trace is not None
+        if args.classifier_trace_id is not None
+        or args.classifier_output_trace is not None
         else trace_numbers[-1]
     )
     for stage in stages[: last_reference_stage + 1]:
@@ -304,14 +307,18 @@ def main() -> None:
             )
             kernel = torch.from_numpy(weight.astype(np.int32))
             groups = source.shape[1] if kind == "depthwise" else 1
-            accumulator = F.conv2d(
-                source,
-                kernel,
-                torch.from_numpy(bias),
-                stride=int(attrs["stride"]),
-                padding=int(attrs["pad_low"]),
-                groups=groups,
-            ).numpy().transpose(0, 2, 3, 1)
+            accumulator = (
+                F.conv2d(
+                    source,
+                    kernel,
+                    torch.from_numpy(bias),
+                    stride=int(attrs["stride"]),
+                    padding=int(attrs["pad_low"]),
+                    groups=groups,
+                )
+                .numpy()
+                .transpose(0, 2, 3, 1)
+            )
             reference = np.clip(
                 np.rint(accumulator.astype(np.float32) * scale), -128, 127
             ).astype(np.int8)
@@ -438,9 +445,7 @@ def main() -> None:
             raise ValueError("short classifier stage 0 weight payload")
         source = values[stages[-1]["result"]].reshape(1, -1)
         if packed_shape != (source.shape[1], classifier["shape"][1]):
-            raise ValueError(
-                f"invalid classifier weight layout: {packed_shape}"
-            )
+            raise ValueError(f"invalid classifier weight layout: {packed_shape}")
         weight = payload.reshape(packed_shape)
         bias = constants[classifier["inputs"][2]].astype(np.int32)
         scale = constants[classifier["inputs"][3]].astype(np.float32)
@@ -464,14 +469,16 @@ def main() -> None:
                 )
         else:
             classifier_parts = sorted(
-            args.trace_dir.glob(
-                f"trace-{args.classifier_trace_id}-part-*.i8"
-            ),
-            key=lambda path: int(path.stem.split("-")[-1]),
+                args.trace_dir.glob(
+                    f"controller-*/core-*/tensor/trace-{args.classifier_trace_id}-part-*.i8"
+                ),
+                key=lambda path: int(path.stem.split("-")[-1]),
             )
-            part_numbers = [
-                int(path.stem.split("-")[-1]) for path in classifier_parts
-            ]
+            part_numbers = [int(path.stem.split("-")[-1]) for path in classifier_parts]
+            if len({path.parent for path in classifier_parts}) > 1:
+                raise ValueError(
+                    "classifier tensor spans multiple controller/core scopes"
+                )
             if not classifier_parts or part_numbers != list(
                 range(len(classifier_parts))
             ):
@@ -500,10 +507,7 @@ def main() -> None:
                 raise SystemExit("first mismatching classifier stage: 0")
 
     if args.classifier_output_trace is not None or args.reference_only:
-        if (
-            not args.reference_only
-            and args.classifier_output_trace.suffix != ".txt"
-        ):
+        if not args.reference_only and args.classifier_output_trace.suffix != ".txt":
             raise ValueError("classifier output trace must be the FP32 text trace")
         classifier = parse_classifier_stage(mlir)
         final_line = next(
@@ -513,29 +517,44 @@ def main() -> None:
             and "mega_kernel_stage = 1 : i64" in line
             and "buckyball.mega_matmul" in line
         )
-        inputs = re.findall(r"%[A-Za-z0-9_]+", re.search(r" ins\((.*?) : tensor<", final_line).group(1))
+        inputs = re.findall(
+            r"%[A-Za-z0-9_]+", re.search(r" ins\((.*?) : tensor<", final_line).group(1)
+        )
         weight_arg = re.fullmatch(r"%arg(\d+)", inputs[1])
         if not weight_arg:
             raise ValueError("classifier stage 1 has no payload weight")
         entry = weights[int(weight_arg.group(1)) - 1]
         payload = np.fromfile(
-            args.payload_dir / "weights.bin", dtype=np.int8,
-            count=entry["payload_bytes"], offset=entry["payload_offset"])
+            args.payload_dir / "weights.bin",
+            dtype=np.int8,
+            count=entry["payload_bytes"],
+            offset=entry["payload_offset"],
+        )
         packed_shape = tuple(entry["payload_shape"])
         if packed_shape != (1024, 1000) or payload.size != 1024000:
             raise ValueError("invalid classifier stage 1 weight payload")
         source = values[stages[-1]["result"]].reshape(1, -1)
-        first_entry = weights[int(re.fullmatch(r"%arg(\d+)", classifier["inputs"][1]).group(1)) - 1]
+        first_entry = weights[
+            int(re.fullmatch(r"%arg(\d+)", classifier["inputs"][1]).group(1)) - 1
+        ]
         first_payload = np.fromfile(
-            args.payload_dir / "weights.bin", dtype=np.int8,
-            count=first_entry["payload_bytes"], offset=first_entry["payload_offset"])
+            args.payload_dir / "weights.bin",
+            dtype=np.int8,
+            count=first_entry["payload_bytes"],
+            offset=first_entry["payload_offset"],
+        )
         first_weight = first_payload.reshape((576, 1024))
         first_bias = constants[classifier["inputs"][2]].astype(np.int32)
         first_scale = constants[classifier["inputs"][3]].astype(np.float32)
         first_lut = constants[classifier["inputs"][4]].astype(np.int8)
         first_i8 = np.clip(
-            np.rint((source.astype(np.int32) @ first_weight.astype(np.int32) + first_bias) * first_scale),
-            -128, 127).astype(np.int8)
+            np.rint(
+                (source.astype(np.int32) @ first_weight.astype(np.int32) + first_bias)
+                * first_scale
+            ),
+            -128,
+            127,
+        ).astype(np.int8)
         first_i8 = first_lut[first_i8.view(np.uint8)]
         final_bias_name = inputs[2]
         final_scale_name = inputs[3]
@@ -555,7 +574,9 @@ def main() -> None:
             return
         actual = np.loadtxt(args.classifier_output_trace, dtype=np.float32)
         if actual.size != 1000:
-            raise ValueError(f"classifier output has {actual.size} values, expected 1000")
+            raise ValueError(
+                f"classifier output has {actual.size} values, expected 1000"
+            )
         actual = actual.reshape(final_ref.shape)
         diff = np.abs(actual.astype(np.float64) - final_ref.astype(np.float64))
         corr = float(np.corrcoef(actual.reshape(-1), final_ref.reshape(-1))[0, 1])

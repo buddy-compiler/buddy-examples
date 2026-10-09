@@ -1,7 +1,7 @@
 #include "testutils.h"
+#include <algorithm>
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/ImgContainer.h>
-#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -18,7 +18,8 @@ template <typename T> MemRef<T, 1> load(const std::string &path) {
   std::ifstream stream(path, std::ios::binary | std::ios::ate);
   stream.exceptions(std::ios::failbit | std::ios::badbit);
   const size_t bytes = stream.tellg();
-  if (bytes % sizeof(T)) throw std::runtime_error("invalid tensor size: " + path);
+  if (bytes % sizeof(T))
+    throw std::runtime_error("invalid tensor size: " + path);
   MemRef<T, 1> result(std::vector<size_t>{bytes / sizeof(T)});
   stream.seekg(0);
   stream.read(reinterpret_cast<char *>(result.getData()), bytes);
@@ -43,26 +44,32 @@ int main(int argc, char **argv) {
     for (size_t channel = 0; channel < 3; ++channel)
       for (size_t pixel = 0; pixel < 224 * 224; ++pixel) {
         size_t index = channel * 224 * 224 + pixel;
-        input.getData()[index] = (image.getData()[index] - mean[channel]) / scale[channel];
+        input.getData()[index] =
+            (image.getData()[index] - mean[channel]) / scale[channel];
       }
   }
   auto params = load<float>("alexnet.payload/params.f32");
   auto weights = load<int8_t>("alexnet.payload/weights.bin");
   MemRef<float, 2> output(std::vector<size_t>{1, 1000});
-  unsigned long start = read_cycles();
+  unsigned long start = read_counter();
   _mlir_ciface_forward(&output, &params, &weights, &input);
-  std::cout << "Cycle count: " << read_cycles() - start << '\n';
+  std::cout << "Counter (" << counter_name() << ") " << counter_field() << ": "
+            << read_counter() - start << '\n';
   for (size_t index = 0; index < 1000; ++index)
     if (!std::isfinite(output.getData()[index]))
       throw std::runtime_error("AlexNet produced non-finite logits");
   std::ofstream logits("logits.f32", std::ios::binary);
   logits.exceptions(std::ios::failbit | std::ios::badbit);
-  logits.write(reinterpret_cast<const char *>(output.getData()), 1000 * sizeof(float));
+  logits.write(reinterpret_cast<const char *>(output.getData()),
+               1000 * sizeof(float));
   std::vector<size_t> order(1000);
   std::iota(order.begin(), order.end(), 0);
   std::partial_sort(order.begin(), order.begin() + 5, order.end(),
-                    [&](size_t a, size_t b) { return output.getData()[a] > output.getData()[b]; });
+                    [&](size_t a, size_t b) {
+                      return output.getData()[a] > output.getData()[b];
+                    });
   std::cout << "Classification Index: " << order[0] << "\nTop5:";
-  for (size_t index = 0; index < 5; ++index) std::cout << ' ' << order[index];
+  for (size_t index = 0; index < 5; ++index)
+    std::cout << ' ' << order[index];
   std::cout << '\n';
 }

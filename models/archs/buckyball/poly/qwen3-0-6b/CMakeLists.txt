@@ -53,7 +53,7 @@ endforeach()
 file(GLOB_RECURSE DESIGN_FILES CONFIGURE_DEPENDS
   "${DESIGN_DIR}/quant/*.py" "${DESIGN_DIR}/trace/*.py"
   "${DESIGN_DIR}/permute/*.py" "${DESIGN_DIR}/trace/*.toml")
-set(DESIGN_DEPENDS ${DESIGN_DIR}/__init__.py ${DESIGN_FILES}
+set(DESIGN_DEPENDS ${DESIGN_DIR}/__init__.py ${DESIGN_DIR}/config.py ${DESIGN_FILES}
   ${BUDDY_SOURCE}/frontend/Python/ops/linalg.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/convolution.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/matrix.py
@@ -67,7 +67,25 @@ set(DESIGN_DEPENDS ${DESIGN_DIR}/__init__.py ${DESIGN_FILES}
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/activation.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/symmetric.py
   ${REPO_ROOT}/stack/compiler/quant/rax.py)
-add_subdirectory(${MODEL_SOURCE} prepare)
+add_custom_command(
+  OUTPUT ${QWEN_MLIR} ${GENERATED_DIR}/model.json
+         ${GENERATED_DIR}/qwen-parameters.h
+  BYPRODUCTS ${GENERATED_DIR}/tokenizer/config.json
+             ${GENERATED_DIR}/tokenizer/tokenizer.json
+             ${GENERATED_DIR}/tokenizer/tokenizer_config.json
+  COMMAND ${PYTHON} -m ${DESIGN_MODULE}.trace.importer
+          --output-dir ${GENERATED_DIR}
+          --compiler-build ${COMPILER_BUILD}
+          --prefill-len ${PREFILL_LENGTH}
+          --max-cache-len ${CACHE_LENGTH}
+          --parts ${PARTS}
+          --model ${CHECKPOINT}
+  DEPENDS ${DESIGN_DEPENDS} ${MODEL_SOURCE}/prepare.py ${DESIGN_DIR}/trace/importer.py ${DESIGN_DIR}/configs/importer-param.py ${DESIGN_DIR}/trace/stages.py ${DESIGN_DIR}/trace/ffn.py ${DESIGN_DIR}/trace/output.py ${DESIGN_DIR}/trace/attention.py ${DESIGN_DIR}/quant/parameters.py
+  WORKING_DIRECTORY ${REPO_ROOT}
+  VERBATIM)
+add_custom_target(qwen-model-build DEPENDS ${QWEN_MLIR}
+  ${GENERATED_DIR}/model.json ${GENERATED_DIR}/qwen-parameters.h)
+
 
 set(FORWARD_PASSES
   -buffer-deallocation-simplification -convert-linalg-to-loops
@@ -113,12 +131,12 @@ endforeach()
 add_library(qwen_kernels STATIC ${OBJECTS})
 set_target_properties(qwen_kernels PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(qwen_kernels qwen-model-build)
-add_executable(qwen-run ${MODEL_SOURCE}/main.cpp ${MODEL_SOURCE}/execution.cpp ${MODEL_SOURCE}/generation.cpp ${MODEL_SOURCE}/ffn.cpp ${MODEL_SOURCE}/attention.cpp)
+add_executable(qwen-run ${MODEL_SOURCE}/main.cpp ${DESIGN_DIR}/execution.cpp ${DESIGN_DIR}/step.cpp ${DESIGN_DIR}/loader.cpp ${MODEL_SOURCE}/generation.cpp ${DESIGN_DIR}/ffn.cpp ${DESIGN_DIR}/attention.cpp)
 target_compile_options(qwen-run PRIVATE -O2)
 add_dependencies(qwen-run model-loader)
-target_include_directories(qwen-run PRIVATE ${ISA_DIR}/chip ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
-set_source_files_properties(${MODEL_SOURCE}/ffn.cpp PROPERTIES INCLUDE_DIRECTORIES "${ISA_DIR}/ffn")
-set_source_files_properties(${MODEL_SOURCE}/attention.cpp PROPERTIES INCLUDE_DIRECTORIES "${ISA_DIR}/attention")
+target_include_directories(qwen-run PRIVATE ${MODEL_SOURCE} ${ISA_DIR}/chip ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
+set_source_files_properties(${DESIGN_DIR}/ffn.cpp PROPERTIES INCLUDE_DIRECTORIES "${ISA_DIR}/ffn")
+set_source_files_properties(${DESIGN_DIR}/attention.cpp PROPERTIES INCLUDE_DIRECTORIES "${ISA_DIR}/attention")
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
@@ -127,10 +145,10 @@ target_link_libraries(qwen-run PRIVATE -static qwen_kernels runtime_ant_tasks rv
 add_custom_command(TARGET qwen-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:qwen-run> ${ARTIFACT_DIR}/qwen-run
-  COMMAND ${PYTHON} -m stack.models.models.qwen3-0-6b.pack
+  COMMAND ${PYTHON} -m ${DESIGN_MODULE}.pack
           --generated-dir ${GENERATED_DIR}
           --model-dir ${ARTIFACT_DIR} --run-config ${DESIGN_DIR}/configs/running-param.toml --backend buckyball --rax-pack ${COMPILER_BUILD}/bin/rax-pack
   WORKING_DIRECTORY ${REPO_ROOT}
   VERBATIM)
 set_property(TARGET qwen-run APPEND PROPERTY LINK_DEPENDS
-  ${MODEL_SOURCE}/pack.py ${MODEL_SOURCE}/inputs.py ${DESIGN_DIR}/configs/running-param.toml ${REPO_ROOT}/stack/compiler/package.py ${GENERATED_DIR}/model.json)
+  ${DESIGN_DIR}/pack.py ${DESIGN_DIR}/loader.py ${DESIGN_DIR}/configs/running-param.toml ${REPO_ROOT}/stack/compiler/package.py ${GENERATED_DIR}/model.json)

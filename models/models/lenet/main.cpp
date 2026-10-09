@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
     std::cout << "\033[34;1m[Log] \033[0mStarting inference on MNIST dataset..."
               << std::endl;
     auto benchmarkStart = std::chrono::steady_clock::now();
-    unsigned long cycleStart = read_cycles();
+    unsigned long counterStart = read_counter();
     for (size_t i = 0; i < MnistCount; ++i) {
       fillMnistImage(buf.data(), images.data() + i * MnistPixels);
       dip::Image<float, 4> input(buf.data(), inSizes);
@@ -257,7 +257,8 @@ int main(int argc, char **argv) {
         << "@BBPERF {\"model\":\"lenet\",\"samples\":" << MnistCount
         << ",\"correct\":" << correct
         << ",\"accuracy_metric\":\"top1\",\"unit\":\"images/s\",\"elapsed_ns\":"
-        << elapsedNs << ",\"cycles\":" << read_cycles() - cycleStart << "}"
+        << elapsedNs << ",\"counter\":\"" << counter_name() << "\",\""
+        << counter_field() << "\":" << read_counter() - counterStart << "}"
         << std::endl;
     return 0;
   }
@@ -270,7 +271,7 @@ int main(int argc, char **argv) {
   BorrowedBuffer<float, 2> output(outputData, sizesOutput);
 
   std::cout << "\033[34;1m[Log] \033[0mStarting inference..." << std::endl;
-  unsigned long start = read_cycles();
+  unsigned long start = read_counter();
   auto benchmarkStart = std::chrono::steady_clock::now();
   size_t predictions[10] = {};
   for (size_t iteration = 0; iteration < opts.repeat; ++iteration) {
@@ -280,12 +281,13 @@ int main(int argc, char **argv) {
   auto elapsedNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
                        std::chrono::steady_clock::now() - benchmarkStart)
                        .count();
-  unsigned long end = read_cycles();
+  unsigned long end = read_counter();
 
   auto out = output.getData();
   softmax(out, 10);
   printLogLabel();
-  std::cout << "Inference Cycles taken: " << end - start << std::endl;
+  std::cout << "Inference counter taken (" << counter_name()
+            << "): " << end - start << std::endl;
   std::cout << std::endl;
 
   float maxVal = 0;
@@ -301,7 +303,9 @@ int main(int argc, char **argv) {
   std::cout << "Classification: " << maxIdx << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
   std::cout << "@BBPERF {\"model\":\"lenet\",\"samples\":" << opts.repeat
-            << ",\"elapsed_ns\":" << elapsedNs << ",\"cycles\":" << end - start
+            << ",\"elapsed_ns\":" << elapsedNs << ",\"counter\":\""
+            << counter_name() << "\",\"" << counter_field()
+            << "\":" << end - start
             << ",\"unit\":\"images/s\",\"predictions\":{";
   bool first = true;
   for (size_t label = 0; label < 10; ++label) {

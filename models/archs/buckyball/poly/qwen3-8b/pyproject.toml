@@ -8,5 +8,5 @@ version = "0.1.0"
 requires-python = ">=3.12"
 
 [tool.setuptools]
-packages = ["examples.models.poly.qwen3-8b", "examples.models.poly.qwen3-8b.permute", "examples.models.poly.qwen3-8b.quant", "examples.models.poly.qwen3-8b.trace"]
+packages = ["examples.models.poly.qwen3-8b", "examples.models.poly.qwen3-8b.permute", "examples.models.poly.qwen3-8b.quant", "examples.models.poly.qwen3-8b.trace", "examples.models.poly.qwen3-8b.configs"]
 package-dir = {"" = ".", "examples.models.poly.qwen3-8b" = "."}

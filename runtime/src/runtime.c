@@ -1,7 +1,10 @@
+#define _GNU_SOURCE
 #include "runtime.h"
+#include "core_location_internal.h"
 #include "workspace_internal.h"
-#include <stdatomic.h>
 #include <sched.h>
+#include <stdatomic.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -17,6 +20,7 @@
   })
 
 extern void *_dl_allocate_tls(void *);
+extern void _dl_deallocate_tls(void *, bool);
 
 struct task {
   _Atomic uint64_t status;
@@ -36,13 +40,18 @@ struct core {
 enum { TASK_RETURN = 0xbb01 };
 
 static struct core *cores;
-static size_t num_cores, stack_size;
+static size_t num_cores, stack_size, outstanding;
+static uint32_t controller;
+static _Thread_local size_t current_core;
+static _Thread_local int controller_thread;
 static void execute(void *argument) {
   runtime_workspace_bind((void *)COMMAND(5, 0, 0));
   task *task = argument;
+  current_core = task->core + 1;
   task->entry(task->argument);
   __asm__ volatile(".insn r 0x7b, 3, 0, x0, x0, x0" ::: "memory");
-  if (COMMAND(11, 0, 0)) __builtin_trap();
+  if (COMMAND(11, 0, 0))
+    __builtin_trap();
   __asm__ volatile("fence rw, rw" ::: "memory");
   register uintptr_t status __asm__("a0") = 0;
   register uintptr_t operation __asm__("a7") = TASK_RETURN;
@@ -51,6 +60,8 @@ static void execute(void *argument) {
 }
 
 void runtime_init(size_t stack_bytes) {
+  controller = runtime_cpu_id();
+  controller_thread = 1;
   if (mlockall(MCL_CURRENT | MCL_FUTURE)) {
     perror("mlockall");
     abort();
@@ -75,20 +86,53 @@ void runtime_init(size_t stack_bytes) {
 }
 
 size_t core_count(void) { return num_cores; }
-uint64_t core_signature(size_t core) { if (!core || core > num_cores) abort(); return cores[core-1].signature; }
-size_t core_submissions(size_t core) { if (!core || core > num_cores) abort(); return cores[core-1].submissions; }
+core_location_t core_location(void) {
+  if (cores && (controller_thread || current_core))
+    return (core_location_t){controller, current_core};
+  return (core_location_t){runtime_cpu_id(), 0};
+}
+void runtime_shutdown(void) {
+  if (!cores || outstanding)
+    abort();
+  for (size_t i = 0; i < num_cores; ++i) {
+    if (cores[i].task)
+      abort();
+    _dl_deallocate_tls(cores[i].tls, true);
+    free(cores[i].stack);
+  }
+  free(cores);
+  cores = NULL;
+  num_cores = stack_size = 0;
+  controller_thread = 0;
+  runtime_workspace_bind(NULL);
+}
+uint64_t core_signature(size_t core) {
+  if (!core || core > num_cores)
+    abort();
+  return cores[core - 1].signature;
+}
+size_t core_submissions(size_t core) {
+  if (!core || core > num_cores)
+    abort();
+  return cores[core - 1].submissions;
+}
 
-static task *submit(size_t required, uint64_t signature, task_entry entry, void *argument) {
+static task *submit(size_t required, uint64_t signature, task_entry entry,
+                    void *argument) {
   size_t selected = num_cores;
   int compatible = 0;
   for (;;) {
     for (size_t core = 0; core < num_cores; ++core) {
-      if ((required != num_cores && core != required) || cores[core].signature != signature)
+      if ((required != num_cores && core != required) ||
+          cores[core].signature != signature)
         continue;
       compatible = 1;
-      if (cores[core].task && !atomic_load_explicit(&cores[core].task->status, memory_order_acquire)) {
+      if (cores[core].task && !atomic_load_explicit(&cores[core].task->status,
+                                                    memory_order_acquire)) {
         uint64_t status = COMMAND(10, core, 0);
-        if (status) atomic_store_explicit(&cores[core].task->status, status, memory_order_release);
+        if (status)
+          atomic_store_explicit(&cores[core].task->status, status,
+                                memory_order_release);
       }
       if (!cores[core].task || atomic_load_explicit(&cores[core].task->status,
                                                     memory_order_acquire)) {
@@ -108,7 +152,8 @@ static task *submit(size_t required, uint64_t signature, task_entry entry, void 
     }
     if (selected != num_cores)
       break;
-    if (sched_yield()) abort();
+    if (sched_yield())
+      abort();
   }
   task *task = malloc(sizeof(*task));
   if (!task)
@@ -119,25 +164,35 @@ static task *submit(size_t required, uint64_t signature, task_entry entry, void 
   task->argument = argument;
   struct core *core = &cores[selected];
   core->task = task;
+  ++outstanding;
   ++core->submissions;
   uintptr_t gp;
   __asm__ volatile("mv %0, gp" : "=r"(gp));
   uintptr_t descriptor[] = {
-      (uintptr_t)execute, (uintptr_t)task,
-      (uintptr_t)core->stack + stack_size, (uintptr_t)core->tls,
-      (uintptr_t)runtime_workspace_state(), gp, signature,
+      (uintptr_t)execute,
+      (uintptr_t)task,
+      (uintptr_t)core->stack + stack_size,
+      (uintptr_t)core->tls,
+      (uintptr_t)runtime_workspace_state(),
+      gp,
+      signature,
   };
-  for (size_t field = 0; field < sizeof(descriptor) / sizeof(descriptor[0]); ++field)
-    if (COMMAND(7, field, descriptor[field])) abort();
-  if (COMMAND(0, selected, signature)) abort();
+  for (size_t field = 0; field < sizeof(descriptor) / sizeof(descriptor[0]);
+       ++field)
+    if (COMMAND(7, field, descriptor[field]))
+      abort();
+  if (COMMAND(0, selected, signature))
+    abort();
   return task;
 }
 
 task *task_submit(uint64_t signature, task_entry entry, void *argument) {
   return submit(num_cores, signature, entry, argument);
 }
-task *task_submit_on(size_t core, uint64_t signature, task_entry entry, void *argument) {
-  if (!core || core > num_cores) abort();
+task *task_submit_on(size_t core, uint64_t signature, task_entry entry,
+                     void *argument) {
+  if (!core || core > num_cores)
+    abort();
   return submit(core - 1, signature, entry, argument);
 }
 
@@ -145,12 +200,14 @@ int task_wait(task *task) {
   uint64_t status;
   if (!(status = atomic_load_explicit(&task->status, memory_order_acquire))) {
     while (!(status = COMMAND(10, task->core, 0)))
-      if (sched_yield()) abort();
+      if (sched_yield())
+        abort();
     __asm__ volatile("fence rw, rw" ::: "memory");
     atomic_store_explicit(&task->status, status, memory_order_release);
   }
   if (cores[task->core].task == task)
     cores[task->core].task = NULL;
+  --outstanding;
   free(task);
   return status == 1 ? 0 : -1;
 }
@@ -162,13 +219,15 @@ void task_run(uint64_t signature, task_entry entry, void *argument) {
   }
 }
 
-
-void task_run_on(size_t core, uint64_t signature, task_entry entry, void *argument) {
-  if (task_wait(task_submit_on(core, signature, entry, argument))) abort();
+void task_run_on(size_t core, uint64_t signature, task_entry entry,
+                 void *argument) {
+  if (task_wait(task_submit_on(core, signature, entry, argument)))
+    abort();
 }
 
 void runtime_workspace_register(void *space) { COMMAND(6, space, 0); }
 void runtime_workspace_check_idle(void) {
   for (size_t i = 0; i < num_cores; ++i)
-    if (cores[i].task) abort();
+    if (cores[i].task)
+      abort();
 }

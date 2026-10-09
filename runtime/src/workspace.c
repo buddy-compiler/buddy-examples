@@ -21,7 +21,7 @@ struct workspace {
   atomic_flag lock;
 };
 
-static struct workspace workspace = {.lock = ATOMIC_FLAG_INIT};
+static _Thread_local struct workspace workspace = {.lock = ATOMIC_FLAG_INIT};
 static _Thread_local struct workspace *current_workspace;
 
 void *runtime_workspace_state(void) { return &workspace; }
@@ -48,7 +48,11 @@ void workspace_begin(void *memory, size_t bytes) {
   runtime_workspace_register(&workspace);
 }
 
-size_t workspace_peak(void) { return workspace.peak; }
+size_t workspace_peak(void) {
+  if (!current_workspace)
+    abort();
+  return current_workspace->peak;
+}
 
 void *workspace_alloc(size_t bytes) {
   struct workspace *space = current_workspace;

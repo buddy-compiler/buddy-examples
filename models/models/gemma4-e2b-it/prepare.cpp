@@ -4,10 +4,10 @@
 #include <stdexcept>
 
 int main(int argc, char **argv) {
-  if (argc != 3)
-    throw std::runtime_error("usage: prepare VOCAB PROMPT");
+  if (argc != 4)
+    throw std::runtime_error("usage: prepare VOCAB PROMPT MAX_TOKENS");
   buddy::Text<size_t, 2> input(argv[2]);
-  input.tokenizeGemma4(argv[1], 512);
+  input.tokenizeGemma4(argv[1], std::stoull(argv[3]));
   const uint64_t count = input.getTokenCnt();
   for (uint64_t index = 0; index <= count; ++index) {
     uint64_t value = index ? input.getData()[index - 1] : count;

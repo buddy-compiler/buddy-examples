@@ -41,8 +41,10 @@ set(NV_LOWER_TO_NVVM_OPTION
   "cubin-chip=${NV_CUBIN_CHIP} cubin-features=+ptx71 cubin-format=fatbin")
 set(NV_CONVERT_MEMCPY_TO_GPU_OPTION_DISABLE_PROCESS_ARG "process-args=0")
 
-add_library(NvHostCRunnerUtils OBJECT ${MODELTEST_LIB_DIR}/CRunnerUtils.cpp)
+add_library(NvHostCRunnerUtils OBJECT ${MODELTEST_LIB_DIR}/CRunnerUtils.cpp
+  ${MODELTEST_LIB_DIR}/native_trace.cpp ${REPO_ROOT}/stack/runtime/src/trace.cpp)
 target_include_directories(NvHostCRunnerUtils PUBLIC
+  ${REPO_ROOT}/stack/runtime/include ${REPO_ROOT}/stack/runtime/src
   ${BUDDY_MLIR_DIR}/llvm/mlir/include/mlir/ExecutionEngine)
 set_target_properties(NvHostCRunnerUtils PROPERTIES
   CXX_STANDARD 17

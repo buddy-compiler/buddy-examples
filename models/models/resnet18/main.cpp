@@ -27,10 +27,9 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <unistd.h>
 #include <utility>
 #include <vector>
-#include <unistd.h>
-
 
 // Declare the resnet C interface.
 extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
@@ -38,10 +37,7 @@ extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
                                      MemRef<int8_t, 1> *weights,
                                      MemRef<float, 4> *input);
 
-
-
-template <typename T>
-MemRef<T, 1> loadBinary(const std::string &path) {
+template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   std::cout << "\033[34;1m[Log] \033[0mLoading " << path << std::endl;
   const auto loadStart = std::chrono::steady_clock::now();
   std::ifstream input(path, std::ios::binary | std::ios::ate);
@@ -54,8 +50,8 @@ MemRef<T, 1> loadBinary(const std::string &path) {
   input.read(reinterpret_cast<char *>(tensor.getData()), bytes);
   const std::chrono::duration<double> loadTime =
       std::chrono::steady_clock::now() - loadStart;
-  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count()
-            << "s" << std::endl;
+  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count() << "s"
+            << std::endl;
   return tensor;
 }
 
@@ -94,7 +90,8 @@ std::string getLabel(int idx) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) throw std::runtime_error("expected an image path");
+  if (argc != 2)
+    throw std::runtime_error("expected an image path");
   // Print the title of this example.
   const std::string title = "ResNet Inference Powered by Buddy Compiler";
   std::cout << "\033[33;1m" << title << "\033[0m" << std::endl;
@@ -121,14 +118,18 @@ int main(int argc, char **argv) {
 
   MemRef<float, 2> output(sizesOutput);
 
-  auto paramsContainer = loadBinary<float>(resnetDir + "/resnet18.payload/params.f32");
-  auto weightsContainer = loadBinary<int8_t>(resnetDir + "/resnet18.payload/weights.bin");
+  auto paramsContainer =
+      loadBinary<float>(resnetDir + "/resnet18.payload/params.f32");
+  auto weightsContainer =
+      loadBinary<int8_t>(resnetDir + "/resnet18.payload/weights.bin");
 
   std::cout << "\033[34;1m[Log] \033[0mStarting inference..." << std::endl;
-  unsigned long start = read_cycles();
-  _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer, &inputResize);
-  unsigned long end = read_cycles();
-  std::cout << "Cycle count: " << end - start << std::endl;
+  unsigned long start = read_counter();
+  _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer,
+                       &inputResize);
+  unsigned long end = read_counter();
+  std::cout << "Counter (" << counter_name() << ") " << counter_field() << ": "
+            << end - start << std::endl;
 
   auto out = output.getData();
   softmax(out, 1000);

@@ -21,12 +21,18 @@ def lower_matmul(node, symbols):
             "MXFP8 requires a positive static FP32 matrix with K divisible by 32"
         )
     rows, reduction = shape
-    tile_rows = 1 if rows == 1 else node.layout["tile_m"]
+    tile_rows = 1 if rows == 1 else min(node.layout["tile_m"], (rows + 15) // 16 * 16)
     chunk, stride = node.layout["tile_k"], node.layout["bank_bytes"]
+    activation_chunk = (
+        reduction
+        if reduction <= 65535
+        and (tile_rows * reduction * 33 // 32 + 15) // 16 * 16 <= stride
+        else chunk
+    )
     packed_size = (
         (rows + tile_rows - 1)
         // tile_rows
-        * ((reduction + chunk - 1) // chunk)
+        * ((reduction + activation_chunk - 1) // activation_chunk)
         * stride
     )
     integer = ir.IntegerType.get_signless(64)
@@ -38,7 +44,7 @@ def lower_matmul(node, symbols):
         ],
         attributes={
             "tile_rows": ir.IntegerAttr.get(integer, tile_rows),
-            "tile_k": ir.IntegerAttr.get(integer, chunk),
+            "tile_k": ir.IntegerAttr.get(integer, activation_chunk),
             "bank_bytes": ir.IntegerAttr.get(integer, stride),
         },
     ).result
@@ -47,7 +53,9 @@ def lower_matmul(node, symbols):
         key: ir.IntegerAttr.get(integer, node.layout[key])
         for key in ("tile_m", "tile_n", "tile_k", "bank_bytes")
     }
+    attributes["tile_m"] = ir.IntegerAttr.get(integer, tile_rows)
     attributes["reduction_k"] = ir.IntegerAttr.get(integer, reduction)
+    attributes["activation_tile_k"] = ir.IntegerAttr.get(integer, activation_chunk)
     return ir.Operation.create(
         "buckyball.mxfp8_matmul",
         results=[output],

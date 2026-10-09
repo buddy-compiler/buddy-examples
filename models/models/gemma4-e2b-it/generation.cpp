@@ -8,8 +8,9 @@ std::vector<int64_t> generate(Execution &execution,
                               size_t maxTokens) {
   execution.prefill(tokens);
   auto choose = [&]() {
-    const float *logits = execution.logits();
-    return int64_t(std::max_element(logits, logits + MaxVocabSize) - logits);
+    auto logits = execution.logits();
+    return int64_t(std::max_element(logits.begin(), logits.end()) -
+                   logits.begin());
   };
   int64_t token = choose();
   std::vector<int64_t> generated{token};

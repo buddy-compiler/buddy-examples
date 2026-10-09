@@ -1,33 +1,27 @@
 #pragma once
-#include "generation.h"
-#include <atomic>
+#include <cstdint>
 #include <filesystem>
-#include <sys/types.h>
+#include <memory>
+#include <span>
+#include <vector>
 
-int controlCpu(size_t tile);
+struct Request {
+  std::vector<int64_t> tokens, eos;
+  size_t maxTokens;
+  double temperature;
+};
+
 class Execution {
-public:
-  struct Shared {
-    std::atomic<int> state;
-    size_t count;
-    int64_t token, tokens[PrefillLength];
-    float logits[MaxVocabSize];
-    char error[256];
-  };
-
-private:
-  Shared *shared;
-  pid_t pid;
-  int notify[2], completion[2];
-  bool closed = false;
-  void run(uint8_t operation);
+  struct State;
+  std::unique_ptr<State> state;
 
 public:
   Execution(const std::filesystem::path &directory,
-            const std::vector<size_t> &tiles);
+            const std::filesystem::path &inputResource, const char *index);
   ~Execution() noexcept(false);
+  const Request &request() const;
   void prefill(const std::vector<int64_t> &tokens);
   void decode(int64_t token);
-  const float *logits() const { return shared->logits; }
+  std::span<const float> logits() const;
   void close();
 };

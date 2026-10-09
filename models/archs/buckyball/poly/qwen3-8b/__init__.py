@@ -1,2 +1,1 @@
-chip = 'poly'
-targets = {'embedding': 'attention', 'attention': 'attention', 'ffn': 'ffn', 'output': 'ffn'}
+from .config import chip, targets
