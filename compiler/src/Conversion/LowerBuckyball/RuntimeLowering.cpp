@@ -184,14 +184,13 @@ public:
         funct7 = cast<IntegerAttr>(op->getAttr("funct7")).getInt();
       } else {
         funct7 = llvm::StringSwitch<int32_t>(name)
-                     .Case("fence", 0)
                      .Case("mvout", 16)
                      .Case("mset", 32)
                      .Case("mvin", 33)
                      .Case("mvin_mmio", 35)
                      .Default(-1);
       }
-      if (funct7 < 0 || funct7 > 127) {
+      if (funct7 <= 0 || funct7 > 127) {
         op->emitError("unsupported Ant command encoding");
         return signalPassFailure();
       }

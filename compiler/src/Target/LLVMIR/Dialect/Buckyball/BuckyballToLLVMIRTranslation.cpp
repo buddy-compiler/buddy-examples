@@ -37,7 +37,6 @@ using namespace buddy;
 namespace {
 static llvm::Intrinsic::ID lookupStableIntrinsic(StringRef opName) {
   return llvm::StringSwitch<llvm::Intrinsic::ID>(opName)
-      .Case("buckyball.intr.fence", llvm::Intrinsic::riscv_bb_fence)
       .Case("buckyball.intr.mset", llvm::Intrinsic::riscv_bb_mset)
       .Case("buckyball.intr.mvin", llvm::Intrinsic::riscv_bb_mvin)
       .Case("buckyball.intr.mvin_mmio", llvm::Intrinsic::riscv_bb_mvin_mmio)

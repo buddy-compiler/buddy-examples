@@ -116,16 +116,6 @@ def MsetTransferOp : Buckyball_Op<"mset_transfer"> {
   let hasVerifier = 1;
 }
 
-def FenceOp : Buckyball_Op<"fence", [MemoryEffects<[MemRead, MemWrite]>]> {
-  let summary = "Memory fence for synchronization";
-  let description = [{
-    Ensures all previous memory operations complete before proceeding.
-    Corresponds to bb_fence instruction (funct7=0).
-  }];
-  let arguments = (ins);
-  let assemblyFormat = "prop-dict attr-dict";
-}
-
 //===----------------------------------------------------------------------===//
 // Bank SSA operations
 //===----------------------------------------------------------------------===//
@@ -407,9 +397,6 @@ class Buckyball_CustomIntrOpBase<string mnemonic, string enumName,
 def MsetIntrOp : Buckyball_IntrOpBase<"mset">,
   Arguments<(ins LLVM_Type, LLVM_Type)>;
 
-def FenceIntrOp : Buckyball_IntrOpBase<"fence">,
-  Arguments<(ins LLVM_Type, LLVM_Type)>;
-
 def MvinIntrOp : Buckyball_IntrOpBase<"mvin">,
   Arguments<(ins LLVM_Type, LLVM_Type)>;
 
@@ -426,7 +413,8 @@ def MvoutIntrOp : Buckyball_IntrOpBase<"mvout">,
 def CustomIntrOp
     : Buckyball_CustomIntrOpBase<"custom", "riscv_buckyball_custom",
                                  [2], ["funct7"]>,
-      Arguments<(ins LLVM_Type:$rs1, LLVM_Type:$rs2, I32Attr:$funct7)> {
+      Arguments<(ins LLVM_Type:$rs1, LLVM_Type:$rs2,
+                     ConfinedAttr<I32Attr, [IntMinValue<1>, IntMaxValue<127>]>:$funct7)> {
   let assemblyFormat = "$rs1 `,` $rs2 prop-dict attr-dict `:` type($rs1) `,` type($rs2)";
 }
 
@@ -441,7 +429,7 @@ def InstOp : Buckyball_Op<"inst"> {
   }];
   let arguments = (ins I64:$rs1, I64:$rs2,
                        ConfinedAttr<I32Attr,
-                                    [IntMinValue<0>, IntMaxValue<127>]>:$funct7);
+                                    [IntMinValue<1>, IntMaxValue<127>]>:$funct7);
   let assemblyFormat = "$rs1 `,` $rs2 prop-dict attr-dict `:` type($rs1)";
 }
 

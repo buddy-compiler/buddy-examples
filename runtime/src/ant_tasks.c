@@ -78,16 +78,15 @@ void ant_flush(void) {
 }
 
 void ant_emit(uint32_t funct7, uint64_t rs1, uint64_t rs2) {
-  if (!current || funct7 > 127)
+  if (!current || funct7 == 0 || funct7 > 127)
     abort();
   if (current->batch->count == current->capacity)
     ant_flush();
   current->batch->instructions[current->batch->count++] =
       (struct instruction){funct7, rs1, rs2};
   // Returning from a DMA call guarantees that CPU reuse of its DDR range is
-  // safe. Bank-only operations remain batched; no additional fence instruction
-  // is inserted.
-  if (funct7 == 0 || funct7 == 12 || funct7 == 16 ||
+  // safe. Bank-only operations remain batched.
+  if (funct7 == 44 || funct7 == 16 ||
       (funct7 >= 33 && funct7 <= 35))
     ant_flush();
 }

@@ -49,7 +49,6 @@ static void execute(void *argument) {
   task *task = argument;
   current_core = task->core + 1;
   task->entry(task->argument);
-  __asm__ volatile(".insn r 0x7b, 3, 0, x0, x0, x0" ::: "memory");
   if (COMMAND(11, 0, 0))
     __builtin_trap();
   __asm__ volatile("fence rw, rw" ::: "memory");

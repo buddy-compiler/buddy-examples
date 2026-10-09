@@ -47,8 +47,6 @@ void dma_touch(void *p, size_t n) {
   for (i = 0; i < n; i += 4096)
     b[i] = b[i];
   b[n - 1] = b[n - 1];
-  /* Publish the CPU page-touch stores before the device can write this span. */
-  __asm__ volatile("fence rw, rw" ::: "memory");
 }
 
 void dma_touch_mvout(void *p, uint64_t depth, uint64_t stride,

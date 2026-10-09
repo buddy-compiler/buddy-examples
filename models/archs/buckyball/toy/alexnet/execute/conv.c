@@ -79,7 +79,6 @@ void _mlir_ciface_gemmini_conv(AlexnetF32_4 *input, AlexnetI8_2 *weight,
         } else bb_gemmini_compute_accumulated(1, 0, 3, 16, 0, 0, 0);
       }
       bb_mvout((uintptr_t)result, 3, 16, 1);
-      bb_fence();
       for (int i = 0; i < 16 && row + i < m; ++i)
         for (int j = 0; j < 16 && col + j < n; ++j) {
           int64_t index = row + i, batch = index / (oh * ow), y = index / ow % oh, x = index % ow;
