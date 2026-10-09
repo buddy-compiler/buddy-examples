@@ -6,12 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "omni-qwen3-omni-30b-a3b-instruct"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["vllm-omni==0.30.0", "soundfile>=0.13.1"]
-
-[project.entry-points."vllm.general_plugins"]
-omni_qwen3 = "omni_qwen3:register"
+dependencies = ["numpy", "torch", "transformers", "soundfile>=0.13.1", "torchaudio", "opencv-python", "Pillow"]
 
 [tool.setuptools]
-py-modules = ["omni_qwen3"]
 packages = ["examples.models.omni.qwen3-omni-30b-a3b-instruct", "examples.models.omni.qwen3-omni-30b-a3b-instruct.media"]
 package-dir = {"" = ".", "examples.models.omni.qwen3-omni-30b-a3b-instruct" = "."}

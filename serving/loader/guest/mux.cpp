@@ -28,6 +28,8 @@
 namespace {
 constexpr uint64_t maxBytes = 256ULL * 1024 * 1024;
 constexpr char magic[] = "BBMUX1\n";
+constexpr char ready[] = "BBMUX1 READY\n";
+constexpr char listening[] = "BBMUX1 LISTENING\n";
 std::atomic<bool> stopping{false};
 std::mutex outputMutex;
 
@@ -137,7 +139,7 @@ void run(Worker &w, uint64_t rank) {
   }
 }
 void spawn(Worker &w, const std::string &program, const std::string &model,
-           unsigned rank, unsigned cpu, const std::filesystem::path &directory) {
+           unsigned rank, unsigned cpu, const std::filesystem::path &directory, const std::string &resources) {
   int input[2], output[2], startup[2];
   if (pipe2(input, O_CLOEXEC) || pipe2(output, O_CLOEXEC) ||
       pipe2(startup, O_CLOEXEC)) throw error("pipe2");
@@ -163,7 +165,7 @@ void spawn(Worker &w, const std::string &program, const std::string &model,
     const rlimit lockedMemory{RLIM_INFINITY, RLIM_INFINITY};
     if (setrlimit(RLIMIT_MEMLOCK, &lockedMemory) < 0) fail();
     const std::string index = std::to_string(rank);
-    execl(program.c_str(), program.c_str(), model.c_str(), index.c_str(), nullptr);
+    execl(program.c_str(), program.c_str(), model.c_str(), index.c_str(), resources.empty() ? nullptr : resources.c_str(), nullptr);
     fail();
   }
   close(input[0]); close(output[1]); close(startup[1]);
@@ -221,8 +223,15 @@ int main(int argc, char **argv) {
     if (argc < 4) throw std::runtime_error("usage: worker-mux PROGRAM MODEL_DIR CPU_ID...");
     const std::string program = std::filesystem::canonical(argv[1]);
     const std::string model = std::filesystem::canonical(argv[2]);
+    std::string resources;
+    int first_cpu = 3;
+    if (argc > 4 && std::string(argv[3]) == "--resource-index") {
+      resources = std::filesystem::canonical(argv[4]);
+      first_cpu = 5;
+    }
+    if (argc <= first_cpu) throw std::runtime_error("worker-mux requires CPU IDs");
     std::vector<unsigned> cpus;
-    for (int argument = 3; argument < argc; ++argument) {
+    for (int argument = first_cpu; argument < argc; ++argument) {
       const char *text = argv[argument];
       if (*text == '\0' || strspn(text, "0123456789") != strlen(text))
         throw std::runtime_error("CPU ID must be a nonnegative decimal integer");
@@ -238,6 +247,7 @@ int main(int argc, char **argv) {
     const unsigned count = cpus.size();
     terminal = std::make_unique<Terminal>();
     nonblocking(STDIN_FILENO); nonblocking(STDOUT_FILENO);
+    transfer(STDOUT_FILENO, const_cast<char *>(listening), sizeof(listening) - 1, true);
     std::array<char, sizeof(magic) - 1> received{};
     transfer(STDIN_FILENO, received.data(), received.size(), false);
     if (memcmp(received.data(), magic, received.size()))
@@ -248,11 +258,11 @@ int main(int argc, char **argv) {
       workers.emplace_back(std::make_unique<Worker>());
       auto path = std::filesystem::path(directory) / ("rank" + std::to_string(rank));
       std::filesystem::create_directory(path);
-      spawn(*workers.back(), program, model, rank, cpus[rank], path);
+      spawn(*workers.back(), program, model, rank, cpus[rank], path, resources);
     }
     for (unsigned rank = 0; rank < count; ++rank)
       workers[rank]->thread = std::thread(run, std::ref(*workers[rank]), rank);
-    transfer(STDOUT_FILENO, const_cast<char *>(magic), sizeof(magic) - 1, true);
+    transfer(STDOUT_FILENO, const_cast<char *>(ready), sizeof(ready) - 1, true);
     while (!stopping.load()) {
       std::array<unsigned char, 32> header{};
       try { transfer(STDIN_FILENO, header.data(), header.size(), false); }

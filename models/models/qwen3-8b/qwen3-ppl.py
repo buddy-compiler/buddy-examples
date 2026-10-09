@@ -5,9 +5,7 @@ import argparse
 import math
 from pathlib import Path
 
-import numpy as np
 import torch
-import torch.nn.functional as F
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.ops import tosa
 from torch._inductor.decomposition import decompositions as inductor_decomp
@@ -69,15 +67,17 @@ def tokenize(text: str, vocab: Path) -> list[int]:
     return ids
 
 
-def load_recon_bf16(path: Path) -> np.ndarray:
-    raw = path.read_bytes()
-    if len(raw) % 2 != 0:
-        raise ValueError(f"recon size {len(raw)} not multiple of 2")
-    u16 = np.frombuffer(raw, dtype=np.uint16)
-    return (u16.astype(np.uint32) << 16).view(np.float32)
+def load_recon_bf16(path: Path) -> torch.Tensor:
+    size = path.stat().st_size
+    if size % 2 != 0:
+        raise ValueError(f"recon size {size} not multiple of 2")
+    bits = torch.from_file(
+        str(path), shared=False, size=size // 2, dtype=torch.int16
+    ).to(torch.int32)
+    return bits.bitwise_left_shift_(16).view(torch.float32)
 
 
-def inject_weights(model: torch.nn.Module, recon_f32: np.ndarray) -> None:
+def inject_weights(model: torch.nn.Module, recon_f32: torch.Tensor) -> None:
     dynamo = DynamoCompiler(
         primary_registry=tosa.ops_registry,
         aot_autograd_decomposition=inductor_decomp,
@@ -98,13 +98,13 @@ def inject_weights(model: torch.nn.Module, recon_f32: np.ndarray) -> None:
             if param.dtype != torch.bfloat16:
                 continue
             n = param.numel()
-            if cursor + n > recon_f32.size:
-                raise ValueError(f"recon truncated at {cursor}+{n}>{recon_f32.size}")
-            chunk = torch.from_numpy(recon_f32[cursor : cursor + n].reshape(param.shape))
+            if cursor + n > recon_f32.numel():
+                raise ValueError(f"recon truncated at {cursor}+{n}>{recon_f32.numel()}")
+            chunk = recon_f32[cursor : cursor + n].reshape(param.shape)
             param.data.copy_(chunk.to(torch.bfloat16))
             cursor += n
-    if cursor != recon_f32.size:
-        raise ValueError(f"recon leftover {recon_f32.size - cursor} elements")
+    if cursor != recon_f32.numel():
+        raise ValueError(f"recon leftover {recon_f32.numel() - cursor} elements")
 
 
 def eval_ppl(model: torch.nn.Module) -> float:
@@ -127,9 +127,7 @@ def main() -> None:
         raise SystemExit(f"missing {args.weights}")
 
     recon = load_recon_bf16(args.weights)
-    model = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen3-8B", dtype=torch.bfloat16
-    )
+    model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-8B", dtype=torch.bfloat16)
     inject_weights(model, recon)
     ppl = eval_ppl(model)
     print(f"ppl={ppl:.4f}")

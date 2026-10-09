@@ -3,11 +3,13 @@ import json
 from pathlib import Path
 import shutil
 from stack.compiler.package import pack
+from .inputs import prepare_inputs
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--generated-dir", type=Path, required=True)
 parser.add_argument("--model-dir", type=Path, required=True)
 parser.add_argument("--rax-pack", type=Path, required=True)
+parser.add_argument("--run-config", type=Path, required=True)
 args = parser.parse_args()
 source, output = args.generated_dir.resolve(), args.model_dir.resolve()
 metadata = json.loads((source / "model.json").read_text())
@@ -29,6 +31,8 @@ for entry in metadata["stages"]:
     if name not in resources:
         resources.append(name)
         (output / name).write_bytes(b"")
+prepared, reference, files = prepare_inputs(output, args.run_config, metadata)
+resources.extend([*prepared, "inputs/labels.json"])
 pack(
     output,
     metadata["chip"],
@@ -38,6 +42,15 @@ pack(
     "model.json",
     resources,
     args.rax_pack,
-    {"kind": "python", "entrypoint": "stack.models.models.laya.run:run"},
+    {
+        "kind": "native",
+        "input": "resource",
+        "arguments": ["/root"],
+        "prepared_inputs": prepared,
+        "reference_settings": reference,
+        "reference_files": files,
+        "output": "json",
+        "p2e": {"kind": "native", "task_runtime": "ant"},
+    },
     "buckyball",
 )

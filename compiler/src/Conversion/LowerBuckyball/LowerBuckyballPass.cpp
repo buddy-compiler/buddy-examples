@@ -115,6 +115,8 @@ void mlir::buddy::registerLowerBuckyballPass() {
   registerGatherRowsPass();
   registerRVVKernelsPasses();
   registerRVVMatmulPass();
+  registerRVVPointwisePass();
+  registerVerifyNpuComputePass();
   PassRegistration<LowerBuckyballToLLVMPass>();
 }
 

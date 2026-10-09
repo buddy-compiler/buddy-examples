@@ -1,183 +1,76 @@
-#include <runtime.h>
-#include <buddy/Core/Container.h>
-#include "ffn.h"
-#include "attention.h"
-#include <array>
-#include <cstdlib>
-#include <filesystem>
+#include "execution.h"
+#include "generation.h"
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 #include <iostream>
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-
-using Hidden = MemRef<float, 3>;
-using Cache = MemRef<float, 4>;
-using Floats = MemRef<float, 1>;
-using Bytes = MemRef<int8_t, 1>;
-using Tokens = MemRef<int64_t, 2>;
-using Positions = MemRef<int64_t, 1>;
-
-struct Parameters {
-  const char *directory;
-  size_t floats, bytes, bankBytes;
-};
-struct EmbeddingEntry {
-  Parameters parameters;
-  void (*run)(Hidden *, Floats *, Tokens *);
-};
-struct AttentionEntry {
-  Parameters parameters;
-  const AttentionKernels *kernels;
-};
-struct FfnEntry {
-  Parameters parameters;
-  const FfnKernels *kernels;
-};
-struct OutputEntry {
-  Parameters parameters;
-  void (*run)(Hidden *, Floats *, Bytes *, Hidden *);
-};
-
-#include "qwen-parameters.h"
-
-struct Weights {
-  ReadonlyMappedMemRef<float> floats;
-  ReadonlyMappedMemRef<int8_t> bytes;
-  Weights(const std::filesystem::path &root, Parameters spec)
-      : floats(root / spec.directory / "params.f32", spec.floats, alignof(float)),
-        bytes(root / spec.directory / "weights.bin", spec.bytes, spec.bankBytes) {}
-};
+#include <sched.h>
+#include <stdexcept>
+#include <system_error>
+#include <time.h>
 
 int main(int argc, char **argv) {
-  std::ios_base::sync_with_stdio(false);
-  if (argc != 3)
-    throw std::runtime_error("usage: qwen-run MODEL_DIRECTORY RANK");
-  size_t rank = std::stoul(argv[2]);
-  if (rank >= executionTiles)
-    throw std::runtime_error("rank exceeds compiled tile count");
-    runtime_init(1024 * 1024);
-  std::map<std::string, std::unique_ptr<Weights>> weights;
-  auto load = [&](Parameters parameters) {
-    if (!weights.contains(parameters.directory))
-      weights.emplace(parameters.directory, std::make_unique<Weights>(argv[1], parameters));
-  };
-  if (rank == 0) {
-    load(prefill_embedding.parameters);
-    load(decode_embedding.parameters);
+  if (argc != 3 && argc != 4)
+    throw std::runtime_error(
+        "usage: qwen-run MODEL_DIRECTORY INPUT_RESOURCE [RESOURCE_INDEX]");
+  const std::filesystem::path directory = std::filesystem::absolute(argv[1]);
+  const std::filesystem::path inputPath = directory / argv[2];
+  resources::configure(directory, argc == 4 ? argv[3] : nullptr);
+  const size_t inputBytes =
+      resources::indexed
+          ? resources::index.entries
+                .at(inputPath.lexically_normal()
+                        .lexically_relative(resources::index.root)
+                        .generic_string())
+                .size
+          : std::filesystem::file_size(inputPath);
+  resources::Mapping input(inputPath, inputBytes, alignof(uint64_t));
+  if (inputBytes < 40)
+    throw std::runtime_error("incomplete Qwen input header");
+  const uint64_t *header = static_cast<const uint64_t *>(input.data());
+  const size_t tokenCount = header[0], maxTokens = header[1],
+               eosCount = header[2], tileCount = header[3];
+  double temperature;
+  std::memcpy(&temperature, &header[4], sizeof(temperature));
+  const auto &shape = modelShape();
+  if (!tokenCount || tokenCount > shape.prefill || !maxTokens ||
+      maxTokens - 1 > shape.cache - tokenCount || tileCount != shape.tiles ||
+      !std::isfinite(temperature) || temperature < 0 ||
+      inputBytes != 40 + (tokenCount + eosCount + tileCount) * sizeof(uint64_t))
+    throw std::runtime_error("invalid Qwen input parameters");
+  const int64_t *tokenIds = reinterpret_cast<const int64_t *>(header + 5);
+  const int64_t *eosIds = tokenIds + tokenCount;
+  const uint64_t *tileIds =
+      reinterpret_cast<const uint64_t *>(eosIds + eosCount);
+  for (size_t index = 0; index < tokenCount + eosCount; ++index)
+    if (tokenIds[index] < 0 || size_t(tokenIds[index]) >= shape.vocabulary)
+      throw std::runtime_error("input token ID exceeds vocabulary");
+  std::vector<uint64_t> tiles(tileIds, tileIds + tileCount);
+  for (size_t rank = 0; rank < tiles.size(); ++rank)
+    if (tiles[rank] == 0 ||
+        std::count(tiles.begin(), tiles.end(), tiles[rank]) != 1)
+      throw std::runtime_error("duplicate or main tile in compute plan");
+  cpu_set_t cpus;
+  CPU_ZERO(&cpus);
+  CPU_SET(controlCpu(0), &cpus);
+  if (sched_setaffinity(0, sizeof(cpus), &cpus))
+    throw std::system_error(errno, std::generic_category(),
+                            "pin model main CPU");
+  Execution execution(directory, tiles);
+  timespec before, after;
+  clock_gettime(CLOCK_MONOTONIC, &before);
+  auto generated = generate(
+      execution, std::vector<int64_t>(tokenIds, tokenIds + tokenCount),
+      std::vector<int64_t>(eosIds, eosIds + eosCount), maxTokens, temperature);
+  execution.close();
+  clock_gettime(CLOCK_MONOTONIC, &after);
+  double elapsed = double(after.tv_sec - before.tv_sec) +
+                   double(after.tv_nsec - before.tv_nsec) * 1e-9;
+  std::cout << "{\"token_ids\":[";
+  for (size_t index = 0; index < generated.size(); ++index) {
+    if (index)
+      std::cout << ',';
+    std::cout << generated[index];
   }
-  load(output[rank].parameters);
-  for (size_t layer = 0; layer < layers; ++layer) {
-    load(prefill_attention[rank][layer].parameters);
-    load(decode_attention[rank][layer].parameters);
-    load(prefill_ffn[rank][layer].parameters);
-    load(decode_ffn[rank][layer].parameters);
-  }
-  const std::vector<size_t> cacheShape{1, kvHeads, cacheLength, headSize};
-  void *workspace = aligned_alloc(64, workspaceBytes);
-  if (!workspace)
-    throw std::bad_alloc();
-  workspace_init(workspace, workspaceBytes);
-  size_t request = 0;
-  std::cout.exceptions(std::ios::failbit | std::ios::badbit);
-  for (;;) {
-    uint64_t header[4];
-    std::cin.read(reinterpret_cast<char *>(header), sizeof(header));
-    if (std::cin.eof() && std::cin.gcount() == 0)
-      break;
-    if (!std::cin)
-      throw std::runtime_error("incomplete Qwen command");
-    const auto [operation, count, start, layer] = std::array{header[0], header[1], header[2], header[3]};
-    bool prefill = start == 0;
-    if (!count || start >= cacheLength || count > cacheLength - start ||
-        (prefill ? count > prefillLength : count != 1))
-      throw std::runtime_error("invalid Qwen token range");
-    size_t length = prefill ? prefillLength : 1;
-    workspace_begin(workspace, workspaceBytes);
-    if (operation == 0) {
-      if (rank != 0 || layer != 0)
-        throw std::runtime_error("embedding belongs to rank zero");
-      Tokens tokens({1, length}, int64_t(0));
-      std::cin.read(reinterpret_cast<char *>(tokens.getData()), count * sizeof(int64_t));
-      if (!std::cin)
-        throw std::runtime_error("incomplete Qwen token IDs");
-      for (size_t token = 0; token < length; ++token)
-        if (tokens.getData()[token] < 0 || size_t(tokens.getData()[token]) >= vocabulary)
-          throw std::runtime_error("token ID exceeds vocabulary");
-      const auto &embedding = prefill ? prefill_embedding : decode_embedding;
-      auto &parameters = *weights.at(embedding.parameters.directory);
-      Hidden hidden({1, length, hiddenSize}, false, 0);
-      embedding.run(&hidden, &parameters.floats, &tokens);
-      std::cout.write(reinterpret_cast<const char *>(hidden.getData()), count * hiddenSize * sizeof(float));
-      workspace_free(hidden.release());
-    } else if (operation == 1 || operation == 4 || operation == 5 || operation == 6 || operation == 7) {
-      size_t inputWidth = operation == 5 ? ffnIntermediate : operation == 7 ? attentionProjectionInput : hiddenSize;
-      Hidden hidden({1, operation == 1 ? 1 : length, inputWidth}, 0.0f);
-      if (operation == 1 && (count != 1 || start != 0 || layer != 0))
-        throw std::runtime_error("invalid Qwen output projection request");
-      if (operation != 1 && layer >= layers)
-        throw std::runtime_error("invalid Qwen layer");
-      std::cin.read(reinterpret_cast<char *>(hidden.getData()), count * inputWidth * sizeof(float));
-      if (!std::cin)
-        throw std::runtime_error("incomplete Qwen hidden states");
-      if (operation == 6) {
-        Cache keys(cacheShape, 0.0f), values(cacheShape, 0.0f);
-        for (Cache *cache : {&keys, &values})
-          for (size_t head = 0; head < kvHeads; ++head)
-            std::cin.read(reinterpret_cast<char *>(cache->getData() + head * cacheLength * headSize),
-                          start * headSize * sizeof(float));
-        if (!std::cin)
-          throw std::runtime_error("incomplete Qwen KV cache");
-        Positions positions({length});
-        for (size_t token = 0; token < length; ++token)
-          positions.getData()[token] = start + token;
-        const auto &attention = prefill ? prefill_attention[rank][layer] : decode_attention[rank][layer];
-        auto &parameters = *weights.at(attention.parameters.directory);
-        AttentionBodyResult result{Cache(cacheShape, false, 0), Cache(cacheShape, false, 0),
-                                   Hidden({1, length, attentionContext}, false, 0)};
-        runAttentionBody(*attention.kernels, &result, &parameters.floats, &parameters.bytes,
-                         &hidden, &keys, &values, &positions);
-        std::cout.write(reinterpret_cast<const char *>(result.context.getData()), count * attentionContext * sizeof(float));
-        for (Cache *cache : {&result.keys, &result.values})
-          for (size_t head = 0; head < kvHeads; ++head)
-            std::cout.write(reinterpret_cast<const char *>(cache->getData() +
-                                                          (head * cacheLength + start) * headSize),
-                            count * headSize * sizeof(float));
-        workspace_free(result.context.release());
-        workspace_free(result.keys.release());
-        workspace_free(result.values.release());
-      } else if (operation == 7) {
-        const auto &attention = prefill ? prefill_attention[rank][layer] : decode_attention[rank][layer];
-        auto &parameters = *weights.at(attention.parameters.directory);
-        Hidden result({1, length, hiddenSize / 2}, false, 0);
-        runAttentionProjection(*attention.kernels, &result, &parameters.bytes, &hidden);
-        std::cout.write(reinterpret_cast<const char *>(result.getData()), count * hiddenSize / 2 * sizeof(float));
-        workspace_free(result.release());
-      } else if (operation == 1) {
-        auto &parameters = *weights.at(output[rank].parameters.directory);
-        size_t width = vocabulary / executionTiles;
-        Hidden result({1, 1, width}, false, 0);
-        output[rank].run(&result, &parameters.floats, &parameters.bytes, &hidden);
-        std::cout.write(reinterpret_cast<const char *>(result.getData()), count * width * sizeof(float));
-        workspace_free(result.release());
-      } else {
-        const auto &stage = prefill ? prefill_ffn[rank][layer] : decode_ffn[rank][layer];
-        auto &parameters = *weights.at(stage.parameters.directory);
-        size_t width = operation == 4 ? ffnIntermediate / 2 : hiddenSize / 2;
-        Hidden result({1, length, width}, false, 0);
-        if (operation == 4)
-          runFfnExpand(*stage.kernels, &result, &parameters.floats, &parameters.bytes, &hidden);
-        else
-          runFfnDown(*stage.kernels, &result, &parameters.bytes, &hidden);
-        std::cout.write(reinterpret_cast<const char *>(result.getData()), count * width * sizeof(float));
-        workspace_free(result.release());
-      }
-    } else {
-      throw std::runtime_error("unknown Qwen command");
-    }
-    std::cout.flush();
-    std::cerr << "request=" << request++ << " rank=" << rank << " operation=" << operation
-              << " layer=" << layer << " workspace_peak_bytes=" << workspace_peak() << '\n';
-  }
-  free(workspace);
+  std::cout << "],\"guest_wall_seconds\":" << elapsed << "}" << std::endl;
 }

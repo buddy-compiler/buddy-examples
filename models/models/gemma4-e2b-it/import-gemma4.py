@@ -1,4 +1,5 @@
 from importlib import import_module
+
 #!/usr/bin/env python3
 # ===- import-gemma4.py ---------------------------------------------------
 #
@@ -21,14 +22,14 @@ from importlib import import_module
 # ===---------------------------------------------------------------------------
 
 import argparse
-import os
-import subprocess
 import sys
 from pathlib import Path
 
-import numpy
+import json
+import tomllib
 import torch
 import torch._dynamo as dynamo
+
 parser = argparse.ArgumentParser(description="Gemma4 Model AOT Importer")
 parser.add_argument(
     "--output-dir",
@@ -44,22 +45,21 @@ parser.add_argument(
 )
 parser.add_argument("--compiler-build", type=Path, required=True)
 parser.add_argument("--trace-config", type=Path)
+parser.add_argument("--design-module", required=True)
+parser.add_argument("--chip", required=True)
+parser.add_argument("--prefill-length", type=int, required=True)
+parser.add_argument("--run-config", type=Path, required=True)
+parser.add_argument("--isa-dir", type=Path, required=True)
+parser.add_argument("--kernel-passes", required=True)
 import_module(".configs.importer-param", __package__).add_arguments(parser)
 args = parser.parse_args()
 sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 
 from buddy.compiler.frontend import DynamoCompiler
-from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.operation import *  # noqa: F403
-from buddy.compiler.graph.transform import (
-    apply_classic_fusion,
-    eliminate_matmul_transpose_reshape,
-    eliminate_transpose,
-    flash_attention_prefill,
-    gqa_attention_fusion,
-    simply_fuse,
-)
-from buddy.compiler.graph.type import DeviceType
+from .abi import verify_config, verify_graph
+from .native import NativeGemma
+from .cache import Cache
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 from torch._inductor.decomposition import decompositions as inductor_decomp
@@ -67,33 +67,47 @@ from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
-    StaticCache,
 )
 from transformers.models.gemma4 import Gemma4ForCausalLM
 
+design = import_module(args.design_module)
+for component in ("tasks", "entry", "linear", "partition"):
+    setattr(design, component, import_module(design.__name__ + "." + component))
+from .task_export import Exporter, Parameters
+from .task_plan import export_phase
+from .task_program import emit_program
 
+tiles = design.partition.participants(
+    tomllib.loads(args.run_config.read_text())["tile_indices"]
+)
+registry = dict(tosa.ops_registry)
 
 output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
+task_exporter = Exporter(
+    args.output_dir,
+    args.compiler_build,
+    args.kernel_passes.split(),
+    design,
+    args.isa_dir,
+)
 model_dir = Path(__file__).resolve().parent
-if args.trace:
-    trace = TraceConfig(load_trace_config(args.trace_config))
-    verbose = False
-    verbose_path = None
-else:
-    trace = None
-    verbose = True
-    verbose_path = os.path.join(output_dir, "output", "buddy-graph.txt")
-    if os.path.exists(verbose_path):
-        os.remove(verbose_path)
+trace = TraceConfig(load_trace_config(args.trace_config)) if args.trace else None
+verbose = False
+verbose_path = None
 
 model_path = args.checkpoint
 
-MaxTokenLength = 512
+CacheLength = 512
+PrefillLength = args.prefill_length
+if not 1 <= PrefillLength <= CacheLength:
+    raise ValueError("Gemma prefill length must be in 1..512")
 
 # Load the full multimodal model and extract language model weights.
 print("Loading full model from:", model_path)
-full_model = AutoModelForCausalLM.from_pretrained(model_path, dtype=torch.float32, low_cpu_mem_usage=True)
+full_model = AutoModelForCausalLM.from_pretrained(
+    model_path, dtype=torch.float32, low_cpu_mem_usage=True
+)
 full_sd = full_model.state_dict()
 
 causal_sd = {}
@@ -113,23 +127,25 @@ model.load_state_dict(causal_sd, strict=True)
 model.eval()
 model.config.use_cache = False
 del full_model, full_sd, causal_sd
+model = NativeGemma(model)
 
-# Pre-initialize StaticCache to avoid Dynamo graph breaks.
-print("Pre-initializing StaticCache for prefill...")
-cache_prefill = StaticCache(config=tc, max_cache_len=MaxTokenLength, batch_size=1)
+# Initialize the quantized cache before graph capture.
+print("Pre-initializing MXFP8 cache for prefill...")
+quant = import_module(design.__name__ + ".quant.quantize")
+cache_prefill = Cache(tc, CacheLength, quant.cache)
 with torch.no_grad():
     model(
         input_ids=torch.zeros((1, 1), dtype=torch.int64),
+        position_ids=torch.zeros((1, 1), dtype=torch.int64),
         past_key_values=cache_prefill,
-        use_cache=True,
-        cache_implementation="static",
     )
 cache_prefill.reset()
+verify_config(tc, cache_prefill)
 
 dynamo.reset()
 
 dynamo_compiler_prefill = DynamoCompiler(
-    primary_registry=tosa.ops_registry,
+    primary_registry=registry,
     aot_autograd_decomposition=inductor_decomp,
     func_name="forward_prefill",
     verbose=verbose,
@@ -138,7 +154,7 @@ dynamo_compiler_prefill = DynamoCompiler(
 )
 
 dynamo_compiler_decode = DynamoCompiler(
-    primary_registry=tosa.ops_registry,
+    primary_registry=registry,
     aot_autograd_decomposition=inductor_decomp,
     func_name="forward_decode",
     verbose=verbose,
@@ -146,45 +162,42 @@ dynamo_compiler_decode = DynamoCompiler(
     trace=trace,
 )
 
+quant.cache.register(dynamo_compiler_prefill)
+quant.cache.register(dynamo_compiler_decode)
+
 with torch.no_grad():
     data_prefill = {
-        "input_ids": torch.zeros((1, MaxTokenLength), dtype=torch.int64),
+        "input_ids": torch.zeros((1, PrefillLength), dtype=torch.int64),
     }
 
+    prefill_positions = torch.arange(PrefillLength, dtype=torch.int64)[None]
     graphs_prefill = dynamo_compiler_prefill.importer(
         model,
         input_ids=data_prefill["input_ids"],
-        use_cache=True,
+        position_ids=prefill_positions,
         past_key_values=cache_prefill,
-        cache_implementation="static",
     )
 
-    print("Pre-initializing StaticCache for decode...")
-    cache_decode = StaticCache(config=tc, max_cache_len=MaxTokenLength, batch_size=1)
+    print("Pre-initializing MXFP8 cache for decode...")
+    cache_decode = Cache(tc, CacheLength, quant.cache)
     model(
         input_ids=torch.zeros((1, 1), dtype=torch.int64),
+        position_ids=torch.zeros((1, 1), dtype=torch.int64),
         past_key_values=cache_decode,
-        use_cache=True,
-        cache_implementation="static",
     )
 
-    # Remove mark_static_address from cumulative_length to prevent dynamo
-    # from constant-folding it. Without this, the attention mask in the
-    # traced graph only works for the cumlen value at trace time.
     for layer in cache_decode.layers:
-        if hasattr(layer.cumulative_length, "_dynamo_static_input_type"):
-            delattr(layer.cumulative_length, "_dynamo_static_input_type")
         layer.cumulative_length.fill_(200)
 
     dynamo.reset()
 
-    cache_position = torch.tensor([200], dtype=torch.int64)
+    decode_tokens = torch.zeros((1, 1), dtype=torch.int64)
+    position_ids = torch.tensor([[200]], dtype=torch.int64)
 
     graphs_decode = dynamo_compiler_decode.importer(
         model,
-        input_ids=torch.zeros((1, 1), dtype=torch.int64),
-        use_cache=True,
-        cache_position=cache_position,
+        input_ids=decode_tokens,
+        position_ids=position_ids,
         past_key_values=cache_decode,
     )
 
@@ -192,49 +205,152 @@ assert len(graphs_prefill) == 1, f"Expected 1 prefill graph, got {len(graphs_pre
 assert len(graphs_decode) == 1, f"Expected 1 decode graph, got {len(graphs_decode)}"
 graph_prefill = graphs_prefill[0]
 graph_decode = graphs_decode[0]
+for graph, tokens, cache, positions in (
+    (graph_prefill, data_prefill["input_ids"], cache_prefill, [prefill_positions]),
+    (graph_decode, decode_tokens, cache_decode, [position_ids]),
+):
+    expected = [tokens, *positions]
+    for layer in cache.layers:
+        expected.extend(
+            (
+                layer.cumulative_length,
+                layer.key_codes,
+                layer.key_scales,
+                layer.value_codes,
+                layer.value_scales,
+            )
+        )
+    captured = {
+        tensor.data_ptr(): index
+        for tensor, index in zip(graph._runtime_inputs_ref, graph._inputs)
+    }
+    if set(captured) != {tensor.data_ptr() for tensor in expected}:
+        raise ValueError(
+            "Gemma captured runtime tensors do not match the native cache interface"
+        )
+    graph._inputs = [captured[tensor.data_ptr()] for tensor in expected]
+    graph._runtime_inputs_ref = expected
 
-params = dynamo_compiler_prefill.imported_params[graph_prefill]
+contracts = {}
+for phase, graph in (("prefill", graph_prefill), ("decode", graph_decode)):
+    result = next(node for node in graph.body if isinstance(node, OutputOp))
 
-graphs_prefill[0].perform([eliminate_transpose, eliminate_matmul_transpose_reshape])
-graphs_decode[0].perform([eliminate_transpose, eliminate_matmul_transpose_reshape])
-pattern_list_prefill = [
-    simply_fuse,
-    apply_classic_fusion,
-    flash_attention_prefill,
+    def describe(node):
+        return {
+            "name": node.name,
+            "shape": list(node.tensor_meta["shape"]),
+            "dtype": str(node.tensor_meta["dtype"]),
+            "parents": list(node._parents),
+            "args": [str(arg) for arg in node.args],
+        }
+
+    contracts[phase] = {
+        "nodes": {
+            node.name: {
+                "parents": list(node._parents),
+                "args": [str(arg) for arg in node.args],
+            }
+            for node in graph.body
+        },
+        "inputs": [describe(node) for node in graph.inputs],
+        "outputs": [describe(graph.node_table[name]) for name in result.args],
+    }
+(output_dir / "capture-abi.json").write_text(json.dumps(contracts, indent=2))
+verify_graph(graph_prefill, "prefill", PrefillLength)
+verify_graph(graph_decode, "decode", 1)
+
+layout = import_module(design.__name__ + ".permute.layout")
+window_bytes = layout.window_bytes(args.compiler_build)
+metadata = {
+    "chip": args.chip,
+    "model": model_path,
+    "precision": "mixed-mxfp8-f32",
+    "prefill_length": PrefillLength,
+    "cache_length": CacheLength,
+    "quantization": {
+        "linear_weights": "mxfp8",
+        "linear_activations": "mxfp8",
+        "embedding": "mxfp8",
+        "kv_cache": "mxfp8_e4m3",
+        "kv_cache_scale": "e8m0",
+        "kv_cache_scale_selection": "cover_maximum_f32_finite",
+        "kv_cache_block_size": 32,
+        "norm_and_attention": "f32",
+    },
+    "bank_bytes": window_bytes,
+    "parameters": {},
+}
+constants = [
+    f"inline constexpr size_t PrefillLength = {PrefillLength};",
+    f"inline constexpr size_t CacheLength = {CacheLength};",
 ]
-pattern_list_decode = [
-    simply_fuse,
-    apply_classic_fusion,
-    gqa_attention_fusion,
-]
-
-
-graphs_prefill[0].fuse_ops(pattern_list_prefill)
-graphs_decode[0].fuse_ops(pattern_list_decode)
-
-graph_prefill.op_groups["subgraph0_prefill"] = graph_prefill.op_groups.pop("subgraph0")
-graph_prefill.group_map_device["subgraph0_prefill"] = DeviceType.CPU
-
-graph_decode.op_groups["subgraph0_decode"] = graph_decode.op_groups.pop("subgraph0")
-graph_decode.group_map_device["subgraph0_decode"] = DeviceType.CPU
-
-driver_prefill = GraphDriver(graphs_prefill[0])
-driver_prefill.subgraphs[0].lower_to_top_level_ir()
-
-driver_decode = GraphDriver(graphs_decode[0])
-driver_decode.subgraphs[0].lower_to_top_level_ir()
-
-with open(output_dir / "subgraph0_prefill.mlir", "w") as module_file:
-    print(driver_prefill.subgraphs[0]._imported_module, file=module_file)
-with open(output_dir / "forward_prefill.mlir", "w") as module_file:
-    print(driver_prefill.construct_main_graph(True), file=module_file)
-all_param = numpy.concatenate([param.detach().numpy().reshape([-1]) for param in params])
-all_param.tofile(output_dir / "arg0.data")
-
-with open(output_dir / "subgraph0_decode.mlir", "w") as module_file:
-    print(driver_decode.subgraphs[0]._imported_module, file=module_file)
-with open(output_dir / "forward_decode.mlir", "w") as module_file:
-    print(driver_decode.construct_main_graph(True), file=module_file)
+for phase, graph, compiler in (
+    ("prefill", graph_prefill, dynamo_compiler_prefill),
+    ("decode", graph_decode, dynamo_compiler_decode),
+):
+    params = list(compiler.imported_params[graph])
+    original_params = {node.name: value for node, value in zip(graph.params, params)}
+    if any(param.dtype != torch.float32 for param in params):
+        raise ValueError(f"{phase}: unsupported parameter dtype")
+    quant.quantize(
+        graph,
+        params,
+        output_dir / phase,
+        phase,
+        args.compiler_build / "bin/rax-pack",
+        window_bytes,
+    )
+    parameters = Parameters(phase, graph, original_params, params, output_dir / phase)
+    export_phase(
+        task_exporter,
+        phase,
+        model.model,
+        parameters,
+        tiles,
+        PrefillLength if phase == "prefill" else 1,
+        design,
+    )
+    floats = sum(param.numel() for param in params if param.dtype == torch.float32)
+    weights = sum(param.numel() for param in params if param.dtype == torch.int8)
+    metadata["parameters"][phase] = {"f32_elements": floats, "weight_bytes": weights}
+    constants.extend(
+        (
+            f"inline constexpr size_t {phase}Floats = {floats};",
+            f"inline constexpr size_t {phase}Bytes = {weights};",
+        )
+    )
+task_manifest = task_exporter.finish(tiles)
+plan_sources, workspace_bound = emit_program(
+    output_dir / "tasks", task_manifest, metadata, PrefillLength
+)
+with (output_dir / "tasks/CMakeLists.txt").open("a") as cmake:
+    cmake.write(
+        "target_sources(gemma4_kernels PRIVATE\n"
+        + "".join(f"  {source}\n" for source in plan_sources)
+        + ")\n"
+    )
+    cmake.write(
+        'target_include_directories(gemma4_kernels PRIVATE "${MODEL_SOURCE}" "${REPO_ROOT}/stack/runtime/include")\n'
+    )
+metadata["execution_tiles"] = list(tiles)
+metadata["task_manifest"] = "tasks/manifest.json"
+metadata["task_kernel_count"] = len(task_manifest["kernels"])
+metadata["task_workspace_bound_bytes"] = workspace_bound
+metadata["task_workspace_bound_kind"] = "static-liveness-first-fit"
+metadata["float_parameter_bytes"] = sum(
+    value["f32_elements"] * 4 for value in metadata["parameters"].values()
+)
+metadata["mxfp8_parameter_bytes"] = sum(
+    value["weight_bytes"] for value in metadata["parameters"].values()
+)
+metadata["parameter_bytes"] = (
+    metadata["float_parameter_bytes"] + metadata["mxfp8_parameter_bytes"]
+)
+constants.append(f"inline constexpr size_t bankBytes = {window_bytes};")
+(output_dir / "model.json").write_text(json.dumps(metadata, indent=2))
+(output_dir / "gemma-parameters.h").write_text(
+    "#pragma once\n#include <cstddef>\n" + "\n".join(constants) + "\n"
+)
 
 # Export vocabulary file for the C++ tokenizer.
 print("Exporting vocabulary...")
@@ -247,10 +363,3 @@ with open(vocab_path, "w", encoding="utf-8") as vf:
         vf.write(token.replace("\n", "\\n") + "\n")
 print(f"Exported {len(sorted_vocab)} tokens to {vocab_path}")
 print("All files saved to:", output_dir)
-
-# Post-process: patch the constant-folded cumulative_length in decode subgraph.
-# torch._dynamo bakes cumulative_length as a compile-time constant, but it must
-# be dynamic for correct attention masking across different cache positions.
-patch_script = Path(__file__).resolve().parent / "patch_decode_mlir.py"
-decode_mlir = output_dir / "subgraph0_decode.mlir"
-subprocess.run([sys.executable, str(patch_script), str(decode_mlir)], check=True)

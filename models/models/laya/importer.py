@@ -6,7 +6,6 @@ import math
 from pathlib import Path
 import sys
 
-import numpy as np
 import torch
 from huggingface_hub import snapshot_download
 from transformers import AutoTokenizer
@@ -60,10 +59,6 @@ encoded_samples = [
     encode(tokenizer, request, args.sequence_length, args.options)[0]
     for request in requests
 ]
-input_samples = [
-    {key: torch.from_numpy(value) for key, value in encoded.items()}
-    for encoded in encoded_samples
-]
 metadata = {
     "model": args.checkpoint,
     "revision": args.revision,
@@ -91,7 +86,7 @@ score_states = [None] * len(requests)
 for name, kind, stage in stages(model, args.sequence_length):
     stage.eval()
     samples, results = [], []
-    for index, inputs in enumerate(input_samples):
+    for index, inputs in enumerate(encoded_samples):
         hidden, scores = hidden_states[index], score_states[index]
         if kind == "embedding":
             sample = {"input_ids": inputs["tokens"]}
@@ -200,7 +195,10 @@ for name, kind, stage in stages(model, args.sequence_length):
     module = subgraph._imported_module
     with module.context:
         function = next(
-            op for op in module.body.operations if op.operation.name == "func.func"
+            op
+            for op in module.body.operations
+            if op.operation.name == "func.func"
+            and ir.StringAttr(op.attributes["sym_name"]).value == symbol
         )
         attrs = []
         for argument in function.regions[0].blocks[0].arguments:
@@ -229,18 +227,30 @@ for name, kind, stage in stages(model, args.sequence_length):
                 op.attributes["buckyball.target"] = ir.StringAttr.get(target)
     (directory / f"{name}-forward.mlir").write_text(str(forward))
     quantized = any(value.dtype == torch.int8 for value in params)
-    types = ["Matrix *" if kind == "action" else "Hidden *", "Floats *"]
+    types = ["Matrix *" if kind == "action" else "Hidden *"]
     arguments = [
         (
             "&ctx.action"
             if kind == "action"
             else "&ctx.scores" if kind == "scorer" else "&ctx.next"
-        ),
-        "&params.floats",
+        )
     ]
-    if quantized:
-        types.append("Bytes *")
-        arguments.append("&params.bytes")
+    function = next(
+        op
+        for op in forward.body.operations
+        if op.operation.name == "func.func"
+        and ir.StringAttr(op.attributes["sym_name"]).value == f"forward_{name}"
+    )
+    parameter_slots = len({value.dtype for value in params})
+    parameter_abi = {
+        "f32": ("Floats *", "&params.floats"),
+        "i8": ("Bytes *", "&params.bytes"),
+    }
+    for argument in list(function.regions[0].blocks[0].arguments)[:parameter_slots]:
+        element = str(ir.MemRefType(argument.type).element_type)
+        slot_type, slot_value = parameter_abi[element]
+        types.append(slot_type)
+        arguments.append(slot_value)
     abi = {
         "embedding": (["Tokens *"], ["&ctx.tokens"]),
         "attention": (["Hidden *", "Tokens *"], ["&ctx.hidden", "&ctx.mask"]),
@@ -254,7 +264,8 @@ for name, kind, stage in stages(model, args.sequence_length):
     arguments += inputs_args
     header.append(f'extern "C" void _mlir_ciface_forward_{name}({", ".join(types)});')
     header.append(
-        f'static void run_{name}(Context &ctx, Parameters &params) {{ _mlir_ciface_forward_{name}({", ".join(arguments)}); }}'
+        f"static void run_{name}(Context &ctx, Parameters &params) {{ "
+        f'_mlir_ciface_forward_{name}({", ".join(arguments)}); }}'
     )
     entries.append(f'{{"{name}", "{kind}", run_{name}}}')
     metadata["stages"].append(
@@ -269,4 +280,4 @@ header.append("const Entry entries[] = {" + ",\n".join(entries) + "};")
 (directory / "stages.h").write_text("\n".join(header) + "\n")
 (directory / "model.json").write_text(json.dumps(metadata, indent=2) + "\n")
 for key, value in encoded_samples[0].items():
-    value.tofile(reference / f"{key}.i64")
+    value.detach().numpy().tofile(reference / f"{key}.i64")

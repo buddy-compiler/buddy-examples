@@ -31,6 +31,8 @@ struct BuckyballTargetConfig {
   int64_t bankNum;
   int64_t bankWidthBits;
   int64_t bankDepth;
+  int64_t privateBankMax;
+  bool rvvEnabled;
   llvm::ArrayRef<llvm::StringRef> balls;
   llvm::ArrayRef<BuckyballBallMapping> ballMappings;
   llvm::ArrayRef<BuckyballIsaEntry> isa;

@@ -18,6 +18,7 @@ def main():
     args = parser.parse_args()
     sys.path.insert(0, str(args.compiler_build / "python_packages"))
     from buddy.compiler.graph.transform.quantization.mxfp8 import quantize
+    from stack.compiler.quant.mxfp8_embedding import pack_rows
     from examples.balls.mxmm.compiler.python.layout import pack as pack_matrix
 
     metadata = json.loads(args.kernels.read_text())
@@ -55,11 +56,19 @@ def main():
                 tensor = values[name]
                 if list(tensor.shape) != shape:
                     raise ValueError(f"audio parameter shape differs: {name}")
-                array = tensor.detach().numpy()
-                if name in spec["quantized"]:
-                    packed.write(pack_matrix(*quantize(array), spec["layouts"][name]).tobytes())
+                array = tensor.detach()
+                if name in spec["embeddings"]:
+                    packed.write(pack_rows(array).cpu().contiguous().numpy().tobytes())
+                elif name in spec["quantized"]:
+                    packed.write(
+                        pack_matrix(*quantize(array), spec["layouts"][name])
+                        .cpu()
+                        .contiguous()
+                        .numpy()
+                        .tobytes()
+                    )
                 else:
-                    floats.write(array.tobytes())
+                    floats.write(array.cpu().contiguous().numpy().tobytes())
             region = (
                 first_float // 4,
                 (floats.tell() - first_float) // 4,

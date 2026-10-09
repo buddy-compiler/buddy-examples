@@ -45,7 +45,7 @@ def MvoverOp : Buckyball_Op<"mvover"> {
                        I64:$targetCore, I64:$targetBank, I64:$targetRow,
                        I64:$rows);
   let assemblyFormat = "$sourceCore $sourceBank $sourceRow $targetCore "
-                       "$targetBank $targetRow $rows attr-dict";
+                       "$targetBank $targetRow $rows prop-dict attr-dict";
 }
 
 def MvinOp : Buckyball_Op<"mvin"> {
@@ -55,9 +55,11 @@ def MvinOp : Buckyball_Op<"mvin"> {
     Corresponds to bb_mvin instruction (funct7=33).
   }];
   let arguments = (ins MemRefRankOf<[AnyType], [2]>:$input,
-                       I64:$addr, I64:$depth, I64:$stride);
-  let assemblyFormat = "$input $addr $depth $stride attr-dict `:` "
+                       I64:$addr, I64:$depth, I64:$stride,
+                       OptionalAttr<I64Attr>:$group);
+  let assemblyFormat = "$input $addr $depth $stride prop-dict attr-dict `:` "
                        "type($input) type($addr) type($depth) type($stride)";
+  let hasVerifier = 1;
 }
 
 def Mvin2dOp : Buckyball_Op<"mvin_2d"> {
@@ -66,7 +68,7 @@ def Mvin2dOp : Buckyball_Op<"mvin_2d"> {
                        I64:$height, I64:$pixelBytes, I64:$sourceWidth,
                        I64:$dstBase, I64:$width, I64:$validBytes);
   let assemblyFormat = "$input $addr $height $pixelBytes $sourceWidth "
-                       "$dstBase $width $validBytes attr-dict `:` "
+                       "$dstBase $width $validBytes prop-dict attr-dict `:` "
                        "type($input) type($addr) type($height) "
                        "type($pixelBytes) type($sourceWidth) "
                        "type($dstBase) type($width) type($validBytes)";
@@ -76,7 +78,7 @@ def MvinMmioOp : Buckyball_Op<"mvin_mmio"> {
   let summary = "Load metadata from memory into MMIO SRAM";
   let arguments = (ins MemRefRankOf<[I8], [1, 2]>:$input,
                        I64:$mmioAddr, I64:$rows, I64:$columns);
-  let assemblyFormat = "$input $mmioAddr $rows $columns attr-dict `:` "
+  let assemblyFormat = "$input $mmioAddr $rows $columns prop-dict attr-dict `:` "
                        "type($input) type($mmioAddr) type($rows) type($columns)";
 }
 
@@ -87,9 +89,11 @@ def MvoutOp : Buckyball_Op<"mvout"> {
     Corresponds to bb_mvout instruction (funct7=16).
   }];
   let arguments = (ins MemRefRankOf<[AnyType], [2]>:$output,
-                       I64:$addr, I64:$depth, I64:$stride);
-  let assemblyFormat = "$output $addr $depth $stride attr-dict `:` "
+                       I64:$addr, I64:$depth, I64:$stride,
+                       OptionalAttr<I64Attr>:$group);
+  let assemblyFormat = "$output $addr $depth $stride prop-dict attr-dict `:` "
                        "type($output) type($addr) type($depth) type($stride)";
+  let hasVerifier = 1;
 }
 
 def MsetOp : Buckyball_Op<"mset"> {
@@ -102,7 +106,14 @@ def MsetOp : Buckyball_Op<"mset"> {
                        DefaultValuedAttr<BoolAttr, "true">:$alloc,
                        DefaultValuedAttr<I64Attr, "1">:$row,
                        DefaultValuedAttr<I64Attr, "1">:$col);
-  let assemblyFormat = "$bankId attr-dict `:` type($bankId)";
+  let assemblyFormat = "$bankId prop-dict attr-dict `:` type($bankId)";
+}
+
+def MsetTransferOp : Buckyball_Op<"mset_transfer"> {
+  let summary = "Transfer bank mappings to a target virtual bank";
+  let arguments = (ins I64:$source, I64:$target);
+  let assemblyFormat = "$source $target prop-dict attr-dict `:` type($source) type($target)";
+  let hasVerifier = 1;
 }
 
 def FenceOp : Buckyball_Op<"fence", [MemoryEffects<[MemRead, MemWrite]>]> {
@@ -112,7 +123,7 @@ def FenceOp : Buckyball_Op<"fence", [MemoryEffects<[MemRead, MemWrite]>]> {
     Corresponds to bb_fence instruction (funct7=0).
   }];
   let arguments = (ins);
-  let assemblyFormat = "attr-dict";
+  let assemblyFormat = "prop-dict attr-dict";
 }
 
 //===----------------------------------------------------------------------===//
@@ -130,41 +141,38 @@ def BankAllocOp : Buckyball_Op<"bank_alloc", [MemoryEffects<[MemRead, MemWrite]>
     DefaultValuedAttr<I64Attr, "1">:$row,
     DefaultValuedAttr<I64Attr, "1">:$col);
   let results = (outs I64:$bank);
-  let assemblyFormat = "attr-dict";
+  let assemblyFormat = "prop-dict attr-dict";
 }
 
 def BankReleaseOp : Buckyball_Op<"bank_release", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Release a virtual bank handle";
   let arguments = (ins I64:$bank);
-  let assemblyFormat = "$bank attr-dict `:` type($bank)";
+  let assemblyFormat = "$bank prop-dict attr-dict `:` type($bank)";
 }
 
-def BankNormOp : Buckyball_Op<"bank_norm", [MemoryEffects<[MemRead, MemWrite]>]> {
-  let summary = "Ordered full-row Norm in caller-owned private banks";
-  let arguments = (ins I64:$descriptorBank, I64:$outputBank,
-    I64:$inputBank, I64:$weightBank, I64:$width, I64:$bankBytes,
-    I32:$meanBits, I32:$epsilonBits);
-  let results = (outs I64:$descriptorOut, I64:$outputOut);
-  let assemblyFormat = "$descriptorBank $outputBank $inputBank $weightBank "
-    "$width $bankBytes $meanBits $epsilonBits attr-dict `:` type($descriptorBank)";
+def BankTransferOp : Buckyball_Op<"bank_transfer", [MemoryEffects<[MemRead, MemWrite]>]> {
+  let summary = "Consume a bank mapping and append its groups to a target handle";
+  let arguments = (ins I64:$source, I64:$target);
+  let results = (outs I64:$bank);
+  let assemblyFormat = "$source $target prop-dict attr-dict `:` type($source) type($target)";
 }
 
-def BankPackFP32Op : Buckyball_Op<"bank_pack_fp32", [MemoryEffects<[MemRead, MemWrite]>]> {
-  let summary = "Pack a private-bank FP32 matrix panel";
-  let arguments = (ins I64:$descriptorBank, I64:$outputBank, I64:$inputBank,
-    I64:$fullK, I64:$fullN, I64:$startK, I64:$startN, I64:$countK, I64:$columns);
-  let results = (outs I64:$descriptorOut, I64:$outputOut);
-  let assemblyFormat = "$descriptorBank $outputBank $inputBank $fullK $fullN "
-    "$startK $startN $countK $columns attr-dict `:` type($descriptorBank)";
+def BankKernelOp : Buckyball_Op<"bank_kernel", [MemoryEffects<[MemRead, MemWrite]>]> {
+  let summary = "Call a synchronous kernel with resident read/write bank handles";
+  let arguments = (ins I64:$readBank, I64:$writeBank,
+    FlatSymbolRefAttr:$callee, Variadic<AnySignlessInteger>:$kernelArgs);
+  let results = (outs I64:$readOut, I64:$writeOut);
+  let assemblyFormat = "$callee $readBank $writeBank `(` $kernelArgs `)` "
+    "prop-dict attr-dict `:` type($kernelArgs)";
 }
 
 def BankMvinOp : Buckyball_Op<"bank_mvin", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Load into a virtual bank handle";
   let arguments = (ins MemRefRankOf<[AnyType], [2]>:$input, I64:$bank, I64:$depth,
-                       I64:$stride);
+                       I64:$stride, OptionalAttr<I64Attr>:$group);
   let results = (outs I64:$bankOut);
   let assemblyFormat =
-      "$input $bank $depth $stride attr-dict `:` type($input) type($bank) type($depth) type($stride)";
+      "$input $bank $depth $stride prop-dict attr-dict `:` type($input) type($bank) type($depth) type($stride)";
 }
 
 def BankMvin2dOp : Buckyball_Op<"bank_mvin_2d"> {
@@ -174,7 +182,7 @@ def BankMvin2dOp : Buckyball_Op<"bank_mvin_2d"> {
                        I64:$dstBase, I64:$width, I64:$validBytes);
   let results = (outs I64:$bankOut);
   let assemblyFormat = "$input $bank $height $pixelBytes $sourceWidth "
-                       "$dstBase $width $validBytes attr-dict `:` "
+                       "$dstBase $width $validBytes prop-dict attr-dict `:` "
                        "type($input) type($bank) type($height) "
                        "type($pixelBytes) type($sourceWidth) "
                        "type($dstBase) type($width) type($validBytes)";
@@ -183,10 +191,10 @@ def BankMvin2dOp : Buckyball_Op<"bank_mvin_2d"> {
 def BankMvoutOp : Buckyball_Op<"bank_mvout", [MemoryEffects<[MemRead, MemWrite]>]> {
   let summary = "Store from a virtual bank handle";
   let arguments = (ins MemRefRankOf<[AnyType], [2]>:$output, I64:$bank, I64:$depth,
-                       I64:$stride);
+                       I64:$stride, OptionalAttr<I64Attr>:$group);
   let results = (outs I64:$bankOut);
   let assemblyFormat =
-      "$output $bank $depth $stride attr-dict `:` type($output) type($bank) type($depth) type($stride)";
+      "$output $bank $depth $stride prop-dict attr-dict `:` type($output) type($bank) type($depth) type($stride)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -199,12 +207,12 @@ def QuantizeTensorF32ToI8Op : Buckyball_Op<"quantize_tensor_f32_to_i8"> {
                        MemRefRankOf<[I8], [2, 4]>:$output,
                        F32Attr:$scale,
                        BoolAttr:$nchwToNhwc);
-  let assemblyFormat = [{$input $output attr-dict `:` type($input) type($output)}];
+  let assemblyFormat = [{$input $output prop-dict attr-dict `:` type($input) type($output)}];
 }
 
 def MegaYieldOp : Buckyball_Op<"mega_yield", [Terminator]> {
   let summary = "Terminate a Buckyball MegaKernel region";
-  let assemblyFormat = "attr-dict";
+  let assemblyFormat = "prop-dict attr-dict";
 }
 
 def MegaKernelOp : Buckyball_Op<"mega_kernel", [
@@ -213,7 +221,7 @@ def MegaKernelOp : Buckyball_Op<"mega_kernel", [
   let arguments = (ins AnyMemRef:$input,
                        AnyMemRef:$output);
   let regions = (region SizedRegion<1>:$body);
-  let assemblyFormat = [{$input $output attr-dict `:`
+  let assemblyFormat = [{$input $output prop-dict attr-dict `:`
     type($input) type($output) $body}];
 }
 
@@ -231,7 +239,7 @@ def MegaMatmulOp : Buckyball_Op<"mega_matmul"> {
                        MemRefRankOf<[I8, F32], [2]>:$output,
                        I64Attr:$activation,
                        F32Attr:$outputScale);
-  let assemblyFormat = [{$input $weight $bias $scale $lut $output attr-dict `:`
+  let assemblyFormat = [{$input $weight $bias $scale $lut $output prop-dict attr-dict `:`
     type($input) type($weight) type($bias) type($scale) type($lut) type($output)}];
 }
 
@@ -255,7 +263,7 @@ def MegaConv2dOp : Buckyball_Op<"mega_conv2d"> {
                        I64Attr:$padHigh,
                        I64Attr:$activation,
                        F32Attr:$outputScale);
-  let assemblyFormat = [{$input $weight $bias $scale $lut $output attr-dict `:`
+  let assemblyFormat = [{$input $weight $bias $scale $lut $output prop-dict attr-dict `:`
     type($input) type($weight) type($bias) type($scale) type($lut) type($output)}];
 }
 
@@ -278,7 +286,7 @@ def MegaConv2dDepthwiseOp : Buckyball_Op<"mega_conv2d_depthwise"> {
                        I64Attr:$padHigh,
                        I64Attr:$activation,
                        F32Attr:$outputScale);
-  let assemblyFormat = [{$input $weight $bias $scale $lut $output attr-dict `:`
+  let assemblyFormat = [{$input $weight $bias $scale $lut $output prop-dict attr-dict `:`
     type($input) type($weight) type($bias) type($scale) type($lut) type($output)}];
 }
 
@@ -295,7 +303,7 @@ def MegaMaxPool2dOp : Buckyball_Op<"mega_max_pool2d"> {
                        I64Attr:$stride,
                        I64Attr:$padding,
                        BoolAttr:$finalOutput);
-  let assemblyFormat = [{$input $output attr-dict `:`
+  let assemblyFormat = [{$input $output prop-dict attr-dict `:`
     type($input) type($output)}];
 }
 
@@ -309,7 +317,7 @@ def MegaGlobalAvgPoolOp : Buckyball_Op<"mega_global_avg_pool"> {
                        MemRefRankOf<[I8], [4]>:$output,
                        F32Attr:$inputScale,
                        F32Attr:$outputScale);
-  let assemblyFormat = [{$input $output attr-dict `:`
+  let assemblyFormat = [{$input $output prop-dict attr-dict `:`
     type($input) type($output)}];
 }
 
@@ -322,7 +330,7 @@ def MegaInt8MulOp : Buckyball_Op<"mega_int8_mul"> {
                        F32Attr:$rhsScale,
                        F32Attr:$outputScale,
                        I64Attr:$activation);
-  let assemblyFormat = [{$lhs $rhs $output attr-dict `:`
+  let assemblyFormat = [{$lhs $rhs $output prop-dict attr-dict `:`
     type($lhs) type($rhs) type($output)}];
 }
 
@@ -335,7 +343,7 @@ def MegaInt8AddOp : Buckyball_Op<"mega_int8_add"> {
                        F32Attr:$rhsScale,
                        F32Attr:$outputScale,
                        I64Attr:$activation);
-  let assemblyFormat = [{$lhs $rhs $output attr-dict `:`
+  let assemblyFormat = [{$lhs $rhs $output prop-dict attr-dict `:`
     type($lhs) type($rhs) type($output)}];
 }
 
@@ -344,7 +352,7 @@ def MegaChannelSliceOp : Buckyball_Op<"mega_channel_slice"> {
   let arguments = (ins MemRefRankOf<[I8], [4]>:$input,
                        MemRefRankOf<[I8], [4]>:$output,
                        I64Attr:$offset);
-  let assemblyFormat = [{$input $output attr-dict `:` type($input) type($output)}];
+  let assemblyFormat = [{$input $output prop-dict attr-dict `:` type($input) type($output)}];
 }
 
 def MegaChannelConcatOp : Buckyball_Op<"mega_channel_concat"> {
@@ -352,7 +360,7 @@ def MegaChannelConcatOp : Buckyball_Op<"mega_channel_concat"> {
   let arguments = (ins Variadic<MemRefRankOf<[I8], [4]>>:$inputs,
                        MemRefRankOf<[I8], [4]>:$output,
                        DenseI64ArrayAttr:$segments);
-  let assemblyFormat = [{$inputs $output attr-dict `:` type($inputs) type($output)}];
+  let assemblyFormat = [{$inputs $output prop-dict attr-dict `:` type($inputs) type($output)}];
 }
 
 def MegaResizeNearestOp : Buckyball_Op<"mega_resize_nearest"> {
@@ -361,7 +369,7 @@ def MegaResizeNearestOp : Buckyball_Op<"mega_resize_nearest"> {
                        MemRefRankOf<[I8], [4]>:$output,
                        I64Attr:$scaleH,
                        I64Attr:$scaleW);
-  let assemblyFormat = [{$input $output attr-dict `:` type($input) type($output)}];
+  let assemblyFormat = [{$input $output prop-dict attr-dict `:` type($input) type($output)}];
 }
 
 //===----------------------------------------------------------------------===//
@@ -419,7 +427,7 @@ def CustomIntrOp
     : Buckyball_CustomIntrOpBase<"custom", "riscv_buckyball_custom",
                                  [2], ["funct7"]>,
       Arguments<(ins LLVM_Type:$rs1, LLVM_Type:$rs2, I32Attr:$funct7)> {
-  let assemblyFormat = "$rs1 `,` $rs2 attr-dict `:` type($rs1) `,` type($rs2)";
+  let assemblyFormat = "$rs1 `,` $rs2 prop-dict attr-dict `:` type($rs1) `,` type($rs2)";
 }
 
 //===----------------------------------------------------------------------===//
@@ -434,7 +442,7 @@ def InstOp : Buckyball_Op<"inst"> {
   let arguments = (ins I64:$rs1, I64:$rs2,
                        ConfinedAttr<I32Attr,
                                     [IntMinValue<0>, IntMaxValue<127>]>:$funct7);
-  let assemblyFormat = "$rs1 `,` $rs2 attr-dict `:` type($rs1)";
+  let assemblyFormat = "$rs1 `,` $rs2 prop-dict attr-dict `:` type($rs1)";
 }
 
 def PrintMemRefOp : Buckyball_Op<"print_memref"> {
@@ -443,7 +451,7 @@ def PrintMemRefOp : Buckyball_Op<"print_memref"> {
     Print the contents of a memref for debugging purposes.
   }];
   let arguments = (ins AnyMemRef:$input);
-  let assemblyFormat = "$input attr-dict `:` type($input)";
+  let assemblyFormat = "$input prop-dict attr-dict `:` type($input)";
 }
 
 def PrintScalarOp : Buckyball_Op<"print_scalar"> {
@@ -452,7 +460,7 @@ def PrintScalarOp : Buckyball_Op<"print_scalar"> {
     Print a scalar value for debugging purposes.
   }];
   let arguments = (ins AnyType:$value);
-  let assemblyFormat = "$value attr-dict `:` type($value)";
+  let assemblyFormat = "$value prop-dict attr-dict `:` type($value)";
 }
 
 #endif // BUCKYBALL_OPS

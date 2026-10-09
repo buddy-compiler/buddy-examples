@@ -25,20 +25,20 @@ public:
     if (row <= 0 || col <= 0)
       return op.emitError("assign-physical-banks: invalid bank shape");
 
-    auto base = state.tryAlloc(row, col);
-    if (!base) {
+    auto bank = state.tryAlloc(row, col);
+    if (!bank) {
       InFlightDiagnostic diagnostic =
-          op.emitError("assign-physical-banks: out of physical banks");
+          op.emitError("assign-physical-banks: unavailable bank resources");
       diagnostic << " (request=" << row << "x" << col
                  << ", used=" << state.getUsedCount() << "/"
-                 << state.getBankNum() << ")";
+                 << state.getBankNum() << ", private ID max="
+                 << state.getPrivateBankMax() << ")";
       return failure();
     }
 
-    state.createMset(rewriter, op.getLoc(), static_cast<uint64_t>(*base), true,
+    state.createMset(rewriter, op.getLoc(), static_cast<uint64_t>(*bank), true,
                      row, col);
-    state.remember(*base, row, col);
-    rewriter.replaceOp(op, state.cstI64(rewriter, op.getLoc(), *base));
+    rewriter.replaceOp(op, state.cstI64(rewriter, op.getLoc(), *bank));
     return success();
   }
 
@@ -71,59 +71,69 @@ private:
   PhysicalBankState &state;
 };
 
-class BankNormPattern : public OpRewritePattern<BankNormOp> {
+class BankTransferPattern : public OpRewritePattern<BankTransferOp> {
 public:
-  using OpRewritePattern::OpRewritePattern;
-  LogicalResult matchAndRewrite(BankNormOp op,
+  BankTransferPattern(MLIRContext *context, PhysicalBankState &state)
+      : OpRewritePattern<BankTransferOp>(context), state(state) {}
+
+  LogicalResult matchAndRewrite(BankTransferOp op,
                                 PatternRewriter &rewriter) const override {
-    auto module = op->getParentOfType<ModuleOp>();
-    StringRef name = "rvv_norm_banks";
-    if (!module.lookupSymbol<func::FuncOp>(name)) {
-      OpBuilder::InsertionGuard guard(rewriter);
-      rewriter.setInsertionPointToStart(module.getBody());
-      SmallVector<Type> types(6, rewriter.getI64Type());
-      types.append(2, rewriter.getI32Type());
-      auto function = rewriter.create<func::FuncOp>(
-          op.getLoc(), name, rewriter.getFunctionType(types, TypeRange{}));
-      function.setPrivate();
-      function->setAttr("llvm.emit_c_interface", rewriter.getUnitAttr());
+    auto source = state.getConstI64(op.getSource());
+    auto target = state.getConstI64(op.getTarget());
+    if (!source || !target)
+      return op.emitError("bank transfer requires constant virtual IDs");
+    auto assigned = op.getSource().getDefiningOp<arith::ConstantOp>();
+    if (!assigned || assigned->getBlock() != op->getBlock())
+      return op.emitError("bank transfer cannot consume a control-flow bank alias");
+    for (Operation *user : op.getSource().getUsers()) {
+      if (user == op.getOperation())
+        continue;
+      while (user && user->getBlock() != op->getBlock())
+        user = user->getParentOp();
+      if (!user || !user->isBeforeInBlock(op))
+        return op.emitError("source bank handle is used after transfer or outside its block");
     }
-    rewriter.create<func::CallOp>(
-        op.getLoc(), name, TypeRange{},
-        ValueRange{op.getDescriptorBank(), op.getOutputBank(),
-                   op.getInputBank(), op.getWeightBank(), op.getWidth(),
-                   op.getBankBytes(), op.getMeanBits(), op.getEpsilonBits()});
-    rewriter.replaceOp(op,
-                       ValueRange{op.getDescriptorBank(), op.getOutputBank()});
+    if (failed(state.transfer(op, *source, *target)))
+      return failure();
+    rewriter.create<MsetTransferOp>(op.getLoc(), op.getSource(), op.getTarget());
+    rewriter.replaceOp(op, state.cstI64(rewriter, op.getLoc(), *target));
     return success();
   }
+
+private:
+  PhysicalBankState &state;
 };
 
-class BankPackFP32Pattern : public OpRewritePattern<BankPackFP32Op> {
+class BankKernelPattern : public OpRewritePattern<BankKernelOp> {
 public:
-  using OpRewritePattern::OpRewritePattern;
-  LogicalResult matchAndRewrite(BankPackFP32Op op,
+  BankKernelPattern(MLIRContext *context, PhysicalBankState &state)
+      : OpRewritePattern<BankKernelOp>(context), state(state) {}
+  LogicalResult matchAndRewrite(BankKernelOp op,
                                 PatternRewriter &rewriter) const override {
+    if (failed(state.verifyKernelHandles(op, op.getReadBank(), op.getWriteBank())))
+      return failure();
     auto module = op->getParentOfType<ModuleOp>();
-    StringRef name = "rvv_pack_banks";
-    bool declared =
-        llvm::any_of(module.getOps<func::FuncOp>(),
-                     [&](func::FuncOp f) { return f.getSymName() == name; });
-    if (!declared) {
+    StringRef name = op.getCallee();
+    SmallVector<Type> types(op.getOperandTypes());
+    auto signature = rewriter.getFunctionType(types, TypeRange{});
+    auto callee = module.lookupSymbol<func::FuncOp>(name);
+    if (callee && callee.getFunctionType() != signature)
+      return op.emitError("bank kernel callee type does not match its operands");
+    if (!callee) {
       OpBuilder::InsertionGuard guard(rewriter);
       rewriter.setInsertionPointToStart(module.getBody());
-      SmallVector<Type> types(9, rewriter.getI64Type());
       auto function = rewriter.create<func::FuncOp>(
-          op.getLoc(), name, rewriter.getFunctionType(types, TypeRange{}));
+          op.getLoc(), name, signature);
       function.setPrivate();
       function->setAttr("llvm.emit_c_interface", rewriter.getUnitAttr());
     }
-    rewriter.create<func::CallOp>(op.getLoc(), name, TypeRange{},
-                                  op.getOperands());
-    rewriter.replaceOp(op,
-                       ValueRange{op.getDescriptorBank(), op.getOutputBank()});
+    rewriter.create<func::CallOp>(op.getLoc(), name, TypeRange{}, op.getOperands());
+    rewriter.replaceOp(op, ValueRange{op.getReadBank(), op.getWriteBank()});
     return success();
   }
+
+private:
+  PhysicalBankState &state;
 };
 
 class BankMvinPattern : public OpRewritePattern<BankMvinOp> {
@@ -133,7 +143,7 @@ public:
   LogicalResult matchAndRewrite(BankMvinOp op,
                                 PatternRewriter &rewriter) const override {
     rewriter.create<MvinOp>(op.getLoc(), op.getInput(), op.getBank(),
-                            op.getDepth(), op.getStride());
+                            op.getDepth(), op.getStride(), op.getGroupAttr());
     rewriter.replaceOp(op, op.getBank());
     return success();
   }
@@ -163,7 +173,7 @@ public:
     // Fence is CPU↔NPU sync, not NPU-internal. Emit FenceOp once at the end of
     // a large Buckyball op (matmul/im2col/transpose), not after every mvout.
     rewriter.create<MvoutOp>(op.getLoc(), op.getOutput(), op.getBank(),
-                             op.getDepth(), op.getStride());
+                             op.getDepth(), op.getStride(), op.getGroupAttr());
     rewriter.replaceOp(op, op.getBank());
     return success();
   }
@@ -189,9 +199,9 @@ LogicalResult verifyNoBankSSAOps(Operation *root) {
 
 void addBaseAssignPhysicalBankPatterns(RewritePatternSet &patterns,
                                        PhysicalBankState &state) {
-  patterns.add<BankAllocPattern, BankReleasePattern>(patterns.getContext(),
+  patterns.add<BankAllocPattern, BankReleasePattern, BankTransferPattern, BankKernelPattern>(patterns.getContext(),
                                                      state);
-  patterns.add<BankNormPattern, BankPackFP32Pattern, BankMvinPattern,
+  patterns.add<BankMvinPattern,
                BankMvin2dPattern, BankMvoutPattern>(patterns.getContext());
 }
 

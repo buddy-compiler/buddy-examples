@@ -4,8 +4,8 @@ from .stages import Attention, shard_linear
 
 
 class AttentionBody(Attention):
-    def __init__(self, layer, config, cache_length, frequencies, rank, parts, attention_scaling):
-        super().__init__(layer, config, cache_length, frequencies, rank, 2 * parts, attention_scaling)
+    def __init__(self, layer, config, cache_length, frequencies, rank, parts, attention_scaling, cache_quantizer):
+        super().__init__(layer, config, cache_length, frequencies, rank, 2 * parts, attention_scaling, cache_quantizer)
         self.o_proj = nn.Identity()
 
 

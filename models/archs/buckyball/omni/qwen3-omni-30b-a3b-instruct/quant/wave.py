@@ -20,6 +20,7 @@ def main():
     args = parser.parse_args()
     sys.path.insert(0, str(args.compiler_build / "python_packages"))
     from buddy.compiler.graph.transform.quantization.mxfp8 import quantize
+    from stack.compiler.quant.mxfp8_embedding import pack_rows
     from examples.balls.mxmm.compiler.python.layout import pack as pack_matrix
 
     torch.set_num_threads(1)
@@ -50,8 +51,9 @@ def main():
         "wb"
     ) as packed:
         embedding = source.tensor("code2wav.code_embedding.weight")
-        regions.append((0, embedding.numel(), 0, 0))
-        floats.write(embedding.numpy().tobytes())
+        rows = pack_rows(embedding.detach().reshape(-1, embedding.shape[-1]))
+        regions.append((0, 0, 0, rows.numel()))
+        packed.write(rows.cpu().contiguous().numpy().tobytes())
 
         def append(stage, name):
             spec = stages[name]
@@ -61,11 +63,19 @@ def main():
                 tensor = values[key]
                 if list(tensor.shape) != shape:
                     raise ValueError(f"Code2Wav parameter shape differs: {key}")
-                array = tensor.detach().numpy()
-                if key in spec["quantized"]:
-                    packed.write(pack_matrix(*quantize(array), spec["layouts"][key]).tobytes())
+                array = tensor.detach()
+                if key in spec["embeddings"]:
+                    packed.write(pack_rows(array).cpu().contiguous().numpy().tobytes())
+                elif key in spec["quantized"]:
+                    packed.write(
+                        pack_matrix(*quantize(array), spec["layouts"][key])
+                        .cpu()
+                        .contiguous()
+                        .numpy()
+                        .tobytes()
+                    )
                 else:
-                    floats.write(array.tobytes())
+                    floats.write(array.cpu().contiguous().numpy().tobytes())
             region = (
                 first_float // 4,
                 (floats.tell() - first_float) // 4,
@@ -101,6 +111,7 @@ def main():
         "tile": tile,
         "float_elements": sizes[0],
         "weight_bytes": sizes[1],
+        "embedding_format": "mxfp8_rows",
     }
     (args.output / "wave-placement.json").write_text(
         json.dumps(placement, indent=2) + "\n"

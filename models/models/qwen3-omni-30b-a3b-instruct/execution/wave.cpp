@@ -1,4 +1,5 @@
 #include "wave.h"
+#include "embedding.h"
 #include "ffn/params.h"
 #include <cstdlib>
 #include <fstream>
@@ -74,16 +75,26 @@ void Wave::execute(const Command &command) {
   std::vector<uint64_t> codes(groups * count);
   read_values(codes.data(), codes.size());
   std::vector<float> hidden(length * width, 0.0f);
+  const auto &embedding = regions[0];
+  if (embedding.float_count ||
+      embedding.byte_count != groups * vocabulary * (width + width / 32))
+    throw std::runtime_error("Code2Wav embedding requires MXFP8 row storage");
+  std::vector<uint64_t> selected(count * groups);
   for (size_t token = 0; token < count; ++token)
     for (size_t group = 0; group < groups; ++group) {
-      auto code = codes[group * count + token];
+      const auto code = codes[group * count + token];
       if (code >= vocabulary)
         throw std::runtime_error("invalid acoustic code ID");
-      const float *embedding = floats.get() + regions[0].float_offset +
-                               (group * vocabulary + code) * width;
-      for (size_t column = 0; column < width; ++column)
-        hidden[token * width + column] += embedding[column];
+      selected[token * groups + group] = group * vocabulary + code;
     }
+  std::vector<float> decoded(count * groups * width);
+  embedding_rows(decoded.data(), bytes.get() + embedding.byte_offset, width,
+                 selected.data(), selected.size());
+  for (size_t token = 0; token < count; ++token)
+    for (size_t group = 0; group < groups; ++group)
+      for (size_t column = 0; column < width; ++column)
+        hidden[token * width + column] +=
+            decoded[(token * groups + group) * width + column];
   for (size_t token = 0; token < count; ++token)
     for (size_t column = 0; column < width; ++column)
       hidden[token * width + column] *= 1.0f / groups;

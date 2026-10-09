@@ -12,9 +12,9 @@ struct Routing {
   Matrix scores, shared;
 };
 extern "C" void _mlir_ciface_forward_talker_prefill_router(Routing *, Floats *,
-                                                           Matrix *);
+                                                           Bytes *, Matrix *);
 extern "C" void _mlir_ciface_forward_talker_decode_router(Routing *, Floats *,
-                                                          Matrix *);
+                                                          Bytes *, Matrix *);
 using Kernel = void (*)(Matrix *, Matrix *, Bytes *, Bytes *, Bytes *);
 #define EXPERT_KERNEL(N)                                                       \
   extern "C" void _mlir_ciface_subgraph_talker_expert_##N(                     \
@@ -60,7 +60,7 @@ void Talker::experts(Matrix &hidden, size_t count, size_t layer) {
       Matrix({length, topK}, false, 0), Matrix({length, 1}, false, 0)};
   auto route = count == 1 ? _mlir_ciface_forward_talker_decode_router
                           : _mlir_ciface_forward_talker_prefill_router;
-  route(&routed, &fp, &hidden);
+  route(&routed, &fp, &packed, &hidden);
   std::vector<std::vector<size_t>> assigned(expertCount);
   for (size_t slot = 0; slot < count * topK; ++slot)
     assigned.at(routed.selected[slot]).push_back(slot);

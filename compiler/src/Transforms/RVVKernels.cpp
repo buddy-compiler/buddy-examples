@@ -211,7 +211,8 @@ public:
       if (auto name = op.getLibraryCallAttr();
           name &&
           (name.getValue() == "rvv_silu" || name.getValue() == "rvv_swiglu" ||
-           name.getValue() == "rvv_snake" || name.getValue() == "rvv_matmul"))
+           name.getValue() == "rvv_snake" || name.getValue() == "rvv_matmul" ||
+           name.getValue() == "rvv_matmul_transpose_rhs"))
         calls.push_back(op);
     });
     for (auto op : calls) {

@@ -13,7 +13,16 @@ from examples.balls.mxmm.compiler.python.layout import bank_bytes
 
 
 def emit(
-    name, stage, inputs, target, quantized, output, compiler_build, *, local=False
+    name,
+    stage,
+    inputs,
+    target,
+    quantized,
+    output,
+    compiler_build,
+    *,
+    embeddings=(),
+    local=False,
 ):
     compiler = DynamoCompiler(
         primary_registry=tosa.ops_registry,
@@ -42,7 +51,8 @@ def emit(
     parameters = output / name
     parameters.mkdir(parents=True, exist_ok=True)
     layouts = {}
-    if quantized:
+    embeddings = set(embeddings)
+    if quantized or embeddings:
         layouts = quantize_graph(
             graph,
             params,
@@ -51,6 +61,7 @@ def emit(
             name,
             compiler_build / "bin/rax-pack",
             weights=quantized,
+            embeddings=embeddings,
             bank_bytes=bank_bytes(compiler_build, target),
             rows_hint=16,
         )
@@ -70,7 +81,10 @@ def emit(
     module = subgraph._imported_module
     with module.context:
         function = next(
-            op for op in module.body.operations if op.operation.name == "func.func"
+            op
+            for op in module.body.operations
+            if op.operation.name == "func.func"
+            and ir.StringAttr(op.attributes["sym_name"]).value == symbol
         )
         weight_bytes = [
             math.prod(ir.RankedTensorType(arg.type).shape)
@@ -116,6 +130,7 @@ def emit(
         "bytes": sum(p.numel() for p in params if p.dtype == torch.int8),
         "parameters": ordered_names,
         "shapes": parameter_shapes,
-        "quantized": sorted(quantized),
+        "quantized": sorted(quantized | embeddings),
+        "embeddings": sorted(embeddings),
         "layouts": layouts,
     }

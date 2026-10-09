@@ -153,11 +153,10 @@ void emitDmaFence(OpBuilder &b, Location loc) {
   LLVM::InlineAsmOp::create(b, loc, Type(), ValueRange{},
                             b.getStringAttr("fence rw, rw"),
                             b.getStringAttr("~{memory}"), b.getUnitAttr(),
-                            UnitAttr(), tail, nullptr, nullptr);
+                            UnitAttr(), tail, UnitAttr(), nullptr, nullptr);
 }
 
 static constexpr char kDmaTouchMvoutFn[] = "dma_touch_mvout";
-static constexpr char kDmaBankSetColsFn[] = "dma_bank_set_cols";
 
 static FlatSymbolRefAttr getOrInsertExtFunc(OpBuilder &b, ModuleOp module,
                                             StringRef name,
@@ -180,14 +179,14 @@ static ModuleOp parentModule(OpBuilder &b) {
   return module;
 }
 
-static void emitBbDmaBankSetCols(OpBuilder &b, Location loc, Value bankId,
-                                 Value cols) {
+static void emitBbDmaBankColumns(OpBuilder &b, Location loc, StringRef name,
+                                 Value bankId, Value cols) {
   ModuleOp module = parentModule(b);
   auto i32Ty = IntegerType::get(b.getContext(), 32);
   auto voidTy = LLVM::LLVMVoidType::get(b.getContext());
   auto fnTy = LLVM::LLVMFunctionType::get(voidTy, {i32Ty, i32Ty});
   FlatSymbolRefAttr callee =
-      getOrInsertExtFunc(b, module, kDmaBankSetColsFn, fnTy);
+      getOrInsertExtFunc(b, module, name, fnTy);
   Value bankI32 = b.create<arith::TruncIOp>(loc, i32Ty, bankId);
   Value colsI32 = b.create<arith::TruncIOp>(loc, i32Ty, cols);
   LLVM::CallOp::create(b, loc, TypeRange{}, callee,
@@ -254,10 +253,36 @@ struct BuckyballMsetLowering : public ConvertOpToLLVMPattern<MsetOp> {
     uint64_t colVal = op.getAlloc() ? static_cast<uint64_t>(op.getCol()) : 0u;
     uint64_t rs2Val = fieldBits(rowVal, 0, 4) | fieldBits(colVal, 5, 9) |
                       fieldBits(allocBit, 10, 10);
-    Value colsForTouch = cstI64(rewriter, loc, op.getAlloc() ? colVal : 1u);
-    emitBbDmaBankSetCols(rewriter, loc, bankId, colsForTouch);
+    Value colsForTouch = cstI64(rewriter, loc, op.getAlloc() ? colVal : 0u);
+    emitBbDmaBankColumns(rewriter, loc,
+                        op.getAlloc() ? "dma_bank_allocate" : "dma_bank_set_cols",
+                        bankId, colsForTouch);
     rewriter.replaceOpWithNewOp<MsetIntrOp>(op, rs1,
                                             cstI64(rewriter, loc, rs2Val));
+    return success();
+  }
+};
+
+struct BuckyballMsetTransferLowering
+    : public ConvertOpToLLVMPattern<MsetTransferOp> {
+  using ConvertOpToLLVMPattern<MsetTransferOp>::ConvertOpToLLVMPattern;
+  LogicalResult
+  matchAndRewrite(MsetTransferOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    Location loc = op.getLoc();
+    Value source = adaptor.getSource(), target = adaptor.getTarget();
+    auto i64 = rewriter.getI64Type();
+    auto fnType = LLVM::LLVMFunctionType::get(
+        LLVM::LLVMVoidType::get(rewriter.getContext()), {i64, i64});
+    auto callee = getOrInsertExtFunc(rewriter, parentModule(rewriter),
+                                     "dma_bank_transfer", fnType);
+    LLVM::CallOp::create(rewriter, loc, TypeRange{}, callee,
+                         ValueRange{source, target});
+    Value targetBits =
+        rewriter.create<arith::ShLIOp>(loc, target, cstI64(rewriter, loc, 20));
+    Value rs1 = rewriter.create<arith::OrIOp>(loc, source, targetBits);
+    rewriter.replaceOpWithNewOp<MsetIntrOp>(op, rs1,
+                                            cstI64(rewriter, loc, 4096));
     return success();
   }
 };
@@ -275,6 +300,9 @@ struct BuckyballMvinLowering : public ConvertOpToLLVMPattern<MvinOp> {
                                      adaptor.getDepth());
     Value rs2 =
         packRs2MemStride(rewriter, loc, memref.address, adaptor.getStride());
+    if (auto group = op.getGroup())
+      rs2 = rewriter.create<arith::OrIOp>(
+          loc, rs2, cstI64(rewriter, loc, (1ULL << 63) | (uint64_t(*group) << 58)));
 
     rewriter.replaceOpWithNewOp<MvinIntrOp>(op, rs1, rs2);
     return success();
@@ -316,7 +344,7 @@ struct BuckyballMvin2dLowering : public ConvertOpToLLVMPattern<Mvin2dOp> {
         rewriter, loc, Type(), ValueRange{validInput64},
         rewriter.getStringAttr("bnez $0, 1f\n\tunimp\n1:"),
         rewriter.getStringAttr("r,~{memory}"), rewriter.getUnitAttr(),
-        UnitAttr(), tail, nullptr, nullptr);
+        UnitAttr(), tail, UnitAttr(), nullptr, nullptr);
 
     emitDmaFence(rewriter, loc);
     Value rs1 = packRs1WriteBankIter(rewriter, loc, adaptor.getAddr(),
@@ -391,13 +419,28 @@ struct BuckyballMvoutLowering : public ConvertOpToLLVMPattern<MvoutOp> {
                   ConversionPatternRewriter &rewriter) const override {
     Location loc = op.getLoc();
     MemrefAddress memref = extractMemrefAddress(rewriter, loc, op.getOutput());
-    emitBbDmaTouchMvout(rewriter, loc, memref.hostPtr, adaptor.getDepth(),
-                        adaptor.getStride(), adaptor.getAddr());
+    if (op.getGroup()) {
+      auto fnTy = LLVM::LLVMFunctionType::get(
+          LLVM::LLVMVoidType::get(rewriter.getContext()),
+          {LLVM::LLVMPointerType::get(rewriter.getContext()),
+           rewriter.getI64Type(), rewriter.getI64Type()});
+      auto callee = getOrInsertExtFunc(rewriter, parentModule(rewriter),
+                                     "dma_touch_mvout_group", fnTy);
+      LLVM::CallOp::create(rewriter, loc, TypeRange{}, callee,
+                          ValueRange{memref.hostPtr, adaptor.getDepth(),
+                                     adaptor.getStride()});
+    } else {
+      emitBbDmaTouchMvout(rewriter, loc, memref.hostPtr, adaptor.getDepth(),
+                         adaptor.getStride(), adaptor.getAddr());
+    }
     emitDmaFence(rewriter, loc);
     Value rs1 =
         packRs1BankIter(rewriter, loc, adaptor.getAddr(), adaptor.getDepth());
     Value rs2 =
         packRs2MemStride(rewriter, loc, memref.address, adaptor.getStride());
+    if (auto group = op.getGroup())
+      rs2 = rewriter.create<arith::OrIOp>(
+          loc, rs2, cstI64(rewriter, loc, (1ULL << 63) | (uint64_t(*group) << 58)));
 
     rewriter.replaceOpWithNewOp<MvoutIntrOp>(op, rs1, rs2);
     return success();
@@ -458,7 +501,7 @@ struct ContiguousCopyLowering : public ConvertOpToLLVMPattern<memref::CopyOp> {
     auto sourceType = cast<MemRefType>(op.getSource().getType());
     auto targetType = cast<MemRefType>(op.getTarget().getType());
     Value zero = LLVM::ConstantOp::create(rewriter, loc, getIndexType(),
-                                          rewriter.getIndexAttr(0));
+                                          rewriter.getIntegerAttr(getIndexType(), 0));
     Value source = getStridedElementPtr(rewriter, loc, sourceType, adaptor.getSource(),
                                        ValueRange{zero});
     Value target = getStridedElementPtr(rewriter, loc, targetType, adaptor.getTarget(),
@@ -497,7 +540,7 @@ void populateBaseLegalizeForLLVMExportPatterns(
   }
   patterns.add<ContiguousCopyLowering>(converter);
   patterns.add<BuckyballFenceLowering>(converter);
-  patterns.add<BuckyballMsetLowering>(converter);
+  patterns.add<BuckyballMsetLowering, BuckyballMsetTransferLowering>(converter);
   patterns.add<BuckyballMvinLowering>(converter);
   patterns.add<BuckyballMvin2dLowering>(converter);
   patterns.add<BuckyballMvinMmioLowering>(converter);
@@ -509,8 +552,8 @@ void populateBaseLegalizeForLLVMExportPatterns(
 void configureBaseLegalizeForExportTarget(LLVMConversionTarget &target) {
   target.addLegalOp<CustomIntrOp, FenceIntrOp, MsetIntrOp, MvinIntrOp,
                     MvinMmioIntrOp, MvoutIntrOp>();
-  target.addIllegalOp<MvoverOp, FenceOp, InstOp, MsetOp, MvinOp, Mvin2dOp, MvinMmioOp,
-                      MvoutOp>();
+  target.addIllegalOp<MvoverOp, FenceOp, InstOp, MsetOp, MsetTransferOp, MvinOp,
+                      Mvin2dOp, MvinMmioOp, MvoutOp>();
   target.addLegalDialect<memref::MemRefDialect>();
   target.addDynamicallyLegalOp<memref::CopyOp>([](memref::CopyOp op) {
     return !contiguousRankOne(op.getSource().getType()) ||

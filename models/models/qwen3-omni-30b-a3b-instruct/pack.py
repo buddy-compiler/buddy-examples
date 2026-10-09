@@ -1,6 +1,5 @@
 import argparse
 import json
-import shutil
 from pathlib import Path
 
 from transformers import AutoConfig, AutoProcessor, AutoTokenizer
@@ -50,11 +49,7 @@ def main():
     tokens.save_pretrained(tokenizer)
     AutoProcessor.from_pretrained(checkpoint["path"]).save_pretrained(tokenizer)
     AutoConfig.from_pretrained(checkpoint["path"]).save_pretrained(tokenizer)
-    design = (
-        Path(__file__).parents[2] / "archs/buckyball/omni/qwen3-omni-30b-a3b-instruct"
-    )
-    shutil.copyfile(design / "configs/deploy.yaml", output / "deploy.yaml")
-    resources = ["model.json", "deploy.yaml"]
+    resources = ["model.json"]
     for path in sorted((source / "weights").rglob("*")):
         if path.is_file():
             relative = path.relative_to(source)

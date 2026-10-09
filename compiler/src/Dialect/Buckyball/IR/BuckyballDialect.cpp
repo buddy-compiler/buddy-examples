@@ -19,6 +19,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/Dialect/Vector/IR/VectorOps.h"
 #include "mlir/IR/Builders.h"
@@ -46,4 +47,33 @@ void BuckyballDialect::initialize() {
 #define GET_OP_LIST
 #include "Buckyball.cpp.inc"
       >();
+}
+
+LogicalResult MsetTransferOp::verify() {
+  for (Value operand : getOperands()) {
+    if (auto constant = operand.getDefiningOp<arith::ConstantIntOp>())
+      if (constant.value() < 0 || constant.value() > 1023)
+        return emitOpError("bank ID must be in [0, 1023]");
+  }
+  auto source = getSource().getDefiningOp<arith::ConstantIntOp>();
+  auto target = getTarget().getDefiningOp<arith::ConstantIntOp>();
+  if (source && target) {
+    if (source.value() == target.value())
+      return emitOpError("source and target must differ");
+  }
+  return success();
+}
+
+LogicalResult MvinOp::verify() {
+  if (auto group = getGroup())
+    if (*group < 0 || *group > 31)
+      return emitOpError("group must be in [0, 31]");
+  return success();
+}
+
+LogicalResult MvoutOp::verify() {
+  if (auto group = getGroup())
+    if (*group < 0 || *group > 31)
+      return emitOpError("group must be in [0, 31]");
+  return success();
 }

@@ -7,10 +7,6 @@ name = "goban-bert-base-uncased-emotion"
 version = "0.1.0"
 requires-python = ">=3.12"
 
-[project.entry-points."vllm.general_plugins"]
-goban_bert_base_uncased_emotion = "goban_bert_base_uncased_emotion:register"
-
 [tool.setuptools]
-py-modules = ["goban_bert_base_uncased_emotion"]
 packages = ["examples.models.goban.bert-base-uncased-emotion", "examples.models.goban.bert-base-uncased-emotion.permute", "examples.models.goban.bert-base-uncased-emotion.quant"]
 package-dir = {"" = ".", "examples.models.goban.bert-base-uncased-emotion" = "."}

@@ -1,3 +1,4 @@
+#include "embedding.h"
 #include "talker.h"
 #include <runtime.h>
 
@@ -27,14 +28,19 @@ void Talker::embedding(size_t count, size_t group) {
   if (group >= groups)
     throw std::runtime_error("invalid codec embedding group");
   const auto &region = regions.at(group);
-  size_t rows = region.float_count / width;
-  for (size_t token = 0; token < count; ++token) {
-    uint64_t index;
-    read_values(&index, 1);
+  const size_t stride = width + width / 32;
+  if (region.float_count || region.byte_count % stride)
+    throw std::runtime_error("codec embedding requires MXFP8 row storage");
+  const size_t rows = region.byte_count / stride;
+  std::vector<uint64_t> indices(count);
+  read_values(indices.data(), count);
+  for (uint64_t index : indices)
     if (index >= rows)
       throw std::runtime_error("invalid codec token ID");
-    write_values(floats.get() + region.float_offset + index * width, width);
-  }
+  std::vector<float> decoded(count * width);
+  embedding_rows(decoded.data(), bytes.get() + region.byte_offset, width,
+                 indices.data(), count);
+  write_values(decoded.data(), decoded.size());
 }
 
 void Talker::resize(size_t count, size_t kind) {

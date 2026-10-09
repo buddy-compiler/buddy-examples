@@ -27,19 +27,15 @@ def _load_proto(repo: Path):
     return chip_pb2
 
 
-def _builtin_kernel(entry) -> bool:
-    if not entry.builtin:
-        if not entry.ball_dir or Path(entry.ball_dir).is_absolute() or len(Path(entry.ball_dir).parts) != 1:
-            _die(f"external Ball {entry.ball_name}: invalid ball_dir {entry.ball_dir!r}")
-        if entry.in_bw <= 0 or entry.out_bw <= 0:
-            _die(f"external Ball {entry.ball_name}: bandwidth must be positive")
-        return False
-    if entry.builtin != "kernel":
-        _die(f"unknown builtin Ball {entry.builtin!r}")
-    if (entry.ball_name != "kernel" or entry.ball_class != "framework.balldomain.kernel.KernelBall"
-            or entry.ball_dir or entry.config_path or entry.in_bw != 0 or entry.out_bw != 0):
-        _die("builtin kernel has an invalid mapping")
-    return True
+def _validate_ball(entry) -> None:
+    if (
+        not entry.ball_dir
+        or Path(entry.ball_dir).is_absolute()
+        or len(Path(entry.ball_dir).parts) != 1
+    ):
+        _die(f"external Ball {entry.ball_name}: invalid ball_dir {entry.ball_dir!r}")
+    if entry.in_bw <= 0 or entry.out_bw <= 0:
+        _die(f"external Ball {entry.ball_name}: bandwidth must be positive")
 
 
 def _target_name(core) -> str:
@@ -89,13 +85,15 @@ def _validate_profile(profile, core) -> None:
     ):
         _die(f"profile {profile.name}: bank geometry must be non-zero")
     for entry in core.balldomain.mappings:
-        _builtin_kernel(entry)
+        _validate_ball(entry)
     balls = [entry.ball_name for entry in core.balldomain.mappings]
     if len(set(balls)) != len(balls):
         _die(f"profile {profile.name}: duplicate Ball mapping")
     mnemonics: set[str] = set()
     funct7s: set[int] = set()
     for entry in core.balldomain.isa:
+        if entry.funct7 == 15 or entry.mnemonic == "RUN_KERNEL":
+            _die("RUN_KERNEL is a global control instruction, not a Ball instruction")
         if not entry.mnemonic.isidentifier():
             _die(f"profile {profile.name}: invalid ISA mnemonic {entry.mnemonic!r}")
         if entry.mnemonic in mnemonics:
@@ -125,7 +123,7 @@ def _core_compiler_dirs(chip, repo: Path) -> list[Path]:
     return result
 
 
-def _core_signature(core) -> int:
+def _core_signature(core, chip) -> int:
     signature_bytes = bytearray(core.pkg.encode() + b"\0")
     for value in (core.mem.bank.num, core.mem.bank.width, core.mem.bank.entries):
         signature_bytes.extend(value.to_bytes(8, "little"))
@@ -140,6 +138,23 @@ def _core_signature(core) -> int:
             signature_bytes.extend(value.to_bytes(8, "little"))
         for name, value in sorted(entry.ball_params.items()):
             signature_bytes.extend(name.encode() + b"\0" + value.encode() + b"\0")
+    if core.cpu.kind == "ant":
+        ant = core.cpu.ant
+        tile = next(tile for tile in chip.tiles if core.index in tile.core_indices)
+        signature_bytes.extend(b"ant\0")
+        for value in (
+            ant.code_bytes,
+            ant.tls.base,
+            ant.tls.bytes,
+            ant.tls.data_bits,
+            ant.task_bits,
+            tile.tss.base,
+            tile.tss.bytes,
+            tile.tss.data_bits,
+            tile.shared_mem.bank_entries,
+            tile.shared_mem.entries,
+        ):
+            signature_bytes.extend(value.to_bytes(8, "little"))
     signature = 0xCBF29CE484222325
     for value in signature_bytes:
         signature = ((signature ^ value) * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
@@ -223,10 +238,12 @@ def _emit(chip, target: str | None = None) -> str:
         else:
             isa_ref = "llvm::ArrayRef<buckyball_target::BuckyballIsaEntry>()"
         chunks.append("")
-        signature = _core_signature(core)
+        signature = _core_signature(core, chip)
+        rvv_enabled = "true" if core.rvv.enable else "false"
         targets.append(
             f"  {{{_cxx_string(profile.name)}, {_cxx_string(core.pkg)}, "
-            f"{profile.bank_num}, {profile.bank_width}, {profile.bank_entries}, "
+            f"{profile.bank_num}, {profile.bank_width}, {profile.bank_entries}, {core.frontend.vbank_id_upper_bound}, "
+            f"{rvv_enabled}, "
             f"{balls_ref}, {mappings_ref}, {isa_ref}, {signature}ULL}},"
         )
     chunks.append(
@@ -248,7 +265,9 @@ def _isqrt(n: int) -> int:
         x = y
 
 
-def _emit_params_header(profile, core, virtual_bank_num: int, isa_dir: Path, test_hart: int) -> None:
+def _emit_params_header(
+    profile, core, virtual_bank_num: int, isa_dir: Path, chip
+) -> None:
     bank = core.mem.bank
     mmio = core.mem.mmio
     if bank.num == 0 or bank.width == 0 or bank.entries == 0:
@@ -270,14 +289,22 @@ def _emit_params_header(profile, core, virtual_bank_num: int, isa_dir: Path, tes
         _die(
             f"profile {profile.name}: MMIO bytes {mmio_bytes} is not a multiple of SRAM row bytes {row_bytes}"
         )
+    tile = next(tile for tile in chip.tiles if core.index in tile.core_indices)
+    shared = tile.shared_mem
+    shared_banks = shared.entries // shared.bank_entries if shared.enable else 0
     lines = [
         "/* Generated from Chip.pb. Do not edit. */",
         "#ifndef BBHW_PARAMS_H",
         "#define BBHW_PARAMS_H",
         "",
-        f"#define CORE_SIGNATURE {_core_signature(core)}ULL",
-        f"#define BB_TEST_HART {test_hart}",
+        f"#define CORE_SIGNATURE {_core_signature(core, chip)}ULL",
+        *(
+            [f"#define BB_TEST_HART {core.hart_id}"]
+            if core.HasField("hart_id")
+            else [f"#define BB_ANT_CONTEXT {core.ant_context_id}"]
+        ),
         f"#define BANK_NUM {bank.num}",
+        f"#define SHARED_BANK_NUM {shared_banks}",
         f"#define VIRTUAL_BANK_NUM {virtual_bank_num}",
         f"#define BB_PRIVATE_VBANK_MAX {core.frontend.vbank_id_upper_bound}",
         f"#define BB_SHARED_BANK_BASE {core.frontend.shared_bank_id_base}",
@@ -334,8 +361,8 @@ def _emit_isa_headers(chip, isa_dir: Path) -> None:
         if tile.shared_mem != compute[0].shared_mem:
             _die(f"tile {tile_id}: shared memory config differs from tile 1")
 
-    # Every core carries its explicit hart id; the header only tabulates them.
-    hart_num = len(chip.cores)
+    # Ant contexts are execution resources, not system harts.
+    hart_num = sum(core.HasField("hart_id") for core in chip.cores)
     cores_per_tile = max(len(tile.core_indices) for tile in chip.tiles)
     hart_tile = [None] * hart_num
     hart_core = [None] * hart_num
@@ -344,41 +371,58 @@ def _emit_isa_headers(chip, isa_dir: Path) -> None:
         row = []
         for core_id, core_index in enumerate(tile.core_indices):
             core = chip.cores[core_index]
-            if not core.HasField("hart_id") or core.hart_id >= hart_num:
-                _die(f"core {core_index}: missing or out-of-range hart_id")
-            hart_tile[core.hart_id] = tile_id
-            hart_core[core.hart_id] = core_id
+            if core.cpu.kind == "ant":
+                if core.HasField("hart_id") or not core.HasField("ant_context_id"):
+                    _die(
+                        f"core {core_index}: Ant requires context ID and forbids hart ID"
+                    )
+            else:
+                if not core.HasField("hart_id") or core.hart_id >= hart_num:
+                    _die(f"core {core_index}: missing or out-of-range hart_id")
+                hart_tile[core.hart_id] = tile_id
+                hart_core[core.hart_id] = core_id
             target = _target_name(core)
             if target not in profile_ids:
-                _die(f"tile {tile_id} core {core_id} target {target!r} has no compiler profile")
+                _die(
+                    f"tile {tile_id} core {core_id} target {target!r} has no compiler profile"
+                )
             row.append(profile_ids[target])
         slot_profiles.append(row + [0xFFFFFFFF] * (cores_per_tile - len(row)))
     if None in hart_tile:
-        _die("chip hart ids are not exactly 0..cores-1")
+        _die("chip CPU hart ids are not exactly 0..harts-1")
     report_hart = chip.cores[bank_tile.core_indices[0]].hart_id
 
     shared = bank_tile.shared_mem
     if shared.enable:
-        endpoints = [chip.cores[index] for index in bank_tile.core_indices
-                     if chip.cores[index].balldomain.mappings]
+        endpoints = [
+            chip.cores[index]
+            for index in bank_tile.core_indices
+            if chip.cores[index].balldomain.mappings
+        ]
         if not endpoints:
             _die("shared memory requires a compute endpoint")
-        shared_bank_entries = endpoints[0].mem.bank.entries
-        if shared.entries == 0 or shared.entries % shared_bank_entries:
+        shared_bank_entries = shared.bank_entries
+        if (
+            shared_bank_entries == 0
+            or shared.entries == 0
+            or shared.entries % shared_bank_entries
+        ):
             _die(
                 "bank tile: shared entries must be a non-zero multiple of compute bank depth"
             )
         shared_physical_bank_num = shared.entries // shared_bank_entries
     else:
         shared_physical_bank_num = 0
-    profile_rows = ", ".join("{" + ", ".join(f"{p}u" for p in row) + "}" for row in slot_profiles)
+    profile_rows = ", ".join(
+        "{" + ", ".join(f"{p}u" for p in row) + "}" for row in slot_profiles
+    )
     lines = [
         "#ifndef BBHW_TOPOLOGY_H",
         "#define BBHW_TOPOLOGY_H",
         f"#define BB_TILE_NUM {len(chip.tiles)}",
         f"#define BB_HART_NUM {hart_num}",
         "// Hart layout: main tile cores are harts 0..BB_MAIN_CORES-1; compute tile t (1-based)",
-        "// has its controller at BB_MAIN_CORES+t-1 and its workers from BB_MAIN_CORES+BB_COMPUTE_TILES.",
+        "// has its controller at BB_MAIN_CORES+t-1. Ant contexts have no hart ID.",
         f"#define BB_MAIN_CORES {len(chip.tiles[0].core_indices)}",
         f"#define BB_COMPUTE_TILES {len(chip.tiles) - 1}",
         f"#define BB_COMPUTE_CORES {len(chip.tiles[1].core_indices) if len(chip.tiles) > 1 else 0}",
@@ -386,11 +430,12 @@ def _emit_isa_headers(chip, isa_dir: Path) -> None:
         "// describe the compute tiles when present, otherwise the main tile.",
         f"#define BB_CORES_PER_TILE {cores_per_tile}",
         "// Bare-metal tests run on the work tile, the tile the bank counts describe; its core 0",
-        "// reports the result, since tiles share no coherent cache state.",
+        "// reports the result. Ant workloads use the local task management interface.",
         f"#define BB_WORK_TILE {work_tile}",
         f"#define BB_REPORT_HART {report_hart}",
         f"#define BB_VIRTUAL_BANK_NUM {virtual_bank_num}",
         f"#define BB_SHARED_PHYSICAL_BANK_NUM {shared_physical_bank_num}",
+        f"#define BB_SHARED_BANK_LINES {shared.bank_entries}",
         "#ifndef __ASSEMBLER__",
         "#include <stdint.h>",
         "typedef struct { uint32_t tile; uint32_t core; } core_id_t;",
@@ -431,9 +476,8 @@ def _emit_isa_headers(chip, isa_dir: Path) -> None:
         lines.extend(["", "#endif", ""])
         header = isa_dir / profile.name / "ballISA.h"
         _write(header, "\n".join(lines))
-        _emit_params_header(
-            profile, core, chip.tiles[hart_tile[core.hart_id]].virtual_bank_count,
-            isa_dir, core.hart_id)
+        tile = next(tile for tile in chip.tiles if core.index in tile.core_indices)
+        _emit_params_header(profile, core, tile.virtual_bank_count, isa_dir, chip)
 
 
 def _emit_dialect_td(chip, repo: Path) -> str:
@@ -443,8 +487,6 @@ def _emit_dialect_td(chip, repo: Path) -> str:
     for profile in chip.profiles:
         core = _profile_core(chip, profile)
         for entry in core.balldomain.mappings:
-            if _builtin_kernel(entry):
-                continue
             ball_dir = entry.ball_dir
             if not ball_dir:
                 _die(f"profile {profile.name}: {entry.ball_name} has no ball_dir")
@@ -483,8 +525,6 @@ def _ball_compilers(chip, repo: Path) -> list[dict[str, object]]:
         core = _profile_core(chip, profile)
         _validate_profile(profile, core)
         for entry in core.balldomain.mappings:
-            if _builtin_kernel(entry):
-                continue
             ball_name = entry.ball_name
             ball_dir = entry.ball_dir
             if not ball_name.isidentifier():
@@ -574,6 +614,7 @@ def main() -> None:
     parser.add_argument("--print-core-compiler-dirs", action="store_true")
     parser.add_argument("--print-targets", action="store_true")
     parser.add_argument("--print-runtime-targets", action="store_true")
+    parser.add_argument("--print-cpu-targets", action="store_true")
     parser.add_argument("--print-bank-targets", action="store_true")
     parser.add_argument("--print-target-balls", action="store_true")
     parser.add_argument("--print-core-targets", action="store_true")
@@ -594,6 +635,7 @@ def main() -> None:
         and (not args.print_core_compiler_dirs)
         and (not args.print_targets)
         and (not args.print_runtime_targets)
+        and (not args.print_cpu_targets)
         and (not args.print_bank_targets)
         and (not args.print_target_balls)
         and (not args.print_core_targets)
@@ -623,18 +665,31 @@ def main() -> None:
             if not any(source.name == "Passes.cpp" for source in ball["passes"]):
                 _die(f"Ball {ball['name']}: Transforms contributions need Passes.cpp")
         if args.pass_decls_out:
-            _write(args.pass_decls_out, "\n".join(
-                f"namespace mlir::buddy {{ void register{ball['name']}Passes(); }}"
-                for ball in passes) + "\n")
+            _write(
+                args.pass_decls_out,
+                "\n".join(
+                    f"namespace mlir::buddy {{ void register{ball['name']}Passes(); }}"
+                    for ball in passes
+                )
+                + "\n",
+            )
         if args.pass_registration_out:
-            _write(args.pass_registration_out, "\n".join(
-                f"::mlir::buddy::register{ball['name']}Passes();"
-                for ball in passes) + "\n")
+            _write(
+                args.pass_registration_out,
+                "\n".join(
+                    f"::mlir::buddy::register{ball['name']}Passes();" for ball in passes
+                )
+                + "\n",
+            )
     if args.isa_dir:
         _emit_isa_headers(chip, args.isa_dir)
     if args.print_targets:
         for profile in chip.profiles:
             print(profile.name)
+    if args.print_cpu_targets:
+        for profile in chip.profiles:
+            if _profile_core(chip, profile).HasField("hart_id"):
+                print(profile.name)
     if args.print_runtime_targets:
         for profile in sorted(chip.profiles, key=lambda profile: profile.bank_entries):
             if _profile_core(chip, profile).balldomain.mappings:
@@ -650,8 +705,6 @@ def main() -> None:
             dirs = []
             seen = set()
             for entry in core.balldomain.mappings:
-                if _builtin_kernel(entry):
-                    continue
                 ball_dir = entry.ball_dir
                 if not ball_dir:
                     _die(f"profile {profile.name}: {entry.ball_name} has no ball_dir")

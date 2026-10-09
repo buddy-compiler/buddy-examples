@@ -22,7 +22,7 @@ def shard_linear(linear, axis, rank, parts):
 
 
 class Attention(nn.Module):
-    def __init__(self, layer, config, cache_length, frequencies, rank, parts, attention_scaling):
+    def __init__(self, layer, config, cache_length, frequencies, rank, parts, attention_scaling, cache_quantizer):
         super().__init__()
         self.norm = layer.input_layernorm
         self.q_norm = layer.self_attn.q_norm
@@ -38,8 +38,9 @@ class Attention(nn.Module):
         self.cache_length = cache_length
         self.register_buffer("frequencies", frequencies)
         self.attention_scaling = attention_scaling
+        self.cache_quantizer = cache_quantizer
 
-    def forward(self, hidden, keys, values, positions):
+    def forward(self, hidden, key_codes, key_scales, value_codes, value_scales, positions):
         length = hidden.shape[1]
         normalized = self.norm(hidden)
         query = self.q_norm(
@@ -58,8 +59,14 @@ class Attention(nn.Module):
         half = self.head_dim // 2
         query = query * cosine + torch.cat((-query[..., half:], query[..., :half]), dim=-1) * sine
         key = key * cosine + torch.cat((-key[..., half:], key[..., :half]), dim=-1) * sine
-        keys = keys.index_copy(2, positions, key)
-        values = values.index_copy(2, positions, value)
+        new_key_codes, new_key_scales = self.cache_quantizer.encode(key)
+        new_value_codes, new_value_scales = self.cache_quantizer.encode(value)
+        key_codes = key_codes.index_copy(2, positions, new_key_codes)
+        key_scales = key_scales.index_copy(2, positions, new_key_scales)
+        value_codes = value_codes.index_copy(2, positions, new_value_codes)
+        value_scales = value_scales.index_copy(2, positions, new_value_scales)
+        keys = self.cache_quantizer.decode(key_codes, key_scales)
+        values = self.cache_quantizer.decode(value_codes, value_scales)
         repeats = self.heads // self.kv_heads
         all_keys = keys[:, :, None, :, :].expand(
             1, self.kv_heads, repeats, self.cache_length, self.head_dim
@@ -73,7 +80,7 @@ class Attention(nn.Module):
         output = (scores.softmax(-1) @ all_values).transpose(1, 2).reshape(
             1, length, self.heads * self.head_dim
         )
-        return self.o_proj(output), keys, values
+        return self.o_proj(output), key_codes, key_scales, value_codes, value_scales
 
 
 class FFN(nn.Module):

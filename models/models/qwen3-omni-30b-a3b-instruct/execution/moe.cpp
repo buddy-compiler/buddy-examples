@@ -4,9 +4,9 @@
 #include <runtime.h>
 
 extern "C" void _mlir_ciface_forward_prefill_router(RouterResult *, Floats *,
-                                                    Matrix *);
+                                                    Bytes *, Matrix *);
 extern "C" void _mlir_ciface_forward_decode_router(RouterResult *, Floats *,
-                                                   Matrix *);
+                                                   Bytes *, Matrix *);
 using ExpertKernel = void (*)(Matrix *, Matrix *, Bytes *, Bytes *, Bytes *);
 extern "C" void _mlir_ciface_subgraph_expert(Matrix *, Matrix *, Bytes *,
                                              Bytes *, Bytes *);
@@ -45,12 +45,13 @@ void Thinker::router(size_t count, size_t layer) {
   Matrix hidden({length, hiddenSize}, 0.0f);
   read_values(hidden.getData(), count * hiddenSize);
   auto fp = float_parameters(layer_region(layer) + 1);
+  auto packed = byte_parameters(layer_region(layer) + 1);
   RouterResult result{Matrix({length, hiddenSize}, false, 0),
                       Tokens({length, topK}, false, 0),
                       Matrix({length, topK}, false, 0)};
   auto run = count == 1 ? _mlir_ciface_forward_decode_router
                         : _mlir_ciface_forward_prefill_router;
-  run(&result, &fp, &hidden);
+  run(&result, &fp, &packed, &hidden);
   write_values(result.hidden.getData(), count * hiddenSize);
   write_values(result.experts.getData(), count * topK);
   write_values(result.scores.getData(), count * topK);

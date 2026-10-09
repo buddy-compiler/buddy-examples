@@ -1,6 +1,6 @@
 add_custom_command(
   OUTPUT ${QWEN_MLIR} ${GENERATED_DIR}/model.json
-         ${GENERATED_DIR}/qwen-parameters.h
+         ${GENERATED_DIR}/qwen-parameters.h ${GENERATED_DIR}/tokenizer/generation_config.json
   BYPRODUCTS ${GENERATED_DIR}/tokenizer/config.json
              ${GENERATED_DIR}/tokenizer/tokenizer.json
              ${GENERATED_DIR}/tokenizer/tokenizer_config.json

@@ -60,7 +60,7 @@ class Model(nn.Module):
         markers = hidden.gather(
             1, positions[:, :, None].expand(-1, -1, hidden.shape[-1])
         )
-        logits = self.scorer(markers).squeeze(-1).masked_fill(~valid, -1e4)
+        logits = self.scorer(markers).squeeze(-1).masked_fill(~valid.bool(), -1e4)
         probabilities = logits.softmax(-1)
         count = valid.sum(-1).clamp(min=2).float()
         entropy = (
@@ -173,8 +173,20 @@ class Projection(nn.Module):
     def __init__(self, source):
         super().__init__()
         self.layers = copy.deepcopy(source)
+        for index, layer in enumerate(self.layers):
+            if isinstance(layer, nn.Linear):
+                self.layers[index] = linear(layer)
+        first = next(layer for layer in self.layers if isinstance(layer, Linear))
+        self.input_padding = -first.in_features % 32
+        if self.input_padding:
+            first.weight = nn.Parameter(
+                torch.nn.functional.pad(first.weight, (0, self.input_padding))
+            )
+            first.in_features += self.input_padding
 
     def forward(self, input):
+        if self.input_padding:
+            input = torch.nn.functional.pad(input, (0, self.input_padding))
         return self.layers(input)
 
 

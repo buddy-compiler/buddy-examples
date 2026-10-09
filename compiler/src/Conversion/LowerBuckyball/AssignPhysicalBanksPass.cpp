@@ -42,7 +42,7 @@ public:
     const buckyball_target::BuckyballTargetConfig &target =
         buckyball_target::getBuckyballTarget();
     for (func::FuncOp func : getOperation().getOps<func::FuncOp>()) {
-      mlir::buddy::PhysicalBankState state(target.bankNum);
+      mlir::buddy::PhysicalBankState state(target.bankNum, target.privateBankMax);
       RewritePatternSet patterns(&getContext());
       mlir::buddy::addBaseAssignPhysicalBankPatterns(patterns, state);
       for (llvm::StringRef ball : target.balls) {

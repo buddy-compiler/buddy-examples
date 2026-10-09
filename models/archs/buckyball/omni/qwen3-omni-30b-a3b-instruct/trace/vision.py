@@ -165,6 +165,7 @@ def main():
                 quantized,
                 args.output,
                 args.compiler_build,
+                embeddings={"positions"} if kind == "patch" else set(),
             )
             print(f"captured {name}", flush=True)
     (args.output / "kernels.json").write_text(json.dumps(metadata, indent=2) + "\n")
