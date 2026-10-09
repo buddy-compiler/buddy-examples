@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "whisper-model"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["vllm[audio]==0.30.0", "huggingface-hub", "openai"]
+dependencies = ["huggingface-hub"]
 
 [tool.setuptools]
 packages = ["stack.models.models.whisper"]

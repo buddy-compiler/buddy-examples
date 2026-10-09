@@ -80,13 +80,13 @@ add_executable(bert-run ${MODEL_SOURCE}/main.cpp)
 add_dependencies(bert-run model-loader)
 target_include_directories(bert-run PRIVATE ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
-target_link_libraries(bert-run PRIVATE -static bert_kernels runtime rvv_kernels)
+target_link_libraries(bert-run PRIVATE -static bert_kernels runtime_linux rvv_kernels)
 add_custom_command(TARGET bert-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:bert-run> ${ARTIFACT_DIR}/bert-run
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${GENERATED_DIR}/bert.payload ${ARTIFACT_DIR}/bert.payload
   COMMAND ${PYTHON} -m stack.models.models.bert-base-uncased-emotion.pack
-          --model-dir ${ARTIFACT_DIR} --entrypoint examples.models.goban.bert-base-uncased-emotion.serve:run --backend buckyball --rax-pack ${COMPILER_BUILD}/bin/rax-pack
+          --model-dir ${ARTIFACT_DIR} --entrypoint examples.models.goban.bert-base-uncased-emotion.serve:run --backend buckyball --task-runtime linux --rax-pack ${COMPILER_BUILD}/bin/rax-pack
   WORKING_DIRECTORY ${REPO_ROOT}
   VERBATIM)
 set_property(TARGET bert-run APPEND PROPERTY LINK_DEPENDS

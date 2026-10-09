@@ -6,13 +6,14 @@
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/Utils/StructuredOpsUtils.h"
 #include "mlir/IR/AffineMap.h"
 #include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
@@ -81,9 +82,10 @@ public:
   }
 
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry.insert<::buddy::trace::BuddyTraceDialect, arith::ArithDialect,
-                    linalg::LinalgDialect, memref::MemRefDialect, LLVM::LLVMDialect,
-                    scf::SCFDialect, ::buddy::buckyball::BuckyballDialect>();
+    registry
+        .insert<::buddy::trace::BuddyTraceDialect, arith::ArithDialect,
+                linalg::LinalgDialect, memref::MemRefDialect, LLVM::LLVMDialect,
+                scf::SCFDialect, ::buddy::buckyball::BuckyballDialect>();
   }
 
   void runOnOperation() override {
@@ -97,7 +99,14 @@ public:
     }
     mlir::buddy::populateQuantizeTensorToBankSSAPatterns(patterns);
     patterns.add<MemTransposeToLinalgPattern>(&getContext());
-    if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))))
+    bool emittedError = false;
+    ScopedDiagnosticHandler diagnostics(
+        &getContext(), [&](Diagnostic &message) {
+          emittedError |= message.getSeverity() == DiagnosticSeverity::Error;
+          return failure();
+        });
+    if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))) ||
+        emittedError)
       signalPassFailure();
   }
 };

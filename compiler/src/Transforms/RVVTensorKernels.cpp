@@ -7,9 +7,14 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/IR/PatternMatch.h"
+#include "mlir/Interfaces/SideEffectInterfaces.h"
+#include "mlir/IR/IRMapping.h"
+#include "llvm/ADT/DenseSet.h"
 #include <limits>
 using namespace mlir;
 namespace mlir::buddy::rvv {
+void populateNormalizationPatterns(RewritePatternSet &patterns);
+void populateActivationPatterns(RewritePatternSet &patterns);
 // Strip scalar region arguments and reshapes that only add unit dimensions.
 Value source(Value value) {
   while (true) {
@@ -188,46 +193,158 @@ struct Norm : OpRewritePattern<linalg::GenericOp> {
     if (!type || !type.hasStaticShape() || !type.getElementType().isF32() ||
         type.getRank() < 1)
       return failure();
-    auto final = operation(op.getResult(0), "arith.mulf");
-    if (!final)
-      return failure();
-    for (unsigned weighted = 0; weighted < 2; ++weighted) {
-      Value weight = source(final->getOperand(weighted));
-      auto wt = dyn_cast<RankedTensorType>(weight.getType());
-      auto scaled = operation(final->getOperand(1 - weighted), "arith.mulf");
-      if (!wt || wt.getRank() != 1 ||
-          wt.getShape()[0] != type.getShape().back() || !scaled)
+    for (Operation &scalar : op.getBody()->without_terminator())
+      if (!isMemoryEffectFree(&scalar))
+        return failure();
+    for (Operation &candidate :
+         llvm::reverse(op.getBody()->without_terminator())) {
+      if (candidate.getName().getStringRef() != "arith.mulf")
         continue;
-      for (unsigned scale = 0; scale < 2; ++scale) {
-        Value input;
-        Value origin = source(scaled->getOperand(1 - scale));
-        for (Value candidate : op.getInputs())
-          if (candidate.getType() == type && source(candidate) == origin)
-            input = candidate;
-        auto rsqrt = operation(scaled->getOperand(scale), "math.rsqrt");
-        if (!rsqrt || !input)
-          continue;
-        auto add = operation(rsqrt->getOperand(0), "arith.addf");
-        if (!add)
-          continue;
-        auto eps = floatBits(add->getOperand(1));
-        auto mean = operation(add->getOperand(0), "arith.mulf");
-        if (!eps || !mean)
-          continue;
-        auto multiplier = floatBits(mean->getOperand(1));
-        auto sum = reduction(mean->getOperand(0), "arith.addf", 0.0);
-        if (!multiplier || !sum)
-          continue;
-        auto square = operation(sum.getInputs()[0], "math.fpowi");
-        bool squares = square && constant(square->getOperand(1), 2.0) &&
-                       source(square->getOperand(0)) == source(input);
-        if (auto mul = operation(sum.getInputs()[0], "arith.mulf"))
-          squares |= source(mul->getOperand(0)) == source(input) &&
-                     source(mul->getOperand(1)) == source(input);
-        if (!squares)
-          continue;
-        call(op, r, "rvv_norm", {input, weight}, {*multiplier, *eps});
-        return success();
+      Operation *final = &candidate;
+      for (unsigned weighted = 0; weighted < 3; ++weighted) {
+        Value weight;
+        Operation *scaled = final;
+        if (weighted < 2) {
+          weight = source(final->getOperand(weighted));
+          auto wt = dyn_cast<RankedTensorType>(weight.getType());
+          scaled = operation(final->getOperand(1 - weighted), "arith.mulf");
+          if (!wt || wt.getRank() != 1 ||
+              wt.getShape()[0] != type.getShape().back() || !scaled)
+            continue;
+        }
+        if (weighted == 2 && op.getResult(0).hasOneUse()) {
+          auto consumer =
+              dyn_cast<linalg::GenericOp>(*op.getResult(0).getUsers().begin());
+          if (consumer && consumer.getNumResults() == 1 &&
+              !consumer.getLibraryCallAttr() &&
+              consumer.getNumParallelLoops() == consumer.getNumLoops() &&
+              consumer.getResult(0).getType() == type &&
+              std::distance(consumer.getBody()->begin(),
+                            consumer.getBody()->end()) == 2) {
+            auto gamma = operation(consumer.getResult(0), "arith.mulf");
+            bool weightedConsumer = false;
+            if (gamma)
+              for (unsigned side = 0; side < 2; ++side) {
+                Value factor = source(gamma->getOperand(side));
+                auto factorType = dyn_cast<RankedTensorType>(factor.getType());
+                weightedConsumer |=
+                    factorType && factorType.getRank() == 1 &&
+                    factorType.getElementType().isF32() &&
+                    factorType.getShape()[0] == type.getShape().back() &&
+                    source(gamma->getOperand(1 - side)) == op.getResult(0);
+              }
+            if (weightedConsumer)
+              continue;
+          }
+        }
+        for (unsigned scale = 0; scale < 2; ++scale) {
+          Value input;
+          Value origin = source(scaled->getOperand(1 - scale));
+          for (Value candidate : op.getInputs())
+            if (candidate.getType() == type && source(candidate) == origin)
+              input = candidate;
+          auto inverse = operation(scaled->getOperand(scale), "math.rsqrt");
+          if (!inverse) {
+            auto power = operation(scaled->getOperand(scale), "math.powf");
+            if (power && constant(power->getOperand(1), -0.5))
+              inverse = power;
+          }
+          if (!inverse || !input)
+            continue;
+          auto add = operation(inverse->getOperand(0), "arith.addf");
+          if (!add)
+            continue;
+          Value epsilon = source(add->getOperand(1));
+          if (auto fill = epsilon.getDefiningOp<linalg::FillOp>())
+            epsilon = fill.getInputs()[0];
+          auto eps = floatBits(epsilon);
+          auto mean = operation(add->getOperand(0), "arith.mulf");
+          if (!eps || !mean)
+            continue;
+          auto multiplier = floatBits(mean->getOperand(1));
+          auto sum = reduction(mean->getOperand(0), "arith.addf", 0.0);
+          if (!multiplier || !sum) {
+            multiplier = floatBits(mean->getOperand(0));
+            sum = reduction(mean->getOperand(1), "arith.addf", 0.0);
+          }
+          if (!multiplier || !sum)
+            continue;
+          auto square = operation(sum.getInputs()[0], "math.fpowi");
+          bool squares = square && constant(square->getOperand(1), 2.0) &&
+                         source(square->getOperand(0)) == source(input);
+          if (auto mul = operation(sum.getInputs()[0], "arith.mulf"))
+            squares |= source(mul->getOperand(0)) == source(input) &&
+                       source(mul->getOperand(1)) == source(input);
+          if (!squares)
+            continue;
+          SmallVector<Value> arguments{input};
+          if (weight)
+            arguments.push_back(weight);
+          StringRef callee = weight ? "rvv_norm" : "rvv_norm_no_weight";
+          Value normalized = final->getResult(0);
+          Value yielded = cast<linalg::YieldOp>(op.getBody()->getTerminator())
+                              .getValues()[0];
+          if (normalized == yielded) {
+            call(op, r, callee, arguments, {*multiplier, *eps});
+            return success();
+          }
+          auto empty = r.create<tensor::EmptyOp>(op.getLoc(), type.getShape(),
+                                                 type.getElementType());
+          auto prefix = r.create<linalg::GenericOp>(
+              op.getLoc(), TypeRange{type}, op.getInputs(), ValueRange{empty},
+              op.getIndexingMapsArray(), op.getIteratorTypesArray(),
+              [&](OpBuilder &b, Location loc, ValueRange args) {
+                IRMapping map;
+                for (auto [old, arg] :
+                     llvm::zip(op.getBody()->getArguments(), args))
+                  map.map(old, arg);
+                for (Operation &old : op.getBody()->without_terminator())
+                  b.clone(old, map);
+                b.create<linalg::YieldOp>(loc, map.lookup(normalized));
+              });
+          llvm::DenseSet<Value> needed;
+          auto collect = [&](auto &self, Value value) -> void {
+            if (value == normalized || !needed.insert(value).second)
+              return;
+            if (Operation *def = value.getDefiningOp();
+                def && def->getBlock() == op.getBody())
+              for (Value operand : def->getOperands())
+                self(self, operand);
+          };
+          collect(collect, yielded);
+          SmallVector<Value> inputs;
+          SmallVector<AffineMap> maps;
+          SmallVector<unsigned> indices;
+          for (unsigned i = 0; i < op.getNumDpsInputs(); ++i)
+            if (needed.contains(op.getBody()->getArgument(i))) {
+              inputs.push_back(op.getInputs()[i]);
+              maps.push_back(op.getIndexingMapsArray()[i]);
+              indices.push_back(i);
+            }
+          inputs.push_back(prefix.getResult(0));
+          maps.push_back(AffineMap::getMultiDimIdentityMap(type.getRank(),
+                                                           r.getContext()));
+          maps.push_back(op.getIndexingMapsArray().back());
+          auto suffix = r.create<linalg::GenericOp>(
+              op.getLoc(), TypeRange{type}, inputs, ValueRange{empty}, maps,
+              op.getIteratorTypesArray(),
+              [&](OpBuilder &b, Location loc, ValueRange args) {
+                IRMapping map;
+                for (auto [newIndex, oldIndex] : llvm::enumerate(indices))
+                  map.map(op.getBody()->getArgument(oldIndex), args[newIndex]);
+                map.map(op.getBody()->getArgument(op.getNumDpsInputs()),
+                        args.back());
+                map.map(normalized, args[indices.size()]);
+                for (Operation &old : op.getBody()->without_terminator())
+                  if (&old != final && needed.contains(old.getResult(0)))
+                    b.clone(old, map);
+                b.create<linalg::YieldOp>(loc, map.lookup(yielded));
+              });
+          r.setInsertionPoint(prefix);
+          call(prefix, r, callee, arguments, {*multiplier, *eps});
+          r.replaceOp(op, suffix.getResults());
+          return success();
+        }
       }
     }
     return failure();
@@ -244,6 +361,34 @@ struct Softmax : OpRewritePattern<linalg::GenericOp> {
     if (!type || !type.hasStaticShape() || !type.getElementType().isF32() ||
         type.getRank() < 1)
       return failure();
+    if (auto exp = operation(op.getResult(0), "math.exp")) {
+      auto sub = operation(exp->getOperand(0), "arith.subf");
+      auto aggregate =
+          sub ? operation(sub->getOperand(1), "arith.addf") : nullptr;
+      if (aggregate) {
+        Value input = source(sub->getOperand(0));
+        for (unsigned side = 0; side < 2; ++side) {
+          auto log = operation(aggregate->getOperand(side), "math.log");
+          auto max =
+              reduction(aggregate->getOperand(1 - side), "arith.maximumf",
+                        -double(std::numeric_limits<float>::max()));
+          auto sum = log ? reduction(log->getOperand(0), "arith.addf", 0.0)
+                         : linalg::ReduceOp{};
+          auto centered =
+              sum ? operation(sum.getInputs()[0], "math.exp") : nullptr;
+          auto difference =
+              centered ? operation(centered->getOperand(0), "arith.subf")
+                       : nullptr;
+          if (max && difference && input.getType() == type &&
+              source(max.getInputs()[0]) == input &&
+              source(difference->getOperand(0)) == input &&
+              source(difference->getOperand(1)) == max.getResult(0)) {
+            call(op, r, "rvv_logsumexp_softmax", {input});
+            return success();
+          }
+        }
+      }
+    }
     auto mul = operation(op.getResult(0), "arith.mulf");
     if (!mul)
       return failure();
@@ -278,8 +423,11 @@ struct Softmax : OpRewritePattern<linalg::GenericOp> {
         if (scale && maskedBits && type.getRank() == 4 &&
             type.getShape()[0] == 1 && maskType &&
             maskType.getElementType().isInteger(1) &&
-            maskType.getShape() == ArrayRef<int64_t>{1, 1, type.getShape()[2],
-                                                     type.getShape()[3]}) {
+            maskType.getRank() == 4 && maskType.getShape()[0] == 1 &&
+            maskType.getShape()[1] == 1 &&
+            (maskType.getShape()[2] == 1 ||
+             maskType.getShape()[2] == type.getShape()[2]) &&
+            maskType.getShape()[3] == type.getShape()[3]) {
           for (unsigned side = 0; side < 2; ++side) {
             auto scaleBits = floatBits(scale->getOperand(side));
             auto scoresArg =
@@ -327,8 +475,8 @@ struct Softmax : OpRewritePattern<linalg::GenericOp> {
 };
 
 bool halfSlice(ArrayRef<int64_t> offsets, ArrayRef<int64_t> sizes,
-               ArrayRef<int64_t> strides, RankedTensorType type,
-               int64_t offset, unsigned axis = 3) {
+               ArrayRef<int64_t> strides, RankedTensorType type, int64_t offset,
+               unsigned axis = 3) {
   if (offsets.size() != 4 || sizes.size() != 4 || strides.size() != 4)
     return false;
   for (unsigned i = 0; i < 4; ++i)
@@ -362,8 +510,29 @@ struct Rope : OpRewritePattern<linalg::GenericOp> {
       if (candidate.getType() == type &&
           source(candidate) == source(direct->getOperand(0)))
         input = candidate;
+    uint32_t scaleBits = 0x3f800000;
     auto cos = operation(direct->getOperand(1), "math.cos");
     auto sin = operation(rotated->getOperand(1), "math.sin");
+    if (!cos || !sin) {
+      auto scaledCos = operation(direct->getOperand(1), "arith.mulf");
+      auto scaledSin = operation(rotated->getOperand(1), "arith.mulf");
+      if (!scaledCos || !scaledSin)
+        return failure();
+      std::optional<uint32_t> cosineScale, sineScale;
+      for (unsigned side = 0; side < 2; ++side) {
+        if (auto trig = operation(scaledCos->getOperand(side), "math.cos")) {
+          cos = trig;
+          cosineScale = floatBits(scaledCos->getOperand(1 - side));
+        }
+        if (auto trig = operation(scaledSin->getOperand(side), "math.sin")) {
+          sin = trig;
+          sineScale = floatBits(scaledSin->getOperand(1 - side));
+        }
+      }
+      if (!cosineScale || cosineScale != sineScale)
+        return failure();
+      scaleBits = *cosineScale;
+    }
     if (!cos || !sin || !input ||
         source(cos->getOperand(0)) != source(sin->getOperand(0)))
       return failure();
@@ -445,12 +614,14 @@ struct Rope : OpRewritePattern<linalg::GenericOp> {
     if (positions.getType() !=
         RankedTensorType::get({type.getShape()[2]}, r.getI64Type()))
       return failure();
-    call(op, r, "rvv_rope", {input, freq, positions});
+    call(op, r, "rvv_rope", {input, freq, positions}, {scaleBits});
     return success();
   }
 };
 } // namespace
 void populateTensorPatterns(RewritePatternSet &patterns) {
+  populateNormalizationPatterns(patterns);
+  populateActivationPatterns(patterns);
   patterns.add<Norm, Softmax, Rope>(patterns.getContext());
 }
 } // namespace mlir::buddy::rvv

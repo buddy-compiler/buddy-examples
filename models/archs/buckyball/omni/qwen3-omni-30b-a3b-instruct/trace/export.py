@@ -42,7 +42,7 @@ def main():
             stage,
             {"hidden": value},
             target,
-            {"gate", "up", "down"} if name.startswith("expert") else set(),
+            {"gate", "up", "down"} if name.startswith("expert") else {"gate"},
             args.output,
             args.compiler_build,
         )
@@ -51,7 +51,7 @@ def main():
             with torch.no_grad(), patch("torch.nn.functional.linear", linear):
                 stage(value).numpy().tofile(output / "expected.f32")
         else:
-            with torch.no_grad():
+            with torch.no_grad(), patch("torch.nn.functional.linear", linear):
                 normalized, indices, scores = stage(hidden)
             normalized.numpy().tofile(output / "expected.f32")
             indices.numpy().tofile(output / "indices.i64")

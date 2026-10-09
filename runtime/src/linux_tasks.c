@@ -2,6 +2,7 @@
 #include "runtime.h"
 #include "workspace_internal.h"
 #include "params.h"
+#include <topology.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stdlib.h>
@@ -45,6 +46,11 @@ void runtime_init(size_t stack_bytes) {
   if (cores) abort();
   cpu_set_t affinity;
   if (sched_getaffinity(0, sizeof(affinity), &affinity)) abort();
+  const uint32_t profile = bb_topology_core_profile(bb_topology_core_id(BB_TEST_HART));
+  for (unsigned cpu = 0; cpu < CPU_SETSIZE; ++cpu)
+    if (cpu >= BB_MAIN_CORES ||
+        bb_topology_core_profile((core_id_t){0, cpu}) != profile)
+      CPU_CLR(cpu, &affinity);
   num_cores = CPU_COUNT(&affinity);
   if (!num_cores) abort();
   cores = calloc(num_cores, sizeof(*cores));

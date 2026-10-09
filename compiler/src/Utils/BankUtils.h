@@ -101,7 +101,7 @@ static inline mlir::Value mvinBank(mlir::OpBuilder &b, mlir::Location loc,
   mlir::Value depthVal = createI64Const(b, loc, depth);
   mlir::Value strideVal = createI64Const(b, loc, stride);
   return b.create<BankMvinOp>(loc, bank.getType(), memref, bank, depthVal,
-                              strideVal);
+                              strideVal, mlir::IntegerAttr{});
 }
 
 /// Move data from bank to memref.
@@ -111,7 +111,7 @@ static inline mlir::Value mvoutBank(mlir::OpBuilder &b, mlir::Location loc,
   mlir::Value depthVal = createI64Const(b, loc, depth);
   mlir::Value strideVal = createI64Const(b, loc, stride);
   return b.create<BankMvoutOp>(loc, bank.getType(), memref, bank, depthVal,
-                               strideVal);
+                               strideVal, mlir::IntegerAttr{});
 }
 
 /// Create mset operation for bank allocation/release.

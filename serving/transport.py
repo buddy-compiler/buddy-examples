@@ -2,11 +2,13 @@
 import socket
 import struct
 import threading
+import time
 from concurrent.futures import Future, TimeoutError
 from pathlib import Path
 
 _HEADER = struct.Struct("<QQQQ")
 _MAGIC = b"BBMUX1\n"
+_READY = b"BBMUX1 READY\n"
 _MAX_FRAME = 256 * 1024 * 1024
 _CLOSE = (1 << 64) - 1
 
@@ -30,8 +32,23 @@ class Transport:
         try:
             self.socket.connect(str(console_socket))
             self.socket.sendall(b"hart 0\n" + _MAGIC)
-            if self._read(len(_MAGIC)) != _MAGIC:
-                raise RuntimeError("P2E guest did not acknowledge the worker transport protocol")
+            # The console can still carry Linux boot output or tty input echo.
+            # Only the guest's distinct acknowledgement begins binary framing.
+            deadline = time.monotonic() + timeout
+            line = bytearray()
+            for _ in range(1024 * 1024):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("guest did not acknowledge the worker transport protocol")
+                self.socket.settimeout(remaining)
+                byte = self._read(1)
+                line.extend(byte)
+                if line.endswith(_READY):
+                    break
+                if byte == b"\n":
+                    line.clear()
+            else:
+                raise RuntimeError("guest boot output exceeded the handshake limit")
         except BaseException:
             self.socket.close()
             raise

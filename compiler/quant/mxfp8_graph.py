@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from buddy.compiler.graph.operation import MatmulOp, AddMMOp, TOp, PermuteOp, Op, OpType
 from buddy.compiler.graph.type import TensorDType
@@ -18,33 +17,64 @@ def lower_matmul(node, symbols):
     activation, weight = [symbols[(name, 0)] for name in node.args]
     shape = list(ir.RankedTensorType(activation.type).shape)
     if len(shape) != 2 or any(size <= 0 for size in shape) or shape[1] % 32:
-        raise ValueError("MXFP8 requires a positive static FP32 matrix with K divisible by 32")
+        raise ValueError(
+            "MXFP8 requires a positive static FP32 matrix with K divisible by 32"
+        )
     rows, reduction = shape
     tile_rows = 1 if rows == 1 else node.layout["tile_m"]
     chunk, stride = node.layout["tile_k"], node.layout["bank_bytes"]
-    packed_size = ((rows + tile_rows - 1) // tile_rows
-                   * ((reduction + chunk - 1) // chunk) * stride)
+    packed_size = (
+        (rows + tile_rows - 1)
+        // tile_rows
+        * ((reduction + chunk - 1) // chunk)
+        * stride
+    )
     integer = ir.IntegerType.get_signless(64)
     packed = ir.Operation.create(
-        "buckyball.mxfp8_quant", operands=[activation],
-        results=[ir.RankedTensorType.get([packed_size], ir.IntegerType.get_signless(8))],
-        attributes={"tile_rows": ir.IntegerAttr.get(integer, tile_rows),
-                    "tile_k": ir.IntegerAttr.get(integer, chunk),
-                    "bank_bytes": ir.IntegerAttr.get(integer, stride)},
+        "buckyball.mxfp8_quant",
+        operands=[activation],
+        results=[
+            ir.RankedTensorType.get([packed_size], ir.IntegerType.get_signless(8))
+        ],
+        attributes={
+            "tile_rows": ir.IntegerAttr.get(integer, tile_rows),
+            "tile_k": ir.IntegerAttr.get(integer, chunk),
+            "bank_bytes": ir.IntegerAttr.get(integer, stride),
+        },
     ).result
     output = ir.RankedTensorType.get(node.tensor_meta["shape"], ir.F32Type.get())
-    attributes = {key: ir.IntegerAttr.get(integer, node.layout[key])
-                  for key in ("tile_m", "tile_n", "tile_k", "bank_bytes")}
+    attributes = {
+        key: ir.IntegerAttr.get(integer, node.layout[key])
+        for key in ("tile_m", "tile_n", "tile_k", "bank_bytes")
+    }
     attributes["reduction_k"] = ir.IntegerAttr.get(integer, reduction)
     return ir.Operation.create(
-        "buckyball.mxfp8_matmul", results=[output], attributes=attributes,
+        "buckyball.mxfp8_matmul",
+        results=[output],
+        attributes=attributes,
         operands=[packed, weight],
     ).result
 
 
 def quantize_graph(
-    graph, params, names, output, name, packer, *, weights, bank_bytes, rows_hint
+    graph,
+    params,
+    names,
+    output,
+    name,
+    packer,
+    *,
+    weights,
+    embeddings,
+    bank_bytes,
+    rows_hint,
 ):
+    from .mxfp8_embedding import _quantize_embeddings
+
+    if weights & embeddings:
+        raise ValueError(
+            "Linear and embedding consumers require separate packed parameters"
+        )
     parameters = list(graph.params)
     parameter_inputs = [graph._body[i] for i in graph._inputs]
     positions = {node.name: index for index, node in enumerate(parameters)}
@@ -73,13 +103,13 @@ def quantize_graph(
                 f"Linear weight has no quantization decision: {names[index]}"
             )
         if weight.name not in quantized:
-            array = params[index].detach().numpy()
+            array = params[index].detach()
             codes, scales = quantize(array)
             layout = plan(max(16, rows_hint), *array.shape, bank_bytes, mxfp8=True)
             packed = pack(codes, scales, layout)
             quantized[weight.name] = (list(array.shape), packed, layout)
-            params[index] = torch.from_numpy(packed.view(np.int8).copy())
-            weight.tensor_meta["shape"] = [packed.size]
+            params[index] = packed
+            weight.tensor_meta["shape"] = [packed.numel()]
             weight.tensor_meta["dtype"] = TensorDType.Int8
         replacement = MXFP8MatmulOp()
         replacement.layout = quantized[weight.name][2]
@@ -115,17 +145,24 @@ def quantize_graph(
     graph._ops_registry["MXFP8MatmulOp"] = lower_matmul
     if {names[positions[node]] for node in quantized} != selected_weights:
         raise ValueError("Selected weights do not match the graph linear operations")
+    quantized.update(_quantize_embeddings(graph, params, names, embeddings=embeddings))
+    return _write_parameters(graph, params, names, output, name, packer, quantized)
+
+
+def _write_parameters(graph, params, names, output, name, packer, quantized):
+    parameters = list(graph.params)
+    positions = {node.name: index for index, node in enumerate(parameters)}
     tensors, weights, floats = [], [], []
     weight_offset = float_offset = 0
     for node, param, parameter_name in zip(parameters, params, names):
         if node.name in quantized:
             shape, packed, layout = quantized[node.name]
-            raw = packed.tobytes()
+            raw = packed.cpu().numpy().tobytes()
             tensors.append(
                 QuantTensor(
                     parameter_name,
                     shape,
-                    [packed.size],
+                    list(packed.shape),
                     "mxfp8",
                     [1],
                     weight_offset,
@@ -138,7 +175,11 @@ def quantize_graph(
             weights.append(raw)
             weight_offset += len(raw)
         else:
-            raw = param.detach().numpy().tobytes()
+            if param.dtype != torch.float32:
+                raise ValueError(
+                    f"Unquantized parameter requires FP32 storage: {parameter_name}"
+                )
+            raw = param.detach().cpu().contiguous().numpy().tobytes()
             shape = list(param.shape)
             tensors.append(
                 QuantTensor(

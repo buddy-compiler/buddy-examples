@@ -29,12 +29,12 @@ public:
 
   StringRef getArgument() const final { return "report-bank-usage"; }
   StringRef getDescription() const final {
-    return "Report physical bank occupancy from bb_mset alloc/release "
-           "timeline.";
+    return "Report mapped group occupancy against the supplied pool capacity "
+           "from mset alloc/transfer/release timeline.";
   }
 
   Option<int64_t> bankNum{*this, "bank_num",
-                          llvm::cl::desc("Number of physical banks."),
+                          llvm::cl::desc("Physical group capacity of the reported pool."),
                           llvm::cl::init(16)};
   Option<bool> verbose{*this, "verbose",
                        llvm::cl::desc("Print per-event timeline."),
@@ -48,7 +48,6 @@ public:
       return;
     }
 
-    llvm::SmallVector<int8_t, 32> used(bankNum, 0);
     llvm::DenseMap<int64_t, int64_t> allocSize;
     int64_t cur = 0;
     int64_t peak = 0;
@@ -68,6 +67,33 @@ public:
 
     for (Block &blk : func.getBlocks()) {
       for (Operation &op : blk.getOperations()) {
+        if (auto transfer = dyn_cast<::buddy::buckyball::MsetTransferOp>(op)) {
+          ++evt;
+          auto source = getConstI64(transfer.getSource());
+          auto target = getConstI64(transfer.getTarget());
+          if (!source || !target) {
+            transfer.emitError(
+                "report-bank-usage: transfer bank IDs must be constant");
+            signalPassFailure();
+            return;
+          }
+          auto sourceAllocation = allocSize.find(*source);
+          if (sourceAllocation == allocSize.end()) {
+            transfer.emitError(
+                "report-bank-usage: transfer source is not allocated");
+            signalPassFailure();
+            return;
+          }
+          int64_t groups = sourceAllocation->second;
+          allocSize.erase(sourceAllocation);
+          allocSize[*target] += groups;
+          if (verbose)
+            llvm::errs() << "[bank-usage] " << func.getName() << " evt=" << evt
+                         << " transfer b" << *source << " -> b" << *target
+                         << " groups=" << groups << " cur=" << cur << "/"
+                         << bankNum << "\n";
+          continue;
+        }
         auto mset = dyn_cast<::buddy::buckyball::MsetOp>(op);
         if (!mset)
           continue;
@@ -78,7 +104,7 @@ public:
           signalPassFailure();
           return;
         }
-        if (*bid < 0 || *bid >= bankNum) {
+        if (*bid < 0 || *bid > 1023) {
           func.emitError("report-bank-usage: bank id out of range");
           signalPassFailure();
           return;
@@ -87,24 +113,19 @@ public:
         if (mset.getAlloc()) {
           int64_t row = mset.getRow();
           int64_t col = mset.getCol();
-          int64_t need = row * col;
-          if (row <= 0 || col <= 0 || need <= 0 || *bid + need > bankNum) {
-            func.emitError("report-bank-usage: invalid alloc row/col or range");
+          int64_t need = col == 0 ? static_cast<int64_t>(bankNum) : col;
+          if (row < 0 || row > 31 || col < 0 || col > 31 ||
+              cur + need > bankNum) {
+            func.emitError(
+                "report-bank-usage: invalid allocation or capacity exceeded");
             signalPassFailure();
             return;
           }
           if (allocSize.count(*bid)) {
-            func.emitError("report-bank-usage: double alloc on same base bank");
+            func.emitError(
+                "report-bank-usage: double alloc on same virtual bank");
             signalPassFailure();
             return;
-          }
-          for (int64_t i = 0; i < need; ++i) {
-            if (used[*bid + i]) {
-              func.emitError("report-bank-usage: overlapping bank allocation");
-              signalPassFailure();
-              return;
-            }
-            used[*bid + i] = 1;
           }
           allocSize[*bid] = need;
           cur += need;
@@ -126,8 +147,6 @@ public:
           return;
         }
         int64_t need = it->second;
-        for (int64_t i = 0; i < need; ++i)
-          used[*bid + i] = 0;
         allocSize.erase(it);
         cur -= need;
         ++relCnt;

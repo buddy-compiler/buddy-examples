@@ -1,3 +1,6 @@
 inputs = ["The capital of France is"]
-core_index = 0
+tile_indices = [1]
+max_tokens = 8
+memory_mib = 4096
+temperature = 0.0
 timeout = 7200

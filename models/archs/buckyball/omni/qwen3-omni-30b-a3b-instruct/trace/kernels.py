@@ -61,7 +61,7 @@ def main():
             weights.router(0),
             {"hidden": torch.randn(count, hidden)},
             "attention",
-            set(),
+            {"gate"},
             args.output,
             args.compiler_build,
         )
@@ -77,6 +77,7 @@ def main():
             set(),
             args.output,
             args.compiler_build,
+            embeddings={"weight"},
         )
         name = f"{phase}_norm"
         metadata["stages"][name] = emit(

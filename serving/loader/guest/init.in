@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+exec </dev/hvc0 >/dev/hvc0 2>/dev/null
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+# BBMUX owns hvc0 after its handshake; ordinary printk and diagnostics stay off it.
+echo 0 > /proc/sys/kernel/printk
+set +e
+/root/run-model 2>/tmp/worker-mux.log
+status=$?
+set -e
+printf '%s\n' "$status" > /tmp/worker-session.status
+if [ "$status" -eq 0 ]; then
+  echo 'BBMUX session closed successfully' > /tmp/worker-session.log
+  poweroff -f >>/tmp/worker-session.log 2>&1 || echo 'poweroff failed' >>/tmp/worker-session.log
+else
+  echo "BBMUX session failed: exit=$status" > /tmp/worker-session.log
+  cat /tmp/worker-session.log /tmp/worker-mux.log > /dev/hvc0
+  reboot -f >>/tmp/worker-session.log 2>&1 || echo 'reboot failed' >>/tmp/worker-session.log
+fi
+# PID1 must remain alive if the platform does not complete poweroff.
+while :; do sleep 3600; done

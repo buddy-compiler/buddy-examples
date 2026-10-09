@@ -11,4 +11,5 @@ void registerGatherRowsPass();
 void populateGatherPatterns(RewritePatternSet &patterns);
 void registerRVVKernelsPasses();
 void registerRVVMatmulPass();
+void registerRVVPointwisePass();
 } // namespace mlir::buddy

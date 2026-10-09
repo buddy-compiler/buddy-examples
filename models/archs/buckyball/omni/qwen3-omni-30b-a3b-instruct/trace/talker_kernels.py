@@ -67,7 +67,7 @@ def main():
                 source.router(0),
                 {"hidden": torch.randn(count, config["hidden_size"])},
                 "attention",
-                set(),
+                {"gate", "shared_gate"},
             ),
             (
                 f"talker_{phase}_shared",

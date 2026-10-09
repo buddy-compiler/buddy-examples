@@ -10,10 +10,38 @@ using namespace mlir;
 namespace {
 template <typename Op> struct Outline : OpRewritePattern<Op> {
   using OpRewritePattern<Op>::OpRewritePattern;
-  LogicalResult matchAndRewrite(Op op, PatternRewriter &rewriter) const override {
+  LogicalResult matchAndRewrite(Op op,
+                                PatternRewriter &rewriter) const override {
     if (!getElementTypeOrSelf(op.getInputs()[0].getType()).isF32() ||
         !getElementTypeOrSelf(op.getInputs()[1].getType()).isF32() ||
         !getElementTypeOrSelf(op.getOutputs()[0].getType()).isF32())
+      return failure();
+    const bool batch = isa<linalg::BatchMatmulOp>(op.getOperation());
+    unsigned shift = batch ? 1 : 0;
+    auto ctx = rewriter.getContext();
+    auto m = getAffineDimExpr(shift, ctx);
+    auto n = getAffineDimExpr(shift + 1, ctx);
+    auto k = getAffineDimExpr(shift + 2, ctx);
+    SmallVector<AffineExpr> lhs, rhs, transposed, output;
+    if (batch) {
+      auto b = getAffineDimExpr(0, ctx);
+      lhs.push_back(b);
+      rhs.push_back(b);
+      transposed.push_back(b);
+      output.push_back(b);
+    }
+    lhs.append({m, k});
+    rhs.append({k, n});
+    transposed.append({n, k});
+    output.append({m, n});
+    auto map = [&](ArrayRef<AffineExpr> results) {
+      return AffineMap::get(shift + 3, 0, results, ctx);
+    };
+    auto maps = op.getIndexingMapsArray();
+    if (maps[0] != map(lhs) || maps[2] != map(output))
+      return failure();
+    bool rhsTransposed = maps[1] == map(transposed);
+    if (!rhsTransposed && maps[1] != map(rhs))
       return failure();
     auto call = rewriter.create<linalg::GenericOp>(
         op.getLoc(), op.getResultTypes(), op.getInputs(), op.getOutputs(),
@@ -23,7 +51,8 @@ template <typename Op> struct Outline : OpRewritePattern<Op> {
           Value sum = builder.create<arith::AddFOp>(loc, args[2], product);
           builder.create<linalg::YieldOp>(loc, sum);
         });
-    call.setLibraryCallAttr(rewriter.getStringAttr("rvv_matmul"));
+    call.setLibraryCallAttr(rewriter.getStringAttr(
+        rhsTransposed ? "rvv_matmul_transpose_rhs" : "rvv_matmul"));
     rewriter.replaceOp(op, call.getResults());
     return success();
   }

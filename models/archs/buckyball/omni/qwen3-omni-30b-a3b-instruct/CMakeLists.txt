@@ -27,6 +27,8 @@ set(GRAPH_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/trace/graph.py
   ${COMPILER_BUILD}/python_packages/buddy/compiler/graph/transform/layout/provenance.py
   ${CMAKE_CURRENT_SOURCE_DIR}/permute/layout.py
   ${REPO_ROOT}/stack/compiler/quant/mxfp8_graph.py
+  ${REPO_ROOT}/stack/compiler/quant/mxfp8_embedding.py
+  ${REPO_ROOT}/stack/compiler/quant/mxfp8_lowering.py
   ${REPO_ROOT}/examples/balls/mxmm/compiler/python/fp32.py
   ${REPO_ROOT}/examples/balls/mxmm/compiler/python/layout.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/mxfp8.py
@@ -93,7 +95,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/media/talker/CMakeLists.txt")
 include("${CMAKE_CURRENT_SOURCE_DIR}/media/wave/CMakeLists.txt")
 file(GLOB EXECUTION_SOURCES CONFIGURE_DEPENDS "${MODEL_SOURCE}/execution/*.cpp")
 add_executable(omni-run ${MODEL_SOURCE}/main.cpp ${EXECUTION_SOURCES} ${OBJECTS} ${KERNEL_DIR}/model-parameters.h ${VISION_DIR}/vision-parameters.h ${AUDIO_DIR}/audio-parameters.h ${TALKER_DIR}/talker-parameters.h ${WAVE_DIR}/wave-parameters.h)
-target_include_directories(omni-run PRIVATE ${MODEL_SOURCE}/execution ${KERNEL_DIR} ${VISION_DIR} ${AUDIO_DIR} ${TALKER_DIR} ${WAVE_DIR} ${CMAKE_BINARY_DIR}/isa ${BUDDY_SOURCE}/frontend/Interfaces)
+target_include_directories(omni-run PRIVATE ${MODEL_SOURCE}/execution ${KERNEL_DIR} ${VISION_DIR} ${AUDIO_DIR} ${TALKER_DIR} ${WAVE_DIR} ${CMAKE_BINARY_DIR}/isa ${BUDDY_SOURCE}/frontend/Interfaces ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine)
 target_compile_options(omni-run PRIVATE -O2 -march=rv64gc)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
@@ -107,4 +109,4 @@ add_custom_command(TARGET omni-run POST_BUILD
           --rax-pack ${COMPILER_BUILD}/bin/rax-pack
   WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
 set_property(TARGET omni-run APPEND PROPERTY LINK_DEPENDS
-  ${MODEL_SOURCE}/pack.py ${CMAKE_CURRENT_SOURCE_DIR}/configs/deploy.yaml ${REPO_ROOT}/stack/compiler/package.py ${GENERATED_DIR}/weights/placements.json ${GENERATED_DIR}/weights/vision-placement.json ${GENERATED_DIR}/weights/audio-placement.json ${GENERATED_DIR}/weights/talker-placement.json ${GENERATED_DIR}/weights/wave-placement.json)
+  ${MODEL_SOURCE}/pack.py ${REPO_ROOT}/stack/compiler/package.py ${GENERATED_DIR}/weights/placements.json ${GENERATED_DIR}/weights/vision-placement.json ${GENERATED_DIR}/weights/audio-placement.json ${GENERATED_DIR}/weights/talker-placement.json ${GENERATED_DIR}/weights/wave-placement.json)

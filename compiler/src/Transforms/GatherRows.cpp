@@ -5,6 +5,8 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/Dialect/Vector/IR/VectorOps.h"
+#include "mlir/IR/Matchers.h"
 #include "mlir/Interfaces/ViewLikeInterface.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
@@ -115,21 +117,96 @@ public:
   }
 };
 
+class ScatterRows : public OpRewritePattern<vector::TransferWriteOp> {
+public:
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(vector::TransferWriteOp write,
+                                PatternRewriter &rewriter) const override {
+    auto read = write.getVector().getDefiningOp<vector::TransferReadOp>();
+    auto sourceType = read ? dyn_cast<MemRefType>(read.getBase().getType())
+                           : MemRefType();
+    auto destinationType = dyn_cast<MemRefType>(write.getBase().getType());
+    if (!read || !sourceType || !destinationType ||
+        !read->hasOneUse() || read->getNextNode() != write.getOperation() ||
+        read.getMask() || write.getMask() ||
+        read.getVectorType().getRank() != 1 ||
+        read.getVectorType().isScalable() || !read.isDimInBounds(0) ||
+        !write.isDimInBounds(0) ||
+        !read.getPermutationMap().isMinorIdentity() ||
+        !write.getPermutationMap().isMinorIdentity())
+      return failure();
+
+    int64_t width = read.getVectorType().getDimSize(0);
+    SmallVector<int64_t> sourceStrides, destinationStrides;
+    int64_t offset;
+    if (sourceType.getRank() < 1 || destinationType.getRank() < 1 ||
+        sourceType.getShape().back() != width ||
+        destinationType.getShape().back() != width ||
+        sourceType.getElementType() != read.getVectorType().getElementType() ||
+        destinationType.getElementType() != read.getVectorType().getElementType() ||
+        !matchPattern(read.getIndices().back(), m_Zero()) ||
+        !matchPattern(write.getIndices().back(), m_Zero()) ||
+        failed(sourceType.getStridesAndOffset(sourceStrides, offset)) ||
+        failed(destinationType.getStridesAndOffset(destinationStrides, offset)) ||
+        sourceStrides.back() != 1 || destinationStrides.back() != 1)
+      return failure();
+
+    Value sourceRoot = read.getBase(), destinationRoot = write.getBase();
+    while (auto view = sourceRoot.getDefiningOp<ViewLikeOpInterface>())
+      sourceRoot = view.getViewSource();
+    while (auto view = destinationRoot.getDefiningOp<ViewLikeOpInterface>())
+      destinationRoot = view.getViewSource();
+    if (!destinationRoot.getDefiningOp<memref::AllocOp>() ||
+        sourceRoot == destinationRoot)
+      return failure();
+    if (auto argument = dyn_cast<BlockArgument>(sourceRoot)) {
+      if (!isa<func::FuncOp>(argument.getOwner()->getParentOp()))
+        return failure();
+    } else if (!sourceRoot.getDefiningOp<memref::AllocOp>()) {
+      return failure();
+    }
+
+    SmallVector<Value> rows;
+    for (auto transfer : {cast<VectorTransferOpInterface>(read.getOperation()),
+                          cast<VectorTransferOpInterface>(write.getOperation())}) {
+      auto type = cast<MemRefType>(transfer.getBase().getType());
+      auto rowType = MemRefType::get(
+          {width}, type.getElementType(),
+          StridedLayoutAttr::get(getContext(), ShapedType::kDynamic, {1}),
+          type.getMemorySpace());
+      SmallVector<OpFoldResult> offsets;
+      for (Value index : transfer.getIndices())
+        offsets.push_back(index);
+      SmallVector<OpFoldResult> sizes(type.getRank(), rewriter.getIndexAttr(1));
+      sizes.back() = rewriter.getIndexAttr(width);
+      SmallVector<OpFoldResult> strides(type.getRank(), rewriter.getIndexAttr(1));
+      rows.push_back(rewriter.create<memref::SubViewOp>(
+          write.getLoc(), rowType, transfer.getBase(), offsets, sizes, strides));
+    }
+    rewriter.create<memref::CopyOp>(write.getLoc(), rows[0], rows[1]);
+    rewriter.eraseOp(write);
+    rewriter.eraseOp(read);
+    return success();
+  }
+};
+
 class GatherRowsPass
     : public PassWrapper<GatherRowsPass, OperationPass<ModuleOp>> {
 public:
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(GatherRowsPass)
   StringRef getArgument() const final { return "lower-gather-rows"; }
   StringRef getDescription() const final {
-    return "Copy contiguous gathered rows without an element loop.";
+    return "Copy contiguous gathered and scattered rows without element loops.";
   }
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<arith::ArithDialect, linalg::LinalgDialect,
-                    memref::MemRefDialect, scf::SCFDialect>();
+                    memref::MemRefDialect, scf::SCFDialect,
+                    vector::VectorDialect>();
   }
   void runOnOperation() override {
     RewritePatternSet patterns(&getContext());
-    patterns.add<GatherRows>(&getContext());
+    patterns.add<GatherRows, ScatterRows>(&getContext());
     if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))))
       signalPassFailure();
   }

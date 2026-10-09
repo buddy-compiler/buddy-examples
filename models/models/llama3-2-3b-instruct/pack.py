@@ -3,6 +3,7 @@ from pathlib import Path
 import shutil
 
 from stack.compiler.package import pack
+from .inputs import prepare_inputs
 
 
 import argparse
@@ -11,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--generated-dir", type=Path, required=True)
 parser.add_argument("--model-dir", type=Path, required=True)
 parser.add_argument("--rax-pack", type=Path, required=True)
-parser.add_argument("--entrypoint", required=True)
+parser.add_argument("--run-config", type=Path, required=True)
 parser.add_argument("--backend", required=True)
 args = parser.parse_args()
 source, output = args.generated_dir.resolve(), args.model_dir.resolve()
@@ -32,6 +33,30 @@ for name in dict.fromkeys(stage["parameters"] for stage in metadata["stages"]):
         shutil.copy2(source / name / filename, destination / filename)
         resources.append(f"{name}/{filename}")
     for filename in ("quant-index.json", "scales.bin"):
-        shutil.copy2(source / name / f"{name}.payload" / filename, destination / filename)
+        shutil.copy2(
+            source / name / f"{name}.payload" / filename, destination / filename
+        )
         resources.append(f"{name}/{filename}")
-pack(output, metadata["chip"], "llama", metadata["model"], "llama-run", "model.json", resources, args.rax_pack, {"kind": "python", "entrypoint": args.entrypoint}, args.backend)
+prepared, reference = prepare_inputs(output, args.run_config, metadata)
+resources.extend(prepared)
+execution = {
+    "kind": "native",
+    "input": "resource",
+    "arguments": ["/root"],
+    "prepared_inputs": prepared,
+    "reference_settings": reference,
+    "output": "json",
+    "p2e": {"kind": "native", "task_runtime": "ant"},
+}
+pack(
+    output,
+    metadata["chip"],
+    "llama",
+    metadata["model"],
+    "llama-run",
+    "model.json",
+    resources,
+    args.rax_pack,
+    execution,
+    args.backend,
+)

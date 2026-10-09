@@ -1,14 +1,14 @@
 set(DESIGN_MODULE examples.models.poly.llama3-2-3b-instruct)
 set(CHECKPOINT "meta-llama/Llama-3.2-3B-Instruct")
 set(DESIGN_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(SERVING_ENTRYPOINT examples.models.poly.llama3-2-3b-instruct.serve:run)
 set(LLVM_OPT_LEVEL 2 CACHE STRING "Backend optimization level")
 set(LLVM_PASSES "function(sroa,early-cse,instcombine,simplifycfg,adce)")
 set(MATTR "+xbuckyball,+m,+D")
 set(MODEL_SOURCE "${REPO_ROOT}/stack/models/models/llama3-2-3b-instruct")
 set(PREFILL_LENGTH 8 CACHE STRING "Compiled prefill capacity")
 set(CACHE_LENGTH 16 CACHE STRING "Compiled KV capacity")
-set(PARTS 4 CACHE STRING "Tensor parallel tile count")
+file(STRINGS "${ISA_DIR}/chip/topology.h" TILE_COUNT_LINE REGEX "^#define BB_COMPUTE_TILES ")
+string(REGEX REPLACE "^#define BB_COMPUTE_TILES ([0-9]+)$" "\\1" PARTS "${TILE_COUNT_LINE}")
 execute_process(COMMAND ${PYTHON} -c
   "import json,sys; from huggingface_hub import hf_hub_download; print(json.load(open(hf_hub_download(sys.argv[1], 'config.json')))['num_hidden_layers'])"
   "${CHECKPOINT}" OUTPUT_VARIABLE LAYERS OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
@@ -41,6 +41,7 @@ set(DESIGN_DEPENDS ${DESIGN_DIR}/__init__.py ${DESIGN_FILES}
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/convolution.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/layout/matrix.py
   ${REPO_ROOT}/stack/compiler/quant/mxfp8_graph.py
+  ${REPO_ROOT}/stack/compiler/quant/mxfp8_embedding.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/mxfp8.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/activation.py
   ${BUDDY_SOURCE}/frontend/Python/graph/transform/quantization/symmetric.py
@@ -57,9 +58,14 @@ set(FORWARD_PASSES
   -lower-tile-runtime)
 set(KERNEL_PASSES
   -eliminate-empty-tensors -convert-elementwise-to-linalg
-  -convert-tensor-to-linalg -canonicalize -cse
-  -one-shot-bufferize=bufferize-function-boundaries
+  -convert-tensor-to-linalg -fuse-pointwise
+  -outline-rvv-matmul -outline-rvv-kernels -fold-unit-transpose -canonicalize
+  -canonicalize -cse
+  -one-shot-bufferize=bufferize-function-boundaries -lower-rvv-kernels
+  -lower-rvv-pointwise
+  -lower-gather-rows -fuse-norm-quant-window
   -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
+  -optimize-allocation-liveness
   -convert-linalg-to-tile=quantized-only -convert-tile-to-buckyball
   -lower-buckyball-to-bank-ssa -assign-physical-banks
   -llvm-request-c-wrappers -lower-bank-ssa-to-intrinsics
@@ -71,7 +77,7 @@ set(KERNEL_PASSES
   -bufferization-lower-deallocations -convert-math-to-llvm
   -convert-math-to-libm -convert-arith-to-llvm -convert-func-to-llvm
   -finalize-memref-to-llvm -reconcile-unrealized-casts -canonicalize -cse
-  -lower-tile-runtime)
+  -lower-tile-runtime -lower-ant-runtime -verify-npu-compute)
 set(OBJECTS)
 foreach(STAGE IN LISTS STAGES)
   if(STAGE MATCHES "_ffn_" OR STAGE STREQUAL "output")
@@ -86,20 +92,21 @@ endforeach()
 add_library(llama_kernels STATIC ${OBJECTS})
 set_target_properties(llama_kernels PROPERTIES LINKER_LANGUAGE CXX)
 add_dependencies(llama_kernels llama-model-build)
-add_executable(llama-run ${MODEL_SOURCE}/main.cpp)
+add_executable(llama-run ${MODEL_SOURCE}/main.cpp ${MODEL_SOURCE}/execution.cpp ${MODEL_SOURCE}/generation.cpp)
 add_dependencies(llama-run model-loader)
-target_include_directories(llama-run PRIVATE ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
+target_include_directories(llama-run PRIVATE ${ISA_DIR}/chip ${GENERATED_DIR} ${BUDDY_SOURCE}/frontend/Interfaces)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
 add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
-target_link_libraries(llama-run PRIVATE -static llama_kernels runtime rvv_kernels mxfp8_pack mxquant_backend)
+add_subdirectory("${REPO_ROOT}/examples/balls/mxmm/workloads/kernels" mxmm)
+target_link_libraries(llama-run PRIVATE -static llama_kernels runtime_ant_tasks rvv_kernels_ant mxfp8_pack_ant mxquant_backend_ant mxmm_kernels_ant)
 add_custom_command(TARGET llama-run POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:llama-run> ${ARTIFACT_DIR}/llama-run
   COMMAND ${PYTHON} -m stack.models.models.llama3-2-3b-instruct.pack
           --generated-dir ${GENERATED_DIR}
-          --model-dir ${ARTIFACT_DIR} --entrypoint ${SERVING_ENTRYPOINT} --backend buckyball --rax-pack ${COMPILER_BUILD}/bin/rax-pack
+          --model-dir ${ARTIFACT_DIR} --run-config ${DESIGN_DIR}/configs/running-param.toml --backend buckyball --rax-pack ${COMPILER_BUILD}/bin/rax-pack
   WORKING_DIRECTORY ${REPO_ROOT}
   VERBATIM)
 set_property(TARGET llama-run APPEND PROPERTY LINK_DEPENDS
-  ${MODEL_SOURCE}/pack.py ${REPO_ROOT}/stack/compiler/package.py ${GENERATED_DIR}/model.json)
+  ${MODEL_SOURCE}/pack.py ${MODEL_SOURCE}/inputs.py ${DESIGN_DIR}/configs/running-param.toml ${REPO_ROOT}/stack/compiler/package.py ${GENERATED_DIR}/model.json)
