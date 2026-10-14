@@ -5,8 +5,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <buddy/Core/Container.h>
 #include "model_parameters.h"
+#include <buddy/Core/Container.h>
 
 #include <chrono>
 #include <cstdint>
@@ -63,8 +63,8 @@ void runOrDie(const std::string &cmd) {
   std::cout << "[cmd] " << cmd << std::endl;
   int rc = std::system(cmd.c_str());
   if (rc != 0)
-    throw std::runtime_error("command failed (" + std::to_string(rc) + "): " +
-                             cmd);
+    throw std::runtime_error("command failed (" + std::to_string(rc) +
+                             "): " + cmd);
 }
 
 size_t floatCount(const std::string &path) {
@@ -107,8 +107,8 @@ std::vector<float> makeTimesteps(int steps, float shift) {
   return ts;
 }
 
-void writeRawAndMux(const MemRef<float, 5> &video, const MemRef<float, 3> &audio,
-                    const std::string &mp4Path) {
+void writeRawAndMux(const MemRef<float, 5> &video,
+                    const MemRef<float, 3> &audio, const std::string &mp4Path) {
   const std::string rgbPath = "h3_768p.rgb";
   const std::string pcmPath = "h3_768p.pcm";
   {
@@ -150,17 +150,16 @@ void writeRawAndMux(const MemRef<float, 5> &video, const MemRef<float, 3> &audio
   }
   std::ostringstream cmd;
   cmd << "ffmpeg -y -f rawvideo -pix_fmt rgb24 -s " << WIDTH << "x" << HEIGHT
-      << " -r " << FPS << " -i " << rgbPath
-      << " -f s16le -ar " << SAMPLE_RATE << " -ac 2 -i " << pcmPath
+      << " -r " << FPS << " -i " << rgbPath << " -f s16le -ar " << SAMPLE_RATE
+      << " -ac 2 -i " << pcmPath
       << " -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest " << mp4Path
       << " >/dev/null 2>&1";
   runOrDie(cmd.str());
 }
 
 void printUsage(const char *argv0) {
-  std::cerr
-      << "Usage: " << argv0
-      << " --mode t2va|fl2va --prompt TEXT [--first IMG] [--last IMG]\n";
+  std::cerr << "Usage: " << argv0
+            << " --mode t2va|fl2va --prompt TEXT [--first IMG] [--last IMG]\n";
 }
 
 } // namespace
@@ -214,15 +213,14 @@ int main(int argc, char **argv) {
   std::string contextPath = "h3_context_prompt.txt";
   {
     std::ostringstream cmd;
-    cmd << "python3 " << apiPy << " context-ir --prompt "
-        << std::quoted(prompt) << " --duration " << DURATION_S
-        << " --ratio 16:9 --out " << contextPath;
+    cmd << "python3 " << apiPy << " context-ir --prompt " << std::quoted(prompt)
+        << " --duration " << DURATION_S << " --ratio 16:9 --out "
+        << contextPath;
     if (!firstPath.empty())
       cmd << " --image " << std::quoted(firstPath)
           << " --image-role first_frame";
     if (!lastPath.empty())
-      cmd << " --image " << std::quoted(lastPath)
-          << " --image-role last_frame";
+      cmd << " --image " << std::quoted(lastPath) << " --image-role last_frame";
     runOrDie(cmd.str());
   }
   {
@@ -257,9 +255,8 @@ int main(int argc, char **argv) {
     const std::string model = "MiniMaxAI/MiniMax-H3";
     std::ostringstream cmd;
     cmd << "python3 " << apiPy << " tokenize --model " << std::quoted(model)
-        << " --subfolder FL2VA --prompt-file " << contextPath
-        << " --ids-out " << idsPath << " --mask-out " << maskPath
-        << " --max-len " << TEXT_LEN;
+        << " --subfolder FL2VA --prompt-file " << contextPath << " --ids-out "
+        << idsPath << " --mask-out " << maskPath << " --max-len " << TEXT_LEN;
     runOrDie(cmd.str());
   }
   MemRef<long long, 2> inputIds({1, TEXT_LEN});

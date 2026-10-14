@@ -6,6 +6,8 @@ from pathlib import Path
 
 import torch
 
+from stack.runtime.scripts.chip_targets import compiler_dir, load_chip, target_core
+
 
 class Parameters:
     def __init__(self, phase, graph, original, packed, directory):
@@ -80,10 +82,10 @@ class Parameters:
 
 
 class Exporter:
-    def __init__(self, directory, compiler_build, passes, design, isa_directory):
+    def __init__(self, directory, chip_pb, passes, design, isa_directory):
         self.directory = Path(directory) / "tasks"
         self.directory.mkdir(exist_ok=True)
-        self.build, self.passes, self.design = Path(compiler_build), passes, design
+        self.chip, self.passes, self.design = load_chip(chip_pb), passes, design
         self.kernels, self.calls = {}, []
         self.isa_directory = Path(isa_directory)
 
@@ -138,7 +140,7 @@ class Exporter:
             text = text.replace("@gemma_task", "@" + symbol)
             source = self.directory / f"{symbol}.mlir"
             source.write_text(text)
-            opt = str(self.build / "bin/buddy-opt")
+            opt = str(compiler_dir(target_core(self.chip, target)) / "bin/buddy-opt")
             log_path = self.directory / f"{symbol}.log"
             with log_path.open("w") as log:
                 subprocess.run(
@@ -158,7 +160,6 @@ class Exporter:
                     [
                         opt,
                         str(self.directory / f"{symbol}.linalg.mlir"),
-                        f"--target={target}",
                         *self.passes[:split],
                         "-o",
                         str(typed),
@@ -171,7 +172,6 @@ class Exporter:
                     [
                         opt,
                         str(typed),
-                        f"--target={target}",
                         *self.passes[split:],
                         "-o",
                         str(final),
@@ -179,11 +179,13 @@ class Exporter:
                     check=True,
                     stderr=log,
                 )
-            from .task_abi import export_wrapper
+            from task_abi import export_wrapper
 
             abi = export_wrapper(symbol, typed, final, self.directory)
             params = (self.isa_directory / target / "params.h").read_text()
-            signature = re.search(r"^#define CORE_SIGNATURE ([0-9]+)ULL$", params, re.M)
+            signature = re.search(
+                r"^#define THREAD_SIGNATURE ([0-9]+)ULL$", params, re.M
+            )
             if signature is None:
                 raise ValueError(
                     f"Gemma task target {target} has no generated core signature"
@@ -191,7 +193,7 @@ class Exporter:
             self.kernels[symbol] = {
                 "symbol": symbol,
                 "target": target,
-                "core_signature": int(signature[1]),
+                "thread_signature": int(signature[1]),
                 **abi,
             }
         if len(outputs) != len(self.kernels[symbol]["outputs"]):
@@ -252,7 +254,7 @@ class Exporter:
         )
 
     def finish(self, tiles):
-        from .task_abi import write_index
+        from task_abi import write_index
 
         manifest = {
             "tiles": list(tiles),
@@ -269,8 +271,9 @@ class Exporter:
             "set(GEMMA_TASK_OBJECTS)\n"
             + "".join(
                 f'add_custom_command(OUTPUT "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.o"\n'
-                f'  COMMAND bash -o pipefail -c "\\"${{COMPILER_BUILD}}/bin/buddy-translate\\" \\"${{CMAKE_CURRENT_SOURCE_DIR}}/{symbol}.llvm.mlir\\" --buddy-to-llvmir | \\"${{COMPILER_BUILD}}/bin/buddy-llc\\" -filetype=obj -mtriple=riscv64 -O2 -code-model=medium -mattr=+xbuckyball,+m,+D -float-abi=hard -o \\"${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.original.o\\""\n'
-                f'  COMMAND "${{CMAKE_OBJCOPY}}" --redefine-syms=${{GEMMA_RENAMES}}/{self.kernels[symbol]["target"]}.rename "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.original.o" "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.o"\n'
+                f'  COMMAND "${{COMPILER_BUILD}}/bin/buddy-translate" "${{CMAKE_CURRENT_SOURCE_DIR}}/{symbol}.llvm.mlir" --buddy-to-llvmir |\n'
+                f'          "${{COMPILER_BUILD}}/bin/buddy-llc" -filetype=obj -mtriple=riscv64 -O2 -code-model=medium -mattr=+xbuckyball,+m,+D -float-abi=hard -o "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.original.o"\n'
+                f'  COMMAND "${{CMAKE_OBJCOPY}}" --redefine-sym malloc=workspace_alloc --redefine-sym free=workspace_free --redefine-syms=${{GEMMA_RENAMES}}/{self.kernels[symbol]["target"]}.rename "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.original.o" "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.o"\n'
                 f'  DEPENDS "${{CMAKE_CURRENT_SOURCE_DIR}}/{symbol}.llvm.mlir" "${{GEMMA_RENAMES}}/{self.kernels[symbol]["target"]}.rename" VERBATIM)\n'
                 f'list(APPEND GEMMA_TASK_OBJECTS "${{CMAKE_CURRENT_BINARY_DIR}}/{symbol}.o")\n'
                 for symbol in symbols

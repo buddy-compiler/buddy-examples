@@ -1,9 +1,9 @@
 from buddy.compiler.graph.transform.quantization.activation import calibrate_layers
 from buddy.compiler.graph.transform.quantization.symmetric import quantize_symmetric
 from stack.compiler.quant.importer import quantize_model_graph
-from ..permute.layout import reorder, pool_result, projection_output
-from ..lowering import ActivationBoundary, PaddedOutputLinear, UnfoldConv
-from ..trace.grouping import partition
+from permute.layout import reorder, pool_result, projection_output
+from lowering import ActivationBoundary, PaddedOutputLinear, UnfoldConv
+from trace.grouping import partition
 
 
 def quantize(graph, params, names, output, name, calibration, rax_pack):
@@ -13,8 +13,17 @@ def quantize(graph, params, names, output, name, calibration, rax_pack):
         if parameter_name.endswith(".weight") and parameter.ndim >= 2:
             _, scales = quantize_symmetric(parameter.detach().numpy(), [0])
             weight_scales[parameter_name] = scales
-    quantize_model_graph(graph, params, names, output, name, calibration, rax_pack,
-                         reorder=reorder, weight_scales=weight_scales)
+    quantize_model_graph(
+        graph,
+        params,
+        names,
+        output,
+        name,
+        calibration,
+        rax_pack,
+        reorder=reorder,
+        weight_scales=weight_scales,
+    )
     graph._ops_registry["MaxPool2dOp"] = pool_result
     graph._ops_registry["PermuteOp"] = projection_output
     partition(graph)
@@ -22,6 +31,7 @@ def quantize(graph, params, names, output, name, calibration, rax_pack):
 
 def prepare(model, inputs):
     import torch
+
     # The first 11x11 convolution exceeds the Im2col bank footprint. The
     # existing MatMul lowering splits its K dimension and accumulates INT32.
     model.features[0] = UnfoldConv(model.features[0])

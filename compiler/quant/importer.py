@@ -77,7 +77,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             raise ValueError(f"unsupported Alias form for {node.name}")
         source = str(node.args[0])
         source_node = graph.node_table.get(source)
-        if source_node is None or source_node.tensor_meta.get("shape") != node.tensor_meta.get("shape"):
+        if source_node is None or source_node.tensor_meta.get(
+            "shape"
+        ) != node.tensor_meta.get("shape"):
             raise ValueError(f"Alias shape mismatch for {node.name}")
         renamed[node.name] = renamed.get(source, source)
         removed.add(node.name)
@@ -132,7 +134,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 if len(node.args) != 2:
                     raise ValueError(f"unexpected Matmul form for {node.name}")
                 activation_name, weight_arg = node.args
-                activation_name = renamed.get(str(activation_name), str(activation_name))
+                activation_name = renamed.get(
+                    str(activation_name), str(activation_name)
+                )
                 bias_arg = None
             weight_value = graph.node_table[str(weight_arg)]
             valid_transpose = isinstance(weight_value, TOp) or (
@@ -383,6 +387,14 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             else:
                 raise ValueError(f"unsupported hard activation after {node.name}")
 
+        if (node.trace_meta is not None and node.trace_meta["tensor"]) or any(
+            item.trace_meta is not None for item in activation_nodes
+        ):
+            activation = None
+            activation_nodes = []
+            activation_kind = 0
+            lut_kind = None
+
         result_name = activation.name if activation is not None else node.name
         result_users = [
             candidate
@@ -440,12 +452,8 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                 "the first Hardswish Conv must feed one 16-channel depthwise Conv"
             )
         first_conv["lane_input_scales"] = first_conv["raw_channel_scales"]
-        first_conv["lane_output_scales"] = first_conv[
-            "hardswish_channel_scales"
-        ]
-        consumers[0]["input_channel_scales"] = first_conv[
-            "lane_output_scales"
-        ]
+        first_conv["lane_output_scales"] = first_conv["hardswish_channel_scales"]
+        consumers[0]["input_channel_scales"] = first_conv["lane_output_scales"]
 
     for plan in plans.values():
         if plan["activation"] is not None:
@@ -633,6 +641,11 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
             users = [
                 candidate for candidate in original_body if uses(candidate, node.name)
             ]
+            if (node.trace_meta is not None and node.trace_meta["tensor"]) or any(
+                isinstance(candidate, ReluOp) and candidate.trace_meta is not None
+                for candidate in users
+            ):
+                continue
             if not any(
                 isinstance(
                     candidate,
@@ -796,13 +809,10 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         dw = plan["dw"]
         input_channel_scales = plan.get("input_channel_scales")
         if input_channel_scales is not None:
-            input_channel_scales = np.asarray(
-                input_channel_scales, dtype=np.float32
-            )
-            if (
-                not isinstance(plan["replacement"], MegaConv2dDepthwiseOp)
-                or input_channel_scales.shape != (dw.size,)
-            ):
+            input_channel_scales = np.asarray(input_channel_scales, dtype=np.float32)
+            if not isinstance(
+                plan["replacement"], MegaConv2dDepthwiseOp
+            ) or input_channel_scales.shape != (dw.size,):
                 raise ValueError(
                     f"per-channel input scale requires matching depthwise Conv: "
                     f"{plan['node'].name}"
@@ -836,9 +846,10 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         )
         if overflow.size:
             channel = int(overflow[0])
+            scale_index = channel if input_channel_scales is not None else 0
             raise ValueError(
                 f"INT32 accumulator overflow for {plan['node'].name} channel {channel}: "
-                f"input_scale={float(np.asarray(accumulator_input_scale).reshape(-1)[channel if input_channel_scales is not None else 0])}, "
+                f"input_scale={float(np.asarray(accumulator_input_scale).reshape(-1)[scale_index])}, "
                 f"weight_scale={float(dw[channel])}, "
                 f"bias_i32={int(bias_i64[channel])}, "
                 f"product_bound={plan['product_bound']}"
@@ -1055,7 +1066,8 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         non_stage_consumers = {stage_name: [] for stage_name in stage_names}
         for stage_name in stage_names:
             aliases = [
-                alias for alias, canonical in stage_aliases.items()
+                alias
+                for alias, canonical in stage_aliases.items()
                 if canonical == stage_name
             ]
             for candidate in original_body:
@@ -1121,7 +1133,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                     if str(argument) in demoted_values
                     or (
                         stage_aliases.get(str(argument), str(argument)) in component_of
-                        and component_of[stage_aliases.get(str(argument), str(argument))]
+                        and component_of[
+                            stage_aliases.get(str(argument), str(argument))
+                        ]
                         != component
                     )
                 ]
@@ -1130,7 +1144,9 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         return components, component_of, stage_aliases, crossing
 
     while True:
-        conv_components, stage_component, stage_aliases, crossing = build_components(entries)
+        conv_components, stage_component, stage_aliases, crossing = build_components(
+            entries
+        )
         component_last = {
             index: stages[-1].name for index, stages in enumerate(conv_components)
         }
@@ -1217,7 +1233,7 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
         kernel._children = list(stages[-1]._children)
         kernel._tensor_meta = stages[-1]._tensor_meta.copy()
         kernel._stages = stages
-        kernel.trace_meta = stages[0].trace_meta
+        kernel.trace_meta = None
         kernels.append(kernel)
 
     # Every value produced by a stage is represented outside its region by the
@@ -1304,14 +1320,18 @@ def _form_mega_kernels(graph, parameter_names, arrays, weight_scales, calibratio
                     pending.extend(argument)
                 elif isinstance(argument, str):
                     arguments.append(argument)
-            if all(argument not in body_names or argument in emitted
-                   for argument in arguments):
+            if all(
+                argument not in body_names or argument in emitted
+                for argument in arguments
+            ):
                 ordered.append(node)
                 emitted.add(node.name)
                 progress = True
         if not progress:
             remaining = [node.name for node in body_nodes if node.name not in emitted]
-            raise ValueError(f"graph dependency cycle after MegaKernel rewrite: {remaining}")
+            raise ValueError(
+                f"graph dependency cycle after MegaKernel rewrite: {remaining}"
+            )
     graph._body = ordered
 
     body_position = {node.name: index for index, node in enumerate(graph._body)}
@@ -1446,7 +1466,11 @@ def quantize_model_graph(
             fp_params.append(raw)
             param_off += len(raw)
     package = RaxQuantPackage(
-        tensors, b"".join(weights), b"".join(fp_params), b"".join(scales), assets if assets is not None else {}
+        tensors,
+        b"".join(weights),
+        b"".join(fp_params),
+        b"".join(scales),
+        assets if assets is not None else {},
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     rax = output_dir / f"{model_name}.rax"

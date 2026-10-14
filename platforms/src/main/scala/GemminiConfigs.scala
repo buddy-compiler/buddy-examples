@@ -39,7 +39,7 @@ class FireSimGemminiVCU118Config extends Config(
   new firechip.chip.WithDefaultFireSimBridges ++
   new firechip.chip.WithFireSimConfigTweaks ++
   new GemminiConfig)
-  
+
 class FireSimGemminiU280Config extends Config(
   new WithBootROM ++
   new firechip.chip.WithDefaultFireSimBridges ++

@@ -22,7 +22,9 @@ class Norm(nn.Module):
         self.epsilon = epsilon
 
     def forward(self, hidden):
-        hidden = hidden * torch.rsqrt(hidden.square().mean(-1, keepdim=True) + self.epsilon)
+        hidden = hidden * torch.rsqrt(
+            hidden.square().mean(-1, keepdim=True) + self.epsilon
+        )
         return hidden * self.weight
 
 

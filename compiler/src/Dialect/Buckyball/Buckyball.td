@@ -40,11 +40,11 @@ class Buckyball_Op<string mnemonic, list<Trait> traits = []> :
   Op<Buckyball_Dialect, mnemonic, traits> {}
 
 def MvoverOp : Buckyball_Op<"mvover"> {
-  let summary = "Move contiguous rows between logical Core-local Banks";
-  let arguments = (ins I64:$sourceCore, I64:$sourceBank, I64:$sourceRow,
-                       I64:$targetCore, I64:$targetBank, I64:$targetRow,
+  let summary = "Move contiguous rows between logical Thread-local Banks";
+  let arguments = (ins I64:$sourceThread, I64:$sourceBank, I64:$sourceRow,
+                       I64:$targetThread, I64:$targetBank, I64:$targetRow,
                        I64:$rows);
-  let assemblyFormat = "$sourceCore $sourceBank $sourceRow $targetCore "
+  let assemblyFormat = "$sourceThread $sourceBank $sourceRow $targetThread "
                        "$targetBank $targetRow $rows prop-dict attr-dict";
 }
 

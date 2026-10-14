@@ -53,8 +53,7 @@ int main(int argc, char **argv) {
   MemRef<float, 2> output(std::vector<size_t>{1, 1000});
   unsigned long start = read_counter();
   _mlir_ciface_forward(&output, &params, &weights, &input);
-  std::cout << "Counter (" << counter_name() << ") " << counter_field() << ": "
-            << read_counter() - start << '\n';
+  std::cout << "Counter: " << read_counter() - start << '\n';
   for (size_t index = 0; index < 1000; ++index)
     if (!std::isfinite(output.getData()[index]))
       throw std::runtime_error("AlexNet produced non-finite logits");

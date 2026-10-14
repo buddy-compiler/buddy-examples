@@ -124,13 +124,12 @@ public:
   LogicalResult matchAndRewrite(vector::TransferWriteOp write,
                                 PatternRewriter &rewriter) const override {
     auto read = write.getVector().getDefiningOp<vector::TransferReadOp>();
-    auto sourceType = read ? dyn_cast<MemRefType>(read.getBase().getType())
-                           : MemRefType();
+    auto sourceType =
+        read ? dyn_cast<MemRefType>(read.getBase().getType()) : MemRefType();
     auto destinationType = dyn_cast<MemRefType>(write.getBase().getType());
-    if (!read || !sourceType || !destinationType ||
-        !read->hasOneUse() || read->getNextNode() != write.getOperation() ||
-        read.getMask() || write.getMask() ||
-        read.getVectorType().getRank() != 1 ||
+    if (!read || !sourceType || !destinationType || !read->hasOneUse() ||
+        read->getNextNode() != write.getOperation() || read.getMask() ||
+        write.getMask() || read.getVectorType().getRank() != 1 ||
         read.getVectorType().isScalable() || !read.isDimInBounds(0) ||
         !write.isDimInBounds(0) ||
         !read.getPermutationMap().isMinorIdentity() ||
@@ -144,11 +143,13 @@ public:
         sourceType.getShape().back() != width ||
         destinationType.getShape().back() != width ||
         sourceType.getElementType() != read.getVectorType().getElementType() ||
-        destinationType.getElementType() != read.getVectorType().getElementType() ||
+        destinationType.getElementType() !=
+            read.getVectorType().getElementType() ||
         !matchPattern(read.getIndices().back(), m_Zero()) ||
         !matchPattern(write.getIndices().back(), m_Zero()) ||
         failed(sourceType.getStridesAndOffset(sourceStrides, offset)) ||
-        failed(destinationType.getStridesAndOffset(destinationStrides, offset)) ||
+        failed(
+            destinationType.getStridesAndOffset(destinationStrides, offset)) ||
         sourceStrides.back() != 1 || destinationStrides.back() != 1)
       return failure();
 
@@ -168,8 +169,9 @@ public:
     }
 
     SmallVector<Value> rows;
-    for (auto transfer : {cast<VectorTransferOpInterface>(read.getOperation()),
-                          cast<VectorTransferOpInterface>(write.getOperation())}) {
+    for (auto transfer :
+         {cast<VectorTransferOpInterface>(read.getOperation()),
+          cast<VectorTransferOpInterface>(write.getOperation())}) {
       auto type = cast<MemRefType>(transfer.getBase().getType());
       auto rowType = MemRefType::get(
           {width}, type.getElementType(),
@@ -180,9 +182,11 @@ public:
         offsets.push_back(index);
       SmallVector<OpFoldResult> sizes(type.getRank(), rewriter.getIndexAttr(1));
       sizes.back() = rewriter.getIndexAttr(width);
-      SmallVector<OpFoldResult> strides(type.getRank(), rewriter.getIndexAttr(1));
+      SmallVector<OpFoldResult> strides(type.getRank(),
+                                        rewriter.getIndexAttr(1));
       rows.push_back(rewriter.create<memref::SubViewOp>(
-          write.getLoc(), rowType, transfer.getBase(), offsets, sizes, strides));
+          write.getLoc(), rowType, transfer.getBase(), offsets, sizes,
+          strides));
     }
     rewriter.create<memref::CopyOp>(write.getLoc(), rows[0], rows[1]);
     rewriter.eraseOp(write);

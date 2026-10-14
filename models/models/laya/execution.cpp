@@ -18,8 +18,8 @@ const Shape &modelShape() {
 }
 int controlCpu(size_t tile) {
   for (uint32_t hart = 0; hart < BB_HART_NUM; ++hart) {
-    auto id = bb_topology_core_id(hart);
-    if (id.tile == tile && id.core == 0)
+    auto id = bb_topology_thread_id(hart);
+    if (id.core == tile && id.thread == 0)
       return hart;
   }
   throw std::runtime_error("tile has no control CPU");

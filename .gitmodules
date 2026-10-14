@@ -5,3 +5,6 @@
 	path = compiler/thirdparty/buddy-mlir
 	url = https://github.com/buddy-compiler/buddy-mlir.git
 	branch = examples
+[submodule "thirdparty/bebop"]
+	path = thirdparty/bebop
+	url = https://github.com/DangoSys/bebop.git

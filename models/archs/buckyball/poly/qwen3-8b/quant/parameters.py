@@ -1,13 +1,14 @@
 import torch
 from buddy.compiler.graph.transform.quantization.mxfp8 import quantize
-from examples.balls.mxmm.compiler.python.layout import plan, pack, bank_bytes
+from examples.balls.mxmm.compiler.python.layout import plan, pack
+from stack.runtime.scripts.chip_targets import bank_bytes
 from stack.compiler.quant.rax import QuantTensor, RaxQuantPackage, write_rax
 
 
-def write_parameters(values, output, name, packer, target, rows_hint):
+def write_parameters(values, output, name, packer, target, rows_hint, chip_pb):
     tensors, weights, floats, matrices = [], [], [], {}
     weight_offset = float_offset = 0
-    capacity = bank_bytes(packer.parent.parent, target)
+    capacity = bank_bytes(chip_pb, target)
     for parameter_name, parameter in sorted(values.items()):
         array = parameter.detach()
         if array.dtype != torch.float32:

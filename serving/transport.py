@@ -1,4 +1,5 @@
 """Framed worker RPC over the P2E console's binary UART stream."""
+
 import socket
 import struct
 import threading
@@ -39,7 +40,9 @@ class Transport:
             for _ in range(1024 * 1024):
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    raise TimeoutError("guest did not acknowledge the worker transport protocol")
+                    raise TimeoutError(
+                        "guest did not acknowledge the worker transport protocol"
+                    )
                 self.socket.settimeout(remaining)
                 byte = self._read(1)
                 line.extend(byte)
@@ -53,7 +56,9 @@ class Transport:
             self.socket.close()
             raise
         self.socket.settimeout(None)
-        self.reader = threading.Thread(target=self._receive, name="p2e-worker-responses", daemon=True)
+        self.reader = threading.Thread(
+            target=self._receive, name="p2e-worker-responses", daemon=True
+        )
         self.reader.start()
 
     def _read(self, size):
@@ -85,7 +90,11 @@ class Transport:
                 rank, sequence, status, size = _HEADER.unpack(self._read(_HEADER.size))
                 if rank == _CLOSE:
                     with self.lock:
-                        if not self.closed or (sequence, status, size) != (0, 0, 0) or self.pending:
+                        if (
+                            not self.closed
+                            or (sequence, status, size) != (0, 0, 0)
+                            or self.pending
+                        ):
                             raise RuntimeError("invalid P2E close acknowledgement")
                         self.close_ack = True
                     self.finished.set()
@@ -93,13 +102,19 @@ class Transport:
                 key = (rank, sequence)
                 with self.lock:
                     if key not in self.pending:
-                        raise RuntimeError(f"unexpected P2E response: rank={rank}, sequence={sequence}")
+                        raise RuntimeError(
+                            f"unexpected P2E response: rank={rank}, sequence={sequence}"
+                        )
                     expected, future = self.pending[key]
                 if (status == 0 and size != expected) or (status != 0 and size > 4096):
-                    raise RuntimeError(f"invalid P2E response length: rank={rank}, status={status}, bytes={size}")
+                    raise RuntimeError(
+                        f"invalid P2E response length: rank={rank}, status={status}, bytes={size}"
+                    )
                 payload = self._read(size)
                 if status:
-                    raise RuntimeError(f"P2E worker {rank} failed ({status}): {payload.decode('utf-8', errors='replace')}")
+                    raise RuntimeError(
+                        f"P2E worker {rank} failed ({status}): {payload.decode('utf-8', errors='replace')}"
+                    )
                 with self.lock:
                     # A timeout/close may have failed all requests while recv was in flight.
                     if key not in self.pending:
@@ -110,24 +125,37 @@ class Transport:
             self._fail(error)
 
     def execute(self, rank: int, request: bytes, result_bytes: int) -> bytes:
-        if not 0 <= rank < self.workers or not 0 < result_bytes <= _MAX_FRAME or not 0 < len(request) <= _MAX_FRAME:
-            raise ValueError("invalid worker rank or frame size (bbmux1 requires 1..256 MiB per frame)")
+        if (
+            not 0 <= rank < self.workers
+            or not 0 < result_bytes <= _MAX_FRAME
+            or not 0 < len(request) <= _MAX_FRAME
+        ):
+            raise ValueError(
+                "invalid worker rank or frame size (bbmux1 requires 1..256 MiB per frame)"
+            )
         future = Future()
         with self.lock:
             if self.closed or self.error:
-                raise RuntimeError("P2E worker transport is unavailable") from self.error
+                raise RuntimeError(
+                    "P2E worker transport is unavailable"
+                ) from self.error
             if any(key[0] == rank for key in self.pending):
                 raise RuntimeError(f"worker {rank} already has an outstanding request")
             sequence = self.sequence[rank]
             self.sequence[rank] += 1
             self.pending[(rank, sequence)] = (result_bytes, future)
         # The timeout also covers a blocked UART send, not just response reception.
-        timer = threading.Timer(self.timeout, self._fail,
-                                args=(TimeoutError(f"P2E worker {rank} request {sequence} timed out"),))
+        timer = threading.Timer(
+            self.timeout,
+            self._fail,
+            args=(TimeoutError(f"P2E worker {rank} request {sequence} timed out"),),
+        )
         timer.start()
         try:
             with self.send_lock:
-                self.socket.sendall(_HEADER.pack(rank, sequence, len(request), result_bytes))
+                self.socket.sendall(
+                    _HEADER.pack(rank, sequence, len(request), result_bytes)
+                )
                 self.socket.sendall(request)
             return future.result()
         except Exception as error:
@@ -142,8 +170,11 @@ class Transport:
                 return
             self.closed = True
             graceful = self.error is None and not self.pending
-        timer = threading.Timer(self.timeout, self._fail,
-                                args=(TimeoutError("P2E guest did not close its workers"),))
+        timer = threading.Timer(
+            self.timeout,
+            self._fail,
+            args=(TimeoutError("P2E guest did not close its workers"),),
+        )
         try:
             if graceful:
                 timer.start()
@@ -151,7 +182,9 @@ class Transport:
                     self.socket.sendall(_HEADER.pack(_CLOSE, 0, 0, 0))
                 self.finished.wait()
                 if not self.close_ack:
-                    raise RuntimeError("P2E guest shutdown was not acknowledged") from self.error
+                    raise RuntimeError(
+                        "P2E guest shutdown was not acknowledged"
+                    ) from self.error
         finally:
             timer.cancel()
             self._fail(RuntimeError("P2E worker transport closed by host"))

@@ -16,23 +16,5 @@ static inline uint64_t read_counter() {
 #error "Benchmark counter source is unsupported"
 #endif
 }
-static inline const char *counter_name() {
-#if defined(__riscv)
-  return "riscv-cycle";
-#elif defined(__x86_64__) && defined(__linux__)
-  return "x86-tsc";
-#else
-#error "Benchmark counter source is unsupported"
-#endif
-}
-static inline const char *counter_field() {
-#if defined(__riscv)
-  return "cycles";
-#elif defined(__x86_64__) && defined(__linux__)
-  return "ticks";
-#else
-#error "Benchmark counter source is unsupported"
-#endif
-}
 
 #endif // TESTUTILS_H

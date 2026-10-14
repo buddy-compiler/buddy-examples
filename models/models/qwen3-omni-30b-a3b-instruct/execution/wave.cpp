@@ -142,7 +142,7 @@ void Wave::execute(const Command &command) {
                       last - first,
                       job->input.getData() +
                           channel * (step.ownedRows + step.halo) + offset);
-        job->pending = task_submit(CORE_SIGNATURE, run_span, job.get());
+        job->pending = task_submit(THREAD_SIGNATURE, run_span, job.get());
         jobs.push_back(std::move(job));
       }
       for (auto &job : jobs) {

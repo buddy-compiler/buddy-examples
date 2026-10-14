@@ -64,7 +64,9 @@ def eval_ppl(model: torch.nn.Module, tokenizer: BertTokenizer) -> float:
     losses: list[float] = []
     with torch.no_grad():
         for text, label in SAMPLES:
-            enc = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)
+            enc = tokenizer(
+                text, return_tensors="pt", padding=True, truncation=True, max_length=128
+            )
             logits = model(**enc).logits
             loss = F.cross_entropy(logits, torch.tensor([label]))
             losses.append(float(loss))

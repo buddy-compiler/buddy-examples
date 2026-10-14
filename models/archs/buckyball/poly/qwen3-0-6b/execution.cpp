@@ -95,6 +95,13 @@ static void runWorker(Worker &worker, size_t rank, int cpu, int64_t *tokens,
     const auto start = command.start, layer = command.layer;
     const bool prefill = start == 0;
     const size_t length = prefill ? prefillLength : 1;
+    if (rank == 0 && layer == 0 && start == 0 && operation >= 4) {
+      for (size_t core = 1; core <= thread_count(); ++core)
+        fprintf(stderr,
+                "BANK_SCOPE begin layer=%zu operation=%llu core=%zu batch=%u\n",
+                layer, static_cast<unsigned long long>(operation), core,
+                core_batches(core));
+    }
     workspace_begin(workspace, workspaceBytes);
     size_t resultWidth;
     if (operation == 0) {
@@ -181,6 +188,13 @@ static void runWorker(Worker &worker, size_t rank, int cpu, int64_t *tokens,
       std::memcpy(worker.output, result.getData(),
                   count * resultWidth * sizeof(float));
       workspace_free(result.release());
+    }
+    if (rank == 0 && layer == 0 && start == 0 && operation >= 4) {
+      for (size_t core = 1; core <= thread_count(); ++core)
+        fprintf(stderr,
+                "BANK_SCOPE end layer=%zu operation=%llu core=%zu batch=%u\n",
+                layer, static_cast<unsigned long long>(operation), core,
+                core_batches(core));
     }
     lock.lock();
     command.state = 2;

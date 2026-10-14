@@ -257,9 +257,13 @@ int main(int argc, char **argv) {
         << "@BBPERF {\"model\":\"lenet\",\"samples\":" << MnistCount
         << ",\"correct\":" << correct
         << ",\"accuracy_metric\":\"top1\",\"unit\":\"images/s\",\"elapsed_ns\":"
-        << elapsedNs << ",\"counter\":\"" << counter_name() << "\",\""
-        << counter_field() << "\":" << read_counter() - counterStart << "}"
-        << std::endl;
+        << elapsedNs;
+#if defined(__riscv)
+    std::cout << ",\"counter\":\"riscv-cycle\",\"cycles\":";
+#elif defined(__x86_64__) && defined(__linux__)
+    std::cout << ",\"counter\":\"x86-tsc\",\"ticks\":";
+#endif
+    std::cout << read_counter() - counterStart << "}" << std::endl;
     return 0;
   }
 
@@ -286,8 +290,7 @@ int main(int argc, char **argv) {
   auto out = output.getData();
   softmax(out, 10);
   printLogLabel();
-  std::cout << "Inference counter taken (" << counter_name()
-            << "): " << end - start << std::endl;
+  std::cout << "Inference counter: " << end - start << std::endl;
   std::cout << std::endl;
 
   float maxVal = 0;
@@ -303,10 +306,13 @@ int main(int argc, char **argv) {
   std::cout << "Classification: " << maxIdx << std::endl;
   std::cout << "Probability: " << maxVal << std::endl;
   std::cout << "@BBPERF {\"model\":\"lenet\",\"samples\":" << opts.repeat
-            << ",\"elapsed_ns\":" << elapsedNs << ",\"counter\":\""
-            << counter_name() << "\",\"" << counter_field()
-            << "\":" << end - start
-            << ",\"unit\":\"images/s\",\"predictions\":{";
+            << ",\"elapsed_ns\":" << elapsedNs;
+#if defined(__riscv)
+  std::cout << ",\"counter\":\"riscv-cycle\",\"cycles\":";
+#elif defined(__x86_64__) && defined(__linux__)
+  std::cout << ",\"counter\":\"x86-tsc\",\"ticks\":";
+#endif
+  std::cout << end - start << ",\"unit\":\"images/s\",\"predictions\":{";
   bool first = true;
   for (size_t label = 0; label < 10; ++label) {
     if (!predictions[label])

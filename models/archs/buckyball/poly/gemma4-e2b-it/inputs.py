@@ -8,7 +8,7 @@ from pathlib import Path
 def prepare_inputs(directory: Path, config: Path, tokenizer: Path):
     metadata = json.loads((directory / "model.json").read_text())
     settings = tomllib.loads(config.read_text())
-    tiles = settings["tile_indices"]
+    tiles = settings["core_indices"]
     max_tokens = settings["max_tokens"]
     if (
         not isinstance(max_tokens, int)
@@ -55,5 +55,5 @@ def prepare_inputs(directory: Path, config: Path, tokenizer: Path):
         resources.append(relative)
     return resources, {
         key: settings[key]
-        for key in ("inputs", "temperature", "tile_indices", "max_tokens")
+        for key in ("inputs", "temperature", "core_indices", "max_tokens")
     }

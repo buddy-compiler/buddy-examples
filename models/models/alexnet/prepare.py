@@ -6,7 +6,6 @@ import torch
 from PIL import Image
 from torchvision.models import AlexNet_Weights, alexnet
 
-
 with Path(__file__).with_name("configs").joinpath("model.toml").open("rb") as file:
     WEIGHTS = tomllib.load(file)["parameters"]["weights"]
 

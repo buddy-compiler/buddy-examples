@@ -19,7 +19,8 @@ public:
 
   StringRef getArgument() const final { return "fuse-pointwise"; }
   StringRef getDescription() const final {
-    return "Fuse pointwise producers and sliced gathers without expanding work.";
+    return "Fuse pointwise producers and sliced gathers without expanding "
+           "work.";
   }
 
   void getDependentDialects(DialectRegistry &registry) const override {

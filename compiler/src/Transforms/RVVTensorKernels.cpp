@@ -6,9 +6,9 @@
 #include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
-#include "mlir/IR/IRMapping.h"
 #include "llvm/ADT/DenseSet.h"
 #include <limits>
 using namespace mlir;
@@ -422,9 +422,8 @@ struct Softmax : OpRewritePattern<linalg::GenericOp> {
         auto maskedBits = floatBits(select->getOperand(1));
         if (scale && maskedBits && type.getRank() == 4 &&
             type.getShape()[0] == 1 && maskType &&
-            maskType.getElementType().isInteger(1) &&
-            maskType.getRank() == 4 && maskType.getShape()[0] == 1 &&
-            maskType.getShape()[1] == 1 &&
+            maskType.getElementType().isInteger(1) && maskType.getRank() == 4 &&
+            maskType.getShape()[0] == 1 && maskType.getShape()[1] == 1 &&
             (maskType.getShape()[2] == 1 ||
              maskType.getShape()[2] == type.getShape()[2]) &&
             maskType.getShape()[3] == type.getShape()[3]) {

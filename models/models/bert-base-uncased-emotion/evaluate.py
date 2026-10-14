@@ -8,7 +8,9 @@ from pathlib import Path
 
 def read_logits(path, labels):
     text = re.sub(r"\x1b\[[0-9;]*m", "", path.read_text())
-    text = "\n".join(re.sub(r"^\[[^\]\n]+\]\s*", "", line) for line in text.splitlines())
+    text = "\n".join(
+        re.sub(r"^\[[^\]\n]+\]\s*", "", line) for line in text.splitlines()
+    )
     blocks = re.findall(r"LOGITS_F32_BEGIN(.*?)LOGITS_F32_END", text, re.S)
     if len(blocks) != 1:
         raise ValueError("expected exactly one complete logits block")
@@ -40,12 +42,23 @@ def main():
     if words != golden:
         raise ValueError(f"hardware output differs from BEMU: {words} != {golden}")
     reference = metadata["validation_inputs"][0]["reference_logits"]
-    cosine = sum(a*b for a,b in zip(values, reference)) / math.sqrt(
-        sum(a*a for a in values) * sum(b*b for b in reference))
-    print(json.dumps({"backend_match": "all float bits equal", "logits": values,
-        "reference_logits": reference, "cosine": cosine,
-        "max_abs_error": max(abs(a-b) for a,b in zip(values, reference)),
-        "label": metadata["labels"][max(range(len(values)), key=values.__getitem__)]}))
+    cosine = sum(a * b for a, b in zip(values, reference)) / math.sqrt(
+        sum(a * a for a in values) * sum(b * b for b in reference)
+    )
+    print(
+        json.dumps(
+            {
+                "backend_match": "all float bits equal",
+                "logits": values,
+                "reference_logits": reference,
+                "cosine": cosine,
+                "max_abs_error": max(abs(a - b) for a, b in zip(values, reference)),
+                "label": metadata["labels"][
+                    max(range(len(values)), key=values.__getitem__)
+                ],
+            }
+        )
+    )
 
 
 if __name__ == "__main__":

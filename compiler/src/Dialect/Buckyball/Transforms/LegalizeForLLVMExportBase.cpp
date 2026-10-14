@@ -16,11 +16,11 @@
 
 #include "Dialect/Buckyball/Transforms/LegalizeForLLVMExportBase.h"
 
-#include "mlir/Conversion/LLVMCommon/Pattern.h"
 #include "mlir/Conversion/LLVMCommon/MemRefBuilder.h"
+#include "mlir/Conversion/LLVMCommon/Pattern.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -176,8 +176,7 @@ static void emitBbDmaBankColumns(OpBuilder &b, Location loc, StringRef name,
   auto i32Ty = IntegerType::get(b.getContext(), 32);
   auto voidTy = LLVM::LLVMVoidType::get(b.getContext());
   auto fnTy = LLVM::LLVMFunctionType::get(voidTy, {i32Ty, i32Ty});
-  FlatSymbolRefAttr callee =
-      getOrInsertExtFunc(b, module, name, fnTy);
+  FlatSymbolRefAttr callee = getOrInsertExtFunc(b, module, name, fnTy);
   Value bankI32 = b.create<arith::TruncIOp>(loc, i32Ty, bankId);
   Value colsI32 = b.create<arith::TruncIOp>(loc, i32Ty, cols);
   LLVM::CallOp::create(b, loc, TypeRange{}, callee,
@@ -231,8 +230,9 @@ struct BuckyballMsetLowering : public ConvertOpToLLVMPattern<MsetOp> {
                       fieldBits(allocBit, 10, 10);
     Value colsForTouch = cstI64(rewriter, loc, op.getAlloc() ? colVal : 0u);
     emitBbDmaBankColumns(rewriter, loc,
-                        op.getAlloc() ? "dma_bank_allocate" : "dma_bank_set_cols",
-                        bankId, colsForTouch);
+                         op.getAlloc() ? "dma_bank_allocate"
+                                       : "dma_bank_set_cols",
+                         bankId, colsForTouch);
     rewriter.replaceOpWithNewOp<MsetIntrOp>(op, rs1,
                                             cstI64(rewriter, loc, rs2Val));
     return success();
@@ -277,7 +277,8 @@ struct BuckyballMvinLowering : public ConvertOpToLLVMPattern<MvinOp> {
         packRs2MemStride(rewriter, loc, memref.address, adaptor.getStride());
     if (auto group = op.getGroup())
       rs2 = rewriter.create<arith::OrIOp>(
-          loc, rs2, cstI64(rewriter, loc, (1ULL << 63) | (uint64_t(*group) << 58)));
+          loc, rs2,
+          cstI64(rewriter, loc, (1ULL << 63) | (uint64_t(*group) << 58)));
 
     rewriter.replaceOpWithNewOp<MvinIntrOp>(op, rs1, rs2);
     return success();
@@ -397,13 +398,13 @@ struct BuckyballMvoutLowering : public ConvertOpToLLVMPattern<MvoutOp> {
           {LLVM::LLVMPointerType::get(rewriter.getContext()),
            rewriter.getI64Type(), rewriter.getI64Type()});
       auto callee = getOrInsertExtFunc(rewriter, parentModule(rewriter),
-                                     "dma_touch_mvout_group", fnTy);
-      LLVM::CallOp::create(rewriter, loc, TypeRange{}, callee,
-                          ValueRange{memref.hostPtr, adaptor.getDepth(),
-                                     adaptor.getStride()});
+                                       "dma_touch_mvout_group", fnTy);
+      LLVM::CallOp::create(
+          rewriter, loc, TypeRange{}, callee,
+          ValueRange{memref.hostPtr, adaptor.getDepth(), adaptor.getStride()});
     } else {
       emitBbDmaTouchMvout(rewriter, loc, memref.hostPtr, adaptor.getDepth(),
-                         adaptor.getStride(), adaptor.getAddr());
+                          adaptor.getStride(), adaptor.getAddr());
     }
     Value rs1 =
         packRs1BankIter(rewriter, loc, adaptor.getAddr(), adaptor.getDepth());
@@ -411,7 +412,8 @@ struct BuckyballMvoutLowering : public ConvertOpToLLVMPattern<MvoutOp> {
         packRs2MemStride(rewriter, loc, memref.address, adaptor.getStride());
     if (auto group = op.getGroup())
       rs2 = rewriter.create<arith::OrIOp>(
-          loc, rs2, cstI64(rewriter, loc, (1ULL << 63) | (uint64_t(*group) << 58)));
+          loc, rs2,
+          cstI64(rewriter, loc, (1ULL << 63) | (uint64_t(*group) << 58)));
 
     rewriter.replaceOpWithNewOp<MvoutIntrOp>(op, rs1, rs2);
     return success();
@@ -420,34 +422,41 @@ struct BuckyballMvoutLowering : public ConvertOpToLLVMPattern<MvoutOp> {
 
 struct BuckyballMvoverLowering : public ConvertOpToLLVMPattern<MvoverOp> {
   using ConvertOpToLLVMPattern<MvoverOp>::ConvertOpToLLVMPattern;
-  LogicalResult matchAndRewrite(MvoverOp op, OpAdaptor adaptor,
-                                ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(MvoverOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
     Location loc = op.getLoc();
     auto bounded = [&](Value value, uint64_t maximum) {
-      Value valid = rewriter.create<arith::CmpIOp>(
-          loc, arith::CmpIPredicate::ule, value, cstI64(rewriter, loc, maximum));
-      rewriter.create<cf::AssertOp>(loc, valid, "mvover operand exceeds ISA range");
+      Value valid =
+          rewriter.create<arith::CmpIOp>(loc, arith::CmpIPredicate::ule, value,
+                                         cstI64(rewriter, loc, maximum));
+      rewriter.create<cf::AssertOp>(loc, valid,
+                                    "mvover operand exceeds ISA range");
     };
-    bounded(adaptor.getSourceCore(), 255);
-    bounded(adaptor.getTargetCore(), 255);
+    bounded(adaptor.getSourceThread(), 255);
+    bounded(adaptor.getTargetThread(), 255);
     bounded(adaptor.getSourceBank(), 1023);
     bounded(adaptor.getTargetBank(), 1023);
     bounded(adaptor.getSourceRow(), 65535);
     bounded(adaptor.getTargetRow(), 65535);
-    Value count = rewriter.create<arith::SubIOp>(
-        loc, adaptor.getRows(), cstI64(rewriter, loc, 1));
+    Value count = rewriter.create<arith::SubIOp>(loc, adaptor.getRows(),
+                                                 cstI64(rewriter, loc, 1));
     bounded(count, 65535);
     auto shifted = [&](Value value, uint64_t shift) -> Value {
-      return rewriter.create<arith::ShLIOp>(loc, value, cstI64(rewriter, loc, shift));
+      return rewriter.create<arith::ShLIOp>(loc, value,
+                                            cstI64(rewriter, loc, shift));
     };
-    Value rs1 = rewriter.create<arith::OrIOp>(loc, adaptor.getSourceCore(),
-                                            shifted(adaptor.getTargetCore(), 8));
-    rs1 = rewriter.create<arith::OrIOp>(loc, rs1, shifted(adaptor.getSourceBank(), 16));
-    rs1 = rewriter.create<arith::OrIOp>(loc, rs1, shifted(adaptor.getTargetBank(), 26));
-    Value rs2 = rewriter.create<arith::OrIOp>(loc, adaptor.getSourceRow(),
-                                            shifted(adaptor.getTargetRow(), 16));
+    Value rs1 = rewriter.create<arith::OrIOp>(
+        loc, adaptor.getSourceThread(), shifted(adaptor.getTargetThread(), 8));
+    rs1 = rewriter.create<arith::OrIOp>(loc, rs1,
+                                        shifted(adaptor.getSourceBank(), 16));
+    rs1 = rewriter.create<arith::OrIOp>(loc, rs1,
+                                        shifted(adaptor.getTargetBank(), 26));
+    Value rs2 = rewriter.create<arith::OrIOp>(
+        loc, adaptor.getSourceRow(), shifted(adaptor.getTargetRow(), 16));
     rs2 = rewriter.create<arith::OrIOp>(loc, rs2, shifted(count, 32));
-    rewriter.replaceOpWithNewOp<CustomIntrOp>(op, rs1, rs2, rewriter.getI32IntegerAttr(13));
+    rewriter.replaceOpWithNewOp<CustomIntrOp>(op, rs1, rs2,
+                                              rewriter.getI32IntegerAttr(13));
     return success();
   }
 };
@@ -458,28 +467,32 @@ static bool contiguousRankOne(Type type) {
     return false;
   SmallVector<int64_t> strides;
   int64_t offset;
-  return succeeded(memref.getStridesAndOffset(strides, offset)) && strides[0] == 1;
+  return succeeded(memref.getStridesAndOffset(strides, offset)) &&
+         strides[0] == 1;
 }
 
 struct ContiguousCopyLowering : public ConvertOpToLLVMPattern<memref::CopyOp> {
   using ConvertOpToLLVMPattern<memref::CopyOp>::ConvertOpToLLVMPattern;
-  LogicalResult matchAndRewrite(memref::CopyOp op, OpAdaptor adaptor,
-                                ConversionPatternRewriter &rewriter) const override {
+  LogicalResult
+  matchAndRewrite(memref::CopyOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
     if (!contiguousRankOne(op.getSource().getType()) ||
         !contiguousRankOne(op.getTarget().getType()))
       return failure();
     Location loc = op.getLoc();
     auto sourceType = cast<MemRefType>(op.getSource().getType());
     auto targetType = cast<MemRefType>(op.getTarget().getType());
-    Value zero = LLVM::ConstantOp::create(rewriter, loc, getIndexType(),
-                                          rewriter.getIntegerAttr(getIndexType(), 0));
-    Value source = getStridedElementPtr(rewriter, loc, sourceType, adaptor.getSource(),
-                                       ValueRange{zero});
-    Value target = getStridedElementPtr(rewriter, loc, targetType, adaptor.getTarget(),
-                                       ValueRange{zero});
+    Value zero =
+        LLVM::ConstantOp::create(rewriter, loc, getIndexType(),
+                                 rewriter.getIntegerAttr(getIndexType(), 0));
+    Value source = getStridedElementPtr(rewriter, loc, sourceType,
+                                        adaptor.getSource(), ValueRange{zero});
+    Value target = getStridedElementPtr(rewriter, loc, targetType,
+                                        adaptor.getTarget(), ValueRange{zero});
     Value size = MemRefDescriptor(adaptor.getSource()).size(rewriter, loc, 0);
     Value bytes = LLVM::MulOp::create(
-        rewriter, loc, size, getSizeInBytes(loc, sourceType.getElementType(), rewriter));
+        rewriter, loc, size,
+        getSizeInBytes(loc, sourceType.getElementType(), rewriter));
     LLVM::MemcpyOp::create(rewriter, loc, target, source, bytes, false);
     rewriter.eraseOp(op);
     return success();
@@ -520,8 +533,8 @@ void populateBaseLegalizeForLLVMExportPatterns(
 }
 
 void configureBaseLegalizeForExportTarget(LLVMConversionTarget &target) {
-  target.addLegalOp<CustomIntrOp, MsetIntrOp, MvinIntrOp,
-                    MvinMmioIntrOp, MvoutIntrOp>();
+  target.addLegalOp<CustomIntrOp, MsetIntrOp, MvinIntrOp, MvinMmioIntrOp,
+                    MvoutIntrOp>();
   target.addIllegalOp<MvoverOp, InstOp, MsetOp, MsetTransferOp, MvinOp,
                       Mvin2dOp, MvinMmioOp, MvoutOp>();
   target.addLegalDialect<memref::MemRefDialect>();

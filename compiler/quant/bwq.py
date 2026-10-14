@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
+
 @dataclass
 class TensorSpec:
     name: str
@@ -14,12 +15,14 @@ class TensorSpec:
     scale_off: int
     scale_len: int
 
+
 @dataclass
 class BwqPackage:
     version: int
     tensors: list[TensorSpec]
     weights: bytes
     scales: bytes
+
 
 _FORBIDDEN = ("groupSize", "group_size", "zeroPoint", "zero_point")
 _STORAGE = {"i8"}
@@ -59,9 +62,7 @@ def validate_bwq(pkg: BwqPackage) -> None:
             if ax < 0 or ax >= len(t.shape):
                 raise ValueError(f"axes OOB for {t.name}")
         if t.weight_len != n:
-            raise ValueError(
-                f"weight_len {t.weight_len} != numel {n} for {t.name}"
-            )
+            raise ValueError(f"weight_len {t.weight_len} != numel {n} for {t.name}")
         if t.axes:
             scale_n = 1
             for ax in t.axes:
@@ -96,6 +97,7 @@ def write_bwq(pkg: BwqPackage, path: Path) -> None:
     (path / "weights.bin").write_bytes(pkg.weights)
     (path / "scales.bin").write_bytes(pkg.scales)
 
+
 def read_bwq(path: Path) -> BwqPackage:
     path = Path(path)
     if not path.is_dir():
@@ -120,8 +122,14 @@ def read_bwq(path: Path) -> BwqPackage:
             if key in entry and entry[key] is not None:
                 raise ValueError(f"forbidden key {key} on tensor {entry.get('name')}")
         need = (
-            "name", "shape", "storage", "axes",
-            "weight_off", "weight_len", "scale_off", "scale_len",
+            "name",
+            "shape",
+            "storage",
+            "axes",
+            "weight_off",
+            "weight_len",
+            "scale_off",
+            "scale_len",
         )
         for k in need:
             if k not in entry:

@@ -1,24 +1,54 @@
-set(CMAKE_CXX_COMPILER ${RISCV_GNU_TOOLCHAIN}/bin/riscv64-unknown-linux-gnu-g++)
+set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
-get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSOLUTE)
-set(MODEL_SOURCE "${REPO_ROOT}/stack/models/models/gemma4-e2b-it")
-set(GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
-set(MODEL_GEMMA4_DIR "${GENERATED_DIR}")
-set(COMPILER_BUILD "${BUDDY_BINARY_DIR}/..")
-set(PYTHON "${Python3_EXECUTABLE}")
-set(TRACE_ARGS --trace --trace-config ${CMAKE_CURRENT_SOURCE_DIR}/trace/trace.toml)
-file(GLOB_RECURSE DESIGN_DEPENDS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/trace/*")
-add_subdirectory(${MODEL_SOURCE} prepare)
-set(INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
-set(TOSA_PIPELINE "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))")
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/forward_prefill.mlir
+         ${OUTPUT_DIR}/subgraph0_prefill.mlir
+         ${OUTPUT_DIR}/forward_decode.mlir
+         ${OUTPUT_DIR}/subgraph0_decode.mlir
+         ${OUTPUT_DIR}/arg0_prefill.data
+         ${OUTPUT_DIR}/arg0_decode.data
+         ${OUTPUT_DIR}/vocab.txt
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
+  COMMAND ${PYTHON} buddy-pytorch-importer.py
+            --repo-root ${REPO_ROOT}
+            --output-dir ${OUTPUT_DIR}
+            --compiler-build ${COMPILER_BUILD}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing gemma4-e2b-it for gemmini"
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT forward_prefill.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_GEMMA4_DIR}/forward_prefill.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_prefill_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_prefill.mlir
             -simplify-tosa-reshape |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline ${TOSA_PIPELINE} |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -convert-scf-to-cf
+            -llvm-request-c-wrappers
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/forward_prefill_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_prefill.mlir
+            -simplify-tosa-reshape |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -eliminate-empty-tensors
             -empty-tensor-to-alloc-tensor
             -one-shot-bufferize="bufferize-function-boundaries"
@@ -35,19 +65,61 @@ add_custom_command(
             -convert-func-to-llvm
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
-          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_prefill.o
-  DEPENDS ${MODEL_GEMMA4_DIR}/forward_prefill.mlir
+          ${COMPILER_BUILD}/bin/buddy-translate
+            --buddy-to-llvmir |
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_prefill.o
+  DEPENDS ${OUTPUT_DIR}/forward_prefill.mlir
   COMMENT "Building forward_prefill.o"
-  VERBATIM)
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT subgraph_prefill.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_GEMMA4_DIR}/subgraph0_prefill.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph_prefill_gemmini.mlir
+             ${OUTPUT_DIR}/subgraph_prefill_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_prefill.mlir
             -simplify-tosa-reshape |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline ${TOSA_PIPELINE} |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-gemmini
+            -o ${OUTPUT_DIR}/subgraph_prefill_gemmini.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_prefill.mlir
+            -simplify-tosa-reshape |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-gemmini
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -convert-scf-to-cf
+            -llvm-request-c-wrappers
+            -lower-gemmini
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/subgraph_prefill_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_prefill.mlir
+            -simplify-tosa-reshape |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -eliminate-empty-tensors
             -empty-tensor-to-alloc-tensor
             -convert-elementwise-to-linalg
@@ -68,19 +140,44 @@ add_custom_command(
             -convert-func-to-llvm
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
-          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_prefill.o
-  DEPENDS ${MODEL_GEMMA4_DIR}/subgraph0_prefill.mlir
+          ${COMPILER_BUILD}/bin/buddy-translate
+            --buddy-to-llvmir |
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_prefill.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0_prefill.mlir
   COMMENT "Building subgraph_prefill.o"
-  VERBATIM)
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT forward_decode.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_GEMMA4_DIR}/forward_decode.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_decode_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_decode.mlir
             -simplify-tosa-reshape |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline ${TOSA_PIPELINE} |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -convert-scf-to-cf
+            -llvm-request-c-wrappers
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/forward_decode_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_decode.mlir
+            -simplify-tosa-reshape |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -eliminate-empty-tensors
             -empty-tensor-to-alloc-tensor
             -one-shot-bufferize="bufferize-function-boundaries"
@@ -97,21 +194,67 @@ add_custom_command(
             -convert-func-to-llvm
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
-          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_decode.o
-  DEPENDS ${MODEL_GEMMA4_DIR}/forward_decode.mlir
+          ${COMPILER_BUILD}/bin/buddy-translate
+            --buddy-to-llvmir |
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward_decode.o
+  DEPENDS ${OUTPUT_DIR}/forward_decode.mlir
   COMMENT "Building forward_decode.o"
-  VERBATIM)
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT subgraph_decode.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_GEMMA4_DIR}/subgraph0_decode.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph_decode_gemmini.mlir
+             ${OUTPUT_DIR}/subgraph_decode_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_decode.mlir
             -simplify-tosa-reshape |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
             -simplify-tosa-matmul-scalar |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline ${TOSA_PIPELINE} |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-gemmini
+            -o ${OUTPUT_DIR}/subgraph_decode_gemmini.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_decode.mlir
+            -simplify-tosa-reshape |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -simplify-tosa-matmul-scalar |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -convert-linalg-to-gemmini
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -convert-scf-to-cf
+            -llvm-request-c-wrappers
+            -lower-gemmini
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/subgraph_decode_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_decode.mlir
+            -simplify-tosa-reshape |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -simplify-tosa-matmul-scalar |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -eliminate-empty-tensors
             -empty-tensor-to-alloc-tensor
             -convert-elementwise-to-linalg
@@ -132,59 +275,27 @@ add_custom_command(
             -convert-func-to-llvm
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts |
-          ${BUDDY_BINARY_DIR}/buddy-translate --buddy-to-llvmir |
-          ${BUDDY_BINARY_DIR}/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_decode.o
-  DEPENDS ${MODEL_GEMMA4_DIR}/subgraph0_decode.mlir
+          ${COMPILER_BUILD}/bin/buddy-translate
+            --buddy-to-llvmir |
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph_decode.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0_decode.mlir
   COMMENT "Building subgraph_decode.o"
-  VERBATIM)
+  VERBATIM
+)
 
-add_library(GemminiGEMMA4 STATIC
-  forward_prefill.o
-  subgraph_prefill.o
-  forward_decode.o
+add_library(gemma4-e2b-it-gemmini-model STATIC EXCLUDE_FROM_ALL forward_prefill.o subgraph_prefill.o forward_decode.o
   subgraph_decode.o
 )
-set_target_properties(GemminiGEMMA4 PROPERTIES LINKER_LANGUAGE CXX)
-add_dependencies(GemminiGEMMA4 gemma4-model-build)
+set_target_properties(gemma4-e2b-it-gemmini-model PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+set_target_properties(gemma4-e2b-it-gemmini-model PROPERTIES LINKER_LANGUAGE CXX)
 
-add_executable(buddy-gemmini-gemma4-run ${MODEL_SOURCE}/main.cpp)
-add_dependencies(buddy-gemmini-gemma4-run GemminiGEMMA4)
+add_executable(buddy-gemmini-gemma4-run EXCLUDE_FROM_ALL ${MODEL_DIR}/gemma4-e2b-it/main.cpp)
+set_target_properties(buddy-gemmini-gemma4-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+add_dependencies(buddy-gemmini-gemma4-run gemma4-e2b-it-gemmini-model)
 
-
-target_include_directories(buddy-gemmini-gemma4-run PRIVATE ${INTERFACE_DIR})
-set(BUDDY_GEMMA4_LIBS GemminiGEMMA4 ModelTestCRunnerUtils)
-target_link_libraries(buddy-gemmini-gemma4-run -static ${BUDDY_GEMMA4_LIBS})
-
-set(GEMMA4_OUTPUT_DIR ${OUTPUT_BIN_DIR}/gemmini/gemma4-e2b-it)
-
-add_custom_command(TARGET buddy-gemmini-gemma4-run POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${GEMMA4_OUTPUT_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          $<TARGET_FILE:buddy-gemmini-gemma4-run>
-          ${GEMMA4_OUTPUT_DIR}/buddy-gemmini-gemma4-run
-  COMMENT "Copying Gemmini Gemma4 executable to output directory"
-  VERBATIM
+target_include_directories(buddy-gemmini-gemma4-run PRIVATE ${BUDDY_SOURCE}/frontend/Interfaces)
+target_link_libraries(buddy-gemmini-gemma4-run -static gemma4-e2b-it-gemmini-model
+                                                       gemmini-runtime
 )
 
-add_custom_target(sync-gemmini-gemma4-deps
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${GEMMA4_OUTPUT_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_GEMMA4_DIR}/arg0.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_GEMMA4_DIR}/arg0.data
-          ${GEMMA4_OUTPUT_DIR}/arg0.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_GEMMA4_DIR}/vocab.txt
-          ${CMAKE_CURRENT_BINARY_DIR}/vocab.txt
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_GEMMA4_DIR}/vocab.txt
-          ${GEMMA4_OUTPUT_DIR}/vocab.txt
-  DEPENDS
-          ${MODEL_GEMMA4_DIR}/arg0.data
-          ${MODEL_GEMMA4_DIR}/vocab.txt
-  COMMENT "Syncing Gemma4 runtime deps to output directory"
-  VERBATIM
-)
-
-add_dependencies(buddy-gemmini-gemma4-run sync-gemmini-gemma4-deps)
+add_custom_target(gemma4-e2b-it-model-build DEPENDS gemma4-e2b-it-gemmini-model)

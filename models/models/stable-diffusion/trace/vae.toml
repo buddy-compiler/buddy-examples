@@ -2,28 +2,40 @@
 node = "convolution"
 id = 200
 tag = "vae_convolution"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_1"
 id = 201
 tag = "vae_convolution_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "add"
 id = 202
 tag = "vae_add"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_2"
 id = 203
 tag = "vae_convolution_2"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "mm"
 id = 204
 tag = "vae_mm"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "mm_1"
 id = 205
 tag = "vae_mm_1"
+cycle = true
+tensor = false

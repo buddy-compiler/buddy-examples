@@ -2,28 +2,40 @@
 node = "sin"
 id = 100
 tag = "unet_sin"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "cos"
 id = 101
 tag = "unet_cos"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "cat"
 id = 102
 tag = "unet_cat"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution"
 id = 103
 tag = "unet_convolution"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm"
 id = 104
 tag = "unet_addmm"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_1"
 id = 105
 tag = "unet_convolution_1"
+cycle = true
+tensor = false

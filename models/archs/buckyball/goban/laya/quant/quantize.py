@@ -4,7 +4,7 @@ from torch import nn
 from buddy.compiler.graph.transform.quantization.activation import calibrate_layers
 from stack.compiler.quant.importer import quantize_model_graph
 from buddy.compiler.graph.transform.quantization.symmetric import quantize_symmetric
-from ..permute.layout import reorder
+from permute.layout import reorder
 
 FORMAT = "int8_per_channel_smooth_dynamic"
 STAGES = {"attention", "ffn"}

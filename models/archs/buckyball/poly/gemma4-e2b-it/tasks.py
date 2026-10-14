@@ -3,7 +3,7 @@ from torch import nn
 from transformers.models.gemma4.modeling_gemma4 import apply_rotary_pos_emb
 
 from stack.compiler.quant import mxfp8_cache as codec
-from .attention import AttentionHeads
+from attention import AttentionHeads
 
 
 class Prepare(nn.Module):
@@ -78,8 +78,8 @@ class PostLayer(nn.Module):
 
 
 def layer_tasks(layer, weights, layouts, tiles, *, prefill):
-    from .linear import PackedLinear
-    from .partition import head_ranges, kv_sources, panel_ranges, participants
+    from linear import PackedLinear
+    from partition import head_ranges, kv_sources, panel_ranges, participants
 
     tiles = participants(tiles)
     projections = {
@@ -157,9 +157,9 @@ def capture_task(compiler, task, inputs, *, symbol, prefill):
         simply_fuse,
     )
     from buddy_mlir import ir
-    from .linear import register
-    from .attention import register as register_attention
-    from .kernels import map_flash_attention
+    from linear import register
+    from attention import register as register_attention
+    from kernels import map_flash_attention
 
     register(compiler)
     codec.register(compiler)

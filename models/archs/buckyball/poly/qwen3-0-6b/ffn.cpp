@@ -44,7 +44,7 @@ void runFfnExpand(const FfnKernels &kernels, Hidden *result, Floats *norm,
                     intptr_t(gate.offset), intptr_t(gate.bytes), 1},
                    {weights->getData(), weights->getData(), intptr_t(up.offset),
                     intptr_t(up.bytes), 1}};
-    tasks[index] = task_submit(CORE_SIGNATURE, expandTask, &jobs[index]);
+    tasks[index] = task_submit(THREAD_SIGNATURE, expandTask, &jobs[index]);
     begin += kernels.expandWidths[index];
   }
   std::unique_ptr<float> allocation(
@@ -82,7 +82,7 @@ void runFfnDown(const FfnKernels &kernels, Hidden *result, Bytes *weights,
                    input,
                    {weights->getData(), weights->getData(),
                     intptr_t(matrix.offset), intptr_t(matrix.bytes), 1}};
-    tasks[index] = task_submit(CORE_SIGNATURE, downTask, &jobs[index]);
+    tasks[index] = task_submit(THREAD_SIGNATURE, downTask, &jobs[index]);
     begin += kernels.downWidths[index];
   }
   std::unique_ptr<float> allocation(

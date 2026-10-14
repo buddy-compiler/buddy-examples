@@ -1,5 +1,5 @@
-from examples.balls.mxmm.compiler.python.layout import bank_bytes
+from stack.runtime.scripts.chip_targets import bank_bytes
 
 
-def window_bytes(compiler_build):
-    return bank_bytes(compiler_build, "ffn")
+def window_bytes(chip_pb):
+    return bank_bytes(chip_pb, "ffn")

@@ -51,6 +51,7 @@ def prepare(processor, item, base, config):
             target = processor.feature_extractor.sampling_rate
             if rate != target:
                 from torchaudio.transforms import Resample
+
                 threads = torch.get_num_threads()
                 try:
                     torch.set_num_threads(1)
@@ -59,13 +60,28 @@ def prepare(processor, item, base, config):
                 finally:
                     torch.set_num_threads(threads)
             media["audio"] = [audio]
-    prompt = processor.apply_chat_template([{"role": "user", "content": content}],
-                                           tokenize=False, add_generation_prompt=True)
-    batch = processor(text=prompt, **media, return_tensors="pt", min_pixels=1024, max_pixels=65536,
-                      sampling_rate=processor.feature_extractor.sampling_rate, use_audio_in_video=False)
+    prompt = processor.apply_chat_template(
+        [{"role": "user", "content": content}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    batch = processor(
+        text=prompt,
+        **media,
+        return_tensors="pt",
+        min_pixels=1024,
+        max_pixels=65536,
+        sampling_rate=processor.feature_extractor.sampling_rate,
+        use_audio_in_video=False,
+    )
     ids = batch["input_ids"][0]
     encoded = {}
-    for name in ("pixel_values", "pixel_values_videos", "image_grid_thw", "video_grid_thw"):
+    for name in (
+        "pixel_values",
+        "pixel_values_videos",
+        "image_grid_thw",
+        "video_grid_thw",
+    ):
         if name in batch:
             encoded[name] = batch[name]
     if "input_features" in batch:
@@ -76,16 +92,27 @@ def prepare(processor, item, base, config):
     for offset, token in enumerate(ids.tolist()):
         if token == config.audio_start_token_id:
             kind = "audio"
-            data = {"audio_feature_lengths": encoded["audio_feature_lengths"][indices[kind]]}
+            data = {
+                "audio_feature_lengths": encoded["audio_feature_lengths"][indices[kind]]
+            }
         elif token == config.vision_start_token_id:
-            kind = {config.image_token_id: "image", config.video_token_id: "video"}[int(ids[offset + 1])]
+            kind = {config.image_token_id: "image", config.video_token_id: "video"}[
+                int(ids[offset + 1])
+            ]
             data = {f"{kind}_grid_thw": encoded[f"{kind}_grid_thw"][indices[kind]]}
             if kind == "video":
-                data["second_per_grid_ts"] = torch.as_tensor(batch["video_second_per_grid"][indices[kind]])
+                data["second_per_grid_ts"] = torch.as_tensor(
+                    batch["video_second_per_grid"][indices[kind]]
+                )
         else:
             continue
         indices[kind] += 1
-        features.append(SimpleNamespace(modality=kind, mm_position=SimpleNamespace(offset=offset),
-                                        data={key: SimpleNamespace(data=value) for key, value in data.items()}))
+        features.append(
+            SimpleNamespace(
+                modality=kind,
+                mm_position=SimpleNamespace(offset=offset),
+                data={key: SimpleNamespace(data=value) for key, value in data.items()},
+            )
+        )
     pos, delta = positions(ids.tolist(), features, config)
     return ids.tolist(), pos.numpy(), delta, encoded

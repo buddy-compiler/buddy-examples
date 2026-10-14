@@ -116,7 +116,7 @@ def register(compiler):
     from buddy.compiler.graph.operation import Op
     from buddy_mlir import ir
     from buddy_mlir.dialects import bufferization, func, memref
-    from .attention_mxfp8 import lower_prefill_attention
+    from attention_mxfp8 import lower_prefill_attention
 
     class PrefillHeadAttentionOp(Op):
         pass

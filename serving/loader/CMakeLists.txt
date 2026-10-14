@@ -7,5 +7,9 @@ find_program(FLATC_EXECUTABLE flatc REQUIRED)
 add_subdirectory("${BUDDY_SOURCE}/runtime/rax" rax)
 add_executable(load-model main.cpp)
 target_compile_features(load-model PRIVATE cxx_std_17)
-target_include_directories(load-model PRIVATE "${BUDDY_SOURCE}/runtime/include" ${LLVM_INCLUDE_DIRS})
-target_link_libraries(load-model PRIVATE buddy_rax LLVMSupport)
+target_include_directories(load-model PRIVATE "${BUDDY_SOURCE}/runtime/include"
+                                              ${LLVM_INCLUDE_DIRS}
+)
+target_link_libraries(load-model PRIVATE buddy_rax
+                                         LLVMSupport
+)

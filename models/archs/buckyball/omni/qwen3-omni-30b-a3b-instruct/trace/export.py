@@ -14,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--compiler-build", type=Path, required=True)
+    parser.add_argument("--chip-pb", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     sys.path.insert(0, str(args.compiler_build / "python_packages"))
@@ -44,7 +45,7 @@ def main():
             target,
             {"gate", "up", "down"} if name.startswith("expert") else {"gate"},
             args.output,
-            args.compiler_build,
+            args,
         )
         output = args.output / name
         if name.startswith("expert"):

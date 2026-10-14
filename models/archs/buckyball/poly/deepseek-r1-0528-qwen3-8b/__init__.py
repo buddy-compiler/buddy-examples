@@ -1,1 +1,1 @@
-from .config import chip, targets
+from config import chip, targets

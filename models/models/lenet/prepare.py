@@ -26,11 +26,12 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-from .model import LeNet
+from model import LeNet
 
 import argparse
 from importlib import import_module
-add_arguments = import_module(".configs.importer-param", __package__).add_arguments
+
+add_arguments = import_module("configs.importer-param").add_arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", type=Path, required=True)
@@ -66,7 +67,9 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-    print(f"Epoch {epoch+1}/{epochs} - Loss: {running_loss/len(train_loader)}", flush=True)
+    print(
+        f"Epoch {epoch+1}/{epochs} - Loss: {running_loss/len(train_loader)}", flush=True
+    )
 
 # Save parameter values independently of Python module paths.
 torch.save(model.state_dict(), args.output)

@@ -6,9 +6,12 @@ from buddy.compiler.graph.graph import Graph, NodeType
 from buddy.compiler.graph.operation import MegaKernelOp, OutputOp, PlaceholderOp
 from buddy.compiler.graph.type import TensorDType
 from buddy_mlir import ir
+from stack.runtime.scripts.tasks import dispatch
+
+import targets
 
 
-def emit(graph, output):
+def emit(graph, output, chip_pb):
     kernels = [node for node in graph.body if isinstance(node, MegaKernelOp)]
     if len(kernels) != 50 or any(len(node._stages) != 1 for node in kernels):
         raise ValueError("Mixer-B/16 requires fifty independent Linear kernels")
@@ -25,7 +28,10 @@ def emit(graph, output):
             isolated.add_node(deepcopy(parameter), NodeType.FakeNode)
         activation = PlaceholderOp()
         activation.name = str(kernel.args[0])
-        activation._tensor_meta = {"shape": [chunk, reduction], "dtype": TensorDType.Float32}
+        activation._tensor_meta = {
+            "shape": [chunk, reduction],
+            "dtype": TensorDType.Float32,
+        }
         isolated.add_node(activation, NodeType.InputNode)
         kernel._tensor_meta["shape"] = [chunk, columns]
         kernel._children = ["output"]
@@ -42,13 +48,26 @@ def emit(graph, output):
         subgraph.lower_to_top_level_ir()
         module = subgraph._imported_module
         with module.context:
-            function = next(op for op in module.body.operations if op.operation.name == "func.func")
+            function = next(
+                op for op in module.body.operations if op.operation.name == "func.func"
+            )
             attributes = []
             for argument in function.regions[0].blocks[0].arguments:
                 shape = list(ir.RankedTensorType(argument.type).shape)
-                strides = [prod(shape[i + 1:]) for i in range(len(shape))]
-                attributes.append(ir.DictAttr.get({"bufferization.buffer_layout": ir.Attribute.parse(f"strided<{strides}, offset: ?>")}))
+                strides = [prod(shape[i + 1 :]) for i in range(len(shape))]
+                attributes.append(
+                    ir.DictAttr.get(
+                        {
+                            "bufferization.buffer_layout": ir.Attribute.parse(
+                                f"strided<{strides}, offset: ?>"
+                            )
+                        }
+                    )
+                )
             function.attributes["arg_attrs"] = ir.ArrayAttr.get(attributes)
         (output / f"subgraph{index}.mlir").write_text(str(module))
-        (output / f"linear{index}.mlir").write_text(str(driver.construct_main_graph(True)))
+        forward = str(driver.construct_main_graph(True))
+        task = output / f"linear{index}-task.c"
+        forward = dispatch(forward, f"subgraph{index}", chip_pb, targets["mixer"], task)
+        (output / f"linear{index}.mlir").write_text(forward)
     return shapes

@@ -1,6 +1,5 @@
 #include "Buckyball/Transform.h"
 #include "Dialect/Buckyball/Transforms/LegalizeForLLVMExportBase.h"
-#include "Target/BuckyballTargetRegistry.h"
 
 using namespace mlir;
 using namespace buddy::buckyball::legalize;
@@ -20,14 +19,11 @@ void mlir::populateBuckyballLegalizeForLLVMExportPatterns(
     bool includeFuncOperandForwarding, bool stable) {
   populateBaseLegalizeForLLVMExportPatterns(converter, patterns,
                                             includeFuncOperandForwarding);
-  for (llvm::StringRef ball : buckyball_target::getBuckyballTarget().balls) {
 #define BUCKYBALL_LEGALIZE_HOOK(BALL)                                          \
-  if (ball == #BALL)                                                           \
-    buddy::buckyball::populate##BALL##LegalizeForLLVMExportPatterns(           \
-        converter, patterns, stable, bankDepth);
+  buddy::buckyball::populate##BALL##LegalizeForLLVMExportPatterns(             \
+      converter, patterns, stable, bankDepth);
 #include "BuckyballBallLoweringHooks.inc"
 #undef BUCKYBALL_LEGALIZE_HOOK
-  }
   (void)bankWidthBytes;
   (void)bankNum;
 }
@@ -35,11 +31,8 @@ void mlir::populateBuckyballLegalizeForLLVMExportPatterns(
 void mlir::configureBuckyballLegalizeForExportTarget(
     LLVMConversionTarget &target, bool stable) {
   configureBaseLegalizeForExportTarget(target);
-  for (llvm::StringRef ball : buckyball_target::getBuckyballTarget().balls) {
 #define BUCKYBALL_LEGALIZE_HOOK(BALL)                                          \
-  if (ball == #BALL)                                                           \
-    buddy::buckyball::configure##BALL##LegalizeForExportTarget(target, stable);
+  buddy::buckyball::configure##BALL##LegalizeForExportTarget(target, stable);
 #include "BuckyballBallLoweringHooks.inc"
 #undef BUCKYBALL_LEGALIZE_HOOK
-  }
 }

@@ -10,7 +10,7 @@ def prepare_inputs(directory: Path, config: Path, metadata: dict):
 
     settings = tomllib.loads(config.read_text())
     prompts = settings["inputs"]
-    tiles = settings["tile_indices"]
+    tiles = settings["core_indices"]
     max_tokens = settings["max_tokens"]
     temperature = settings["temperature"]
     if (
@@ -50,6 +50,6 @@ def prepare_inputs(directory: Path, config: Path, metadata: dict):
         resources.append(relative)
     reference = {
         key: settings[key]
-        for key in ("inputs", "max_tokens", "temperature", "tile_indices")
+        for key in ("inputs", "max_tokens", "temperature", "core_indices")
     }
     return resources, reference

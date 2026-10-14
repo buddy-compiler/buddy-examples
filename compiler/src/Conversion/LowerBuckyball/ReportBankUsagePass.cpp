@@ -33,9 +33,10 @@ public:
            "from mset alloc/transfer/release timeline.";
   }
 
-  Option<int64_t> bankNum{*this, "bank_num",
-                          llvm::cl::desc("Physical group capacity of the reported pool."),
-                          llvm::cl::init(16)};
+  Option<int64_t> bankNum{
+      *this, "bank_num",
+      llvm::cl::desc("Physical group capacity of the reported pool."),
+      llvm::cl::init(16)};
   Option<bool> verbose{*this, "verbose",
                        llvm::cl::desc("Print per-event timeline."),
                        llvm::cl::init(false)};

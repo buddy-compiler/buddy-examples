@@ -13,6 +13,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--compiler-build", type=Path, required=True)
+    parser.add_argument("--chip-pb", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     sys.path.insert(0, str(args.compiler_build / "python_packages"))
@@ -43,7 +44,7 @@ def main():
             "attention",
             {"weights.q", "weights.k", "weights.v", "weights.o"},
             args.output,
-            args.compiler_build,
+            args,
         )
         for key, tensor in inputs.items():
             tensor.numpy().tofile(args.output / name / f"{key}.bin")

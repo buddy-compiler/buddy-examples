@@ -8,7 +8,6 @@ from safetensors.torch import load_file
 import torch
 from torch import nn
 
-
 with Path(__file__).with_name("configs").joinpath("model.toml").open("rb") as file:
     PARAMETERS = tomllib.load(file)["parameters"]
 
@@ -67,7 +66,11 @@ def load_pixels(path: Path):
     image = Image.open(path).convert("RGB")
     width, height = image.size
     size = 256
-    target = (size, int(size * height / width)) if width <= height else (int(size * width / height), size)
+    target = (
+        (size, int(size * height / width))
+        if width <= height
+        else (int(size * width / height), size)
+    )
     image = image.resize(target, Image.Resampling.BICUBIC)
     left, top = round((image.width - 224) / 2), round((image.height - 224) / 2)
     image = image.crop((left, top, left + 224, top + 224))
@@ -78,7 +81,12 @@ def load_pixels(path: Path):
 def pack_patches(pixels):
     # Offline input layout: patch-row, patch-column, channel, local-row,
     # local-column. No high-rank transpose remains in the compiled graph.
-    return pixels.reshape(1, 3, 14, 16, 14, 16).permute(0, 2, 4, 1, 3, 5).reshape(196, 768).contiguous()
+    return (
+        pixels.reshape(1, 3, 14, 16, 14, 16)
+        .permute(0, 2, 4, 1, 3, 5)
+        .reshape(196, 768)
+        .contiguous()
+    )
 
 
 def load_input(path: Path):

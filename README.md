@@ -34,7 +34,7 @@ cd ~/.ssh
 ssh-agent -s > AGENT_VARS
 source AGENT_VARS
 ssh-add firesim.pem
-``` 
+```
 
 4. Build hardware in FireSim
 
@@ -55,7 +55,7 @@ Build the FPGA bitstream and launch FireSim simulations. The bitstream generatio
 ```bash
 cd buddy-examples
 source ./env.sh
-``` 
+```
 
 > **Note:** This guide assumes you have basic knowledge of FireSim. For detailed FireSim configuration instructions, please refer to the [official FireSim documentation](https://docs.fires.im).
 
@@ -95,7 +95,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!
@@ -139,7 +139,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!
@@ -182,7 +182,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!
@@ -229,7 +229,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!
@@ -271,7 +271,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!
@@ -313,7 +313,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!
@@ -356,7 +356,7 @@ cd buddy-examples
 
 ```bash
 ssh localhost
-screen -r fsim0 
+screen -r fsim0
 ```
 
 4. Final step!

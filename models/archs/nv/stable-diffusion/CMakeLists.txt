@@ -1,287 +1,545 @@
+set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
+
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/arg0_text_encoder.data
+         ${OUTPUT_DIR}/arg1_text_encoder.data
+         ${OUTPUT_DIR}/arg0_unet.data
+         ${OUTPUT_DIR}/arg0_vae.data
+         ${OUTPUT_DIR}/forward_text_encoder.mlir
+         ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+         ${OUTPUT_DIR}/forward_unet.mlir
+         ${OUTPUT_DIR}/subgraph0_unet.mlir
+         ${OUTPUT_DIR}/forward_vae.mlir
+         ${OUTPUT_DIR}/subgraph0_vae.mlir
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
+  COMMAND ${PYTHON} buddy-pytorch-importer.py
+            --repo-root ${REPO_ROOT}
+            --output-dir ${OUTPUT_DIR}
+            --compiler-build ${COMPILER_BUILD}
+            --checkpoint "borno1/stable_diffusion_2_base"
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing stable-diffusion for nv"
+  VERBATIM
+)
+
 # Host x86 + NVIDIA GPU path (copied from nv/LeNet, adapted).
-
-set(MODEL_STABLEDIFFUSION_DIR ${MODEL_DIR}/stable-diffusion)
-set(INTERFACE_DIR ${NV_INTERFACE_DIR})
-set(INCLUDE_DIR ${MODEL_STABLEDIFFUSION_DIR}/include)
-
 
 add_custom_command(
   OUTPUT forward_text_encoder_gpu.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/forward_text_encoder.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -buffer-hoisting
-          -canonicalize -cse -expand-strided-metadata
-          -convert-memcpy-to-gpu -gpu-async-region |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers --gpu-to-llvm |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/forward_text_encoder_gpu.o
-  DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/forward_text_encoder.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+  BYPRODUCTS ${OUTPUT_DIR}/forward_text_encoder_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -expand-strided-metadata
+            -convert-memcpy-to-gpu
+            -gpu-async-region |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers
+            --gpu-to-llvm
+            -o ${OUTPUT_DIR}/forward_text_encoder_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -expand-strided-metadata
+            -convert-memcpy-to-gpu
+            -gpu-async-region |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers
+            --gpu-to-llvm |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/forward_text_encoder_gpu.o
+  DEPENDS ${OUTPUT_DIR}/forward_text_encoder.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV forward_text_encoder_gpu.o"
-  VERBATIM)
-
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT subgraph0_text_encoder_gpu.o
-  BYPRODUCTS subgraph0_text_encoder_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_text_encoder.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
-            > ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_text_encoder.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_gpu.mlir
+             ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_nvvm.mlir
+             ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -eliminate-empty-tensors
-          -convert-elementwise-to-linalg
-          -convert-tensor-to-linalg
-          -one-shot-bufferize="bufferize-function-boundaries"
-          -ownership-based-buffer-deallocation
-          -buffer-deallocation-simplification
-          -bufferization-lower-deallocations
-          -convert-linalg-to-parallel-loops
-          -canonicalize
-          -gpu-map-parallel-loops
-          -convert-parallel-loops-to-gpu
-          -gpu-kernel-outlining
-          -buffer-hoisting
-          -canonicalize
-          -cse |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -convert-memcpy-to-gpu=${NV_CONVERT_MEMCPY_TO_GPU_OPTION_DISABLE_PROCESS_ARG}
-          -gpu-async-region -canonicalize |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers
-          -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_text_encoder_gpu.o
-  DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_text_encoder.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -o ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_gpu.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_nvvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin" |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_text_encoder_gpu.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV subgraph0_text_encoder_gpu.o (TOSA→NVVM)"
-  VERBATIM)
-
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT forward_unet_gpu.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/forward_unet.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -buffer-hoisting
-          -canonicalize -cse -expand-strided-metadata
-          -convert-memcpy-to-gpu -gpu-async-region |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers --gpu-to-llvm |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/forward_unet_gpu.o
-  DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/forward_unet.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+  BYPRODUCTS ${OUTPUT_DIR}/forward_unet_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -expand-strided-metadata
+            -convert-memcpy-to-gpu
+            -gpu-async-region |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers
+            --gpu-to-llvm
+            -o ${OUTPUT_DIR}/forward_unet_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -expand-strided-metadata
+            -convert-memcpy-to-gpu
+            -gpu-async-region |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers
+            --gpu-to-llvm |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/forward_unet_gpu.o
+  DEPENDS ${OUTPUT_DIR}/forward_unet.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV forward_unet_gpu.o"
-  VERBATIM)
-
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT subgraph0_unet_gpu.o
-  BYPRODUCTS subgraph0_unet_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_unet.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
-            > ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_unet_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_unet.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_unet_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_unet_gpu_gpu.mlir
+             ${OUTPUT_DIR}/subgraph0_unet_gpu_nvvm.mlir
+             ${OUTPUT_DIR}/subgraph0_unet_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -eliminate-empty-tensors
-          -convert-elementwise-to-linalg
-          -convert-tensor-to-linalg
-          -one-shot-bufferize="bufferize-function-boundaries"
-          -ownership-based-buffer-deallocation
-          -buffer-deallocation-simplification
-          -bufferization-lower-deallocations
-          -convert-linalg-to-parallel-loops
-          -canonicalize
-          -gpu-map-parallel-loops
-          -convert-parallel-loops-to-gpu
-          -gpu-kernel-outlining
-          -buffer-hoisting
-          -canonicalize
-          -cse |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -convert-memcpy-to-gpu=${NV_CONVERT_MEMCPY_TO_GPU_OPTION_DISABLE_PROCESS_ARG}
-          -gpu-async-region -canonicalize |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers
-          -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_unet_gpu.o
-  DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_unet.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -o ${OUTPUT_DIR}/subgraph0_unet_gpu_gpu.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_unet_gpu_nvvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_unet_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_unet_gpu_linalg.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin" |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_unet_gpu.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0_unet.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV subgraph0_unet_gpu.o (TOSA→NVVM)"
-  VERBATIM)
-
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT forward_vae_gpu.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/forward_vae.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -buffer-hoisting
-          -canonicalize -cse -expand-strided-metadata
-          -convert-memcpy-to-gpu -gpu-async-region |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers --gpu-to-llvm |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/forward_vae_gpu.o
-  DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/forward_vae.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+  BYPRODUCTS ${OUTPUT_DIR}/forward_vae_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -expand-strided-metadata
+            -convert-memcpy-to-gpu
+            -gpu-async-region |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers
+            --gpu-to-llvm
+            -o ${OUTPUT_DIR}/forward_vae_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -expand-strided-metadata
+            -convert-memcpy-to-gpu
+            -gpu-async-region |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers
+            --gpu-to-llvm |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/forward_vae_gpu.o
+  DEPENDS ${OUTPUT_DIR}/forward_vae.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV forward_vae_gpu.o"
-  VERBATIM)
-
+  VERBATIM
+)
 
 add_custom_command(
   OUTPUT subgraph0_vae_gpu.o
-  BYPRODUCTS subgraph0_vae_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_vae.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
-            > ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_vae_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_vae.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_vae_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_vae_gpu_gpu.mlir
+             ${OUTPUT_DIR}/subgraph0_vae_gpu_nvvm.mlir
+             ${OUTPUT_DIR}/subgraph0_vae_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -eliminate-empty-tensors
-          -convert-elementwise-to-linalg
-          -convert-tensor-to-linalg
-          -one-shot-bufferize="bufferize-function-boundaries"
-          -ownership-based-buffer-deallocation
-          -buffer-deallocation-simplification
-          -bufferization-lower-deallocations
-          -convert-linalg-to-parallel-loops
-          -canonicalize
-          -gpu-map-parallel-loops
-          -convert-parallel-loops-to-gpu
-          -gpu-kernel-outlining
-          -buffer-hoisting
-          -canonicalize
-          -cse |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -convert-memcpy-to-gpu=${NV_CONVERT_MEMCPY_TO_GPU_OPTION_DISABLE_PROCESS_ARG}
-          -gpu-async-region -canonicalize |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers
-          -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_vae_gpu.o
-  DEPENDS ${MODEL_STABLEDIFFUSION_DIR}/subgraph0_vae.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -o ${OUTPUT_DIR}/subgraph0_vae_gpu_gpu.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_vae_gpu_nvvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_vae_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_vae_gpu_linalg.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae.mlir
+            -convert-trace-to-llvm |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-linalg-to-parallel-loops
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-memcpy-to-gpu=process-args=0
+            -gpu-async-region
+            -canonicalize |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=sm_80 cubin-features=+ptx71 cubin-format=fatbin" |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_vae_gpu.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0_vae.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV subgraph0_vae_gpu.o (TOSA→NVVM)"
-  VERBATIM)
-
-
-add_library(NvTEXTENCODER STATIC subgraph0_text_encoder_gpu.o forward_text_encoder_gpu.o)
-add_library(NvUNET STATIC subgraph0_unet_gpu.o forward_unet_gpu.o)
-add_library(NvVAE STATIC subgraph0_vae_gpu.o forward_vae_gpu.o)
-set_target_properties(NvTEXTENCODER NvUNET NvVAE PROPERTIES LINKER_LANGUAGE CXX)
-add_dependencies(NvTEXTENCODER stable-diffusion-model-build)
-add_dependencies(NvUNET stable-diffusion-model-build)
-add_dependencies(NvVAE stable-diffusion-model-build)
-
-add_executable(buddy-nv-stable-diffusion-run ${MODEL_STABLEDIFFUSION_DIR}/main.cpp)
-add_dependencies(buddy-nv-stable-diffusion-run NvTEXTENCODER NvUNET NvVAE)
-target_include_directories(buddy-nv-stable-diffusion-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
-target_link_directories(buddy-nv-stable-diffusion-run PRIVATE ${NV_LLVM_LIBRARY_DIR} ${BUDDY_MLIR_DIR}/build/lib)
-target_link_libraries(buddy-nv-stable-diffusion-run
-  NvTEXTENCODER
-  NvUNET
-  NvVAE
-  NvHostCRunnerUtils
-  ${NV_BUDDY_LIB_DIP}
-  PNG::PNG
-  ${NV_MLIR_C_RUNNER_UTILS_LIB}
-  ${NV_MLIR_RUNNER_UTILS_LIB}
-  ${NV_MLIR_ASYNC_RUNTIME_LIB}
-  ${NV_MLIR_CUDA_RUNTIME_LIB}
-  dl
-  pthread
+  VERBATIM
 )
 
-add_custom_target(sync-nv-stable-diffusion-deps
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/trace/cycle
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_STABLEDIFFUSION_DIR}/arg0_text_encoder.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg0_text_encoder.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_STABLEDIFFUSION_DIR}/arg1_text_encoder.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg1_text_encoder.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_STABLEDIFFUSION_DIR}/arg0_unet.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg0_unet.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_STABLEDIFFUSION_DIR}/arg0_vae.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg0_vae.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_STABLEDIFFUSION_DIR}/vocab.txt
-          ${CMAKE_CURRENT_BINARY_DIR}/vocab.txt
-  DEPENDS
-          ${MODEL_STABLEDIFFUSION_DIR}/arg0_text_encoder.data
-          ${MODEL_STABLEDIFFUSION_DIR}/arg1_text_encoder.data
-          ${MODEL_STABLEDIFFUSION_DIR}/arg0_unet.data
-          ${MODEL_STABLEDIFFUSION_DIR}/arg0_vae.data
-          ${MODEL_STABLEDIFFUSION_DIR}/vocab.txt
-  COMMENT "Syncing NV stable-diffusion runtime deps"
-  VERBATIM)
-add_dependencies(buddy-nv-stable-diffusion-run sync-nv-stable-diffusion-deps)
+add_library(stable-diffusion-nv-textencoder-model STATIC EXCLUDE_FROM_ALL subgraph0_text_encoder_gpu.o
+  forward_text_encoder_gpu.o
+)
+set_target_properties(stable-diffusion-nv-textencoder-model PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+add_library(stable-diffusion-nv-unet-model STATIC EXCLUDE_FROM_ALL subgraph0_unet_gpu.o forward_unet_gpu.o)
+set_target_properties(stable-diffusion-nv-unet-model PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+add_library(stable-diffusion-nv-vae-model STATIC EXCLUDE_FROM_ALL subgraph0_vae_gpu.o forward_vae_gpu.o)
+set_target_properties(stable-diffusion-nv-vae-model PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+set_target_properties(stable-diffusion-nv-textencoder-model stable-diffusion-nv-unet-model
+  stable-diffusion-nv-vae-model PROPERTIES LINKER_LANGUAGE CXX
+)
 
-if(DEFINED OUTPUT_BIN_DIR)
-  set(OUT_DIR ${OUTPUT_BIN_DIR}/nv/stable-diffusion)
-  add_custom_command(TARGET buddy-nv-stable-diffusion-run POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${OUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${OUT_DIR}/trace/cycle
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:buddy-nv-stable-diffusion-run>
-            ${OUT_DIR}/buddy-nv-stable-diffusion-run
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_STABLEDIFFUSION_DIR}/arg0_text_encoder.data
-            ${OUT_DIR}/arg0_text_encoder.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_STABLEDIFFUSION_DIR}/arg1_text_encoder.data
-            ${OUT_DIR}/arg1_text_encoder.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_STABLEDIFFUSION_DIR}/arg0_unet.data
-            ${OUT_DIR}/arg0_unet.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_STABLEDIFFUSION_DIR}/arg0_vae.data
-            ${OUT_DIR}/arg0_vae.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_STABLEDIFFUSION_DIR}/vocab.txt
-            ${OUT_DIR}/vocab.txt
-    COMMENT "Copying NV stable-diffusion executable and deps to output directory"
-    VERBATIM)
-endif()
+add_executable(buddy-nv-stable-diffusion-run EXCLUDE_FROM_ALL ${MODEL_DIR}/stable-diffusion/main.cpp)
+set_target_properties(buddy-nv-stable-diffusion-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+add_dependencies(
+  buddy-nv-stable-diffusion-run
+  stable-diffusion-nv-textencoder-model
+  stable-diffusion-nv-unet-model
+  stable-diffusion-nv-vae-model
+)
+target_include_directories(buddy-nv-stable-diffusion-run PRIVATE ${BUDDY_SOURCE}/frontend/Interfaces
+                                                                 ${MODEL_DIR}/stable-diffusion/include
+)
+target_link_directories(buddy-nv-stable-diffusion-run PRIVATE ${BUDDY_SOURCE}/llvm/build/lib ${BUDDY_SOURCE}/build/lib)
+target_link_libraries(buddy-nv-stable-diffusion-run stable-diffusion-nv-textencoder-model stable-diffusion-nv-unet-model
+                                                                                          stable-diffusion-nv-vae-model
+                                                                                          nv-runtime
+                                                                                          BuddyLibDIP
+                                                                                          PNG::PNG
+                                                                                          mlir_c_runner_utils
+                                                                                          mlir_runner_utils
+                                                                                          mlir_async_runtime
+                                                                                          mlir_cuda_runtime
+                                                                                          dl
+                                                                                          pthread
+)
 
-add_custom_target(buddy-nv-stable-diffusion-all-run DEPENDS buddy-nv-stable-diffusion-run)
+add_custom_target(
+  stable-diffusion-model-build
+  DEPENDS stable-diffusion-nv-textencoder-model stable-diffusion-nv-unet-model stable-diffusion-nv-vae-model
+)

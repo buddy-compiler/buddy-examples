@@ -14,7 +14,9 @@ class Router(nn.Module):
 
     def forward(self, hidden):
         hidden = hidden.float()
-        normalized = hidden * torch.rsqrt(hidden.square().mean(-1, keepdim=True) + self.epsilon)
+        normalized = hidden * torch.rsqrt(
+            hidden.square().mean(-1, keepdim=True) + self.epsilon
+        )
         normalized = normalized * self.norm
         probabilities = F.linear(normalized, self.gate).softmax(-1)
         scores, experts = probabilities.topk(self.top_k, dim=-1)
@@ -31,4 +33,6 @@ class Expert(nn.Module):
         self.down = nn.Parameter(down)
 
     def forward(self, hidden):
-        return F.linear(F.silu(F.linear(hidden, self.gate)) * F.linear(hidden, self.up), self.down)
+        return F.linear(
+            F.silu(F.linear(hidden, self.gate)) * F.linear(hidden, self.up), self.down
+        )

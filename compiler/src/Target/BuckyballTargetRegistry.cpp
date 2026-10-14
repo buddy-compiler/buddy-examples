@@ -1,68 +1,42 @@
 #include "Target/BuckyballTargetRegistry.h"
 
 #include "llvm/ADT/Twine.h"
-#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ErrorHandling.h"
 
 using namespace llvm;
 
-namespace {
-cl::opt<std::string>
-    buckyballTarget("target", cl::desc("Required Buckyball compiler target"),
-                    cl::value_desc("target"));
-} // namespace
-
 #include "BuckyballTargetRegistry.inc"
-
-llvm::StringRef buckyball_target::getRequestedBuckyballTarget() {
-  return buckyballTarget;
-}
 
 const buckyball_target::BuckyballTargetConfig &
 buckyball_target::getBuckyballTarget() {
-  llvm::StringRef requestedTarget = getRequestedBuckyballTarget();
-  if (requestedTarget.empty())
-    report_fatal_error("--target is required for Buckyball lowering");
-  return getBuckyballTarget(requestedTarget);
-}
-
-const buckyball_target::BuckyballTargetConfig &
-buckyball_target::getBuckyballTarget(llvm::StringRef requestedTarget) {
-  for (const BuckyballTargetConfig &target : kBuckyballTargets) {
-    if (target.name == requestedTarget)
-      return target;
-  }
-  report_fatal_error(Twine("unknown Buckyball target: ") + requestedTarget);
+  return kBuckyballTarget;
 }
 
 int32_t buckyball_target::getBuckyballFunct7(llvm::StringRef mnemonic) {
-  const BuckyballTargetConfig &target = getBuckyballTarget();
-  for (const BuckyballIsaEntry &entry : target.isa) {
+  for (const BuckyballIsaEntry &entry : kBuckyballTarget.isa) {
     if (entry.mnemonic == mnemonic)
       return entry.funct7;
   }
-  report_fatal_error(Twine("Buckyball target ") + target.name +
+  report_fatal_error(Twine("Buckyball core ") + kBuckyballTarget.core +
                      " does not define ISA mnemonic " + mnemonic);
 }
 
 void buckyball_target::requireBuckyballBall(llvm::StringRef ballName) {
-  const BuckyballTargetConfig &target = getBuckyballTarget();
-  for (llvm::StringRef enabled : target.balls) {
+  for (llvm::StringRef enabled : kBuckyballTarget.balls) {
     if (enabled == ballName)
       return;
   }
-  report_fatal_error(Twine("Buckyball target ") + target.name +
+  report_fatal_error(Twine("Buckyball core ") + kBuckyballTarget.core +
                      " does not enable Ball " + ballName);
 }
 
 const buckyball_target::BuckyballBallMapping &
 buckyball_target::getBuckyballBallMapping(llvm::StringRef ballName) {
-  const BuckyballTargetConfig &target = getBuckyballTarget();
-  for (const BuckyballBallMapping &mapping : target.ballMappings) {
+  for (const BuckyballBallMapping &mapping : kBuckyballTarget.ballMappings) {
     if (mapping.name == ballName)
       return mapping;
   }
-  report_fatal_error(Twine("Buckyball target ") + target.name +
+  report_fatal_error(Twine("Buckyball core ") + kBuckyballTarget.core +
                      " does not map Ball " + ballName);
 }
 

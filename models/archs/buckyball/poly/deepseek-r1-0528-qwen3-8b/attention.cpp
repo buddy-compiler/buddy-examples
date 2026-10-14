@@ -59,7 +59,7 @@ void runAttentionBody(const AttentionKernels &kernels,
                keyScales,
                valueCodes,
                valueScales};
-  if (task_wait(task_submit(CORE_SIGNATURE, bodyTask, &job)))
+  if (task_wait(task_submit(THREAD_SIGNATURE, bodyTask, &job)))
     throw std::runtime_error("attention body task failed");
 }
 
@@ -74,6 +74,6 @@ void runAttentionProjection(const AttentionKernels &kernels, Hidden *result,
                      {packed, packed,
                       intptr_t(kernels.projectionWeights.offset),
                       intptr_t(kernels.projectionWeights.bytes), 1}};
-  if (task_wait(task_submit(CORE_SIGNATURE, projectionTask, &job)))
+  if (task_wait(task_submit(THREAD_SIGNATURE, projectionTask, &job)))
     throw std::runtime_error("attention projection task failed");
 }

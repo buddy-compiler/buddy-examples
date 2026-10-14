@@ -87,10 +87,10 @@ static std::pair<uint64_t, uint64_t> processThread() {
 #error "Trace process/thread identity is unsupported"
 #endif
 }
-static std::filesystem::path traceRoot(core_location_t location) {
+static std::filesystem::path traceRoot(thread_location_t location) {
   return std::filesystem::path("trace") /
          ("controller-" + std::to_string(location.controller)) /
-         ("core-" + std::to_string(location.core));
+         ("thread-" + std::to_string(location.thread));
 }
 static uint64_t fnv1a64(const int8_t *data, size_t size, uint64_t hash) {
   for (size_t i = 0; i < size; ++i) {
@@ -269,9 +269,9 @@ extern "C" void _mlir_ciface_buckyballTraceStageI8Path(
   auto location = runtime_trace::location();
   auto identity = processThread();
   fprintf(stdout,
-          "STAGE_TRACE controller=%u core=%zu platform=%s pid=%llu tid=%llu "
+          "STAGE_TRACE controller=%u thread=%zu platform=%s pid=%llu tid=%llu "
           "path=%s size=%zu hash=%016llx\n",
-          location.controller, location.core, platformName(),
+          location.controller, location.thread, platformName(),
           (unsigned long long)identity.first,
           (unsigned long long)identity.second, key, size,
           (unsigned long long)hash);
@@ -303,10 +303,10 @@ static void beginCycle(int64_t id, int64_t depth, int64_t p0, int64_t p1,
   char key[64];
   writeTracePath(key, sizeof(key), depth, p0, p1, p2, p3);
   std::lock_guard<std::mutex> guard(traceMutex);
-  auto &state = traceStates[{location.controller, location.core}];
+  auto &state = traceStates[{location.controller, location.thread}];
   auto &start = state.starts[id];
   if (start.active)
-    traceError("start already active in this controller/core");
+    traceError("start already active in this controller/thread");
   start = {true, cycle, identity.first, identity.second, key};
   if (!state.began) {
     state.first = cycle;
@@ -323,11 +323,12 @@ static void endCycle(int64_t id, int64_t depth, int64_t p0, int64_t p1,
   char key[64];
   writeTracePath(key, sizeof(key), depth, p0, p1, p2, p3);
   std::lock_guard<std::mutex> guard(traceMutex);
-  auto &state = traceStates[{location.controller, location.core}];
+  auto &state = traceStates[{location.controller, location.thread}];
   auto &start = state.starts[id];
   if (!start.active || start.pid != identity.first ||
       start.tid != identity.second || start.path != key)
-    traceError("end has no matching start in this thread and controller/core");
+    traceError(
+        "end has no matching start in this thread and controller/thread");
   if (end < start.cycle)
     traceError("counter moved backwards");
   auto cycle = end - start.cycle;

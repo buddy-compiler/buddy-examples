@@ -107,9 +107,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate RHAL .mlir manifest for the Whisper model."
     )
-    parser.add_argument(
-        "--spec", required=True, help="Path to the variant spec JSON"
-    )
+    parser.add_argument("--spec", required=True, help="Path to the variant spec JSON")
     parser.add_argument(
         "--runner-library",
         default="whisper_runner.so",
@@ -128,9 +126,7 @@ def main():
     if args.output == "-":
         sys.stdout.write(text)
     else:
-        os.makedirs(
-            os.path.dirname(os.path.abspath(args.output)), exist_ok=True
-        )
+        os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
         with open(args.output, "w") as f:
             f.write(text)
         print(f"[gen_whisper_manifest] Written: {args.output}", file=sys.stderr)

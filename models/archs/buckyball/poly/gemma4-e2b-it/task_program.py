@@ -106,7 +106,7 @@ def task_memory(directory, manifest):
 
 
 def lifetime_plan(directory, manifest):
-    from .workspace import Pool
+    from workspace import Pool
 
     calls = manifest["calls"]
     last, produced, exports, last_layer_outputs = {}, set(), set(), {}

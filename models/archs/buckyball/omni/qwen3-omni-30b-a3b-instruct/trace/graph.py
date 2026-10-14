@@ -9,7 +9,7 @@ from buddy.compiler.ops import tosa
 from buddy_mlir import ir
 from stack.compiler.quant.mxfp8_graph import quantize_graph
 
-from examples.balls.mxmm.compiler.python.layout import bank_bytes
+from stack.runtime.scripts.chip_targets import bank_bytes
 
 
 def emit(
@@ -19,7 +19,7 @@ def emit(
     target,
     quantized,
     output,
-    compiler_build,
+    args,
     *,
     embeddings=(),
     local=False,
@@ -59,10 +59,10 @@ def emit(
             ordered_names,
             parameters,
             name,
-            compiler_build / "bin/rax-pack",
+            args.compiler_build / "bin/rax-pack",
             weights=quantized,
             embeddings=embeddings,
-            bank_bytes=bank_bytes(compiler_build, target),
+            bank_bytes=bank_bytes(args.chip_pb, target),
             rows_hint=16,
         )
     else:
@@ -110,18 +110,14 @@ def emit(
     content = str(module)
     if not path.exists() or path.read_text() != content:
         path.write_text(content)
-    forward = driver.construct_main_graph(True)
-    with forward.context:
-        if local:
-            forward.operation.attributes["buckyball.local"] = ir.UnitAttr.get()
-        for op in forward.body.operations:
-            if (
-                op.operation.name == "func.func"
-                and ir.StringAttr(op.attributes["sym_name"]).value == symbol
-            ):
-                op.attributes["buckyball.target"] = ir.StringAttr.get(target)
+    forward = str(driver.construct_main_graph(True))
+    task = output / f"{name}-task.c"
+    if local:
+        task.write_text("")
+        content = forward
+    else:
+        content = dispatch(forward, symbol, args.chip_pb, target, task)
     path = output / f"{name}-forward.mlir"
-    content = str(forward)
     if not path.exists() or path.read_text() != content:
         path.write_text(content)
     return {

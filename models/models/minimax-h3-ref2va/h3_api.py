@@ -100,8 +100,13 @@ def main():
             if args.subfolder:
                 kwargs["subfolder"] = args.subfolder
             processor = AutoProcessor.from_pretrained(model, **kwargs)
-        out = processor(text=text, return_tensors="pt", padding="max_length",
-                        truncation=True, max_length=args.max_len)
+        out = processor(
+            text=text,
+            return_tensors="pt",
+            padding="max_length",
+            truncation=True,
+            max_length=args.max_len,
+        )
         if "input_ids" not in out or "attention_mask" not in out:
             raise SystemExit(f"processor missing ids/mask: {list(out.keys())}")
         ids = out["input_ids"].cpu().numpy().astype(numpy.int64).reshape(-1)

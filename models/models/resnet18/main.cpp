@@ -128,8 +128,7 @@ int main(int argc, char **argv) {
   _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer,
                        &inputResize);
   unsigned long end = read_counter();
-  std::cout << "Counter (" << counter_name() << ") " << counter_field() << ": "
-            << end - start << std::endl;
+  std::cout << "Counter: " << end - start << std::endl;
 
   auto out = output.getData();
   softmax(out, 1000);

@@ -46,16 +46,16 @@ TaskWorker::TaskWorker(int cpu, void *workspace, size_t workspaceBytes)
         workspace_free(shared->allocation);
       } else if (operation == 0) {
         size_t selected = 0;
-        for (size_t step = 0; step < core_count(); ++step) {
-          size_t core = (next + step) % core_count() + 1;
-          if (core_signature(core) == GemmaTaskSignatures[shared->kernel]) {
+        for (size_t step = 0; step < thread_count(); ++step) {
+          size_t core = (next + step) % thread_count() + 1;
+          if (thread_signature(core) == GemmaTaskSignatures[shared->kernel]) {
             selected = core;
             break;
           }
         }
         if (!selected)
           throw std::runtime_error("no matching tile task core");
-        next = selected % core_count();
+        next = selected % thread_count();
         task_run_on(
             selected, GemmaTaskSignatures[shared->kernel],
             [](void *argument) {

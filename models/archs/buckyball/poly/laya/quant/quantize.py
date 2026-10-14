@@ -1,7 +1,6 @@
 from buddy.compiler.graph.operation import EmbeddingOp
 from stack.compiler.quant.mxfp8_graph import quantize_graph
 from stack.compiler.quant.mxfp8_embedding import quant_embedding
-from examples.balls.mxmm.compiler.python.layout import bank_bytes
 
 FORMAT = "mxfp8_e4m3"
 PREPARE = None
@@ -32,6 +31,6 @@ def apply(graph, params, names, output, name, packer, stage, samples):
         packer,
         weights=weights,
         embeddings=embeddings,
-        bank_bytes=bank_bytes(packer.parent.parent, graph.packing_target),
+        bank_bytes=graph.bank_bytes,
         rows_hint=next(iter(samples[0].values())).shape[-2],
     )

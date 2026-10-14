@@ -6,8 +6,11 @@ def prefill(config, talker, prompt_ids, executed_ids, embeddings, hidden, specia
         raise ValueError("Thinker conditioning does not match executed positions")
     bos, eos, pad = [talker.text_projection(value.reshape(1, -1)) for value in special]
     thinker = config.thinker_config
-    mask = ((executed_ids == thinker.audio_token_id) | (executed_ids == thinker.image_token_id)
-            | (executed_ids == thinker.video_token_id))
+    mask = (
+        (executed_ids == thinker.audio_token_id)
+        | (executed_ids == thinker.image_token_id)
+        | (executed_ids == thinker.video_token_id)
+    )
     starts = torch.nonzero(prompt_ids == config.im_start_token_id).flatten().tolist()
     starts.append(len(executed_ids))
     parts = []
@@ -29,11 +32,21 @@ def prefill(config, talker, prompt_ids, executed_ids, embeddings, hidden, specia
                 continue
             values = talker.text_projection(embeddings[start:end])
             if len(values) < 4:
-                raise ValueError("Talker requires assistant header and a generated text token")
+                raise ValueError(
+                    "Talker requires assistant header and a generated text token"
+                )
             text = torch.cat((values[:3], pad.expand(4, -1), bos, values[3:4]))
             c = config.talker_config
-            ids = torch.tensor([c.codec_nothink_id, c.codec_think_bos_id, c.codec_think_eos_id,
-                                speaker, c.codec_pad_id, c.codec_bos_id])
+            ids = torch.tensor(
+                [
+                    c.codec_nothink_id,
+                    c.codec_think_bos_id,
+                    c.codec_think_eos_id,
+                    speaker,
+                    c.codec_pad_id,
+                    c.codec_bos_id,
+                ]
+            )
             codec = torch.cat((torch.zeros_like(values[:3]), talker.embedding(ids)))
             parts.append(text + codec)
             trailing = torch.cat((values[4:], eos))

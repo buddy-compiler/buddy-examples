@@ -202,7 +202,7 @@ def write_index(directory, kernels):
     source += f"const size_t GemmaTaskEntryCount = {len(symbols)};\n"
     source += (
         "const uint64_t GemmaTaskSignatures[] = {\n"
-        + "".join(f"  {kernel['core_signature']}ULL,\n" for kernel in kernels)
+        + "".join(f"  {kernel['thread_signature']}ULL,\n" for kernel in kernels)
         + "};\n"
     )
     for label in ("Input", "Output"):

@@ -102,7 +102,7 @@ void Thinker::experts(size_t count, size_t layer) {
     for (size_t row = 0; row < slots.size(); ++row)
       std::copy_n(hidden.getData() + slots[row] / topK * hiddenSize, hiddenSize,
                   job->input.getData() + row * hiddenSize);
-    job->pending = task_submit(CORE_SIGNATURE, execute_expert, job.get());
+    job->pending = task_submit(THREAD_SIGNATURE, execute_expert, job.get());
     jobs.push_back(std::move(job));
   }
   for (auto &job : jobs) {

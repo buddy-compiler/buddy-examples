@@ -2,10 +2,10 @@ from buddy.compiler.graph.operation import EmbeddingOp
 from stack.compiler.quant.mxfp8_graph import quantize_graph
 from stack.compiler.quant.mxfp8_embedding import quant_embedding
 from stack.compiler.quant import mxfp8_cache as cache
-from examples.balls.mxmm.compiler.python.layout import bank_bytes
+from stack.runtime.scripts.chip_targets import bank_bytes
 
 
-def quantize(graph, params, names, output, name, packer, *, kind):
+def quantize(graph, params, names, output, name, packer, *, kind, chip_pb):
     if kind not in {"embedding", "attention", "ffn", "output"}:
         raise ValueError(f"Unknown model stage: {kind}")
     if kind == "embedding":
@@ -34,7 +34,7 @@ def quantize(graph, params, names, output, name, packer, *, kind):
         weights=weights,
         embeddings=set(),
         bank_bytes=bank_bytes(
-            packer.parent.parent,
+            chip_pb,
             "attention" if kind in {"embedding", "attention"} else "ffn",
         ),
         rows_hint=graph.packing_rows,

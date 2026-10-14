@@ -19,27 +19,8 @@
 
 #include "mlir/IR/PatternMatch.h"
 
-#include <cstdint>
-
 namespace mlir {
 namespace buddy {
-
-inline constexpr int64_t kDefaultBankWidthBytes = 16;
-inline constexpr size_t kBankLane = 16;
-
-inline size_t ceilDiv(size_t a, size_t b) { return (a + b - 1) / b; }
-
-inline size_t aMvinDepthLines(size_t mEl, size_t kEl) {
-  return mEl * (kEl / kBankLane);
-}
-
-inline size_t bMvinDepthLines(size_t kEl, size_t nEl) {
-  return kEl * (nEl / kBankLane);
-}
-
-inline size_t cMvoutDepthLines(size_t mEl, size_t nEl) {
-  return mEl * (nEl / kBankLane);
-}
 
 void populateQuantizedKernelTileLoweringPatterns(RewritePatternSet &patterns);
 void registerLowerTileToBuckyballPass();

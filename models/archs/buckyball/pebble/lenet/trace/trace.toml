@@ -1,59 +1,69 @@
-[[trace.extend]]
-dialect = "linalg"
-include = ["generic"]
-
-[[trace.extend]]
-dialect = "buckyball"
-include = ["bank_mvin", "bank_mvin_2d", "bank_mvout", "bank_smatmul", "bank_smatmul_bias", "bank_im2col", "bank_transpose", "bank_quant_f32_to_i8", "bank_quant_i32_to_i8", "bank_int32_to_fp32", "bank_relu", "bank_maxpool", "bank_matadd"]
-
 [[trace.node]]
 node = "convolution"
 id = 0
 tag = "convolution"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu"
 id = 1
 tag = "relu"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_1"
 id = 2
 tag = "convolution_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu_1"
 id = 3
 tag = "relu_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "view"
 id = 4
 tag = "view"
-extend = []
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm"
 id = 6
 tag = "addmm"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu_2"
 id = 7
 tag = "relu_2"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_1"
 id = 9
 tag = "addmm_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu_3"
 id = 10
 tag = "relu_3"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_2"
 id = 12
 tag = "addmm_2"
-
+cycle = true
+tensor = false

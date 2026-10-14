@@ -45,7 +45,7 @@ std::optional<int64_t> PhysicalBankState::getConstI64(Value value) const {
     }
     if (auto op = value.getDefiningOp<BankKernelOp>()) {
       value = cast<OpResult>(value).getResultNumber() == 0 ? op.getReadBank()
-                                                       : op.getWriteBank();
+                                                           : op.getWriteBank();
       continue;
     }
     // Optional Balls: use op names so Cores can omit generated C++ types.
@@ -88,8 +88,7 @@ std::optional<int64_t> PhysicalBankState::getConstI64(Value value) const {
         value = op->getOperand(2);
         continue;
       }
-      if (name == "buckyball.bank_smatmul" ||
-          name == "buckyball.bank_mxfp8" ||
+      if (name == "buckyball.bank_smatmul" || name == "buckyball.bank_mxfp8" ||
           name == "buckyball.bank_vecmat16") {
         value = op->getOperand(2);
         continue;
@@ -140,7 +139,8 @@ std::optional<BankSlot> PhysicalBankState::getSlot(Value value) const {
     return std::nullopt;
   for (auto [index, group] : llvm::enumerate(slot->second.physicalGroups))
     if (group != slot->second.base + static_cast<int64_t>(index)) {
-      emitError(value.getLoc(), "bank operation requires contiguous physical groups");
+      emitError(value.getLoc(),
+                "bank operation requires contiguous physical groups");
       return std::nullopt;
     }
   return slot->second;
@@ -157,8 +157,9 @@ std::optional<int64_t> PhysicalBankState::tryAlloc(int64_t row, int64_t col) {
   BankSlot slot;
   slot.row = row;
   slot.col = col;
-  for (int64_t group = 0; group < bankNum &&
-                          static_cast<int64_t>(slot.physicalGroups.size()) < row * col;
+  for (int64_t group = 0;
+       group < bankNum &&
+       static_cast<int64_t>(slot.physicalGroups.size()) < row * col;
        ++group)
     if (!used[group]) {
       slot.physicalGroups.push_back(group);
@@ -173,7 +174,8 @@ LogicalResult PhysicalBankState::verifyKernelHandles(Operation *op, Value read,
                                                      Value write) const {
   auto r = getConstI64(read), w = getConstI64(write);
   if (!r || !w || *r == *w || !vm.contains(*r) || !vm.contains(*w))
-    return op->emitError("bank kernel requires distinct live read/write handles");
+    return op->emitError(
+        "bank kernel requires distinct live read/write handles");
   return success();
 }
 
@@ -182,7 +184,8 @@ LogicalResult PhysicalBankState::transfer(Operation *op, int64_t source,
   if (source == target)
     return op->emitError("bank transfer source and target must differ");
   if (target < 0 || target > privateBankMax)
-    return op->emitError("bank transfer target exceeds the private virtual ID range");
+    return op->emitError(
+        "bank transfer target exceeds the private virtual ID range");
   auto sourceSlot = vm.find(source);
   if (sourceSlot == vm.end())
     return op->emitError("transfer consumes an unknown virtual bank handle");

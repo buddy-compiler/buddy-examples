@@ -42,16 +42,14 @@ public:
     const buckyball_target::BuckyballTargetConfig &target =
         buckyball_target::getBuckyballTarget();
     for (func::FuncOp func : getOperation().getOps<func::FuncOp>()) {
-      mlir::buddy::PhysicalBankState state(target.bankNum, target.privateBankMax);
+      mlir::buddy::PhysicalBankState state(target.bankNum,
+                                           target.privateBankMax);
       RewritePatternSet patterns(&getContext());
       mlir::buddy::addBaseAssignPhysicalBankPatterns(patterns, state);
-      for (llvm::StringRef ball : target.balls) {
 #define BUCKYBALL_ASSIGN_HOOK(BALL)                                            \
-  if (ball == #BALL)                                                           \
-    mlir::buddy::populate##BALL##AssignPhysicalBankPatterns(patterns, state);
+  mlir::buddy::populate##BALL##AssignPhysicalBankPatterns(patterns, state);
 #include "BuckyballBallLoweringHooks.inc"
 #undef BUCKYBALL_ASSIGN_HOOK
-      }
       FrozenRewritePatternSet frozen(std::move(patterns));
       PatternApplicator applicator(frozen);
       applicator.applyDefaultCostModel();

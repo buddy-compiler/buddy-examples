@@ -18,8 +18,8 @@
 #ifndef BUCKYBALL_BUCKYBALLOPS_H
 #define BUCKYBALL_BUCKYBALLOPS_H
 
-#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Bufferization/IR/BufferizableOpInterface.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/OpDefinition.h"

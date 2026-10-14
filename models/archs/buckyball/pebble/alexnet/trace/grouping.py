@@ -13,7 +13,9 @@ def partition(graph):
             groups[f"subgraph{len(groups)}"] = current
             current = []
     if len(groups) != 9:
-        raise ValueError(f"AlexNet expected nine kernels; got {len(groups)}, trailing {[(node.name, type(node).__name__) for node in current]}")
+        raise ValueError(
+            f"AlexNet expected nine kernels; got {len(groups)}, trailing {[(node.name, type(node).__name__) for node in current]}"
+        )
     # The padded final Linear returns its original 1000-class slice.
     groups["subgraph8"].extend(current)
     graph.op_groups = groups

@@ -49,6 +49,6 @@ cmake -G Ninja .. -DARCH=nv -DMODEL=minimax_h3_fl2va,minimax_h3_ref2va \
 ninja buddy-nv-minimax-h3-fl2va-run buddy-nv-minimax-h3-ref2va-run
 ```
 
-FL2VA: `./buddy-nv-minimax-h3-fl2va-run --mode t2va --prompt "..."`  
-Ref2VA: `./buddy-nv-minimax-h3-ref2va-run --prompt "..." --ref-image a.png`  
+FL2VA: `./buddy-nv-minimax-h3-fl2va-run --mode t2va --prompt "..."`
+Ref2VA: `./buddy-nv-minimax-h3-ref2va-run --prompt "..." --ref-image a.png`
 Both call Context-IR + local Base 768p + Regenerate-2K; missing env/API/weights exits non-zero.

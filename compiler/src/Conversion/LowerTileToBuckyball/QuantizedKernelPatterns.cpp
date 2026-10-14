@@ -1,7 +1,7 @@
 //===- QuantizedKernelPatterns.cpp ----------===//
-// 
+//
 // Quantized Tile to Buckyball lowering
-// 
+//
 //===----------------------------------------===//
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -345,6 +345,11 @@ public:
             lutValue, outputValue, conv.getKernelAttr(), conv.getStrideAttr(),
             conv.getPadLowAttr(), conv.getPadHighAttr(),
             conv.getActivationAttr(), conv.getOutputScaleAttr());
+    }
+    for (auto [source, target] :
+         llvm::zip_equal(stages, kernel.getBody().front())) {
+      if (auto trace = source->getAttr("trace_node"))
+        target.setAttr("trace_node", trace);
     }
     rewriter.create<MegaYieldOp>(op.getLoc());
     rewriter.eraseOp(op);

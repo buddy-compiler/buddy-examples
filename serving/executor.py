@@ -13,34 +13,66 @@ from pathlib import Path
 
 
 class Executor:
-    def __init__(self, simulator: Path, program: Path, model_dir: Path, log_root: Path,
-                 tile_index: int = 0, record_io: bool = False, arguments: tuple[str, ...] = (), memory_mib: int = 3072,
-                 transport=None, rank: int = 0, itrace: bool = False, mtrace: bool = False,
-                 *, timeout: float = 7200):
+    def __init__(
+        self,
+        simulator: Path,
+        program: Path,
+        model_dir: Path,
+        log_root: Path,
+        core_index: int = 0,
+        record_io: bool = False,
+        arguments: tuple[str, ...] = (),
+        memory_mib: int = 3072,
+        transport=None,
+        rank: int = 0,
+        itrace: bool = False,
+        mtrace: bool = False,
+        *,
+        timeout: float = 7200,
+    ):
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("request timeout must be finite and positive")
         self.timeout = timeout
         self.failed = False
         log_root.mkdir(parents=True, exist_ok=True)
-        self.log_dir = Path(tempfile.mkdtemp(prefix=f"tile-{tile_index}-", dir=log_root))
+        self.log_dir = Path(
+            tempfile.mkdtemp(prefix=f"core-{core_index}-", dir=log_root)
+        )
         for kind in ("cycle", "tensor"):
             (self.log_dir / "trace" / kind).mkdir(parents=True)
         self.log = (self.log_dir / "simulator.log").open("wb")
         self.lock = threading.Lock()
         self.record_io = record_io
         self.sequence = 0
-        self.tile_index = tile_index
+        self.core_index = core_index
         self.events = (self.log_dir / "requests.jsonl").open("w")
         self.transport = transport
         self.rank = rank
-        self.process = None if transport is not None else subprocess.Popen(
-            [str(simulator), "--elf", str(program), "--log-dir", str(self.log_dir),
-             "--tile-index", str(tile_index),
-             "--memory-mib", str(memory_mib),
-             *(["--itrace"] if itrace else []), *(["--mtrace"] if mtrace else []),
-             "--", str(model_dir), *arguments],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log,
-            bufsize=0,
+        self.process = (
+            None
+            if transport is not None
+            else subprocess.Popen(
+                [
+                    str(simulator),
+                    "--elf",
+                    str(program),
+                    "--log-dir",
+                    str(self.log_dir),
+                    "--core-index",
+                    str(core_index),
+                    "--memory-mib",
+                    str(memory_mib),
+                    *(["--itrace"] if itrace else []),
+                    *(["--mtrace"] if mtrace else []),
+                    "--",
+                    str(model_dir),
+                    *arguments,
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=self.log,
+                bufsize=0,
+            )
         )
         if self.process is not None:
             os.set_blocking(self.process.stdin.fileno(), False)
@@ -62,11 +94,15 @@ class Executor:
                     while pending:
                         self._ready(self.process.stdin.fileno(), deadline, write=True)
                         try:
-                            written = os.write(self.process.stdin.fileno(), pending[:65536])
+                            written = os.write(
+                                self.process.stdin.fileno(), pending[:65536]
+                            )
                         except BlockingIOError:
                             continue
                         except BrokenPipeError as error:
-                            raise RuntimeError(f"BEMU input closed: {self.log_dir}") from error
+                            raise RuntimeError(
+                                f"BEMU input closed: {self.log_dir}"
+                            ) from error
                         if not written:
                             raise RuntimeError(f"BEMU input closed: {self.log_dir}")
                         pending = pending[written:]
@@ -74,11 +110,16 @@ class Executor:
                     while len(result) < result_bytes:
                         self._ready(self.process.stdout.fileno(), deadline, write=False)
                         try:
-                            chunk = os.read(self.process.stdout.fileno(), min(65536, result_bytes - len(result)))
+                            chunk = os.read(
+                                self.process.stdout.fileno(),
+                                min(65536, result_bytes - len(result)),
+                            )
                         except BlockingIOError:
                             continue
                         if not chunk:
-                            raise RuntimeError(f"BEMU exited before completing the request: {self.log_dir}")
+                            raise RuntimeError(
+                                f"BEMU exited before completing the request: {self.log_dir}"
+                            )
                         result.extend(chunk)
                 except BaseException:
                     self.failed = True
@@ -86,9 +127,19 @@ class Executor:
                     raise
             if self.record_io:
                 (self.log_dir / f"{self.sequence:04d}-output.bin").write_bytes(result)
-            self.events.write(json.dumps({"tile": self.tile_index, "sequence": self.sequence,
-                                          "start_ns": started, "end_ns": time.monotonic_ns(),
-                                          "request_bytes": len(request), "result_bytes": result_bytes}) + "\n")
+            self.events.write(
+                json.dumps(
+                    {
+                        "core": self.core_index,
+                        "sequence": self.sequence,
+                        "start_ns": started,
+                        "end_ns": time.monotonic_ns(),
+                        "request_bytes": len(request),
+                        "result_bytes": result_bytes,
+                    }
+                )
+                + "\n"
+            )
             self.events.flush()
             self.sequence += 1
             return bytes(result)
@@ -97,7 +148,9 @@ class Executor:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise TimeoutError(f"BEMU request timed out: {self.log_dir}")
-        readers, writers, _ = select.select([] if write else [descriptor], [descriptor] if write else [], [], remaining)
+        readers, writers, _ = select.select(
+            [] if write else [descriptor], [descriptor] if write else [], [], remaining
+        )
         if not (readers or writers):
             raise TimeoutError(f"BEMU request timed out: {self.log_dir}")
 
@@ -124,7 +177,9 @@ class Executor:
                 except subprocess.TimeoutExpired:
                     self.failed = True
                     self._stop()
-                    raise TimeoutError(f"BEMU did not stop after input closed: {self.log_dir}") from None
+                    raise TimeoutError(
+                        f"BEMU did not stop after input closed: {self.log_dir}"
+                    ) from None
                 finally:
                     self.process.stdout.close()
         finally:
@@ -135,31 +190,67 @@ class Executor:
 
 
 class Pool:
-    def __init__(self, simulator: Path, artifact: dict, log_root: Path,
-                 tile_indices: list[int], record_io: bool, arguments: list[tuple[str, ...]], memory_mib: int = 3072,
-                 p2e: dict | None = None, itrace: bool = False, mtrace: bool = False,
-                 *, timeout: float = 7200):
-        if not tile_indices or len(set(tile_indices)) != len(tile_indices) or min(tile_indices) < 0:
-            raise ValueError("tile indices must be nonempty, unique and nonnegative")
-        if len(arguments) != len(tile_indices):
-            raise ValueError("each tile requires its own program arguments")
+    def __init__(
+        self,
+        simulator: Path,
+        artifact: dict,
+        log_root: Path,
+        core_indices: list[int],
+        record_io: bool,
+        arguments: list[tuple[str, ...]],
+        memory_mib: int = 3072,
+        p2e: dict | None = None,
+        itrace: bool = False,
+        mtrace: bool = False,
+        *,
+        timeout: float = 7200,
+    ):
+        if (
+            not core_indices
+            or len(set(core_indices)) != len(core_indices)
+            or min(core_indices) < 0
+        ):
+            raise ValueError("core indices must be nonempty, unique and nonnegative")
+        if len(arguments) != len(core_indices):
+            raise ValueError("each core requires its own program arguments")
         self.transport = None
         if p2e is not None:
             from .transport import Transport
-            if tile_indices != list(range(1, len(tile_indices) + 1)):
-                raise ValueError("P2E workers require compute tiles in rank order after the main tile")
-            self.transport = Transport(Path(p2e["console_socket"]), len(tile_indices), p2e["timeout"])
-        self.executors = [Executor(simulator, Path(artifact["program"]), Path(artifact["directory"]),
-                                   log_root, tile, record_io, argument, memory_mib, self.transport, rank,
-                                   itrace, mtrace, timeout=timeout)
-                          for rank, (tile, argument) in enumerate(zip(tile_indices, arguments))]
-        self.threads = ThreadPoolExecutor(max_workers=len(tile_indices), thread_name_prefix="tile")
-        self.next_tile = 0
+
+            if core_indices != list(range(1, len(core_indices) + 1)):
+                raise ValueError(
+                    "P2E workers require compute cores in rank order after the main core"
+                )
+            self.transport = Transport(
+                Path(p2e["console_socket"]), len(core_indices), p2e["timeout"]
+            )
+        self.executors = [
+            Executor(
+                simulator,
+                Path(artifact["program"]),
+                Path(artifact["directory"]),
+                log_root,
+                core,
+                record_io,
+                argument,
+                memory_mib,
+                self.transport,
+                rank,
+                itrace,
+                mtrace,
+                timeout=timeout,
+            )
+            for rank, (core, argument) in enumerate(zip(core_indices, arguments))
+        ]
+        self.threads = ThreadPoolExecutor(
+            max_workers=len(core_indices), thread_name_prefix="core"
+        )
+        self.next_core = 0
         atexit.register(self.close)
 
     def submit(self, request: bytes, result_bytes: int):
-        executor = self.executors[self.next_tile]
-        self.next_tile = (self.next_tile + 1) % len(self.executors)
+        executor = self.executors[self.next_core]
+        self.next_core = (self.next_core + 1) % len(self.executors)
         return self.threads.submit(executor.execute, request, result_bytes)
 
     def submit_to(self, rank: int, request: bytes, result_bytes: int):
@@ -181,13 +272,13 @@ class Pool:
 def run_program(package, args, arguments):
     log_root = args.log_dir.resolve()
     log_root.mkdir(parents=True, exist_ok=True)
-    if hasattr(args, "tile_indices"):
-        if len(args.tile_indices) != 1:
-            raise ValueError("native model execution requires exactly one tile index")
-        selector, index, scope = "--tile-index", args.tile_indices[0], "tile"
+    if hasattr(args, "core_indices"):
+        if len(args.core_indices) != 1:
+            raise ValueError("native model execution requires exactly one core index")
+        selector, index, scope = "--core-index", args.core_indices[0], "core"
         working_directory = []
     else:
-        selector, index, scope = "--core-index", args.core_index, "core"
+        selector, index, scope = "--thread-index", args.thread_index, "thread"
         working_directory = None
     directory = Path(tempfile.mkdtemp(prefix=f"{scope}-{index}-", dir=log_root))
     if working_directory is None:
@@ -200,11 +291,29 @@ def run_program(package, args, arguments):
             target.symlink_to(resource.resolve())
     for kind in ("cycle", "tensor"):
         (directory / "trace" / kind).mkdir(parents=True)
-    program = directory / package.execution["emulation_program"] if "emulation_program" in package.execution else package.program
+    program = (
+        directory / package.execution["emulation_program"]
+        if "emulation_program" in package.execution
+        else package.program
+    )
     with (directory / "simulator.log").open("wb") as log:
-        subprocess.run([str(args.simulator.resolve()), "--elf", str(program),
-                        "--log-dir", str(directory), *working_directory,
-                        selector, str(index),
-                        *(["--itrace"] if args.itrace else []),
-                        *(["--mtrace"] if args.mtrace else []),
-                        "--", *arguments], stderr=log, cwd=directory, check=True, timeout=args.timeout)
+        subprocess.run(
+            [
+                str(args.simulator.resolve()),
+                "--elf",
+                str(program),
+                "--log-dir",
+                str(directory),
+                *working_directory,
+                selector,
+                str(index),
+                *(["--itrace"] if args.itrace else []),
+                *(["--mtrace"] if args.mtrace else []),
+                "--",
+                *arguments,
+            ],
+            stderr=log,
+            cwd=directory,
+            check=True,
+            timeout=args.timeout,
+        )

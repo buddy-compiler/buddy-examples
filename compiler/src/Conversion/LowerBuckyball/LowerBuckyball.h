@@ -11,10 +11,6 @@
 #include <cstdint>
 #include <optional>
 
-namespace buddy::buckyball {
-class MegaMatmulOp;
-}
-
 namespace mlir {
 class Operation;
 
@@ -39,7 +35,8 @@ public:
   std::optional<int64_t> getConstI64(Value value) const;
   std::optional<BankSlot> getSlot(Value value) const;
   std::optional<int64_t> tryAlloc(int64_t row, int64_t col);
-  LogicalResult verifyKernelHandles(Operation *op, Value read, Value write) const;
+  LogicalResult verifyKernelHandles(Operation *op, Value read,
+                                    Value write) const;
   LogicalResult transfer(Operation *op, int64_t source, int64_t target);
   LogicalResult release(Operation *op, int64_t bank);
 
@@ -59,20 +56,10 @@ private:
 LogicalResult verifyNoBankSSAOps(Operation *root);
 void addBaseAssignPhysicalBankPatterns(RewritePatternSet &patterns,
                                        PhysicalBankState &state);
-void populateSMatMulBallLowerBuckyballToBankSSAPatterns(
-    RewritePatternSet &patterns);
-void populateReluBallLowerBuckyballToBankSSAPatterns(
-    RewritePatternSet &patterns);
-void populateQuantizeTensorToBankSSAPatterns(RewritePatternSet &patterns);
-void populateMatmulRegionToBankSSAPatterns(RewritePatternSet &patterns,
-                                           bool traceStages, int64_t traceStart,
-                                           int64_t traceLimit);
 void registerAssignPhysicalBanksPass();
 void registerVerifyNpuComputePass();
 void registerLowerBuckyballPass();
-void registerTileRuntimePass();
-LogicalResult lowerMatmulToBanks(::buddy::buckyball::MegaMatmulOp op,
-                                 PatternRewriter &rewriter);
+void registerAntRuntimePass();
 void registerLowerBankSSAToIntrinsicsPass();
 void registerLowerBuckyballToBankSSAPass();
 void registerReportBankUsagePass();

@@ -1,30 +1,25 @@
 import argparse
 import json
 from pathlib import Path
-import shutil
 from stack.compiler.package import pack
 from .inputs import prepare_inputs
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--generated-dir", type=Path, required=True)
-parser.add_argument("--model-dir", type=Path, required=True)
+parser.add_argument("--output-dir", type=Path, required=True)
 parser.add_argument("--rax-pack", type=Path, required=True)
 parser.add_argument("--run-config", type=Path, required=True)
 args = parser.parse_args()
-source, output = args.generated_dir.resolve(), args.model_dir.resolve()
-metadata = json.loads((source / "model.json").read_text())
+output = args.output_dir.resolve()
+metadata = json.loads((output / "model.json").read_text())
 resources = ["model.json"]
 for entry in metadata["stages"]:
     for filename in ("params.f32", "weights.bin"):
         path = f'{entry["name"]}/{filename}'
-        if (source / path).stat().st_size:
+        if (output / path).stat().st_size:
             resources.append(path)
-for path in (source / "tokenizer").iterdir():
+for path in (output / "tokenizer").iterdir():
     if path.is_file():
-        resources.append(str(path.relative_to(source)))
-for name in resources:
-    (output / name).parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source / name, output / name)
+        resources.append(str(path.relative_to(output)))
 # Empty weight files are still required by the executable; RAX resources can be empty.
 for entry in metadata["stages"]:
     name = f'{entry["name"]}/weights.bin'

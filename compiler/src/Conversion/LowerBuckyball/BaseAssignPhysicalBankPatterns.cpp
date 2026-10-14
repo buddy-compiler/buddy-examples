@@ -31,8 +31,8 @@ public:
           op.emitError("assign-physical-banks: unavailable bank resources");
       diagnostic << " (request=" << row << "x" << col
                  << ", used=" << state.getUsedCount() << "/"
-                 << state.getBankNum() << ", private ID max="
-                 << state.getPrivateBankMax() << ")";
+                 << state.getBankNum()
+                 << ", private ID max=" << state.getPrivateBankMax() << ")";
       return failure();
     }
 
@@ -84,18 +84,21 @@ public:
       return op.emitError("bank transfer requires constant virtual IDs");
     auto assigned = op.getSource().getDefiningOp<arith::ConstantOp>();
     if (!assigned || assigned->getBlock() != op->getBlock())
-      return op.emitError("bank transfer cannot consume a control-flow bank alias");
+      return op.emitError(
+          "bank transfer cannot consume a control-flow bank alias");
     for (Operation *user : op.getSource().getUsers()) {
       if (user == op.getOperation())
         continue;
       while (user && user->getBlock() != op->getBlock())
         user = user->getParentOp();
       if (!user || !user->isBeforeInBlock(op))
-        return op.emitError("source bank handle is used after transfer or outside its block");
+        return op.emitError(
+            "source bank handle is used after transfer or outside its block");
     }
     if (failed(state.transfer(op, *source, *target)))
       return failure();
-    rewriter.create<MsetTransferOp>(op.getLoc(), op.getSource(), op.getTarget());
+    rewriter.create<MsetTransferOp>(op.getLoc(), op.getSource(),
+                                    op.getTarget());
     rewriter.replaceOp(op, state.cstI64(rewriter, op.getLoc(), *target));
     return success();
   }
@@ -110,7 +113,8 @@ public:
       : OpRewritePattern<BankKernelOp>(context), state(state) {}
   LogicalResult matchAndRewrite(BankKernelOp op,
                                 PatternRewriter &rewriter) const override {
-    if (failed(state.verifyKernelHandles(op, op.getReadBank(), op.getWriteBank())))
+    if (failed(
+            state.verifyKernelHandles(op, op.getReadBank(), op.getWriteBank())))
       return failure();
     auto module = op->getParentOfType<ModuleOp>();
     StringRef name = op.getCallee();
@@ -118,16 +122,18 @@ public:
     auto signature = rewriter.getFunctionType(types, TypeRange{});
     auto callee = module.lookupSymbol<func::FuncOp>(name);
     if (callee && callee.getFunctionType() != signature)
-      return op.emitError("bank kernel callee type does not match its operands");
+      return op.emitError(
+          "bank kernel callee type does not match its operands");
     if (!callee) {
       OpBuilder::InsertionGuard guard(rewriter);
       rewriter.setInsertionPointToStart(module.getBody());
-      auto function = rewriter.create<func::FuncOp>(
-          op.getLoc(), name, signature);
+      auto function =
+          rewriter.create<func::FuncOp>(op.getLoc(), name, signature);
       function.setPrivate();
       function->setAttr("llvm.emit_c_interface", rewriter.getUnitAttr());
     }
-    rewriter.create<func::CallOp>(op.getLoc(), name, TypeRange{}, op.getOperands());
+    rewriter.create<func::CallOp>(op.getLoc(), name, TypeRange{},
+                                  op.getOperands());
     rewriter.replaceOp(op, ValueRange{op.getReadBank(), op.getWriteBank()});
     return success();
   }
@@ -197,10 +203,10 @@ LogicalResult verifyNoBankSSAOps(Operation *root) {
 
 void addBaseAssignPhysicalBankPatterns(RewritePatternSet &patterns,
                                        PhysicalBankState &state) {
-  patterns.add<BankAllocPattern, BankReleasePattern, BankTransferPattern, BankKernelPattern>(patterns.getContext(),
-                                                     state);
-  patterns.add<BankMvinPattern,
-               BankMvin2dPattern, BankMvoutPattern>(patterns.getContext());
+  patterns.add<BankAllocPattern, BankReleasePattern, BankTransferPattern,
+               BankKernelPattern>(patterns.getContext(), state);
+  patterns.add<BankMvinPattern, BankMvin2dPattern, BankMvoutPattern>(
+      patterns.getContext());
 }
 
 } // namespace mlir::buddy

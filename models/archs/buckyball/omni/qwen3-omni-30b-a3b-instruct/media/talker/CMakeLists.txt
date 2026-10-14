@@ -1,5 +1,8 @@
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/configs/compiler-param.toml")
-set(TALKER_DIR "${GENERATED_DIR}/talker")
+set_property(
+  DIRECTORY
+  APPEND
+  PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/configs/compiler-param.toml"
+)
 set(TALKER_STAGES talker_output predictor_output)
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/configs/compiler-param.toml" CACHE_LENGTH REGEX "^cache_length = [0-9]+$")
 string(REPLACE "cache_length = " "" TALKER_CAPACITY "${CACHE_LENGTH}")
@@ -14,43 +17,308 @@ foreach(PHASE prefill decode)
   foreach(CAPACITY IN LISTS TALKER_CACHE_BUCKETS)
     list(APPEND TALKER_STAGES talker_${PHASE}_attention_${CAPACITY})
   endforeach()
-  foreach(KIND router shared norm text_projection hidden_projection)
+  foreach(
+    KIND
+    router
+    shared
+    norm
+    text_projection
+    hidden_projection
+  )
     list(APPEND TALKER_STAGES talker_${PHASE}_${KIND})
   endforeach()
   foreach(KIND attention dense norm)
     list(APPEND TALKER_STAGES predictor_${PHASE}_${KIND})
   endforeach()
 endforeach()
-foreach(COUNT 1 2 4 8 16)
+foreach(
+  COUNT
+  1
+  2
+  4
+  8
+  16
+)
   list(APPEND TALKER_STAGES talker_expert_${COUNT})
 endforeach()
 set(TALKER_FILES)
 foreach(STAGE IN LISTS TALKER_STAGES)
-  list(APPEND TALKER_FILES ${TALKER_DIR}/${STAGE}.mlir ${TALKER_DIR}/${STAGE}-forward.mlir)
+  list(
+    APPEND TALKER_FILES
+    ${OUTPUT_DIR}/talker/${STAGE}.mlir
+    ${OUTPUT_DIR}/talker/${STAGE}-forward.mlir
+    ${OUTPUT_DIR}/talker/${STAGE}-task.c
+  )
 endforeach()
-add_custom_command(OUTPUT ${TALKER_FILES} ${TALKER_DIR}/kernels.json ${TALKER_DIR}/talker-parameters.h
-  COMMAND ${PYTHON} -m ${DESIGN_MODULE}.trace.talker_kernels
-          --checkpoint-config ${GENERATED_DIR}/checkpoint.json
-          --compiler-build ${COMPILER_BUILD} --output ${TALKER_DIR}
-  DEPENDS ${GENERATED_DIR}/checkpoint.json ${MODEL_SOURCES} ${MODEL_SOURCE}/talker.py ${GRAPH_SOURCES}
-          ${CMAKE_CURRENT_SOURCE_DIR}/trace/talker.py ${CMAKE_CURRENT_SOURCE_DIR}/trace/talker_kernels.py
+add_custom_command(
+  OUTPUT ${TALKER_FILES}
+         ${OUTPUT_DIR}/talker/kernels.json
+         ${OUTPUT_DIR}/talker/talker-parameters.h
+  COMMAND ${PYTHON} buddy-pytorch-talker-importer.py
+            --repo-root ${REPO_ROOT}
+            --checkpoint-config ${MODEL_DIR}/qwen3-omni-30b-a3b-instruct/output/checkpoint.json
+            --compiler-build ${COMPILER_BUILD}
+            --chip-pb ${CHIP_PB}
+            --output ${OUTPUT_DIR}/talker
+  DEPENDS ${MODEL_DIR}/qwen3-omni-30b-a3b-instruct/output/checkpoint.json
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/attention.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/moe.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/projections.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/weights.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/talker.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/trace/graph.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/permute/layout.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/trace/talker.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-talker-importer.py
           ${CMAKE_CURRENT_SOURCE_DIR}/configs/compiler-param.toml
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-add_custom_command(OUTPUT ${GENERATED_DIR}/weights/talker-placement.json
-  COMMAND ${PYTHON} -m ${DESIGN_MODULE}.quant.talker
-          --checkpoint-config ${GENERATED_DIR}/checkpoint.json --compiler-build ${COMPILER_BUILD}
-          --kernels ${TALKER_DIR}/kernels.json --system-config ${SYSTEM_CONFIG}
-          --output ${GENERATED_DIR}/weights
-  DEPENDS ${TALKER_DIR}/kernels.json ${MODEL_SOURCES} ${MODEL_SOURCE}/talker.py ${PACK_SOURCES}
-          ${CMAKE_CURRENT_SOURCE_DIR}/quant/talker.py ${CMAKE_CURRENT_SOURCE_DIR}/trace/talker.py ${SYSTEM_CONFIG}
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-add_custom_target(omni-talker-weights DEPENDS ${GENERATED_DIR}/weights/talker-placement.json)
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM
+)
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/weights/talker-placement.json
+  COMMAND ${PYTHON} pack-talker-weights.py
+            --repo-root ${REPO_ROOT}
+            --checkpoint-config ${MODEL_DIR}/qwen3-omni-30b-a3b-instruct/output/checkpoint.json
+            --compiler-build ${COMPILER_BUILD}
+            --kernels ${OUTPUT_DIR}/talker/kernels.json
+            --system-config ${REPO_ROOT}/examples/chips/omni/configs/system.toml
+            --output ${OUTPUT_DIR}/weights
+  DEPENDS ${OUTPUT_DIR}/talker/kernels.json
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/attention.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/moe.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/projections.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/weights.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/talker.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/permute/layout.py
+          ${REPO_ROOT}/stack/models/models/qwen3-omni-30b-a3b-instruct/weights.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/pack-talker-weights.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/trace/talker.py
+          ${REPO_ROOT}/examples/chips/omni/configs/system.toml
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM
+)
+add_custom_target(omni-talker-weights DEPENDS ${OUTPUT_DIR}/weights/talker-placement.json)
 foreach(STAGE IN LISTS TALKER_STAGES)
   set(TARGET ffn)
   if(STAGE MATCHES "_(attention(_[0-9]+)?|router|norm)$")
     set(TARGET attention)
   endif()
-  compile_graph(${STAGE} "${TALKER_DIR}/${STAGE}.mlir" ${TARGET} kernel)
-  compile_graph(${STAGE}-forward "${TALKER_DIR}/${STAGE}-forward.mlir" ${TARGET} forward)
-  list(APPEND OBJECTS ${STAGE}.o ${STAGE}-forward.o)
+
+  add_custom_command(
+    OUTPUT ${STAGE}.o
+    BYPRODUCTS ${OUTPUT_DIR}/${STAGE}_linalg.mlir
+               ${OUTPUT_DIR}/${STAGE}_tile.mlir
+               ${OUTPUT_DIR}/${STAGE}_buckyball.mlir
+               ${OUTPUT_DIR}/${STAGE}_bank_ssa.mlir
+               ${OUTPUT_DIR}/${STAGE}_llvm.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}.mlir
+              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
+              -o ${OUTPUT_DIR}/${STAGE}_linalg.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}.mlir
+              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+              -eliminate-empty-tensors
+              -convert-elementwise-to-linalg
+              -convert-tensor-to-linalg
+              -fuse-pointwise
+              -outline-rvv-kernels
+              -canonicalize
+              -canonicalize
+              -cse
+              -one-shot-bufferize=bufferize-function-boundaries
+              -lower-rvv-kernels
+              -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
+              -convert-linalg-to-tile=quantized-only
+              -o ${OUTPUT_DIR}/${STAGE}_tile.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}.mlir
+              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+              -eliminate-empty-tensors
+              -convert-elementwise-to-linalg
+              -convert-tensor-to-linalg
+              -fuse-pointwise
+              -outline-rvv-kernels
+              -canonicalize
+              -canonicalize
+              -cse
+              -one-shot-bufferize=bufferize-function-boundaries
+              -lower-rvv-kernels
+              -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
+              -convert-linalg-to-tile=quantized-only
+              -convert-tile-to-buckyball
+              -o ${OUTPUT_DIR}/${STAGE}_buckyball.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}.mlir
+              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+              -eliminate-empty-tensors
+              -convert-elementwise-to-linalg
+              -convert-tensor-to-linalg
+              -fuse-pointwise
+              -outline-rvv-kernels
+              -canonicalize
+              -canonicalize
+              -cse
+              -one-shot-bufferize=bufferize-function-boundaries
+              -lower-rvv-kernels
+              -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
+              -convert-linalg-to-tile=quantized-only
+              -convert-tile-to-buckyball
+              -lower-buckyball-to-bank-ssa
+              -assign-physical-banks
+              -o ${OUTPUT_DIR}/${STAGE}_bank_ssa.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}.mlir
+              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+              -eliminate-empty-tensors
+              -convert-elementwise-to-linalg
+              -convert-tensor-to-linalg
+              -fuse-pointwise
+              -outline-rvv-kernels
+              -canonicalize
+              -canonicalize
+              -cse
+              -one-shot-bufferize=bufferize-function-boundaries
+              -lower-rvv-kernels
+              -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
+              -convert-linalg-to-tile=quantized-only
+              -convert-tile-to-buckyball
+              -lower-buckyball-to-bank-ssa
+              -assign-physical-banks
+              -llvm-request-c-wrappers
+              -lower-bank-ssa-to-intrinsics
+              -expand-strided-metadata
+              -convert-linalg-to-loops
+              -lower-buckyball
+              -convert-vector-to-scf=target-rank=0
+              -lower-affine
+              -canonicalize
+              -cse
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
+              -convert-vector-to-llvm
+              -buffer-deallocation-simplification
+              -bufferization-lower-deallocations
+              -convert-math-to-llvm
+              -convert-math-to-libm
+              -convert-arith-to-llvm
+              -convert-func-to-llvm
+              -finalize-memref-to-llvm
+              -reconcile-unrealized-casts
+              -canonicalize
+              -cse
+              -o ${OUTPUT_DIR}/${STAGE}_llvm.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}.mlir
+              -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+              -eliminate-empty-tensors
+              -convert-elementwise-to-linalg
+              -convert-tensor-to-linalg
+              -fuse-pointwise
+              -outline-rvv-kernels
+              -canonicalize
+              -canonicalize
+              -cse
+              -one-shot-bufferize=bufferize-function-boundaries
+              -lower-rvv-kernels
+              -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
+              -convert-linalg-to-tile=quantized-only
+              -convert-tile-to-buckyball
+              -lower-buckyball-to-bank-ssa
+              -assign-physical-banks
+              -llvm-request-c-wrappers
+              -lower-bank-ssa-to-intrinsics
+              -expand-strided-metadata
+              -convert-linalg-to-loops
+              -lower-buckyball
+              -convert-vector-to-scf=target-rank=0
+              -lower-affine
+              -canonicalize
+              -cse
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
+              -convert-vector-to-llvm
+              -buffer-deallocation-simplification
+              -bufferization-lower-deallocations
+              -convert-math-to-llvm
+              -convert-math-to-libm
+              -convert-arith-to-llvm
+              -convert-func-to-llvm
+              -finalize-memref-to-llvm
+              -reconcile-unrealized-casts
+              -canonicalize
+              -cse |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-translate
+              --buddy-to-llvmir |
+            ${BUDDY_SOURCE}/llvm/build/bin/opt -passes=default<O2> |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-llc -filetype=obj -mtriple=riscv64 -O3 -mattr=+xbuckyball,+m,+D,+c -float-abi=hard -o ${STAGE}.o
+    COMMAND ${CMAKE_OBJCOPY}
+              --redefine-syms=${THREAD_RUNTIME_DIR}/${TARGET}.rename
+              --redefine-sym malloc=workspace_alloc
+              --redefine-sym free=workspace_free ${STAGE}.o
+    DEPENDS "${OUTPUT_DIR}/talker/${STAGE}.mlir"
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-translate
+            "${BUDDY_SOURCE}/llvm/build/bin/opt"
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-llc
+            ${THREAD_RUNTIME_DIR}/${TARGET}.rename
+    COMMENT "Building ${STAGE}.o"
+    VERBATIM
+  )
+
+  add_custom_command(
+    OUTPUT ${STAGE}-forward.o
+    BYPRODUCTS ${OUTPUT_DIR}/${STAGE}-forward_llvm.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}-forward.mlir
+              -buffer-deallocation-simplification
+              -convert-linalg-to-loops
+              -eliminate-empty-tensors
+              -llvm-request-c-wrappers
+              -convert-math-to-llvm
+              -convert-math-to-libm
+              -lower-affine
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
+              -convert-arith-to-llvm
+              -expand-strided-metadata
+              -finalize-memref-to-llvm
+              -convert-func-to-llvm
+              -reconcile-unrealized-casts
+              -canonicalize
+              -cse
+              -o ${OUTPUT_DIR}/${STAGE}-forward_llvm.mlir
+    COMMAND ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt ${OUTPUT_DIR}/talker/${STAGE}-forward.mlir
+              -buffer-deallocation-simplification
+              -convert-linalg-to-loops
+              -eliminate-empty-tensors
+              -llvm-request-c-wrappers
+              -convert-math-to-llvm
+              -convert-math-to-libm
+              -lower-affine
+              -convert-scf-to-cf
+              -convert-cf-to-llvm
+              -convert-arith-to-llvm
+              -expand-strided-metadata
+              -finalize-memref-to-llvm
+              -convert-func-to-llvm
+              -reconcile-unrealized-casts
+              -canonicalize
+              -cse |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-translate
+              --buddy-to-llvmir |
+            ${BUDDY_SOURCE}/llvm/build/bin/opt -passes=default<O2> |
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-llc -filetype=obj -mtriple=riscv64 -O3 -mattr=+xbuckyball,+m,+D,+c -float-abi=hard -o ${STAGE}-forward.o
+    COMMAND ${CMAKE_OBJCOPY}
+              --redefine-syms=${THREAD_RUNTIME_DIR}/${TARGET}.rename
+              --redefine-sym malloc=workspace_alloc
+              --redefine-sym free=workspace_free ${STAGE}-forward.o
+    DEPENDS "${OUTPUT_DIR}/talker/${STAGE}-forward.mlir"
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-opt
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-translate
+            "${BUDDY_SOURCE}/llvm/build/bin/opt"
+            ${COMPILER_BUILD_${TARGET}}/bin/buddy-llc
+            ${THREAD_RUNTIME_DIR}/${TARGET}.rename
+    COMMENT "Building ${STAGE}-forward.o"
+    VERBATIM
+  )
+  list(APPEND OBJECTS ${STAGE}.o ${STAGE}-forward.o ${OUTPUT_DIR}/talker/${STAGE}-task.c)
 endforeach()

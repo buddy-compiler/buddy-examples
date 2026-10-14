@@ -1,8 +1,8 @@
 #define _GNU_SOURCE
 #include "ant.h"
 #include "ant_stream.h"
-#include "core_location_internal.h"
 #include "runtime.h"
+#include "thread_location_internal.h"
 #include "workspace_internal.h"
 #include <pthread.h>
 #include <sched.h>
@@ -25,7 +25,7 @@ struct task {
   int done;
   struct runtime *owner;
 };
-struct core {
+struct thread {
   struct runtime *owner;
   pthread_t thread;
   task *job;
@@ -35,8 +35,8 @@ struct core {
   uint32_t context, sequence;
 };
 struct runtime {
-  struct core *cores;
-  size_t num_cores, outstanding;
+  struct thread *threads;
+  size_t num_threads, outstanding;
   unsigned controller;
   int stopping;
   void *workspace;
@@ -46,9 +46,12 @@ struct runtime {
 static _Thread_local struct runtime owned = {
     .lock = PTHREAD_MUTEX_INITIALIZER, .changed = PTHREAD_COND_INITIALIZER};
 static _Thread_local struct runtime *owner;
-static _Thread_local struct core *current;
+static _Thread_local struct thread *current;
 static pthread_once_t process_init = PTHREAD_ONCE_INIT;
 static _Atomic size_t active_instances;
+uint32_t thread_batches(size_t thread) {
+  return owner->threads[thread - 1].sequence;
+}
 extern const unsigned char ant_stream_image[], ant_stream_image_end[];
 static void check(int status) {
   if (status) {
@@ -60,21 +63,25 @@ static void check(int status) {
 void ant_flush(void) {
   if (!current)
     abort();
-  struct core *core = current;
-  if (!core->batch->count)
+  struct thread *thread = current;
+  if (!thread->batch->count)
     return;
-  if (++core->sequence == 0)
+  if (++thread->sequence == 0)
     abort();
-  ant_write(core->context, ANT_TLS, 0, core->batch,
-            sizeof(uint64_t) + core->batch->count * sizeof(struct instruction));
-  struct ant_task job = {
-      core->sequence, 0,           ant_stream_image_end - ant_stream_image,
-      core->base,     core->stack, core->signature};
-  ant_start(core->context, &job);
+  ant_write(thread->context, ANT_TLS, 0, thread->batch,
+            sizeof(uint64_t) +
+                thread->batch->count * sizeof(struct instruction));
+  struct ant_task job = {thread->sequence,
+                         0,
+                         ant_stream_image_end - ant_stream_image,
+                         thread->base,
+                         thread->stack,
+                         thread->signature};
+  ant_start(thread->context, &job);
   int cancelled;
-  if (ant_wait(core->context, core->sequence, &cancelled) || cancelled)
+  if (ant_wait(thread->context, thread->sequence, &cancelled) || cancelled)
     abort();
-  core->batch->count = 0;
+  thread->batch->count = 0;
 }
 
 void ant_emit(uint32_t funct7, uint64_t rs1, uint64_t rs2) {
@@ -86,8 +93,7 @@ void ant_emit(uint32_t funct7, uint64_t rs1, uint64_t rs2) {
       (struct instruction){funct7, rs1, rs2};
   // Returning from a DMA call guarantees that CPU reuse of its DDR range is
   // safe. Bank-only operations remain batched.
-  if (funct7 == 44 || funct7 == 16 ||
-      (funct7 >= 33 && funct7 <= 35))
+  if (funct7 == 44 || funct7 == 16 || (funct7 >= 33 && funct7 <= 35))
     ant_flush();
 }
 
@@ -121,7 +127,7 @@ static void *execute(void *argument) {
 
 void runtime_shutdown(void) {
   struct runtime *runtime = owner;
-  if (!runtime || runtime != &owned || current || !runtime->cores)
+  if (!runtime || runtime != &owned || current || !runtime->threads)
     abort();
   cpu_set_t affinity;
   if (sched_getaffinity(0, sizeof(affinity), &affinity) ||
@@ -130,20 +136,20 @@ void runtime_shutdown(void) {
   check(pthread_mutex_lock(&runtime->lock));
   if (runtime->outstanding)
     abort();
-  for (size_t i = 0; i < runtime->num_cores; ++i)
-    if (runtime->cores[i].job)
+  for (size_t i = 0; i < runtime->num_threads; ++i)
+    if (runtime->threads[i].job)
       abort();
   runtime->stopping = 1;
   check(pthread_cond_broadcast(&runtime->changed));
   check(pthread_mutex_unlock(&runtime->lock));
-  for (size_t i = 0; i < runtime->num_cores; ++i) {
-    check(pthread_join(runtime->cores[i].thread, NULL));
-    free(runtime->cores[i].batch);
+  for (size_t i = 0; i < runtime->num_threads; ++i) {
+    check(pthread_join(runtime->threads[i].thread, NULL));
+    free(runtime->threads[i].batch);
   }
   ant_release();
-  free(runtime->cores);
-  runtime->cores = NULL;
-  runtime->num_cores = 0;
+  free(runtime->threads);
+  runtime->threads = NULL;
+  runtime->num_threads = 0;
   runtime->workspace = NULL;
   runtime->stopping = 0;
   owner = NULL;
@@ -152,7 +158,7 @@ void runtime_shutdown(void) {
 }
 
 static void shutdown_at_exit(void) {
-  if (owner == &owned && owned.cores && !current)
+  if (owner == &owned && owned.threads && !current)
     runtime_shutdown();
   if (atomic_load(&active_instances))
     abort();
@@ -175,65 +181,65 @@ void runtime_init(size_t stack_bytes) {
       CPU_COUNT(&affinity) != 1)
     abort();
   runtime->controller = sched_getcpu();
-  runtime->num_cores = ant_query(0, ANT_COUNT);
-  if (!runtime->num_cores)
+  runtime->num_threads = ant_query(0, ANT_COUNT);
+  if (!runtime->num_threads)
     abort();
-  runtime->cores = calloc(runtime->num_cores, sizeof(*runtime->cores));
-  if (!runtime->cores)
+  runtime->threads = calloc(runtime->num_threads, sizeof(*runtime->threads));
+  if (!runtime->threads)
     abort();
   size_t image_bytes = ant_stream_image_end - ant_stream_image;
-  for (size_t i = 0; i < runtime->num_cores; ++i) {
-    struct core *core = &runtime->cores[i];
-    core->owner = runtime;
+  for (size_t i = 0; i < runtime->num_threads; ++i) {
+    struct thread *thread = &runtime->threads[i];
+    thread->owner = runtime;
     uint64_t bytes = ant_query(i, ANT_TLS_BYTES);
     if (ant_query(i, ANT_STATUS) != ANT_ONLINE ||
         bytes <= 512 + sizeof(uint64_t) ||
         image_bytes > ant_query(i, ANT_CODE_BYTES))
       abort();
-    core->context = i;
-    core->signature = ant_query(i, ANT_SIGNATURE);
-    core->base = ant_query(i, ANT_TLS_BASE);
-    core->stack = core->base + bytes;
-    core->capacity =
+    thread->context = i;
+    thread->signature = ant_query(i, ANT_SIGNATURE);
+    thread->base = ant_query(i, ANT_TLS_BASE);
+    thread->stack = thread->base + bytes;
+    thread->capacity =
         (bytes - 512 - sizeof(uint64_t)) / sizeof(struct instruction);
-    core->batch =
-        malloc(sizeof(uint64_t) + core->capacity * sizeof(struct instruction));
-    if (!core->batch)
+    thread->batch = malloc(sizeof(uint64_t) +
+                           thread->capacity * sizeof(struct instruction));
+    if (!thread->batch)
       abort();
-    core->batch->count = 0;
+    thread->batch->count = 0;
     ant_write(i, ANT_CODE, 0, ant_stream_image, image_bytes);
   }
   ant_acquire();
   pthread_attr_t attributes;
   check(pthread_attr_init(&attributes));
   check(pthread_attr_setstacksize(&attributes, stack_bytes));
-  for (size_t i = 0; i < runtime->num_cores; ++i)
-    check(pthread_create(&runtime->cores[i].thread, &attributes, execute,
-                         &runtime->cores[i]));
+  for (size_t i = 0; i < runtime->num_threads; ++i)
+    check(pthread_create(&runtime->threads[i].thread, &attributes, execute,
+                         &runtime->threads[i]));
   check(pthread_attr_destroy(&attributes));
   atomic_fetch_add(&active_instances, 1);
 }
 
-size_t core_count(void) {
+size_t thread_count(void) {
   if (!owner)
     abort();
-  return owner->num_cores;
+  return owner->num_threads;
 }
-core_location_t core_location(void) {
+thread_location_t thread_location(void) {
   if (owner)
-    return (core_location_t){owner->controller,
-                             current ? current->context + 1 : 0};
-  return (core_location_t){runtime_cpu_id(), 0};
+    return (thread_location_t){owner->controller,
+                               current ? current->context + 1 : 0};
+  return (thread_location_t){runtime_cpu_id(), 0};
 }
-uint64_t core_signature(size_t core) {
-  if (!owner || !core || core > owner->num_cores)
+uint64_t thread_signature(size_t thread) {
+  if (!owner || !thread || thread > owner->num_threads)
     abort();
-  return owner->cores[core - 1].signature;
+  return owner->threads[thread - 1].signature;
 }
-size_t core_submissions(size_t core) {
-  if (!owner || !core || core > owner->num_cores)
+size_t thread_submissions(size_t thread) {
+  if (!owner || !thread || thread > owner->num_threads)
     abort();
-  return owner->cores[core - 1].submissions;
+  return owner->threads[thread - 1].submissions;
 }
 static task *submit(size_t required, uint64_t signature, task_entry entry,
                     void *argument) {
@@ -246,23 +252,24 @@ static task *submit(size_t required, uint64_t signature, task_entry entry,
   *job = (task){entry, argument, 0, runtime};
   check(pthread_mutex_lock(&runtime->lock));
   for (;;) {
-    size_t selected = runtime->num_cores;
+    size_t selected = runtime->num_threads;
     int compatible = 0;
-    for (size_t i = 0; i < runtime->num_cores; ++i) {
-      if ((required != runtime->num_cores && i != required) ||
-          runtime->cores[i].signature != signature)
+    for (size_t i = 0; i < runtime->num_threads; ++i) {
+      if ((required != runtime->num_threads && i != required) ||
+          runtime->threads[i].signature != signature)
         continue;
       compatible = 1;
-      if (!runtime->cores[i].job && (selected == runtime->num_cores ||
-                                     runtime->cores[i].submissions <
-                                         runtime->cores[selected].submissions))
+      if (!runtime->threads[i].job &&
+          (selected == runtime->num_threads ||
+           runtime->threads[i].submissions <
+               runtime->threads[selected].submissions))
         selected = i;
     }
     if (!compatible)
       abort();
-    if (selected != runtime->num_cores) {
-      runtime->cores[selected].job = job;
-      ++runtime->cores[selected].submissions;
+    if (selected != runtime->num_threads) {
+      runtime->threads[selected].job = job;
+      ++runtime->threads[selected].submissions;
       ++runtime->outstanding;
       check(pthread_cond_broadcast(&runtime->changed));
       check(pthread_mutex_unlock(&runtime->lock));
@@ -272,13 +279,13 @@ static task *submit(size_t required, uint64_t signature, task_entry entry,
   }
 }
 task *task_submit(uint64_t signature, task_entry entry, void *argument) {
-  return submit(core_count(), signature, entry, argument);
+  return submit(thread_count(), signature, entry, argument);
 }
-task *task_submit_on(size_t core, uint64_t signature, task_entry entry,
+task *task_submit_on(size_t thread, uint64_t signature, task_entry entry,
                      void *argument) {
-  if (!core || core > core_count())
+  if (!thread || thread > thread_count())
     abort();
-  return submit(core - 1, signature, entry, argument);
+  return submit(thread - 1, signature, entry, argument);
 }
 int task_wait(task *job) {
   struct runtime *runtime = job->owner;
@@ -293,9 +300,9 @@ int task_wait(task *job) {
 void task_run(uint64_t signature, task_entry entry, void *argument) {
   task_wait(task_submit(signature, entry, argument));
 }
-void task_run_on(size_t core, uint64_t signature, task_entry entry,
+void task_run_on(size_t thread, uint64_t signature, task_entry entry,
                  void *argument) {
-  task_wait(task_submit_on(core, signature, entry, argument));
+  task_wait(task_submit_on(thread, signature, entry, argument));
 }
 void runtime_workspace_register(void *space) {
   if (!owner || owner != &owned || current)
@@ -308,8 +315,8 @@ void runtime_workspace_check_idle(void) {
   if (!owner || owner != &owned || current)
     abort();
   check(pthread_mutex_lock(&owner->lock));
-  for (size_t i = 0; i < owner->num_cores; ++i)
-    if (owner->cores[i].job)
+  for (size_t i = 0; i < owner->num_threads; ++i)
+    if (owner->threads[i].job)
       abort();
   check(pthread_mutex_unlock(&owner->lock));
 }

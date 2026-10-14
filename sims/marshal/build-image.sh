@@ -19,10 +19,10 @@ MARSHAL_DIR=$ROOT/sims/marshal
 
 source $ROOT/env.sh
 
-# Preload conda libstdc++ for MLIR Python (GLIBCXX_3.4.29). 
+# Preload conda libstdc++ for MLIR Python (GLIBCXX_3.4.29).
 # export LD_PRELOAD=$(conda info --base)/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}
 
-# step 1: build workload 
+# step 1: build workload
 if [ $WORKLOAD == "lenet-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
@@ -218,7 +218,7 @@ elif [ $WORKLOAD == "cnn-gemmini" ]; then
   cp $ROOT/models/models/resnet18/arg0.data ./
   cp -r $ROOT/models/models/resnet18/images ./
   cp $ROOT/models/models/resnet18/Labels.txt ./
-  
+
   mkdir -p $ROOT/models/bin/mobilenetv3 && cd $ROOT/models/bin/mobilenetv3
   if [ ! -f $ROOT/models/build/archs/gemmini/mobilenet-v3-small/buddy-gemmini-mobilenetv3-run ]; then
     echo "Error: buddy-gemmini-mobilenetv3-run not found"

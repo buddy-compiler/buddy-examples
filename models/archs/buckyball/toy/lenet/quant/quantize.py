@@ -1,7 +1,7 @@
 from buddy.compiler.graph.transform.quantization.activation import calibrate_layers
 from buddy.compiler.graph.transform.quantization.symmetric import quantize_symmetric
 from examples.balls.gemmini.compiler.python.quant import apply
-from ..permute.layout import reorder, pool_result
+from permute.layout import reorder, pool_result
 
 
 def prepare(model, source):

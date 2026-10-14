@@ -70,7 +70,7 @@ void Talker::experts(Matrix &hidden, size_t count, size_t layer) {
              count == 1 ? _mlir_ciface_subgraph_talker_decode_shared
                         : _mlir_ciface_subgraph_talker_prefill_shared);
   std::copy_n(routed.hidden.getData(), length * width, shared.input.getData());
-  shared.pending = task_submit(CORE_SIGNATURE, run, &shared);
+  shared.pending = task_submit(THREAD_SIGNATURE, run, &shared);
   std::vector<std::unique_ptr<Job>> jobs;
   for (size_t expert = 0; expert < expertCount; ++expert) {
     const auto &slots = assigned[expert];
@@ -103,7 +103,7 @@ void Talker::experts(Matrix &hidden, size_t count, size_t layer) {
     for (size_t index = 0; index < slots.size(); ++index)
       std::copy_n(routed.hidden.getData() + slots[index] / topK * width, width,
                   job->input.getData() + index * width);
-    job->pending = task_submit(CORE_SIGNATURE, run, job.get());
+    job->pending = task_submit(THREAD_SIGNATURE, run, job.get());
     jobs.push_back(std::move(job));
   }
   std::vector<float> partials(count * topK * width);

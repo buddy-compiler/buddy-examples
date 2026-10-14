@@ -76,7 +76,7 @@ static Matrix linear(size_t layer, const Matrix &input,
     ++count;
   }
   for (size_t index = 0; index < count; ++index)
-    tasks[index] = task_submit(CORE_SIGNATURE, execute_shard, &shards[index]);
+    tasks[index] = task_submit(THREAD_SIGNATURE, execute_shard, &shards[index]);
   for (size_t index = 0; index < count; ++index)
     if (task_wait(tasks[index]))
       throw std::runtime_error("Mixer shard failed");
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
   auto params = load<float>("mixer.payload/params.f32");
   auto weights = load<int8_t>("mixer.payload/weights.bin");
   runtime_init(1024 * 1024);
-  if (core_count() != 4)
+  if (thread_count() != 4)
     throw std::runtime_error(
         "Mixer recipe requires four homogeneous compute cores");
   constexpr size_t workspaceBytes = size_t(1) << 24;
@@ -178,18 +178,18 @@ int main(int argc, char **argv) {
   std::iota(order.begin(), order.end(), 0);
   std::partial_sort(order.begin(), order.begin() + 5, order.end(),
                     [&](size_t a, size_t b) { return logits[a] > logits[b]; });
-  std::cout << "Counter (" << counter_name() << ") " << counter_field() << ": "
-            << elapsedCounter << "\nCompute cores: " << core_count()
+  std::cout << "Counter: " << elapsedCounter
+            << "\nCompute cores: " << thread_count()
             << "\nWorkspace peak bytes: " << workspace_peak()
             << "\nClassification Index: " << order[0] << "\nTop5:";
   for (size_t index = 0; index < 5; ++index)
     std::cout << ' ' << order[index];
   std::cout << '\n';
   for (size_t block = 0; block < 12; ++block)
-    std::cout << "Block " << block << " " << counter_field() << ": "
-              << blockCounters[block] << '\n';
-  for (size_t core = 1; core <= core_count(); ++core)
-    std::cout << "Core " << core << " tasks: " << core_submissions(core)
+    std::cout << "Block " << block << " counter: " << blockCounters[block]
+              << '\n';
+  for (size_t core = 1; core <= thread_count(); ++core)
+    std::cout << "Core " << core << " tasks: " << thread_submissions(core)
               << '\n';
   std::cout << "LOGITS_F32_BEGIN\n" << std::hex << std::setfill('0');
   for (size_t index = 0; index < logits.size(); ++index) {

@@ -3,7 +3,9 @@ import subprocess
 from pathlib import Path
 
 
-def build_instances(repo, output, isa, images, compiler, ar, nm, objcopy):
+def build_instances(
+    repo, output, isa, images, compiler, ar, nm, objcopy, thread_runtime
+):
     source = repo / "bb-tests/workloads/lib/bbsw/kernels/rvv"
     sources = (
         "dispatch.cpp",
@@ -57,6 +59,7 @@ def build_instances(repo, output, isa, images, compiler, ar, nm, objcopy):
         rename = output / (target + ".rename")
         rename.write_text(
             "".join(f"{name} {name}__{target}\n" for name in sorted(symbols))
+            + (thread_runtime / (target + ".rename")).read_text()
         )
         renamed = []
         for obj in objects:
@@ -84,7 +87,17 @@ def build_instances(repo, output, isa, images, compiler, ar, nm, objcopy):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    for name in ("repo", "output", "isa", "images", "compiler", "ar", "nm", "objcopy"):
+    for name in (
+        "repo",
+        "output",
+        "isa",
+        "images",
+        "compiler",
+        "ar",
+        "nm",
+        "objcopy",
+        "thread-runtime",
+    ):
         parser.add_argument("--" + name, type=Path, required=True)
     args = parser.parse_args()
     build_instances(**vars(args))

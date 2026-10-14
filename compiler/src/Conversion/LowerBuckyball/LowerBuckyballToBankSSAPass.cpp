@@ -2,24 +2,20 @@
 //----------===//
 
 #include "Conversion/LowerBuckyball/LowerBuckyball.h"
-#include "Target/BuckyballTargetRegistry.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
-#include "mlir/Dialect/Utils/StructuredOpsUtils.h"
-#include "mlir/IR/AffineMap.h"
-#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 #include "Buckyball/BuckyballDialect.h"
-#include "Buckyball/BuckyballOps.h"
 #include "Trace/TraceDialect.h"
 
 using namespace mlir;
@@ -30,43 +26,6 @@ namespace mlir::buddy {
 #include "BuckyballBallLoweringHooks.inc"
 #undef BUCKYBALL_BANK_SSA_HOOK
 } // namespace mlir::buddy
-
-namespace {
-
-class MemTransposeToLinalgPattern
-    : public OpRewritePattern<::buddy::buckyball::MemTransposeOp> {
-public:
-  using OpRewritePattern::OpRewritePattern;
-
-  LogicalResult matchAndRewrite(::buddy::buckyball::MemTransposeOp op,
-                                PatternRewriter &rewriter) const override {
-    auto input = dyn_cast<MemRefType>(op.getInput().getType());
-    auto output = dyn_cast<MemRefType>(op.getOutput().getType());
-    if (!input || !output || !input.hasStaticShape() ||
-        !output.hasStaticShape() || input.getRank() != 2 ||
-        output.getRank() != 2 || output.getShape()[0] != input.getShape()[1] ||
-        output.getShape()[1] != input.getShape()[0])
-      return op.emitError("requires matching static rank-2 transpose memrefs");
-
-    MLIRContext *context = rewriter.getContext();
-    AffineMap identity = AffineMap::getMultiDimIdentityMap(2, context);
-    AffineMap transpose = AffineMap::get(
-        2, 0, {rewriter.getAffineDimExpr(1), rewriter.getAffineDimExpr(0)},
-        context);
-    SmallVector<utils::IteratorType> iterators(2,
-                                               utils::IteratorType::parallel);
-    rewriter.create<linalg::GenericOp>(
-        op.getLoc(), TypeRange{}, ValueRange{op.getInput()},
-        ValueRange{op.getOutput()}, ArrayRef<AffineMap>{identity, transpose},
-        iterators, [](OpBuilder &builder, Location location, ValueRange args) {
-          builder.create<linalg::YieldOp>(location, args[0]);
-        });
-    rewriter.eraseOp(op);
-    return success();
-  }
-};
-
-} // namespace
 
 namespace {
 
@@ -82,23 +41,18 @@ public:
   }
 
   void getDependentDialects(DialectRegistry &registry) const override {
-    registry
-        .insert<::buddy::trace::BuddyTraceDialect, arith::ArithDialect,
-                linalg::LinalgDialect, memref::MemRefDialect, LLVM::LLVMDialect,
-                scf::SCFDialect, ::buddy::buckyball::BuckyballDialect>();
+    registry.insert<::buddy::trace::BuddyTraceDialect, arith::ArithDialect,
+                    linalg::LinalgDialect, math::MathDialect,
+                    memref::MemRefDialect, LLVM::LLVMDialect, scf::SCFDialect,
+                    ::buddy::buckyball::BuckyballDialect>();
   }
 
   void runOnOperation() override {
     RewritePatternSet patterns(&getContext());
-    for (llvm::StringRef ball : buckyball_target::getBuckyballTarget().balls) {
 #define BUCKYBALL_BANK_SSA_HOOK(BALL)                                          \
-  if (ball == #BALL)                                                           \
-    mlir::buddy::populate##BALL##LowerBuckyballToBankSSAPatterns(patterns);
+  mlir::buddy::populate##BALL##LowerBuckyballToBankSSAPatterns(patterns);
 #include "BuckyballBallLoweringHooks.inc"
 #undef BUCKYBALL_BANK_SSA_HOOK
-    }
-    mlir::buddy::populateQuantizeTensorToBankSSAPatterns(patterns);
-    patterns.add<MemTransposeToLinalgPattern>(&getContext());
     bool emittedError = false;
     ScopedDiagnosticHandler diagnostics(
         &getContext(), [&](Diagnostic &message) {

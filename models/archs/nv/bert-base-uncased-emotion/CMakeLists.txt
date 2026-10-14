@@ -1,139 +1,150 @@
+set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
+
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/forward.mlir
+         ${OUTPUT_DIR}/subgraph0.mlir
+         ${OUTPUT_DIR}/arg0.data
+         ${OUTPUT_DIR}/bert-parameters.h
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
+  COMMAND ${PYTHON} buddy-pytorch-importer.py
+            --repo-root ${REPO_ROOT}
+            --output-dir ${OUTPUT_DIR}
+            --compiler-build ${COMPILER_BUILD}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing bert-base-uncased-emotion for nv"
+  VERBATIM
+)
+
 # Host x86 + NVIDIA GPU path (copied from nv/LeNet, adapted).
 
-set(MODEL_BERT_DIR ${MODEL_DIR}/bert-base-uncased-emotion)
-set(INTERFACE_DIR ${NV_INTERFACE_DIR})
-set(INCLUDE_DIR ${MODEL_BERT_DIR})
-
-
-# forward.mlir is already memref glue (like BuddyBert); keep it on host CPU.
+# ${OUTPUT_DIR}/forward.mlir is already memref glue (like BuddyBert); keep it on host CPU.
 add_custom_command(
   OUTPUT forward_gpu.o
-  COMMAND ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt ${MODEL_BERT_DIR}/forward.mlir
-          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith), empty-tensor-to-alloc-tensor, convert-elementwise-to-linalg)" |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-cf-to-llvm, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, reconcile-unrealized-casts)" |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/forward_gpu.o
-  DEPENDS ${MODEL_BERT_DIR}/forward.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_gpu_llvm.mlir
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt ${OUTPUT_DIR}/forward.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith), empty-tensor-to-alloc-tensor, convert-elementwise-to-linalg)" |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-cf-to-llvm, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, reconcile-unrealized-casts)"
+            -o ${OUTPUT_DIR}/forward_gpu_llvm.mlir
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt ${OUTPUT_DIR}/forward.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith), empty-tensor-to-alloc-tensor, convert-elementwise-to-linalg)" |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -pass-pipeline "builtin.module(func.func(buffer-deallocation-simplification, convert-linalg-to-loops), eliminate-empty-tensors, func.func(llvm-request-c-wrappers), convert-math-to-llvm, convert-math-to-libm, convert-scf-to-cf, convert-cf-to-llvm, convert-arith-to-llvm, expand-strided-metadata, finalize-memref-to-llvm, convert-func-to-llvm, reconcile-unrealized-casts)" |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/forward_gpu.o
+  DEPENDS ${OUTPUT_DIR}/forward.mlir
   COMMENT "Building NV forward_gpu.o"
-  VERBATIM)
-
+  VERBATIM
+)
 
 # Bert GPU path is broken: process-args=0 passes host strided memrefs into
 # gpu.launch_func (CUDA_ERROR_ILLEGAL_ADDRESS); process-args=1 breaks subview
 # layouts. Lower subgraph on host CPU (sequential, no OpenMP) until that is fixed.
 add_custom_command(
   OUTPUT subgraph0_gpu.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_BERT_DIR}/subgraph0.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
+            -convert-trace-to-llvm |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -convert-elementwise-to-linalg
-          -arith-expand
-          -eliminate-empty-tensors
-          -empty-tensor-to-alloc-tensor
-          -one-shot-bufferize="bufferize-function-boundaries"
-          -ownership-based-buffer-deallocation
-          -buffer-deallocation-simplification
-          -bufferization-lower-deallocations
-          -matmul-parallel-vectorization-optimize
-          -convert-linalg-to-affine-loops
-          -affine-loop-fusion
-          -lower-affine
-          -convert-vector-to-scf
-          -expand-strided-metadata
-          -lower-affine
-          -cse
-          -convert-vector-to-llvm
-          -memref-expand
-          -arith-expand
-          -convert-arith-to-llvm
-          -finalize-memref-to-llvm
-          -convert-scf-to-cf
-          -convert-cf-to-llvm
-          -llvm-request-c-wrappers
-          -convert-arith-to-llvm
-          -convert-math-to-llvm
-          -convert-math-to-libm
-          -convert-func-to-llvm
-          -reconcile-unrealized-casts |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_gpu.o
-  DEPENDS ${MODEL_BERT_DIR}/subgraph0.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-elementwise-to-linalg
+            -arith-expand
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -matmul-parallel-vectorization-optimize
+            -convert-linalg-to-affine-loops
+            -affine-loop-fusion
+            -lower-affine
+            -convert-vector-to-scf
+            -expand-strided-metadata
+            -lower-affine
+            -cse
+            -convert-vector-to-llvm
+            -memref-expand
+            -arith-expand
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -llvm-request-c-wrappers
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
+            -convert-trace-to-llvm |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-opt
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named),func.func(tosa-to-linalg),func.func(tosa-to-tensor),func.func(tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -convert-elementwise-to-linalg
+            -arith-expand
+            -eliminate-empty-tensors
+            -empty-tensor-to-alloc-tensor
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -matmul-parallel-vectorization-optimize
+            -convert-linalg-to-affine-loops
+            -affine-loop-fusion
+            -lower-affine
+            -convert-vector-to-scf
+            -expand-strided-metadata
+            -lower-affine
+            -cse
+            -convert-vector-to-llvm
+            -memref-expand
+            -arith-expand
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -llvm-request-c-wrappers
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts |
+          ${BUDDY_SOURCE}/llvm/build/bin/mlir-translate -mlir-to-llvmir |
+          ${BUDDY_SOURCE}/llvm/build/bin/llvm-as |
+          ${BUDDY_SOURCE}/llvm/build/bin/llc -filetype=obj -relocation-model=pic -O2 -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_gpu.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
   COMMENT "Building NV subgraph0_gpu.o (host CPU, no OpenMP)"
-  VERBATIM)
-
-add_library(NvBERT STATIC subgraph0_gpu.o forward_gpu.o)
-set_target_properties(NvBERT PROPERTIES LINKER_LANGUAGE CXX)
-add_dependencies(NvBERT bert-model-build)
-
-add_executable(buddy-nv-bert-run ${MODEL_BERT_DIR}/main.cpp)
-add_dependencies(buddy-nv-bert-run NvBERT)
-target_include_directories(buddy-nv-bert-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
-target_link_directories(buddy-nv-bert-run PRIVATE ${NV_LLVM_LIBRARY_DIR} ${BUDDY_MLIR_DIR}/build/lib)
-target_link_libraries(buddy-nv-bert-run
-  NvBERT
-  NvHostCRunnerUtils
-  PNG::PNG
-  ${NV_BUDDY_LIB_DIP}
-  ${NV_MLIR_C_RUNNER_UTILS_LIB}
-  ${NV_MLIR_RUNNER_UTILS_LIB}
-  ${NV_MLIR_ASYNC_RUNTIME_LIB}
-  ${NV_MLIR_CUDA_RUNTIME_LIB}
-  dl
-  pthread
+  VERBATIM
 )
 
-add_custom_target(sync-nv-bert-deps
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/trace/cycle
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_BERT_DIR}/arg0.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_BERT_DIR}/arg1.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg1.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_BERT_DIR}/vocab.txt
-          ${CMAKE_CURRENT_BINARY_DIR}/vocab.txt
-  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
-          ${MODEL_BERT_DIR}/quant/out
-          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
-  DEPENDS
-          ${MODEL_BERT_DIR}/arg0.data
-          ${MODEL_BERT_DIR}/arg1.data
-          ${MODEL_BERT_DIR}/vocab.txt
-  COMMENT "Syncing NV bert runtime deps"
-  VERBATIM)
-add_dependencies(buddy-nv-bert-run sync-nv-bert-deps)
+add_library(bert-base-uncased-emotion-nv-model STATIC EXCLUDE_FROM_ALL subgraph0_gpu.o forward_gpu.o)
+set_target_properties(bert-base-uncased-emotion-nv-model PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+set_target_properties(bert-base-uncased-emotion-nv-model PROPERTIES LINKER_LANGUAGE CXX)
 
-if(DEFINED OUTPUT_BIN_DIR)
-  set(OUT_DIR ${OUTPUT_BIN_DIR}/nv/bert-base-uncased-emotion)
-  add_custom_command(TARGET buddy-nv-bert-run POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${OUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${OUT_DIR}/trace/cycle
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:buddy-nv-bert-run>
-            ${OUT_DIR}/buddy-nv-bert-run
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_BERT_DIR}/arg0.data
-            ${OUT_DIR}/arg0.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_BERT_DIR}/arg1.data
-            ${OUT_DIR}/arg1.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_BERT_DIR}/vocab.txt
-            ${OUT_DIR}/vocab.txt
-    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
-            ${MODEL_BERT_DIR}/quant/out
-            ${OUT_DIR}/quant/out
-    COMMENT "Copying NV bert executable and deps to output directory"
-    VERBATIM)
-endif()
+add_executable(buddy-nv-bert-run EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+set_target_properties(buddy-nv-bert-run PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
+add_dependencies(buddy-nv-bert-run bert-base-uncased-emotion-nv-model)
+target_include_directories(buddy-nv-bert-run PRIVATE ${BUDDY_SOURCE}/frontend/Interfaces
+                                                     ${MODEL_DIR}/bert-base-uncased-emotion
+)
+target_link_directories(buddy-nv-bert-run PRIVATE ${BUDDY_SOURCE}/llvm/build/lib ${BUDDY_SOURCE}/build/lib)
+target_link_libraries(buddy-nv-bert-run bert-base-uncased-emotion-nv-model nv-runtime
+                                                                           PNG::PNG
+                                                                           BuddyLibDIP
+                                                                           mlir_c_runner_utils
+                                                                           mlir_runner_utils
+                                                                           mlir_async_runtime
+                                                                           mlir_cuda_runtime
+                                                                           dl
+                                                                           pthread
+)
 
-add_custom_target(buddy-nv-bert-all-run DEPENDS buddy-nv-bert-run)
+add_custom_target(bert-base-uncased-emotion-model-build DEPENDS bert-base-uncased-emotion-nv-model)
+
+target_include_directories(buddy-nv-bert-run PRIVATE "${OUTPUT_DIR}")

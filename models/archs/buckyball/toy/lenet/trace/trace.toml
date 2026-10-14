@@ -2,58 +2,82 @@
 node = "convolution"
 id = 0
 tag = "convolution"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu"
 id = 1
 tag = "relu"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "getitem"
 id = 2
 tag = "getitem"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_1"
 id = 3
 tag = "convolution_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu_1"
 id = 4
 tag = "relu_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "getitem_2"
 id = 5
 tag = "getitem_2"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "view"
 id = 6
 tag = "view"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm"
 id = 7
 tag = "addmm"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu_2"
 id = 8
 tag = "relu_2"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_1"
 id = 9
 tag = "addmm_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "relu_3"
 id = 10
 tag = "relu_3"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_2"
 id = 11
 tag = "addmm_2"
+cycle = true
+tensor = false

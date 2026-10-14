@@ -62,4 +62,3 @@ alveo_u280_firesim_GemminiU280Config_no_nic:
     post_build_hook: null
     metasim_customruntimeconfig: null
     bit_builder_recipe: bit-builder-recipes/xilinx_alveo_u280.yaml
-    

@@ -12,8 +12,14 @@ def reorder(codes, scales):
     padded_rows = (rows + TILE_ROWS - 1) // TILE_ROWS * TILE_ROWS
     padded_k = (width + TILE_K - 1) // TILE_K * TILE_K
     codes = np.pad(codes, ((0, padded_rows - rows), (0, padded_k - width)))
-    scales = np.pad(scales, ((0, padded_rows - rows), (0, (padded_k - width) // 32)), constant_values=127)
+    scales = np.pad(
+        scales,
+        ((0, padded_rows - rows), (0, (padded_k - width) // 32)),
+        constant_values=127,
+    )
     # Each N/K tile stores its E4M3 code plane followed by its E8M0 scale plane.
     codes = matrix_tiles(codes, TILE_ROWS, TILE_K).reshape(-1, TILE_ROWS * TILE_K)
-    scales = matrix_tiles(scales, TILE_ROWS, TILE_K // 32).reshape(-1, TILE_ROWS * TILE_K // 32)
+    scales = matrix_tiles(scales, TILE_ROWS, TILE_K // 32).reshape(
+        -1, TILE_ROWS * TILE_K // 32
+    )
     return np.concatenate((codes, scales), axis=1).ravel()

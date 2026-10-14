@@ -8,26 +8,25 @@ from stack.compiler.package import pack
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--generated-dir", type=Path, required=True)
-    parser.add_argument("--model-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--rax-pack", type=Path, required=True)
     args = parser.parse_args()
-    source, output = args.generated_dir.resolve(), args.model_dir.resolve()
-    checkpoint = json.loads((source / "checkpoint.json").read_text())
-    metadata = json.loads((source / "thinker/kernels.json").read_text())
-    metadata["wave"] = json.loads((source / "wave/kernels.json").read_text())
-    metadata["talker"] = json.loads((source / "talker/kernels.json").read_text())
-    metadata["audio"] = json.loads((source / "audio/kernels.json").read_text())
-    metadata["vision"] = json.loads((source / "vision/kernels.json").read_text())
-    placements = json.loads((source / "weights/placements.json").read_text())
+    output = args.output_dir.resolve()
+    checkpoint = json.loads((output / "checkpoint.json").read_text())
+    metadata = json.loads((output / "thinker/kernels.json").read_text())
+    metadata["wave"] = json.loads((output / "wave/kernels.json").read_text())
+    metadata["talker"] = json.loads((output / "talker/kernels.json").read_text())
+    metadata["audio"] = json.loads((output / "audio/kernels.json").read_text())
+    metadata["vision"] = json.loads((output / "vision/kernels.json").read_text())
+    placements = json.loads((output / "weights/placements.json").read_text())
     placements.append(
-        json.loads((source / "weights/vision-placement.json").read_text())
+        json.loads((output / "weights/vision-placement.json").read_text())
     )
-    placements.append(json.loads((source / "weights/audio-placement.json").read_text()))
+    placements.append(json.loads((output / "weights/audio-placement.json").read_text()))
     placements.append(
-        json.loads((source / "weights/talker-placement.json").read_text())
+        json.loads((output / "weights/talker-placement.json").read_text())
     )
-    placements.append(json.loads((source / "weights/wave-placement.json").read_text()))
+    placements.append(json.loads((output / "weights/wave-placement.json").read_text()))
     for chip in metadata["system"]["chips"]:
         resident = sum(
             p["float_elements"] * 4 + p["weight_bytes"]
@@ -50,13 +49,9 @@ def main():
     AutoProcessor.from_pretrained(checkpoint["path"]).save_pretrained(tokenizer)
     AutoConfig.from_pretrained(checkpoint["path"]).save_pretrained(tokenizer)
     resources = ["model.json"]
-    for path in sorted((source / "weights").rglob("*")):
+    for path in sorted((output / "weights").rglob("*")):
         if path.is_file():
-            relative = path.relative_to(source)
-            target = output / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.unlink(missing_ok=True)
-            target.symlink_to(path)
+            relative = path.relative_to(output)
             resources.append(str(relative))
     resources.extend(
         str(path.relative_to(output))

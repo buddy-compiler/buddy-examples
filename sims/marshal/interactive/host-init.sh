@@ -12,7 +12,7 @@ cd $ROOT && source env.sh
 
 # echo "Building marshal workload"
 # cd $ROOT/models/build
-# make 
+# make
 
 cd $ROOT/models/bin
 rm -r $MARSHAL_DIR/overlay/root/* 2>/dev/null || true

@@ -26,7 +26,6 @@ struct BuckyballBallMapping {
 };
 
 struct BuckyballTargetConfig {
-  llvm::StringRef name;
   llvm::StringRef core;
   int64_t bankNum;
   int64_t bankWidthBits;
@@ -36,12 +35,9 @@ struct BuckyballTargetConfig {
   llvm::ArrayRef<llvm::StringRef> balls;
   llvm::ArrayRef<BuckyballBallMapping> ballMappings;
   llvm::ArrayRef<BuckyballIsaEntry> isa;
-  uint64_t signature;
 };
 
-llvm::StringRef getRequestedBuckyballTarget();
 const BuckyballTargetConfig &getBuckyballTarget();
-const BuckyballTargetConfig &getBuckyballTarget(llvm::StringRef name);
 int32_t getBuckyballFunct7(llvm::StringRef mnemonic);
 void requireBuckyballBall(llvm::StringRef ballName);
 const BuckyballBallMapping &getBuckyballBallMapping(llvm::StringRef ballName);

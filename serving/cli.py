@@ -29,10 +29,10 @@ def main():
         settings = tomllib.load(source)
     fields = {
         "inputs",
-        "core_index",
+        "thread_index",
         "timeout",
         "memory_mib",
-        "tile_indices",
+        "core_indices",
         "max_tokens",
         "max_audio_tokens",
         "threads",

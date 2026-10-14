@@ -2,28 +2,40 @@
 node = "embedding"
 id = 0
 tag = "embedding"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "embedding_1"
 id = 1
 tag = "embedding_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "mul_1"
 id = 2
 tag = "mul_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "pow_1"
 id = 3
 tag = "pow_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "mean"
 id = 4
 tag = "mean"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "add_1"
 id = 5
 tag = "add_1"
+cycle = true
+tensor = false

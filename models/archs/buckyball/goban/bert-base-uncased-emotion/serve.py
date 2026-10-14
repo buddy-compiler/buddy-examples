@@ -18,10 +18,19 @@ class Model:
         self.tokenizer = AutoTokenizer.from_pretrained(self.metadata["model"])
         self.pool = Pool(
             args.simulator.resolve(),
-            {"directory": str(package.directory), "program": str(package.program),
-             "metadata": str(package.metadata_path)},
-            args.log_dir.resolve(), args.tile_indices, args.record_io,
-            [() for _ in args.tile_indices], args.memory_mib, itrace=args.itrace, mtrace=args.mtrace, timeout=args.timeout,
+            {
+                "directory": str(package.directory),
+                "program": str(package.program),
+                "metadata": str(package.metadata_path),
+            },
+            args.log_dir.resolve(),
+            args.core_indices,
+            args.record_io,
+            [() for _ in args.core_indices],
+            args.memory_mib,
+            itrace=args.itrace,
+            mtrace=args.mtrace,
+            timeout=args.timeout,
         )
 
     def classify(self, text):
@@ -41,7 +50,12 @@ class Model:
         probabilities = torch.softmax(torch.from_numpy(logits), dim=-1).tolist()
         scores = dict(zip(self.metadata["labels"], probabilities, strict=True))
         label = max(scores, key=scores.__getitem__)
-        return {"text": text, "label": label, "probability": scores[label], "scores": scores}
+        return {
+            "text": text,
+            "label": label,
+            "probability": scores[label],
+            "scores": scores,
+        }
 
     def close(self):
         self.pool.close()

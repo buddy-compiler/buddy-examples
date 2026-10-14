@@ -2,28 +2,40 @@
 node = "embedding"
 id = 0
 tag = "text_encoder_embedding"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "embedding_1"
 id = 1
 tag = "text_encoder_embedding_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "add"
 id = 2
 tag = "text_encoder_add"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "rsqrt"
 id = 3
 tag = "text_encoder_rsqrt"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm"
 id = 4
 tag = "text_encoder_addmm"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_1"
 id = 5
 tag = "text_encoder_addmm_1"
+cycle = true
+tensor = false

@@ -198,8 +198,7 @@ int main(int argc, char **argv) {
   _mlir_ciface_forward(&output, &paramsContainer, &weightsContainer,
                        &letterbox.input);
   unsigned long end = read_counter();
-  std::cout << "Counter (" << counter_name() << ") " << counter_field() << ": "
-            << end - start << std::endl;
+  std::cout << "Counter: " << end - start << std::endl;
 
   const intptr_t *outSizes = output.getSizes();
   const intptr_t *outStrides = output.getStrides();

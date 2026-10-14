@@ -68,13 +68,13 @@ function begin_step
 {
   thisStepNum=$1;
   thisStepDesc=$2;
-  
+
   # Color codes
   local BLUE='\033[0;34m'
   local GREEN='\033[0;32m'
   local YELLOW='\033[1;33m'
-  local NC='\033[0m' 
-  
+  local NC='\033[0m'
+
   echo -e "${BLUE} ========================================================================="
   echo -e "${GREEN} ==== BUDDY-EXAMPLE SETUP STEP ${YELLOW}$thisStepNum${GREEN}: ${YELLOW}$thisStepDesc${GREEN} "
   echo -e "${BLUE} ========================================================================="
