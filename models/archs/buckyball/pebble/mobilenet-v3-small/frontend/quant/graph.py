@@ -18,10 +18,23 @@ from stack.compiler.frontend.quant import (
     quantize_bias,
 )
 
-# The depthwise convolutions of the first two blocks read inputs whose
-# channels span very different ranges: one INT8 scale for the tensor loses
-# most of the accuracy, so they stay in FP32.
-FP32 = ["features.1.block.0.0", "features.2.block.1.0"]
+# The convolutions that stay in FP32:
+# - the depthwise convolutions of the first two blocks read inputs whose
+#   channels span very different ranges: one INT8 scale for the tensor loses
+#   most of the accuracy;
+# - the expansion of block 2 and the depthwise convolution of block 3 would
+#   make the pebble core chain a 56x56 or 28x28 image from the convolution
+#   before into them, which does not fit its banks;
+# - the Linears of the classifier reduce 576 and 1024 inputs, more than one
+#   bank holds.
+FP32 = [
+    "features.1.block.0.0",
+    "features.2.block.1.0",
+    "features.2.block.0.0",
+    "features.3.block.1.0",
+    "classifier.0",
+    "classifier.3",
+]
 
 
 def parameter(graph, values, name, value):
