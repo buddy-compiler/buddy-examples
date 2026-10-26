@@ -31,11 +31,10 @@ uint32_t readBE32(std::ifstream &stream) {
 }
 
 using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
-                         MemRef<int8_t, 1> *, MemRef<float, 4> *);
+                         MemRef<float, 4> *);
 
 void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
-                   MemRef<float, 1> &parameters,
-                   MemRef<int8_t, 1> &quantizedWeights) {
+                   MemRef<float, 1> &parameters) {
   const auto directory =
       std::filesystem::path(config.datasetPath) / "MNIST/raw";
   std::ifstream images, labels;
@@ -62,7 +61,7 @@ void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
           (pixels[sample * 28 * 28 + i] / 255.0f) * 2.0f - 1.0f;
     // Each invocation returns an owned output descriptor, released here.
     MemRef<float, 2> output(std::vector<size_t>{1, 10}, false, 0);
-    forward(&output, &parameters, &quantizedWeights, &input);
+    forward(&output, &parameters, &input);
     const float *logits = output.getData();
     correct +=
         std::max_element(logits, logits + 10) - logits == expected[sample];
@@ -81,8 +80,7 @@ void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
 }
 
 void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
-                   MemRef<float, 1> &parameters,
-                   MemRef<int8_t, 1> &quantizedWeights) {
+                   MemRef<float, 1> &parameters) {
   // Preserve floating-point grayscale conversion; DIP_GRAYSCALE truncates it.
   dip::Image<float, 4> rgb(config.imagePath, dip::DIP_RGB);
   if (rgb.getWidth() != 28 || rgb.getHeight() != 28)
@@ -99,7 +97,7 @@ void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
   // The compiled function returns an owned memref descriptor.
   MemRef<float, 2> output(std::vector<size_t>{1, 10}, false, 0);
   const auto start = std::chrono::steady_clock::now();
-  forward(&output, &parameters, &quantizedWeights, &input);
+  forward(&output, &parameters, &input);
   const std::chrono::duration<double> elapsed =
       std::chrono::steady_clock::now() - start;
   const float *logits = output.getData();
@@ -139,18 +137,10 @@ public:
     weights.seekg(0);
     weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
 
-    weights.close();
-    weights.open(manifest.weightPaths.at(1), std::ios::binary | std::ios::ate);
-    const size_t weightBytes = weights.tellg();
-    MemRef<int8_t, 1> quantizedWeights(std::vector<size_t>{weightBytes});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(quantizedWeights.getData()),
-                 weightBytes);
-
     if (!config.datasetPath.empty())
-      evaluateMnist(config, forward, parameters, quantizedWeights);
+      evaluateMnist(config, forward, parameters);
     else
-      classifyImage(config, forward, parameters, quantizedWeights);
+      classifyImage(config, forward, parameters);
   }
 };
 

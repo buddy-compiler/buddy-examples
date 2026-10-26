@@ -1,23 +1,20 @@
-file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
-
 set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
 # ===----------------------------------------------------------------------===
-# Import AlexNet into MLIR and export its quantized model data.
+# Import the AlexNet graph and partition it.
 # ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/forward.mlir
+  OUTPUT ${OUTPUT_DIR}/01-import.txt
+         ${OUTPUT_DIR}/02-partitioned.txt
          ${OUTPUT_DIR}/subgraph0.mlir
+         ${OUTPUT_DIR}/forward.mlir
          ${OUTPUT_DIR}/arg0.data
-         ${OUTPUT_DIR}/arg1.data
   COMMAND ${PYTHON} buddy-pytorch-importer.py
-  DEPENDS ${COMPILER_FRONTEND_SOURCES}
-          ${RECIPE_FRONTEND_SOURCES}
-          buddy-pytorch-importer.py
-          ${MODEL_DIR}/alexnet/output/alexnet/model.pth
-          quant/quant.toml
+  DEPENDS buddy-pytorch-importer.py
           trace/trace.toml
+          ${MODEL_DIR}/alexnet/output/alexnet/model.pth
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing AlexNet"
   VERBATIM
 )
 
@@ -28,11 +25,11 @@ add_custom_command(
   OUTPUT forward.o
   BYPRODUCTS ${OUTPUT_DIR}/forward.ll
              ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/forward.mlir -buffer-deallocation-simplification -convert-linalg-to-loops -eliminate-empty-tensors -llvm-request-c-wrappers -convert-math-to-llvm -convert-math-to-libm -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-arith-to-llvm -expand-strided-metadata -finalize-memref-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/forward.mlir -buffer-deallocation-simplification -convert-linalg-to-loops -eliminate-empty-tensors -llvm-request-c-wrappers -convert-math-to-llvm -convert-math-to-libm -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -expand-strided-metadata -finalize-memref-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
   COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
-  DEPENDS "${OUTPUT_DIR}/forward.mlir"
+  DEPENDS ${OUTPUT_DIR}/forward.mlir
           ${DESIGN_TARGET_PLUGIN_toy}
           ${DESIGN_COMPILER}/bin/buddy-translate
           ${DESIGN_COMPILER}/bin/buddy-llc
@@ -41,27 +38,33 @@ add_custom_command(
 )
 
 # ===----------------------------------------------------------------------===
-# Lower the compute graphs to RISC-V objects and export intermediate MLIR.
+# Lower the compute graph and export intermediate MLIR.
+#
+# The toy core recognizes no operation yet: the whole FP32 graph takes the
+# software path, without -form-custom-ops and -convert-linalg-to-buckyball.
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0.o
   BYPRODUCTS ${OUTPUT_DIR}/subgraph0.ll
              ${OUTPUT_DIR}/subgraph0_linalg.mlir
-             ${OUTPUT_DIR}/subgraph0_bank_ssa.mlir
+             ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+             ${OUTPUT_DIR}/subgraph0_physical.mlir
              ${OUTPUT_DIR}/subgraph0_llvm.mlir
-  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
-  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_linalg.mlir -eliminate-empty-tensors -convert-elementwise-to-linalg -one-shot-bufferize=bufferize-function-boundaries -convert-linalg-to-gemmini-ball -lower-buckyball-to-bank-ssa -assign-physical-banks -o ${OUTPUT_DIR}/subgraph0_bank_ssa.mlir
-  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_bank_ssa.mlir -llvm-request-c-wrappers -convert-trace-to-llvm -lower-buckyball -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -buffer-deallocation-simplification -bufferization-lower-deallocations -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -finalize-memref-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0.mlir -allow-unregistered-dialect -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
+  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_linalg.mlir -allow-unregistered-dialect -lower-frontend -eliminate-empty-tensors -convert-elementwise-to-linalg -one-shot-bufferize=bufferize-function-boundaries -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -o ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_buckyball.mlir -convert-trace-to-llvm -assign-physical-banks -llvm-request-c-wrappers -o ${OUTPUT_DIR}/subgraph0_physical.mlir
+  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_physical.mlir -lower-buckyball -expand-strided-metadata -convert-linalg-to-loops -canonicalize -cse -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -convert-func-to-llvm -finalize-memref-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
   COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
-  DEPENDS "${OUTPUT_DIR}/subgraph0.mlir"
+  DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${DESIGN_TARGET_PLUGIN_toy}
           ${DESIGN_COMPILER}/bin/buddy-translate
           ${DESIGN_COMPILER}/bin/buddy-llc
   COMMENT "Building subgraph0.o"
   VERBATIM
 )
+
 # ===----------------------------------------------------------------------===
 # Link the model and runtime into a RISC-V shared library.
 # ===----------------------------------------------------------------------===
@@ -103,12 +106,11 @@ target_link_libraries(alexnet-buckyball-toy-runner
 #
 # Contents:
 # RISC-V model library (libalexnet-buckyball-toy-model.so),
-# RISC-V runner library (libalexnet-buckyball-toy-runner.so),
-# FP32 parameters (arg0.data), and
-# INT8 weights (arg1.data).
+# RISC-V runner library (libalexnet-buckyball-toy-runner.so), and
+# FP32 parameters (arg0.data).
 #
 # Output: output/alexnet.rax embeds these files alongside RHAL metadata
-# identifying the runner, model entry and parameter buffers.
+# identifying the runner, model entry and parameter buffer.
 # ===----------------------------------------------------------------------===
 configure_file(alexnet.rhal.mlir.in ${OUTPUT_DIR}/alexnet.rhal.mlir @ONLY)
 add_custom_command(
@@ -121,7 +123,6 @@ add_custom_command(
           alexnet-buckyball-toy-model
           alexnet-buckyball-toy-runner
           ${OUTPUT_DIR}/arg0.data
-          ${OUTPUT_DIR}/arg1.data
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Packaging alexnet for buckyball-toy"
   VERBATIM
