@@ -1,0 +1,301 @@
+execution = "int8"
+
+# Per-channel INT8 weights and offline per-tensor activation quantization.
+
+[weights."conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer1.0.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer1.0.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer1.1.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer1.1.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer2.0.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer2.0.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer2.0.downsample.0.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer2.1.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer2.1.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer3.0.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer3.0.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer3.0.downsample.0.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer3.1.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer3.1.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer4.0.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer4.0.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer4.0.downsample.0.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer4.1.conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."layer4.1.conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."fc.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[activations.convolution]
+module = "conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_1]
+module = "layer1.0.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_2]
+module = "layer1.0.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_3]
+module = "layer1.1.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_4]
+module = "layer1.1.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_5]
+module = "layer2.0.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_6]
+module = "layer2.0.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_7]
+module = "layer2.0.downsample.0"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_8]
+module = "layer2.1.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_9]
+module = "layer2.1.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_10]
+module = "layer3.0.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_11]
+module = "layer3.0.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_12]
+module = "layer3.0.downsample.0"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_13]
+module = "layer3.1.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_14]
+module = "layer3.1.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_15]
+module = "layer4.0.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_16]
+module = "layer4.0.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_17]
+module = "layer4.0.downsample.0"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_18]
+module = "layer4.1.conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_19]
+module = "layer4.1.conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm]
+module = "fc"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[calibration]
+samples = 1024
+batch_size = 64

@@ -1,2 +1,9106 @@
-[trace]
-node = []
+[[trace.node]]
+node = "cast_arg3_1"
+id = 1
+tag = "bert-base-uncased-emotion.cast_arg3_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "dequantized_arg3_1"
+id = 2
+tag = "bert-base-uncased-emotion.dequantized_arg3_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "embedding"
+id = 3
+tag = "bert-base-uncased-emotion.embedding"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cast_arg4_1"
+id = 5
+tag = "bert-base-uncased-emotion.cast_arg4_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "dequantized_arg4_1"
+id = 6
+tag = "bert-base-uncased-emotion.dequantized_arg4_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "embedding_1"
+id = 7
+tag = "bert-base-uncased-emotion.embedding_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add"
+id = 8
+tag = "bert-base-uncased-emotion.add"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cast_arg5_1"
+id = 10
+tag = "bert-base-uncased-emotion.cast_arg5_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "dequantized_arg5_1"
+id = 11
+tag = "bert-base-uncased-emotion.dequantized_arg5_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "embedding_2"
+id = 12
+tag = "bert-base-uncased-emotion.embedding_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_1"
+id = 13
+tag = "bert-base-uncased-emotion.add_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm"
+id = 14
+tag = "bert-base-uncased-emotion.native_layer_norm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone"
+id = 15
+tag = "bert-base-uncased-emotion.clone"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "unsqueeze"
+id = 16
+tag = "bert-base-uncased-emotion.unsqueeze"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "unsqueeze_1"
+id = 17
+tag = "bert-base-uncased-emotion.unsqueeze_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_to_copy"
+id = 18
+tag = "bert-base-uncased-emotion._to_copy"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "rsub"
+id = 19
+tag = "bert-base-uncased-emotion.rsub"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul"
+id = 20
+tag = "bert-base-uncased-emotion.mul"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 21
+tag = "bert-base-uncased-emotion.view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_abs"
+id = 22
+tag = "bert-base-uncased-emotion.addmm_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_max"
+id = 23
+tag = "bert-base-uncased-emotion.addmm_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_raw_scale"
+id = 24
+tag = "bert-base-uncased-emotion.addmm_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_zero"
+id = 25
+tag = "bert-base-uncased-emotion.addmm_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_scale"
+id = 26
+tag = "bert-base-uncased-emotion.addmm_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_normalized"
+id = 27
+tag = "bert-base-uncased-emotion.addmm_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_round"
+id = 28
+tag = "bert-base-uncased-emotion.addmm_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_clamp"
+id = 29
+tag = "bert-base-uncased-emotion.addmm_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_int8"
+id = 30
+tag = "bert-base-uncased-emotion.addmm_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm"
+id = 33
+tag = "bert-base-uncased-emotion.addmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_1"
+id = 34
+tag = "bert-base-uncased-emotion.view_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_2"
+id = 35
+tag = "bert-base-uncased-emotion.view_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose"
+id = 36
+tag = "bert-base-uncased-emotion.transpose"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_3"
+id = 37
+tag = "bert-base-uncased-emotion.view_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_abs"
+id = 38
+tag = "bert-base-uncased-emotion.addmm_1_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_max"
+id = 39
+tag = "bert-base-uncased-emotion.addmm_1_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_raw_scale"
+id = 40
+tag = "bert-base-uncased-emotion.addmm_1_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_zero"
+id = 41
+tag = "bert-base-uncased-emotion.addmm_1_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_scale"
+id = 42
+tag = "bert-base-uncased-emotion.addmm_1_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_normalized"
+id = 43
+tag = "bert-base-uncased-emotion.addmm_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_round"
+id = 44
+tag = "bert-base-uncased-emotion.addmm_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_clamp"
+id = 45
+tag = "bert-base-uncased-emotion.addmm_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_int8"
+id = 46
+tag = "bert-base-uncased-emotion.addmm_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1"
+id = 49
+tag = "bert-base-uncased-emotion.addmm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_4"
+id = 50
+tag = "bert-base-uncased-emotion.view_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_5"
+id = 51
+tag = "bert-base-uncased-emotion.view_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_1"
+id = 52
+tag = "bert-base-uncased-emotion.transpose_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_6"
+id = 53
+tag = "bert-base-uncased-emotion.view_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_abs"
+id = 54
+tag = "bert-base-uncased-emotion.addmm_2_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_max"
+id = 55
+tag = "bert-base-uncased-emotion.addmm_2_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_raw_scale"
+id = 56
+tag = "bert-base-uncased-emotion.addmm_2_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_zero"
+id = 57
+tag = "bert-base-uncased-emotion.addmm_2_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_scale"
+id = 58
+tag = "bert-base-uncased-emotion.addmm_2_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_normalized"
+id = 59
+tag = "bert-base-uncased-emotion.addmm_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_round"
+id = 60
+tag = "bert-base-uncased-emotion.addmm_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_clamp"
+id = 61
+tag = "bert-base-uncased-emotion.addmm_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_int8"
+id = 62
+tag = "bert-base-uncased-emotion.addmm_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2"
+id = 65
+tag = "bert-base-uncased-emotion.addmm_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_7"
+id = 66
+tag = "bert-base-uncased-emotion.view_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_8"
+id = 67
+tag = "bert-base-uncased-emotion.view_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_2"
+id = 68
+tag = "bert-base-uncased-emotion.transpose_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_3"
+id = 69
+tag = "bert-base-uncased-emotion.transpose_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand"
+id = 70
+tag = "bert-base-uncased-emotion.expand"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_9"
+id = 71
+tag = "bert-base-uncased-emotion.view_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_1"
+id = 72
+tag = "bert-base-uncased-emotion.expand_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_10"
+id = 73
+tag = "bert-base-uncased-emotion.view_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm"
+id = 74
+tag = "bert-base-uncased-emotion.bmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_11"
+id = 75
+tag = "bert-base-uncased-emotion.view_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_1"
+id = 76
+tag = "bert-base-uncased-emotion.mul_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_2"
+id = 77
+tag = "bert-base-uncased-emotion.add_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax"
+id = 78
+tag = "bert-base-uncased-emotion._softmax"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_1"
+id = 79
+tag = "bert-base-uncased-emotion.clone_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_2"
+id = 80
+tag = "bert-base-uncased-emotion.expand_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_12"
+id = 81
+tag = "bert-base-uncased-emotion.view_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_3"
+id = 82
+tag = "bert-base-uncased-emotion.expand_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_13"
+id = 83
+tag = "bert-base-uncased-emotion.view_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_1"
+id = 84
+tag = "bert-base-uncased-emotion.bmm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_14"
+id = 85
+tag = "bert-base-uncased-emotion.view_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_4"
+id = 86
+tag = "bert-base-uncased-emotion.transpose_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_2"
+id = 87
+tag = "bert-base-uncased-emotion.clone_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_15"
+id = 88
+tag = "bert-base-uncased-emotion.view_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_16"
+id = 89
+tag = "bert-base-uncased-emotion.view_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_abs"
+id = 90
+tag = "bert-base-uncased-emotion.addmm_3_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_max"
+id = 91
+tag = "bert-base-uncased-emotion.addmm_3_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_raw_scale"
+id = 92
+tag = "bert-base-uncased-emotion.addmm_3_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_zero"
+id = 93
+tag = "bert-base-uncased-emotion.addmm_3_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_scale"
+id = 94
+tag = "bert-base-uncased-emotion.addmm_3_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_normalized"
+id = 95
+tag = "bert-base-uncased-emotion.addmm_3_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_round"
+id = 96
+tag = "bert-base-uncased-emotion.addmm_3_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_clamp"
+id = 97
+tag = "bert-base-uncased-emotion.addmm_3_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3_activation_int8"
+id = 98
+tag = "bert-base-uncased-emotion.addmm_3_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_3"
+id = 101
+tag = "bert-base-uncased-emotion.addmm_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_17"
+id = 102
+tag = "bert-base-uncased-emotion.view_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_3"
+id = 103
+tag = "bert-base-uncased-emotion.clone_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_3"
+id = 104
+tag = "bert-base-uncased-emotion.add_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_1"
+id = 105
+tag = "bert-base-uncased-emotion.native_layer_norm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_18"
+id = 106
+tag = "bert-base-uncased-emotion.view_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_abs"
+id = 107
+tag = "bert-base-uncased-emotion.addmm_4_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_max"
+id = 108
+tag = "bert-base-uncased-emotion.addmm_4_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_raw_scale"
+id = 109
+tag = "bert-base-uncased-emotion.addmm_4_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_zero"
+id = 110
+tag = "bert-base-uncased-emotion.addmm_4_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_scale"
+id = 111
+tag = "bert-base-uncased-emotion.addmm_4_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_normalized"
+id = 112
+tag = "bert-base-uncased-emotion.addmm_4_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_round"
+id = 113
+tag = "bert-base-uncased-emotion.addmm_4_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_clamp"
+id = 114
+tag = "bert-base-uncased-emotion.addmm_4_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4_activation_int8"
+id = 115
+tag = "bert-base-uncased-emotion.addmm_4_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_4"
+id = 118
+tag = "bert-base-uncased-emotion.addmm_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_19"
+id = 119
+tag = "bert-base-uncased-emotion.view_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu"
+id = 120
+tag = "bert-base-uncased-emotion.gelu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_20"
+id = 121
+tag = "bert-base-uncased-emotion.view_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_abs"
+id = 122
+tag = "bert-base-uncased-emotion.addmm_5_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_max"
+id = 123
+tag = "bert-base-uncased-emotion.addmm_5_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_raw_scale"
+id = 124
+tag = "bert-base-uncased-emotion.addmm_5_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_zero"
+id = 125
+tag = "bert-base-uncased-emotion.addmm_5_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_scale"
+id = 126
+tag = "bert-base-uncased-emotion.addmm_5_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_normalized"
+id = 127
+tag = "bert-base-uncased-emotion.addmm_5_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_round"
+id = 128
+tag = "bert-base-uncased-emotion.addmm_5_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_clamp"
+id = 129
+tag = "bert-base-uncased-emotion.addmm_5_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5_activation_int8"
+id = 130
+tag = "bert-base-uncased-emotion.addmm_5_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_5"
+id = 133
+tag = "bert-base-uncased-emotion.addmm_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_21"
+id = 134
+tag = "bert-base-uncased-emotion.view_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_4"
+id = 135
+tag = "bert-base-uncased-emotion.clone_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_4"
+id = 136
+tag = "bert-base-uncased-emotion.add_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_2"
+id = 137
+tag = "bert-base-uncased-emotion.native_layer_norm_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_22"
+id = 138
+tag = "bert-base-uncased-emotion.view_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_abs"
+id = 139
+tag = "bert-base-uncased-emotion.addmm_6_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_max"
+id = 140
+tag = "bert-base-uncased-emotion.addmm_6_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_raw_scale"
+id = 141
+tag = "bert-base-uncased-emotion.addmm_6_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_zero"
+id = 142
+tag = "bert-base-uncased-emotion.addmm_6_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_scale"
+id = 143
+tag = "bert-base-uncased-emotion.addmm_6_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_normalized"
+id = 144
+tag = "bert-base-uncased-emotion.addmm_6_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_round"
+id = 145
+tag = "bert-base-uncased-emotion.addmm_6_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_clamp"
+id = 146
+tag = "bert-base-uncased-emotion.addmm_6_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6_activation_int8"
+id = 147
+tag = "bert-base-uncased-emotion.addmm_6_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_6"
+id = 150
+tag = "bert-base-uncased-emotion.addmm_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_23"
+id = 151
+tag = "bert-base-uncased-emotion.view_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_24"
+id = 152
+tag = "bert-base-uncased-emotion.view_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_5"
+id = 153
+tag = "bert-base-uncased-emotion.transpose_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_25"
+id = 154
+tag = "bert-base-uncased-emotion.view_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_abs"
+id = 155
+tag = "bert-base-uncased-emotion.addmm_7_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_max"
+id = 156
+tag = "bert-base-uncased-emotion.addmm_7_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_raw_scale"
+id = 157
+tag = "bert-base-uncased-emotion.addmm_7_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_zero"
+id = 158
+tag = "bert-base-uncased-emotion.addmm_7_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_scale"
+id = 159
+tag = "bert-base-uncased-emotion.addmm_7_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_normalized"
+id = 160
+tag = "bert-base-uncased-emotion.addmm_7_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_round"
+id = 161
+tag = "bert-base-uncased-emotion.addmm_7_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_clamp"
+id = 162
+tag = "bert-base-uncased-emotion.addmm_7_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7_activation_int8"
+id = 163
+tag = "bert-base-uncased-emotion.addmm_7_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_7"
+id = 166
+tag = "bert-base-uncased-emotion.addmm_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_26"
+id = 167
+tag = "bert-base-uncased-emotion.view_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_27"
+id = 168
+tag = "bert-base-uncased-emotion.view_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_6"
+id = 169
+tag = "bert-base-uncased-emotion.transpose_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_28"
+id = 170
+tag = "bert-base-uncased-emotion.view_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_abs"
+id = 171
+tag = "bert-base-uncased-emotion.addmm_8_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_max"
+id = 172
+tag = "bert-base-uncased-emotion.addmm_8_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_raw_scale"
+id = 173
+tag = "bert-base-uncased-emotion.addmm_8_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_zero"
+id = 174
+tag = "bert-base-uncased-emotion.addmm_8_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_scale"
+id = 175
+tag = "bert-base-uncased-emotion.addmm_8_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_normalized"
+id = 176
+tag = "bert-base-uncased-emotion.addmm_8_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_round"
+id = 177
+tag = "bert-base-uncased-emotion.addmm_8_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_clamp"
+id = 178
+tag = "bert-base-uncased-emotion.addmm_8_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8_activation_int8"
+id = 179
+tag = "bert-base-uncased-emotion.addmm_8_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_8"
+id = 182
+tag = "bert-base-uncased-emotion.addmm_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_29"
+id = 183
+tag = "bert-base-uncased-emotion.view_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_30"
+id = 184
+tag = "bert-base-uncased-emotion.view_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_7"
+id = 185
+tag = "bert-base-uncased-emotion.transpose_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_8"
+id = 186
+tag = "bert-base-uncased-emotion.transpose_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_4"
+id = 187
+tag = "bert-base-uncased-emotion.expand_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_31"
+id = 188
+tag = "bert-base-uncased-emotion.view_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_5"
+id = 189
+tag = "bert-base-uncased-emotion.expand_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_32"
+id = 190
+tag = "bert-base-uncased-emotion.view_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_2"
+id = 191
+tag = "bert-base-uncased-emotion.bmm_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_33"
+id = 192
+tag = "bert-base-uncased-emotion.view_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_2"
+id = 193
+tag = "bert-base-uncased-emotion.mul_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_5"
+id = 194
+tag = "bert-base-uncased-emotion.add_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_1"
+id = 195
+tag = "bert-base-uncased-emotion._softmax_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_5"
+id = 196
+tag = "bert-base-uncased-emotion.clone_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_6"
+id = 197
+tag = "bert-base-uncased-emotion.expand_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_34"
+id = 198
+tag = "bert-base-uncased-emotion.view_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_7"
+id = 199
+tag = "bert-base-uncased-emotion.expand_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_35"
+id = 200
+tag = "bert-base-uncased-emotion.view_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_3"
+id = 201
+tag = "bert-base-uncased-emotion.bmm_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_36"
+id = 202
+tag = "bert-base-uncased-emotion.view_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_9"
+id = 203
+tag = "bert-base-uncased-emotion.transpose_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_6"
+id = 204
+tag = "bert-base-uncased-emotion.clone_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_37"
+id = 205
+tag = "bert-base-uncased-emotion.view_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_38"
+id = 206
+tag = "bert-base-uncased-emotion.view_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_abs"
+id = 207
+tag = "bert-base-uncased-emotion.addmm_9_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_max"
+id = 208
+tag = "bert-base-uncased-emotion.addmm_9_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_raw_scale"
+id = 209
+tag = "bert-base-uncased-emotion.addmm_9_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_zero"
+id = 210
+tag = "bert-base-uncased-emotion.addmm_9_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_scale"
+id = 211
+tag = "bert-base-uncased-emotion.addmm_9_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_normalized"
+id = 212
+tag = "bert-base-uncased-emotion.addmm_9_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_round"
+id = 213
+tag = "bert-base-uncased-emotion.addmm_9_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_clamp"
+id = 214
+tag = "bert-base-uncased-emotion.addmm_9_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9_activation_int8"
+id = 215
+tag = "bert-base-uncased-emotion.addmm_9_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_9"
+id = 218
+tag = "bert-base-uncased-emotion.addmm_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_39"
+id = 219
+tag = "bert-base-uncased-emotion.view_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_7"
+id = 220
+tag = "bert-base-uncased-emotion.clone_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_6"
+id = 221
+tag = "bert-base-uncased-emotion.add_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_3"
+id = 222
+tag = "bert-base-uncased-emotion.native_layer_norm_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_40"
+id = 223
+tag = "bert-base-uncased-emotion.view_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_abs"
+id = 224
+tag = "bert-base-uncased-emotion.addmm_10_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_max"
+id = 225
+tag = "bert-base-uncased-emotion.addmm_10_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_raw_scale"
+id = 226
+tag = "bert-base-uncased-emotion.addmm_10_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_zero"
+id = 227
+tag = "bert-base-uncased-emotion.addmm_10_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_scale"
+id = 228
+tag = "bert-base-uncased-emotion.addmm_10_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_normalized"
+id = 229
+tag = "bert-base-uncased-emotion.addmm_10_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_round"
+id = 230
+tag = "bert-base-uncased-emotion.addmm_10_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_clamp"
+id = 231
+tag = "bert-base-uncased-emotion.addmm_10_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10_activation_int8"
+id = 232
+tag = "bert-base-uncased-emotion.addmm_10_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_10"
+id = 235
+tag = "bert-base-uncased-emotion.addmm_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_41"
+id = 236
+tag = "bert-base-uncased-emotion.view_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_1"
+id = 237
+tag = "bert-base-uncased-emotion.gelu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_42"
+id = 238
+tag = "bert-base-uncased-emotion.view_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_abs"
+id = 239
+tag = "bert-base-uncased-emotion.addmm_11_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_max"
+id = 240
+tag = "bert-base-uncased-emotion.addmm_11_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_raw_scale"
+id = 241
+tag = "bert-base-uncased-emotion.addmm_11_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_zero"
+id = 242
+tag = "bert-base-uncased-emotion.addmm_11_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_scale"
+id = 243
+tag = "bert-base-uncased-emotion.addmm_11_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_normalized"
+id = 244
+tag = "bert-base-uncased-emotion.addmm_11_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_round"
+id = 245
+tag = "bert-base-uncased-emotion.addmm_11_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_clamp"
+id = 246
+tag = "bert-base-uncased-emotion.addmm_11_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11_activation_int8"
+id = 247
+tag = "bert-base-uncased-emotion.addmm_11_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_11"
+id = 250
+tag = "bert-base-uncased-emotion.addmm_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_43"
+id = 251
+tag = "bert-base-uncased-emotion.view_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_8"
+id = 252
+tag = "bert-base-uncased-emotion.clone_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_7"
+id = 253
+tag = "bert-base-uncased-emotion.add_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_4"
+id = 254
+tag = "bert-base-uncased-emotion.native_layer_norm_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_44"
+id = 255
+tag = "bert-base-uncased-emotion.view_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_abs"
+id = 256
+tag = "bert-base-uncased-emotion.addmm_12_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_max"
+id = 257
+tag = "bert-base-uncased-emotion.addmm_12_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_raw_scale"
+id = 258
+tag = "bert-base-uncased-emotion.addmm_12_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_zero"
+id = 259
+tag = "bert-base-uncased-emotion.addmm_12_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_scale"
+id = 260
+tag = "bert-base-uncased-emotion.addmm_12_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_normalized"
+id = 261
+tag = "bert-base-uncased-emotion.addmm_12_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_round"
+id = 262
+tag = "bert-base-uncased-emotion.addmm_12_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_clamp"
+id = 263
+tag = "bert-base-uncased-emotion.addmm_12_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12_activation_int8"
+id = 264
+tag = "bert-base-uncased-emotion.addmm_12_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_12"
+id = 267
+tag = "bert-base-uncased-emotion.addmm_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_45"
+id = 268
+tag = "bert-base-uncased-emotion.view_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_46"
+id = 269
+tag = "bert-base-uncased-emotion.view_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_10"
+id = 270
+tag = "bert-base-uncased-emotion.transpose_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_47"
+id = 271
+tag = "bert-base-uncased-emotion.view_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_abs"
+id = 272
+tag = "bert-base-uncased-emotion.addmm_13_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_max"
+id = 273
+tag = "bert-base-uncased-emotion.addmm_13_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_raw_scale"
+id = 274
+tag = "bert-base-uncased-emotion.addmm_13_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_zero"
+id = 275
+tag = "bert-base-uncased-emotion.addmm_13_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_scale"
+id = 276
+tag = "bert-base-uncased-emotion.addmm_13_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_normalized"
+id = 277
+tag = "bert-base-uncased-emotion.addmm_13_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_round"
+id = 278
+tag = "bert-base-uncased-emotion.addmm_13_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_clamp"
+id = 279
+tag = "bert-base-uncased-emotion.addmm_13_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13_activation_int8"
+id = 280
+tag = "bert-base-uncased-emotion.addmm_13_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_13"
+id = 283
+tag = "bert-base-uncased-emotion.addmm_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_48"
+id = 284
+tag = "bert-base-uncased-emotion.view_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_49"
+id = 285
+tag = "bert-base-uncased-emotion.view_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_11"
+id = 286
+tag = "bert-base-uncased-emotion.transpose_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_50"
+id = 287
+tag = "bert-base-uncased-emotion.view_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_abs"
+id = 288
+tag = "bert-base-uncased-emotion.addmm_14_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_max"
+id = 289
+tag = "bert-base-uncased-emotion.addmm_14_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_raw_scale"
+id = 290
+tag = "bert-base-uncased-emotion.addmm_14_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_zero"
+id = 291
+tag = "bert-base-uncased-emotion.addmm_14_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_scale"
+id = 292
+tag = "bert-base-uncased-emotion.addmm_14_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_normalized"
+id = 293
+tag = "bert-base-uncased-emotion.addmm_14_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_round"
+id = 294
+tag = "bert-base-uncased-emotion.addmm_14_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_clamp"
+id = 295
+tag = "bert-base-uncased-emotion.addmm_14_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14_activation_int8"
+id = 296
+tag = "bert-base-uncased-emotion.addmm_14_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_14"
+id = 299
+tag = "bert-base-uncased-emotion.addmm_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_51"
+id = 300
+tag = "bert-base-uncased-emotion.view_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_52"
+id = 301
+tag = "bert-base-uncased-emotion.view_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_12"
+id = 302
+tag = "bert-base-uncased-emotion.transpose_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_13"
+id = 303
+tag = "bert-base-uncased-emotion.transpose_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_8"
+id = 304
+tag = "bert-base-uncased-emotion.expand_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_53"
+id = 305
+tag = "bert-base-uncased-emotion.view_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_9"
+id = 306
+tag = "bert-base-uncased-emotion.expand_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_54"
+id = 307
+tag = "bert-base-uncased-emotion.view_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_4"
+id = 308
+tag = "bert-base-uncased-emotion.bmm_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_55"
+id = 309
+tag = "bert-base-uncased-emotion.view_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_3"
+id = 310
+tag = "bert-base-uncased-emotion.mul_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_8"
+id = 311
+tag = "bert-base-uncased-emotion.add_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_2"
+id = 312
+tag = "bert-base-uncased-emotion._softmax_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_9"
+id = 313
+tag = "bert-base-uncased-emotion.clone_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_10"
+id = 314
+tag = "bert-base-uncased-emotion.expand_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_56"
+id = 315
+tag = "bert-base-uncased-emotion.view_56"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_11"
+id = 316
+tag = "bert-base-uncased-emotion.expand_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_57"
+id = 317
+tag = "bert-base-uncased-emotion.view_57"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_5"
+id = 318
+tag = "bert-base-uncased-emotion.bmm_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_58"
+id = 319
+tag = "bert-base-uncased-emotion.view_58"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_14"
+id = 320
+tag = "bert-base-uncased-emotion.transpose_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_10"
+id = 321
+tag = "bert-base-uncased-emotion.clone_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_59"
+id = 322
+tag = "bert-base-uncased-emotion.view_59"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_60"
+id = 323
+tag = "bert-base-uncased-emotion.view_60"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_abs"
+id = 324
+tag = "bert-base-uncased-emotion.addmm_15_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_max"
+id = 325
+tag = "bert-base-uncased-emotion.addmm_15_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_raw_scale"
+id = 326
+tag = "bert-base-uncased-emotion.addmm_15_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_zero"
+id = 327
+tag = "bert-base-uncased-emotion.addmm_15_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_scale"
+id = 328
+tag = "bert-base-uncased-emotion.addmm_15_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_normalized"
+id = 329
+tag = "bert-base-uncased-emotion.addmm_15_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_round"
+id = 330
+tag = "bert-base-uncased-emotion.addmm_15_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_clamp"
+id = 331
+tag = "bert-base-uncased-emotion.addmm_15_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15_activation_int8"
+id = 332
+tag = "bert-base-uncased-emotion.addmm_15_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_15"
+id = 335
+tag = "bert-base-uncased-emotion.addmm_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_61"
+id = 336
+tag = "bert-base-uncased-emotion.view_61"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_11"
+id = 337
+tag = "bert-base-uncased-emotion.clone_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_9"
+id = 338
+tag = "bert-base-uncased-emotion.add_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_5"
+id = 339
+tag = "bert-base-uncased-emotion.native_layer_norm_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_62"
+id = 340
+tag = "bert-base-uncased-emotion.view_62"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_abs"
+id = 341
+tag = "bert-base-uncased-emotion.addmm_16_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_max"
+id = 342
+tag = "bert-base-uncased-emotion.addmm_16_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_raw_scale"
+id = 343
+tag = "bert-base-uncased-emotion.addmm_16_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_zero"
+id = 344
+tag = "bert-base-uncased-emotion.addmm_16_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_scale"
+id = 345
+tag = "bert-base-uncased-emotion.addmm_16_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_normalized"
+id = 346
+tag = "bert-base-uncased-emotion.addmm_16_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_round"
+id = 347
+tag = "bert-base-uncased-emotion.addmm_16_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_clamp"
+id = 348
+tag = "bert-base-uncased-emotion.addmm_16_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16_activation_int8"
+id = 349
+tag = "bert-base-uncased-emotion.addmm_16_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_16"
+id = 352
+tag = "bert-base-uncased-emotion.addmm_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_63"
+id = 353
+tag = "bert-base-uncased-emotion.view_63"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_2"
+id = 354
+tag = "bert-base-uncased-emotion.gelu_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_64"
+id = 355
+tag = "bert-base-uncased-emotion.view_64"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_abs"
+id = 356
+tag = "bert-base-uncased-emotion.addmm_17_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_max"
+id = 357
+tag = "bert-base-uncased-emotion.addmm_17_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_raw_scale"
+id = 358
+tag = "bert-base-uncased-emotion.addmm_17_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_zero"
+id = 359
+tag = "bert-base-uncased-emotion.addmm_17_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_scale"
+id = 360
+tag = "bert-base-uncased-emotion.addmm_17_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_normalized"
+id = 361
+tag = "bert-base-uncased-emotion.addmm_17_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_round"
+id = 362
+tag = "bert-base-uncased-emotion.addmm_17_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_clamp"
+id = 363
+tag = "bert-base-uncased-emotion.addmm_17_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17_activation_int8"
+id = 364
+tag = "bert-base-uncased-emotion.addmm_17_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_17"
+id = 367
+tag = "bert-base-uncased-emotion.addmm_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_65"
+id = 368
+tag = "bert-base-uncased-emotion.view_65"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_12"
+id = 369
+tag = "bert-base-uncased-emotion.clone_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_10"
+id = 370
+tag = "bert-base-uncased-emotion.add_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_6"
+id = 371
+tag = "bert-base-uncased-emotion.native_layer_norm_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_66"
+id = 372
+tag = "bert-base-uncased-emotion.view_66"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_abs"
+id = 373
+tag = "bert-base-uncased-emotion.addmm_18_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_max"
+id = 374
+tag = "bert-base-uncased-emotion.addmm_18_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_raw_scale"
+id = 375
+tag = "bert-base-uncased-emotion.addmm_18_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_zero"
+id = 376
+tag = "bert-base-uncased-emotion.addmm_18_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_scale"
+id = 377
+tag = "bert-base-uncased-emotion.addmm_18_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_normalized"
+id = 378
+tag = "bert-base-uncased-emotion.addmm_18_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_round"
+id = 379
+tag = "bert-base-uncased-emotion.addmm_18_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_clamp"
+id = 380
+tag = "bert-base-uncased-emotion.addmm_18_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18_activation_int8"
+id = 381
+tag = "bert-base-uncased-emotion.addmm_18_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_18"
+id = 384
+tag = "bert-base-uncased-emotion.addmm_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_67"
+id = 385
+tag = "bert-base-uncased-emotion.view_67"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_68"
+id = 386
+tag = "bert-base-uncased-emotion.view_68"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_15"
+id = 387
+tag = "bert-base-uncased-emotion.transpose_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_69"
+id = 388
+tag = "bert-base-uncased-emotion.view_69"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_abs"
+id = 389
+tag = "bert-base-uncased-emotion.addmm_19_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_max"
+id = 390
+tag = "bert-base-uncased-emotion.addmm_19_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_raw_scale"
+id = 391
+tag = "bert-base-uncased-emotion.addmm_19_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_zero"
+id = 392
+tag = "bert-base-uncased-emotion.addmm_19_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_scale"
+id = 393
+tag = "bert-base-uncased-emotion.addmm_19_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_normalized"
+id = 394
+tag = "bert-base-uncased-emotion.addmm_19_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_round"
+id = 395
+tag = "bert-base-uncased-emotion.addmm_19_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_clamp"
+id = 396
+tag = "bert-base-uncased-emotion.addmm_19_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19_activation_int8"
+id = 397
+tag = "bert-base-uncased-emotion.addmm_19_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_19"
+id = 400
+tag = "bert-base-uncased-emotion.addmm_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_70"
+id = 401
+tag = "bert-base-uncased-emotion.view_70"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_71"
+id = 402
+tag = "bert-base-uncased-emotion.view_71"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_16"
+id = 403
+tag = "bert-base-uncased-emotion.transpose_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_72"
+id = 404
+tag = "bert-base-uncased-emotion.view_72"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_abs"
+id = 405
+tag = "bert-base-uncased-emotion.addmm_20_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_max"
+id = 406
+tag = "bert-base-uncased-emotion.addmm_20_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_raw_scale"
+id = 407
+tag = "bert-base-uncased-emotion.addmm_20_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_zero"
+id = 408
+tag = "bert-base-uncased-emotion.addmm_20_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_scale"
+id = 409
+tag = "bert-base-uncased-emotion.addmm_20_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_normalized"
+id = 410
+tag = "bert-base-uncased-emotion.addmm_20_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_round"
+id = 411
+tag = "bert-base-uncased-emotion.addmm_20_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_clamp"
+id = 412
+tag = "bert-base-uncased-emotion.addmm_20_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20_activation_int8"
+id = 413
+tag = "bert-base-uncased-emotion.addmm_20_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_20"
+id = 416
+tag = "bert-base-uncased-emotion.addmm_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_73"
+id = 417
+tag = "bert-base-uncased-emotion.view_73"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_74"
+id = 418
+tag = "bert-base-uncased-emotion.view_74"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_17"
+id = 419
+tag = "bert-base-uncased-emotion.transpose_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_18"
+id = 420
+tag = "bert-base-uncased-emotion.transpose_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_12"
+id = 421
+tag = "bert-base-uncased-emotion.expand_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_75"
+id = 422
+tag = "bert-base-uncased-emotion.view_75"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_13"
+id = 423
+tag = "bert-base-uncased-emotion.expand_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_76"
+id = 424
+tag = "bert-base-uncased-emotion.view_76"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_6"
+id = 425
+tag = "bert-base-uncased-emotion.bmm_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_77"
+id = 426
+tag = "bert-base-uncased-emotion.view_77"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_4"
+id = 427
+tag = "bert-base-uncased-emotion.mul_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_11"
+id = 428
+tag = "bert-base-uncased-emotion.add_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_3"
+id = 429
+tag = "bert-base-uncased-emotion._softmax_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_13"
+id = 430
+tag = "bert-base-uncased-emotion.clone_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_14"
+id = 431
+tag = "bert-base-uncased-emotion.expand_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_78"
+id = 432
+tag = "bert-base-uncased-emotion.view_78"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_15"
+id = 433
+tag = "bert-base-uncased-emotion.expand_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_79"
+id = 434
+tag = "bert-base-uncased-emotion.view_79"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_7"
+id = 435
+tag = "bert-base-uncased-emotion.bmm_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_80"
+id = 436
+tag = "bert-base-uncased-emotion.view_80"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_19"
+id = 437
+tag = "bert-base-uncased-emotion.transpose_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_14"
+id = 438
+tag = "bert-base-uncased-emotion.clone_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_81"
+id = 439
+tag = "bert-base-uncased-emotion.view_81"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_82"
+id = 440
+tag = "bert-base-uncased-emotion.view_82"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_abs"
+id = 441
+tag = "bert-base-uncased-emotion.addmm_21_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_max"
+id = 442
+tag = "bert-base-uncased-emotion.addmm_21_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_raw_scale"
+id = 443
+tag = "bert-base-uncased-emotion.addmm_21_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_zero"
+id = 444
+tag = "bert-base-uncased-emotion.addmm_21_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_scale"
+id = 445
+tag = "bert-base-uncased-emotion.addmm_21_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_normalized"
+id = 446
+tag = "bert-base-uncased-emotion.addmm_21_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_round"
+id = 447
+tag = "bert-base-uncased-emotion.addmm_21_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_clamp"
+id = 448
+tag = "bert-base-uncased-emotion.addmm_21_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21_activation_int8"
+id = 449
+tag = "bert-base-uncased-emotion.addmm_21_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_21"
+id = 452
+tag = "bert-base-uncased-emotion.addmm_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_83"
+id = 453
+tag = "bert-base-uncased-emotion.view_83"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_15"
+id = 454
+tag = "bert-base-uncased-emotion.clone_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_12"
+id = 455
+tag = "bert-base-uncased-emotion.add_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_7"
+id = 456
+tag = "bert-base-uncased-emotion.native_layer_norm_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_84"
+id = 457
+tag = "bert-base-uncased-emotion.view_84"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_abs"
+id = 458
+tag = "bert-base-uncased-emotion.addmm_22_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_max"
+id = 459
+tag = "bert-base-uncased-emotion.addmm_22_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_raw_scale"
+id = 460
+tag = "bert-base-uncased-emotion.addmm_22_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_zero"
+id = 461
+tag = "bert-base-uncased-emotion.addmm_22_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_scale"
+id = 462
+tag = "bert-base-uncased-emotion.addmm_22_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_normalized"
+id = 463
+tag = "bert-base-uncased-emotion.addmm_22_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_round"
+id = 464
+tag = "bert-base-uncased-emotion.addmm_22_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_clamp"
+id = 465
+tag = "bert-base-uncased-emotion.addmm_22_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22_activation_int8"
+id = 466
+tag = "bert-base-uncased-emotion.addmm_22_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_22"
+id = 469
+tag = "bert-base-uncased-emotion.addmm_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_85"
+id = 470
+tag = "bert-base-uncased-emotion.view_85"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_3"
+id = 471
+tag = "bert-base-uncased-emotion.gelu_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_86"
+id = 472
+tag = "bert-base-uncased-emotion.view_86"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_abs"
+id = 473
+tag = "bert-base-uncased-emotion.addmm_23_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_max"
+id = 474
+tag = "bert-base-uncased-emotion.addmm_23_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_raw_scale"
+id = 475
+tag = "bert-base-uncased-emotion.addmm_23_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_zero"
+id = 476
+tag = "bert-base-uncased-emotion.addmm_23_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_scale"
+id = 477
+tag = "bert-base-uncased-emotion.addmm_23_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_normalized"
+id = 478
+tag = "bert-base-uncased-emotion.addmm_23_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_round"
+id = 479
+tag = "bert-base-uncased-emotion.addmm_23_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_clamp"
+id = 480
+tag = "bert-base-uncased-emotion.addmm_23_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23_activation_int8"
+id = 481
+tag = "bert-base-uncased-emotion.addmm_23_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_23"
+id = 484
+tag = "bert-base-uncased-emotion.addmm_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_87"
+id = 485
+tag = "bert-base-uncased-emotion.view_87"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_16"
+id = 486
+tag = "bert-base-uncased-emotion.clone_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_13"
+id = 487
+tag = "bert-base-uncased-emotion.add_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_8"
+id = 488
+tag = "bert-base-uncased-emotion.native_layer_norm_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_88"
+id = 489
+tag = "bert-base-uncased-emotion.view_88"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_abs"
+id = 490
+tag = "bert-base-uncased-emotion.addmm_24_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_max"
+id = 491
+tag = "bert-base-uncased-emotion.addmm_24_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_raw_scale"
+id = 492
+tag = "bert-base-uncased-emotion.addmm_24_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_zero"
+id = 493
+tag = "bert-base-uncased-emotion.addmm_24_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_scale"
+id = 494
+tag = "bert-base-uncased-emotion.addmm_24_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_normalized"
+id = 495
+tag = "bert-base-uncased-emotion.addmm_24_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_round"
+id = 496
+tag = "bert-base-uncased-emotion.addmm_24_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_clamp"
+id = 497
+tag = "bert-base-uncased-emotion.addmm_24_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24_activation_int8"
+id = 498
+tag = "bert-base-uncased-emotion.addmm_24_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_24"
+id = 501
+tag = "bert-base-uncased-emotion.addmm_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_89"
+id = 502
+tag = "bert-base-uncased-emotion.view_89"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_90"
+id = 503
+tag = "bert-base-uncased-emotion.view_90"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_20"
+id = 504
+tag = "bert-base-uncased-emotion.transpose_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_91"
+id = 505
+tag = "bert-base-uncased-emotion.view_91"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_abs"
+id = 506
+tag = "bert-base-uncased-emotion.addmm_25_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_max"
+id = 507
+tag = "bert-base-uncased-emotion.addmm_25_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_raw_scale"
+id = 508
+tag = "bert-base-uncased-emotion.addmm_25_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_zero"
+id = 509
+tag = "bert-base-uncased-emotion.addmm_25_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_scale"
+id = 510
+tag = "bert-base-uncased-emotion.addmm_25_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_normalized"
+id = 511
+tag = "bert-base-uncased-emotion.addmm_25_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_round"
+id = 512
+tag = "bert-base-uncased-emotion.addmm_25_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_clamp"
+id = 513
+tag = "bert-base-uncased-emotion.addmm_25_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25_activation_int8"
+id = 514
+tag = "bert-base-uncased-emotion.addmm_25_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_25"
+id = 517
+tag = "bert-base-uncased-emotion.addmm_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_92"
+id = 518
+tag = "bert-base-uncased-emotion.view_92"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_93"
+id = 519
+tag = "bert-base-uncased-emotion.view_93"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_21"
+id = 520
+tag = "bert-base-uncased-emotion.transpose_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_94"
+id = 521
+tag = "bert-base-uncased-emotion.view_94"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_abs"
+id = 522
+tag = "bert-base-uncased-emotion.addmm_26_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_max"
+id = 523
+tag = "bert-base-uncased-emotion.addmm_26_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_raw_scale"
+id = 524
+tag = "bert-base-uncased-emotion.addmm_26_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_zero"
+id = 525
+tag = "bert-base-uncased-emotion.addmm_26_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_scale"
+id = 526
+tag = "bert-base-uncased-emotion.addmm_26_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_normalized"
+id = 527
+tag = "bert-base-uncased-emotion.addmm_26_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_round"
+id = 528
+tag = "bert-base-uncased-emotion.addmm_26_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_clamp"
+id = 529
+tag = "bert-base-uncased-emotion.addmm_26_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26_activation_int8"
+id = 530
+tag = "bert-base-uncased-emotion.addmm_26_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_26"
+id = 533
+tag = "bert-base-uncased-emotion.addmm_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_95"
+id = 534
+tag = "bert-base-uncased-emotion.view_95"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_96"
+id = 535
+tag = "bert-base-uncased-emotion.view_96"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_22"
+id = 536
+tag = "bert-base-uncased-emotion.transpose_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_23"
+id = 537
+tag = "bert-base-uncased-emotion.transpose_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_16"
+id = 538
+tag = "bert-base-uncased-emotion.expand_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_97"
+id = 539
+tag = "bert-base-uncased-emotion.view_97"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_17"
+id = 540
+tag = "bert-base-uncased-emotion.expand_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_98"
+id = 541
+tag = "bert-base-uncased-emotion.view_98"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_8"
+id = 542
+tag = "bert-base-uncased-emotion.bmm_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_99"
+id = 543
+tag = "bert-base-uncased-emotion.view_99"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_5"
+id = 544
+tag = "bert-base-uncased-emotion.mul_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_14"
+id = 545
+tag = "bert-base-uncased-emotion.add_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_4"
+id = 546
+tag = "bert-base-uncased-emotion._softmax_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_17"
+id = 547
+tag = "bert-base-uncased-emotion.clone_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_18"
+id = 548
+tag = "bert-base-uncased-emotion.expand_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_100"
+id = 549
+tag = "bert-base-uncased-emotion.view_100"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_19"
+id = 550
+tag = "bert-base-uncased-emotion.expand_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_101"
+id = 551
+tag = "bert-base-uncased-emotion.view_101"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_9"
+id = 552
+tag = "bert-base-uncased-emotion.bmm_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_102"
+id = 553
+tag = "bert-base-uncased-emotion.view_102"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_24"
+id = 554
+tag = "bert-base-uncased-emotion.transpose_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_18"
+id = 555
+tag = "bert-base-uncased-emotion.clone_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_103"
+id = 556
+tag = "bert-base-uncased-emotion.view_103"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_104"
+id = 557
+tag = "bert-base-uncased-emotion.view_104"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_abs"
+id = 558
+tag = "bert-base-uncased-emotion.addmm_27_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_max"
+id = 559
+tag = "bert-base-uncased-emotion.addmm_27_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_raw_scale"
+id = 560
+tag = "bert-base-uncased-emotion.addmm_27_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_zero"
+id = 561
+tag = "bert-base-uncased-emotion.addmm_27_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_scale"
+id = 562
+tag = "bert-base-uncased-emotion.addmm_27_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_normalized"
+id = 563
+tag = "bert-base-uncased-emotion.addmm_27_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_round"
+id = 564
+tag = "bert-base-uncased-emotion.addmm_27_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_clamp"
+id = 565
+tag = "bert-base-uncased-emotion.addmm_27_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27_activation_int8"
+id = 566
+tag = "bert-base-uncased-emotion.addmm_27_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_27"
+id = 569
+tag = "bert-base-uncased-emotion.addmm_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_105"
+id = 570
+tag = "bert-base-uncased-emotion.view_105"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_19"
+id = 571
+tag = "bert-base-uncased-emotion.clone_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_15"
+id = 572
+tag = "bert-base-uncased-emotion.add_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_9"
+id = 573
+tag = "bert-base-uncased-emotion.native_layer_norm_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_106"
+id = 574
+tag = "bert-base-uncased-emotion.view_106"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_abs"
+id = 575
+tag = "bert-base-uncased-emotion.addmm_28_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_max"
+id = 576
+tag = "bert-base-uncased-emotion.addmm_28_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_raw_scale"
+id = 577
+tag = "bert-base-uncased-emotion.addmm_28_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_zero"
+id = 578
+tag = "bert-base-uncased-emotion.addmm_28_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_scale"
+id = 579
+tag = "bert-base-uncased-emotion.addmm_28_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_normalized"
+id = 580
+tag = "bert-base-uncased-emotion.addmm_28_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_round"
+id = 581
+tag = "bert-base-uncased-emotion.addmm_28_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_clamp"
+id = 582
+tag = "bert-base-uncased-emotion.addmm_28_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28_activation_int8"
+id = 583
+tag = "bert-base-uncased-emotion.addmm_28_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_28"
+id = 586
+tag = "bert-base-uncased-emotion.addmm_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_107"
+id = 587
+tag = "bert-base-uncased-emotion.view_107"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_4"
+id = 588
+tag = "bert-base-uncased-emotion.gelu_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_108"
+id = 589
+tag = "bert-base-uncased-emotion.view_108"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_abs"
+id = 590
+tag = "bert-base-uncased-emotion.addmm_29_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_max"
+id = 591
+tag = "bert-base-uncased-emotion.addmm_29_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_raw_scale"
+id = 592
+tag = "bert-base-uncased-emotion.addmm_29_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_zero"
+id = 593
+tag = "bert-base-uncased-emotion.addmm_29_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_scale"
+id = 594
+tag = "bert-base-uncased-emotion.addmm_29_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_normalized"
+id = 595
+tag = "bert-base-uncased-emotion.addmm_29_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_round"
+id = 596
+tag = "bert-base-uncased-emotion.addmm_29_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_clamp"
+id = 597
+tag = "bert-base-uncased-emotion.addmm_29_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29_activation_int8"
+id = 598
+tag = "bert-base-uncased-emotion.addmm_29_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_29"
+id = 601
+tag = "bert-base-uncased-emotion.addmm_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_109"
+id = 602
+tag = "bert-base-uncased-emotion.view_109"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_20"
+id = 603
+tag = "bert-base-uncased-emotion.clone_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_16"
+id = 604
+tag = "bert-base-uncased-emotion.add_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_10"
+id = 605
+tag = "bert-base-uncased-emotion.native_layer_norm_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_110"
+id = 606
+tag = "bert-base-uncased-emotion.view_110"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_abs"
+id = 607
+tag = "bert-base-uncased-emotion.addmm_30_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_max"
+id = 608
+tag = "bert-base-uncased-emotion.addmm_30_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_raw_scale"
+id = 609
+tag = "bert-base-uncased-emotion.addmm_30_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_zero"
+id = 610
+tag = "bert-base-uncased-emotion.addmm_30_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_scale"
+id = 611
+tag = "bert-base-uncased-emotion.addmm_30_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_normalized"
+id = 612
+tag = "bert-base-uncased-emotion.addmm_30_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_round"
+id = 613
+tag = "bert-base-uncased-emotion.addmm_30_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_clamp"
+id = 614
+tag = "bert-base-uncased-emotion.addmm_30_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30_activation_int8"
+id = 615
+tag = "bert-base-uncased-emotion.addmm_30_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_30"
+id = 618
+tag = "bert-base-uncased-emotion.addmm_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_111"
+id = 619
+tag = "bert-base-uncased-emotion.view_111"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_112"
+id = 620
+tag = "bert-base-uncased-emotion.view_112"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_25"
+id = 621
+tag = "bert-base-uncased-emotion.transpose_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_113"
+id = 622
+tag = "bert-base-uncased-emotion.view_113"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_abs"
+id = 623
+tag = "bert-base-uncased-emotion.addmm_31_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_max"
+id = 624
+tag = "bert-base-uncased-emotion.addmm_31_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_raw_scale"
+id = 625
+tag = "bert-base-uncased-emotion.addmm_31_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_zero"
+id = 626
+tag = "bert-base-uncased-emotion.addmm_31_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_scale"
+id = 627
+tag = "bert-base-uncased-emotion.addmm_31_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_normalized"
+id = 628
+tag = "bert-base-uncased-emotion.addmm_31_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_round"
+id = 629
+tag = "bert-base-uncased-emotion.addmm_31_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_clamp"
+id = 630
+tag = "bert-base-uncased-emotion.addmm_31_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31_activation_int8"
+id = 631
+tag = "bert-base-uncased-emotion.addmm_31_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_31"
+id = 634
+tag = "bert-base-uncased-emotion.addmm_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_114"
+id = 635
+tag = "bert-base-uncased-emotion.view_114"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_115"
+id = 636
+tag = "bert-base-uncased-emotion.view_115"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_26"
+id = 637
+tag = "bert-base-uncased-emotion.transpose_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_116"
+id = 638
+tag = "bert-base-uncased-emotion.view_116"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_abs"
+id = 639
+tag = "bert-base-uncased-emotion.addmm_32_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_max"
+id = 640
+tag = "bert-base-uncased-emotion.addmm_32_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_raw_scale"
+id = 641
+tag = "bert-base-uncased-emotion.addmm_32_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_zero"
+id = 642
+tag = "bert-base-uncased-emotion.addmm_32_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_scale"
+id = 643
+tag = "bert-base-uncased-emotion.addmm_32_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_normalized"
+id = 644
+tag = "bert-base-uncased-emotion.addmm_32_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_round"
+id = 645
+tag = "bert-base-uncased-emotion.addmm_32_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_clamp"
+id = 646
+tag = "bert-base-uncased-emotion.addmm_32_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32_activation_int8"
+id = 647
+tag = "bert-base-uncased-emotion.addmm_32_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_32"
+id = 650
+tag = "bert-base-uncased-emotion.addmm_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_117"
+id = 651
+tag = "bert-base-uncased-emotion.view_117"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_118"
+id = 652
+tag = "bert-base-uncased-emotion.view_118"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_27"
+id = 653
+tag = "bert-base-uncased-emotion.transpose_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_28"
+id = 654
+tag = "bert-base-uncased-emotion.transpose_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_20"
+id = 655
+tag = "bert-base-uncased-emotion.expand_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_119"
+id = 656
+tag = "bert-base-uncased-emotion.view_119"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_21"
+id = 657
+tag = "bert-base-uncased-emotion.expand_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_120"
+id = 658
+tag = "bert-base-uncased-emotion.view_120"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_10"
+id = 659
+tag = "bert-base-uncased-emotion.bmm_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_121"
+id = 660
+tag = "bert-base-uncased-emotion.view_121"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_6"
+id = 661
+tag = "bert-base-uncased-emotion.mul_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_17"
+id = 662
+tag = "bert-base-uncased-emotion.add_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_5"
+id = 663
+tag = "bert-base-uncased-emotion._softmax_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_21"
+id = 664
+tag = "bert-base-uncased-emotion.clone_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_22"
+id = 665
+tag = "bert-base-uncased-emotion.expand_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_122"
+id = 666
+tag = "bert-base-uncased-emotion.view_122"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_23"
+id = 667
+tag = "bert-base-uncased-emotion.expand_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_123"
+id = 668
+tag = "bert-base-uncased-emotion.view_123"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_11"
+id = 669
+tag = "bert-base-uncased-emotion.bmm_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_124"
+id = 670
+tag = "bert-base-uncased-emotion.view_124"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_29"
+id = 671
+tag = "bert-base-uncased-emotion.transpose_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_22"
+id = 672
+tag = "bert-base-uncased-emotion.clone_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_125"
+id = 673
+tag = "bert-base-uncased-emotion.view_125"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_126"
+id = 674
+tag = "bert-base-uncased-emotion.view_126"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_abs"
+id = 675
+tag = "bert-base-uncased-emotion.addmm_33_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_max"
+id = 676
+tag = "bert-base-uncased-emotion.addmm_33_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_raw_scale"
+id = 677
+tag = "bert-base-uncased-emotion.addmm_33_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_zero"
+id = 678
+tag = "bert-base-uncased-emotion.addmm_33_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_scale"
+id = 679
+tag = "bert-base-uncased-emotion.addmm_33_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_normalized"
+id = 680
+tag = "bert-base-uncased-emotion.addmm_33_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_round"
+id = 681
+tag = "bert-base-uncased-emotion.addmm_33_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_clamp"
+id = 682
+tag = "bert-base-uncased-emotion.addmm_33_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33_activation_int8"
+id = 683
+tag = "bert-base-uncased-emotion.addmm_33_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_33"
+id = 686
+tag = "bert-base-uncased-emotion.addmm_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_127"
+id = 687
+tag = "bert-base-uncased-emotion.view_127"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_23"
+id = 688
+tag = "bert-base-uncased-emotion.clone_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_18"
+id = 689
+tag = "bert-base-uncased-emotion.add_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_11"
+id = 690
+tag = "bert-base-uncased-emotion.native_layer_norm_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_128"
+id = 691
+tag = "bert-base-uncased-emotion.view_128"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_abs"
+id = 692
+tag = "bert-base-uncased-emotion.addmm_34_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_max"
+id = 693
+tag = "bert-base-uncased-emotion.addmm_34_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_raw_scale"
+id = 694
+tag = "bert-base-uncased-emotion.addmm_34_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_zero"
+id = 695
+tag = "bert-base-uncased-emotion.addmm_34_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_scale"
+id = 696
+tag = "bert-base-uncased-emotion.addmm_34_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_normalized"
+id = 697
+tag = "bert-base-uncased-emotion.addmm_34_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_round"
+id = 698
+tag = "bert-base-uncased-emotion.addmm_34_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_clamp"
+id = 699
+tag = "bert-base-uncased-emotion.addmm_34_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34_activation_int8"
+id = 700
+tag = "bert-base-uncased-emotion.addmm_34_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_34"
+id = 703
+tag = "bert-base-uncased-emotion.addmm_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_129"
+id = 704
+tag = "bert-base-uncased-emotion.view_129"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_5"
+id = 705
+tag = "bert-base-uncased-emotion.gelu_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_130"
+id = 706
+tag = "bert-base-uncased-emotion.view_130"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_abs"
+id = 707
+tag = "bert-base-uncased-emotion.addmm_35_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_max"
+id = 708
+tag = "bert-base-uncased-emotion.addmm_35_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_raw_scale"
+id = 709
+tag = "bert-base-uncased-emotion.addmm_35_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_zero"
+id = 710
+tag = "bert-base-uncased-emotion.addmm_35_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_scale"
+id = 711
+tag = "bert-base-uncased-emotion.addmm_35_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_normalized"
+id = 712
+tag = "bert-base-uncased-emotion.addmm_35_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_round"
+id = 713
+tag = "bert-base-uncased-emotion.addmm_35_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_clamp"
+id = 714
+tag = "bert-base-uncased-emotion.addmm_35_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35_activation_int8"
+id = 715
+tag = "bert-base-uncased-emotion.addmm_35_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_35"
+id = 718
+tag = "bert-base-uncased-emotion.addmm_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_131"
+id = 719
+tag = "bert-base-uncased-emotion.view_131"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_24"
+id = 720
+tag = "bert-base-uncased-emotion.clone_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_19"
+id = 721
+tag = "bert-base-uncased-emotion.add_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_12"
+id = 722
+tag = "bert-base-uncased-emotion.native_layer_norm_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_132"
+id = 723
+tag = "bert-base-uncased-emotion.view_132"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_abs"
+id = 724
+tag = "bert-base-uncased-emotion.addmm_36_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_max"
+id = 725
+tag = "bert-base-uncased-emotion.addmm_36_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_raw_scale"
+id = 726
+tag = "bert-base-uncased-emotion.addmm_36_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_zero"
+id = 727
+tag = "bert-base-uncased-emotion.addmm_36_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_scale"
+id = 728
+tag = "bert-base-uncased-emotion.addmm_36_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_normalized"
+id = 729
+tag = "bert-base-uncased-emotion.addmm_36_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_round"
+id = 730
+tag = "bert-base-uncased-emotion.addmm_36_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_clamp"
+id = 731
+tag = "bert-base-uncased-emotion.addmm_36_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36_activation_int8"
+id = 732
+tag = "bert-base-uncased-emotion.addmm_36_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_36"
+id = 735
+tag = "bert-base-uncased-emotion.addmm_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_133"
+id = 736
+tag = "bert-base-uncased-emotion.view_133"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_134"
+id = 737
+tag = "bert-base-uncased-emotion.view_134"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_30"
+id = 738
+tag = "bert-base-uncased-emotion.transpose_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_135"
+id = 739
+tag = "bert-base-uncased-emotion.view_135"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_abs"
+id = 740
+tag = "bert-base-uncased-emotion.addmm_37_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_max"
+id = 741
+tag = "bert-base-uncased-emotion.addmm_37_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_raw_scale"
+id = 742
+tag = "bert-base-uncased-emotion.addmm_37_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_zero"
+id = 743
+tag = "bert-base-uncased-emotion.addmm_37_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_scale"
+id = 744
+tag = "bert-base-uncased-emotion.addmm_37_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_normalized"
+id = 745
+tag = "bert-base-uncased-emotion.addmm_37_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_round"
+id = 746
+tag = "bert-base-uncased-emotion.addmm_37_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_clamp"
+id = 747
+tag = "bert-base-uncased-emotion.addmm_37_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37_activation_int8"
+id = 748
+tag = "bert-base-uncased-emotion.addmm_37_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_37"
+id = 751
+tag = "bert-base-uncased-emotion.addmm_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_136"
+id = 752
+tag = "bert-base-uncased-emotion.view_136"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_137"
+id = 753
+tag = "bert-base-uncased-emotion.view_137"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_31"
+id = 754
+tag = "bert-base-uncased-emotion.transpose_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_138"
+id = 755
+tag = "bert-base-uncased-emotion.view_138"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_abs"
+id = 756
+tag = "bert-base-uncased-emotion.addmm_38_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_max"
+id = 757
+tag = "bert-base-uncased-emotion.addmm_38_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_raw_scale"
+id = 758
+tag = "bert-base-uncased-emotion.addmm_38_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_zero"
+id = 759
+tag = "bert-base-uncased-emotion.addmm_38_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_scale"
+id = 760
+tag = "bert-base-uncased-emotion.addmm_38_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_normalized"
+id = 761
+tag = "bert-base-uncased-emotion.addmm_38_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_round"
+id = 762
+tag = "bert-base-uncased-emotion.addmm_38_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_clamp"
+id = 763
+tag = "bert-base-uncased-emotion.addmm_38_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38_activation_int8"
+id = 764
+tag = "bert-base-uncased-emotion.addmm_38_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_38"
+id = 767
+tag = "bert-base-uncased-emotion.addmm_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_139"
+id = 768
+tag = "bert-base-uncased-emotion.view_139"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_140"
+id = 769
+tag = "bert-base-uncased-emotion.view_140"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_32"
+id = 770
+tag = "bert-base-uncased-emotion.transpose_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_33"
+id = 771
+tag = "bert-base-uncased-emotion.transpose_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_24"
+id = 772
+tag = "bert-base-uncased-emotion.expand_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_141"
+id = 773
+tag = "bert-base-uncased-emotion.view_141"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_25"
+id = 774
+tag = "bert-base-uncased-emotion.expand_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_142"
+id = 775
+tag = "bert-base-uncased-emotion.view_142"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_12"
+id = 776
+tag = "bert-base-uncased-emotion.bmm_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_143"
+id = 777
+tag = "bert-base-uncased-emotion.view_143"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_7"
+id = 778
+tag = "bert-base-uncased-emotion.mul_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_20"
+id = 779
+tag = "bert-base-uncased-emotion.add_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_6"
+id = 780
+tag = "bert-base-uncased-emotion._softmax_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_25"
+id = 781
+tag = "bert-base-uncased-emotion.clone_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_26"
+id = 782
+tag = "bert-base-uncased-emotion.expand_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_144"
+id = 783
+tag = "bert-base-uncased-emotion.view_144"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_27"
+id = 784
+tag = "bert-base-uncased-emotion.expand_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_145"
+id = 785
+tag = "bert-base-uncased-emotion.view_145"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_13"
+id = 786
+tag = "bert-base-uncased-emotion.bmm_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_146"
+id = 787
+tag = "bert-base-uncased-emotion.view_146"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_34"
+id = 788
+tag = "bert-base-uncased-emotion.transpose_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_26"
+id = 789
+tag = "bert-base-uncased-emotion.clone_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_147"
+id = 790
+tag = "bert-base-uncased-emotion.view_147"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_148"
+id = 791
+tag = "bert-base-uncased-emotion.view_148"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_abs"
+id = 792
+tag = "bert-base-uncased-emotion.addmm_39_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_max"
+id = 793
+tag = "bert-base-uncased-emotion.addmm_39_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_raw_scale"
+id = 794
+tag = "bert-base-uncased-emotion.addmm_39_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_zero"
+id = 795
+tag = "bert-base-uncased-emotion.addmm_39_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_scale"
+id = 796
+tag = "bert-base-uncased-emotion.addmm_39_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_normalized"
+id = 797
+tag = "bert-base-uncased-emotion.addmm_39_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_round"
+id = 798
+tag = "bert-base-uncased-emotion.addmm_39_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_clamp"
+id = 799
+tag = "bert-base-uncased-emotion.addmm_39_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39_activation_int8"
+id = 800
+tag = "bert-base-uncased-emotion.addmm_39_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_39"
+id = 803
+tag = "bert-base-uncased-emotion.addmm_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_149"
+id = 804
+tag = "bert-base-uncased-emotion.view_149"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_27"
+id = 805
+tag = "bert-base-uncased-emotion.clone_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_21"
+id = 806
+tag = "bert-base-uncased-emotion.add_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_13"
+id = 807
+tag = "bert-base-uncased-emotion.native_layer_norm_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_150"
+id = 808
+tag = "bert-base-uncased-emotion.view_150"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_abs"
+id = 809
+tag = "bert-base-uncased-emotion.addmm_40_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_max"
+id = 810
+tag = "bert-base-uncased-emotion.addmm_40_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_raw_scale"
+id = 811
+tag = "bert-base-uncased-emotion.addmm_40_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_zero"
+id = 812
+tag = "bert-base-uncased-emotion.addmm_40_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_scale"
+id = 813
+tag = "bert-base-uncased-emotion.addmm_40_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_normalized"
+id = 814
+tag = "bert-base-uncased-emotion.addmm_40_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_round"
+id = 815
+tag = "bert-base-uncased-emotion.addmm_40_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_clamp"
+id = 816
+tag = "bert-base-uncased-emotion.addmm_40_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40_activation_int8"
+id = 817
+tag = "bert-base-uncased-emotion.addmm_40_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_40"
+id = 820
+tag = "bert-base-uncased-emotion.addmm_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_151"
+id = 821
+tag = "bert-base-uncased-emotion.view_151"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_6"
+id = 822
+tag = "bert-base-uncased-emotion.gelu_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_152"
+id = 823
+tag = "bert-base-uncased-emotion.view_152"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_abs"
+id = 824
+tag = "bert-base-uncased-emotion.addmm_41_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_max"
+id = 825
+tag = "bert-base-uncased-emotion.addmm_41_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_raw_scale"
+id = 826
+tag = "bert-base-uncased-emotion.addmm_41_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_zero"
+id = 827
+tag = "bert-base-uncased-emotion.addmm_41_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_scale"
+id = 828
+tag = "bert-base-uncased-emotion.addmm_41_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_normalized"
+id = 829
+tag = "bert-base-uncased-emotion.addmm_41_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_round"
+id = 830
+tag = "bert-base-uncased-emotion.addmm_41_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_clamp"
+id = 831
+tag = "bert-base-uncased-emotion.addmm_41_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41_activation_int8"
+id = 832
+tag = "bert-base-uncased-emotion.addmm_41_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_41"
+id = 835
+tag = "bert-base-uncased-emotion.addmm_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_153"
+id = 836
+tag = "bert-base-uncased-emotion.view_153"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_28"
+id = 837
+tag = "bert-base-uncased-emotion.clone_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_22"
+id = 838
+tag = "bert-base-uncased-emotion.add_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_14"
+id = 839
+tag = "bert-base-uncased-emotion.native_layer_norm_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_154"
+id = 840
+tag = "bert-base-uncased-emotion.view_154"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_abs"
+id = 841
+tag = "bert-base-uncased-emotion.addmm_42_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_max"
+id = 842
+tag = "bert-base-uncased-emotion.addmm_42_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_raw_scale"
+id = 843
+tag = "bert-base-uncased-emotion.addmm_42_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_zero"
+id = 844
+tag = "bert-base-uncased-emotion.addmm_42_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_scale"
+id = 845
+tag = "bert-base-uncased-emotion.addmm_42_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_normalized"
+id = 846
+tag = "bert-base-uncased-emotion.addmm_42_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_round"
+id = 847
+tag = "bert-base-uncased-emotion.addmm_42_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_clamp"
+id = 848
+tag = "bert-base-uncased-emotion.addmm_42_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42_activation_int8"
+id = 849
+tag = "bert-base-uncased-emotion.addmm_42_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_42"
+id = 852
+tag = "bert-base-uncased-emotion.addmm_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_155"
+id = 853
+tag = "bert-base-uncased-emotion.view_155"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_156"
+id = 854
+tag = "bert-base-uncased-emotion.view_156"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_35"
+id = 855
+tag = "bert-base-uncased-emotion.transpose_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_157"
+id = 856
+tag = "bert-base-uncased-emotion.view_157"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_abs"
+id = 857
+tag = "bert-base-uncased-emotion.addmm_43_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_max"
+id = 858
+tag = "bert-base-uncased-emotion.addmm_43_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_raw_scale"
+id = 859
+tag = "bert-base-uncased-emotion.addmm_43_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_zero"
+id = 860
+tag = "bert-base-uncased-emotion.addmm_43_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_scale"
+id = 861
+tag = "bert-base-uncased-emotion.addmm_43_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_normalized"
+id = 862
+tag = "bert-base-uncased-emotion.addmm_43_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_round"
+id = 863
+tag = "bert-base-uncased-emotion.addmm_43_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_clamp"
+id = 864
+tag = "bert-base-uncased-emotion.addmm_43_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43_activation_int8"
+id = 865
+tag = "bert-base-uncased-emotion.addmm_43_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_43"
+id = 868
+tag = "bert-base-uncased-emotion.addmm_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_158"
+id = 869
+tag = "bert-base-uncased-emotion.view_158"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_159"
+id = 870
+tag = "bert-base-uncased-emotion.view_159"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_36"
+id = 871
+tag = "bert-base-uncased-emotion.transpose_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_160"
+id = 872
+tag = "bert-base-uncased-emotion.view_160"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_abs"
+id = 873
+tag = "bert-base-uncased-emotion.addmm_44_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_max"
+id = 874
+tag = "bert-base-uncased-emotion.addmm_44_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_raw_scale"
+id = 875
+tag = "bert-base-uncased-emotion.addmm_44_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_zero"
+id = 876
+tag = "bert-base-uncased-emotion.addmm_44_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_scale"
+id = 877
+tag = "bert-base-uncased-emotion.addmm_44_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_normalized"
+id = 878
+tag = "bert-base-uncased-emotion.addmm_44_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_round"
+id = 879
+tag = "bert-base-uncased-emotion.addmm_44_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_clamp"
+id = 880
+tag = "bert-base-uncased-emotion.addmm_44_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44_activation_int8"
+id = 881
+tag = "bert-base-uncased-emotion.addmm_44_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_44"
+id = 884
+tag = "bert-base-uncased-emotion.addmm_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_161"
+id = 885
+tag = "bert-base-uncased-emotion.view_161"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_162"
+id = 886
+tag = "bert-base-uncased-emotion.view_162"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_37"
+id = 887
+tag = "bert-base-uncased-emotion.transpose_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_38"
+id = 888
+tag = "bert-base-uncased-emotion.transpose_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_28"
+id = 889
+tag = "bert-base-uncased-emotion.expand_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_163"
+id = 890
+tag = "bert-base-uncased-emotion.view_163"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_29"
+id = 891
+tag = "bert-base-uncased-emotion.expand_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_164"
+id = 892
+tag = "bert-base-uncased-emotion.view_164"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_14"
+id = 893
+tag = "bert-base-uncased-emotion.bmm_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_165"
+id = 894
+tag = "bert-base-uncased-emotion.view_165"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_8"
+id = 895
+tag = "bert-base-uncased-emotion.mul_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_23"
+id = 896
+tag = "bert-base-uncased-emotion.add_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_7"
+id = 897
+tag = "bert-base-uncased-emotion._softmax_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_29"
+id = 898
+tag = "bert-base-uncased-emotion.clone_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_30"
+id = 899
+tag = "bert-base-uncased-emotion.expand_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_166"
+id = 900
+tag = "bert-base-uncased-emotion.view_166"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_31"
+id = 901
+tag = "bert-base-uncased-emotion.expand_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_167"
+id = 902
+tag = "bert-base-uncased-emotion.view_167"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_15"
+id = 903
+tag = "bert-base-uncased-emotion.bmm_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_168"
+id = 904
+tag = "bert-base-uncased-emotion.view_168"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_39"
+id = 905
+tag = "bert-base-uncased-emotion.transpose_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_30"
+id = 906
+tag = "bert-base-uncased-emotion.clone_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_169"
+id = 907
+tag = "bert-base-uncased-emotion.view_169"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_170"
+id = 908
+tag = "bert-base-uncased-emotion.view_170"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_abs"
+id = 909
+tag = "bert-base-uncased-emotion.addmm_45_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_max"
+id = 910
+tag = "bert-base-uncased-emotion.addmm_45_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_raw_scale"
+id = 911
+tag = "bert-base-uncased-emotion.addmm_45_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_zero"
+id = 912
+tag = "bert-base-uncased-emotion.addmm_45_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_scale"
+id = 913
+tag = "bert-base-uncased-emotion.addmm_45_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_normalized"
+id = 914
+tag = "bert-base-uncased-emotion.addmm_45_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_round"
+id = 915
+tag = "bert-base-uncased-emotion.addmm_45_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_clamp"
+id = 916
+tag = "bert-base-uncased-emotion.addmm_45_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45_activation_int8"
+id = 917
+tag = "bert-base-uncased-emotion.addmm_45_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_45"
+id = 920
+tag = "bert-base-uncased-emotion.addmm_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_171"
+id = 921
+tag = "bert-base-uncased-emotion.view_171"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_31"
+id = 922
+tag = "bert-base-uncased-emotion.clone_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_24"
+id = 923
+tag = "bert-base-uncased-emotion.add_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_15"
+id = 924
+tag = "bert-base-uncased-emotion.native_layer_norm_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_172"
+id = 925
+tag = "bert-base-uncased-emotion.view_172"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_abs"
+id = 926
+tag = "bert-base-uncased-emotion.addmm_46_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_max"
+id = 927
+tag = "bert-base-uncased-emotion.addmm_46_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_raw_scale"
+id = 928
+tag = "bert-base-uncased-emotion.addmm_46_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_zero"
+id = 929
+tag = "bert-base-uncased-emotion.addmm_46_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_scale"
+id = 930
+tag = "bert-base-uncased-emotion.addmm_46_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_normalized"
+id = 931
+tag = "bert-base-uncased-emotion.addmm_46_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_round"
+id = 932
+tag = "bert-base-uncased-emotion.addmm_46_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_clamp"
+id = 933
+tag = "bert-base-uncased-emotion.addmm_46_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46_activation_int8"
+id = 934
+tag = "bert-base-uncased-emotion.addmm_46_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_46"
+id = 937
+tag = "bert-base-uncased-emotion.addmm_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_173"
+id = 938
+tag = "bert-base-uncased-emotion.view_173"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_7"
+id = 939
+tag = "bert-base-uncased-emotion.gelu_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_174"
+id = 940
+tag = "bert-base-uncased-emotion.view_174"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_abs"
+id = 941
+tag = "bert-base-uncased-emotion.addmm_47_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_max"
+id = 942
+tag = "bert-base-uncased-emotion.addmm_47_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_raw_scale"
+id = 943
+tag = "bert-base-uncased-emotion.addmm_47_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_zero"
+id = 944
+tag = "bert-base-uncased-emotion.addmm_47_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_scale"
+id = 945
+tag = "bert-base-uncased-emotion.addmm_47_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_normalized"
+id = 946
+tag = "bert-base-uncased-emotion.addmm_47_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_round"
+id = 947
+tag = "bert-base-uncased-emotion.addmm_47_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_clamp"
+id = 948
+tag = "bert-base-uncased-emotion.addmm_47_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47_activation_int8"
+id = 949
+tag = "bert-base-uncased-emotion.addmm_47_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_47"
+id = 952
+tag = "bert-base-uncased-emotion.addmm_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_175"
+id = 953
+tag = "bert-base-uncased-emotion.view_175"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_32"
+id = 954
+tag = "bert-base-uncased-emotion.clone_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_25"
+id = 955
+tag = "bert-base-uncased-emotion.add_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_16"
+id = 956
+tag = "bert-base-uncased-emotion.native_layer_norm_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_176"
+id = 957
+tag = "bert-base-uncased-emotion.view_176"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_abs"
+id = 958
+tag = "bert-base-uncased-emotion.addmm_48_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_max"
+id = 959
+tag = "bert-base-uncased-emotion.addmm_48_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_raw_scale"
+id = 960
+tag = "bert-base-uncased-emotion.addmm_48_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_zero"
+id = 961
+tag = "bert-base-uncased-emotion.addmm_48_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_scale"
+id = 962
+tag = "bert-base-uncased-emotion.addmm_48_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_normalized"
+id = 963
+tag = "bert-base-uncased-emotion.addmm_48_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_round"
+id = 964
+tag = "bert-base-uncased-emotion.addmm_48_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_clamp"
+id = 965
+tag = "bert-base-uncased-emotion.addmm_48_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48_activation_int8"
+id = 966
+tag = "bert-base-uncased-emotion.addmm_48_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_48"
+id = 969
+tag = "bert-base-uncased-emotion.addmm_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_177"
+id = 970
+tag = "bert-base-uncased-emotion.view_177"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_178"
+id = 971
+tag = "bert-base-uncased-emotion.view_178"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_40"
+id = 972
+tag = "bert-base-uncased-emotion.transpose_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_179"
+id = 973
+tag = "bert-base-uncased-emotion.view_179"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_abs"
+id = 974
+tag = "bert-base-uncased-emotion.addmm_49_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_max"
+id = 975
+tag = "bert-base-uncased-emotion.addmm_49_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_raw_scale"
+id = 976
+tag = "bert-base-uncased-emotion.addmm_49_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_zero"
+id = 977
+tag = "bert-base-uncased-emotion.addmm_49_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_scale"
+id = 978
+tag = "bert-base-uncased-emotion.addmm_49_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_normalized"
+id = 979
+tag = "bert-base-uncased-emotion.addmm_49_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_round"
+id = 980
+tag = "bert-base-uncased-emotion.addmm_49_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_clamp"
+id = 981
+tag = "bert-base-uncased-emotion.addmm_49_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49_activation_int8"
+id = 982
+tag = "bert-base-uncased-emotion.addmm_49_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_49"
+id = 985
+tag = "bert-base-uncased-emotion.addmm_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_180"
+id = 986
+tag = "bert-base-uncased-emotion.view_180"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_181"
+id = 987
+tag = "bert-base-uncased-emotion.view_181"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_41"
+id = 988
+tag = "bert-base-uncased-emotion.transpose_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_182"
+id = 989
+tag = "bert-base-uncased-emotion.view_182"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_abs"
+id = 990
+tag = "bert-base-uncased-emotion.addmm_50_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_max"
+id = 991
+tag = "bert-base-uncased-emotion.addmm_50_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_raw_scale"
+id = 992
+tag = "bert-base-uncased-emotion.addmm_50_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_zero"
+id = 993
+tag = "bert-base-uncased-emotion.addmm_50_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_scale"
+id = 994
+tag = "bert-base-uncased-emotion.addmm_50_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_normalized"
+id = 995
+tag = "bert-base-uncased-emotion.addmm_50_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_round"
+id = 996
+tag = "bert-base-uncased-emotion.addmm_50_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_clamp"
+id = 997
+tag = "bert-base-uncased-emotion.addmm_50_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50_activation_int8"
+id = 998
+tag = "bert-base-uncased-emotion.addmm_50_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_50"
+id = 1001
+tag = "bert-base-uncased-emotion.addmm_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_183"
+id = 1002
+tag = "bert-base-uncased-emotion.view_183"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_184"
+id = 1003
+tag = "bert-base-uncased-emotion.view_184"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_42"
+id = 1004
+tag = "bert-base-uncased-emotion.transpose_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_43"
+id = 1005
+tag = "bert-base-uncased-emotion.transpose_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_32"
+id = 1006
+tag = "bert-base-uncased-emotion.expand_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_185"
+id = 1007
+tag = "bert-base-uncased-emotion.view_185"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_33"
+id = 1008
+tag = "bert-base-uncased-emotion.expand_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_186"
+id = 1009
+tag = "bert-base-uncased-emotion.view_186"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_16"
+id = 1010
+tag = "bert-base-uncased-emotion.bmm_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_187"
+id = 1011
+tag = "bert-base-uncased-emotion.view_187"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_9"
+id = 1012
+tag = "bert-base-uncased-emotion.mul_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_26"
+id = 1013
+tag = "bert-base-uncased-emotion.add_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_8"
+id = 1014
+tag = "bert-base-uncased-emotion._softmax_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_33"
+id = 1015
+tag = "bert-base-uncased-emotion.clone_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_34"
+id = 1016
+tag = "bert-base-uncased-emotion.expand_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_188"
+id = 1017
+tag = "bert-base-uncased-emotion.view_188"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_35"
+id = 1018
+tag = "bert-base-uncased-emotion.expand_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_189"
+id = 1019
+tag = "bert-base-uncased-emotion.view_189"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_17"
+id = 1020
+tag = "bert-base-uncased-emotion.bmm_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_190"
+id = 1021
+tag = "bert-base-uncased-emotion.view_190"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_44"
+id = 1022
+tag = "bert-base-uncased-emotion.transpose_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_34"
+id = 1023
+tag = "bert-base-uncased-emotion.clone_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_191"
+id = 1024
+tag = "bert-base-uncased-emotion.view_191"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_192"
+id = 1025
+tag = "bert-base-uncased-emotion.view_192"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_abs"
+id = 1026
+tag = "bert-base-uncased-emotion.addmm_51_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_max"
+id = 1027
+tag = "bert-base-uncased-emotion.addmm_51_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_raw_scale"
+id = 1028
+tag = "bert-base-uncased-emotion.addmm_51_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_zero"
+id = 1029
+tag = "bert-base-uncased-emotion.addmm_51_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_scale"
+id = 1030
+tag = "bert-base-uncased-emotion.addmm_51_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_normalized"
+id = 1031
+tag = "bert-base-uncased-emotion.addmm_51_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_round"
+id = 1032
+tag = "bert-base-uncased-emotion.addmm_51_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_clamp"
+id = 1033
+tag = "bert-base-uncased-emotion.addmm_51_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51_activation_int8"
+id = 1034
+tag = "bert-base-uncased-emotion.addmm_51_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_51"
+id = 1037
+tag = "bert-base-uncased-emotion.addmm_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_193"
+id = 1038
+tag = "bert-base-uncased-emotion.view_193"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_35"
+id = 1039
+tag = "bert-base-uncased-emotion.clone_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_27"
+id = 1040
+tag = "bert-base-uncased-emotion.add_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_17"
+id = 1041
+tag = "bert-base-uncased-emotion.native_layer_norm_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_194"
+id = 1042
+tag = "bert-base-uncased-emotion.view_194"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_abs"
+id = 1043
+tag = "bert-base-uncased-emotion.addmm_52_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_max"
+id = 1044
+tag = "bert-base-uncased-emotion.addmm_52_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_raw_scale"
+id = 1045
+tag = "bert-base-uncased-emotion.addmm_52_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_zero"
+id = 1046
+tag = "bert-base-uncased-emotion.addmm_52_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_scale"
+id = 1047
+tag = "bert-base-uncased-emotion.addmm_52_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_normalized"
+id = 1048
+tag = "bert-base-uncased-emotion.addmm_52_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_round"
+id = 1049
+tag = "bert-base-uncased-emotion.addmm_52_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_clamp"
+id = 1050
+tag = "bert-base-uncased-emotion.addmm_52_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52_activation_int8"
+id = 1051
+tag = "bert-base-uncased-emotion.addmm_52_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_52"
+id = 1054
+tag = "bert-base-uncased-emotion.addmm_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_195"
+id = 1055
+tag = "bert-base-uncased-emotion.view_195"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_8"
+id = 1056
+tag = "bert-base-uncased-emotion.gelu_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_196"
+id = 1057
+tag = "bert-base-uncased-emotion.view_196"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_abs"
+id = 1058
+tag = "bert-base-uncased-emotion.addmm_53_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_max"
+id = 1059
+tag = "bert-base-uncased-emotion.addmm_53_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_raw_scale"
+id = 1060
+tag = "bert-base-uncased-emotion.addmm_53_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_zero"
+id = 1061
+tag = "bert-base-uncased-emotion.addmm_53_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_scale"
+id = 1062
+tag = "bert-base-uncased-emotion.addmm_53_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_normalized"
+id = 1063
+tag = "bert-base-uncased-emotion.addmm_53_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_round"
+id = 1064
+tag = "bert-base-uncased-emotion.addmm_53_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_clamp"
+id = 1065
+tag = "bert-base-uncased-emotion.addmm_53_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53_activation_int8"
+id = 1066
+tag = "bert-base-uncased-emotion.addmm_53_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_53"
+id = 1069
+tag = "bert-base-uncased-emotion.addmm_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_197"
+id = 1070
+tag = "bert-base-uncased-emotion.view_197"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_36"
+id = 1071
+tag = "bert-base-uncased-emotion.clone_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_28"
+id = 1072
+tag = "bert-base-uncased-emotion.add_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_18"
+id = 1073
+tag = "bert-base-uncased-emotion.native_layer_norm_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_198"
+id = 1074
+tag = "bert-base-uncased-emotion.view_198"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_abs"
+id = 1075
+tag = "bert-base-uncased-emotion.addmm_54_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_max"
+id = 1076
+tag = "bert-base-uncased-emotion.addmm_54_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_raw_scale"
+id = 1077
+tag = "bert-base-uncased-emotion.addmm_54_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_zero"
+id = 1078
+tag = "bert-base-uncased-emotion.addmm_54_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_scale"
+id = 1079
+tag = "bert-base-uncased-emotion.addmm_54_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_normalized"
+id = 1080
+tag = "bert-base-uncased-emotion.addmm_54_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_round"
+id = 1081
+tag = "bert-base-uncased-emotion.addmm_54_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_clamp"
+id = 1082
+tag = "bert-base-uncased-emotion.addmm_54_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54_activation_int8"
+id = 1083
+tag = "bert-base-uncased-emotion.addmm_54_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_54"
+id = 1086
+tag = "bert-base-uncased-emotion.addmm_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_199"
+id = 1087
+tag = "bert-base-uncased-emotion.view_199"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_200"
+id = 1088
+tag = "bert-base-uncased-emotion.view_200"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_45"
+id = 1089
+tag = "bert-base-uncased-emotion.transpose_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_201"
+id = 1090
+tag = "bert-base-uncased-emotion.view_201"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_abs"
+id = 1091
+tag = "bert-base-uncased-emotion.addmm_55_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_max"
+id = 1092
+tag = "bert-base-uncased-emotion.addmm_55_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_raw_scale"
+id = 1093
+tag = "bert-base-uncased-emotion.addmm_55_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_zero"
+id = 1094
+tag = "bert-base-uncased-emotion.addmm_55_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_scale"
+id = 1095
+tag = "bert-base-uncased-emotion.addmm_55_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_normalized"
+id = 1096
+tag = "bert-base-uncased-emotion.addmm_55_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_round"
+id = 1097
+tag = "bert-base-uncased-emotion.addmm_55_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_clamp"
+id = 1098
+tag = "bert-base-uncased-emotion.addmm_55_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55_activation_int8"
+id = 1099
+tag = "bert-base-uncased-emotion.addmm_55_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_55"
+id = 1102
+tag = "bert-base-uncased-emotion.addmm_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_202"
+id = 1103
+tag = "bert-base-uncased-emotion.view_202"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_203"
+id = 1104
+tag = "bert-base-uncased-emotion.view_203"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_46"
+id = 1105
+tag = "bert-base-uncased-emotion.transpose_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_204"
+id = 1106
+tag = "bert-base-uncased-emotion.view_204"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_abs"
+id = 1107
+tag = "bert-base-uncased-emotion.addmm_56_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_max"
+id = 1108
+tag = "bert-base-uncased-emotion.addmm_56_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_raw_scale"
+id = 1109
+tag = "bert-base-uncased-emotion.addmm_56_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_zero"
+id = 1110
+tag = "bert-base-uncased-emotion.addmm_56_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_scale"
+id = 1111
+tag = "bert-base-uncased-emotion.addmm_56_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_normalized"
+id = 1112
+tag = "bert-base-uncased-emotion.addmm_56_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_round"
+id = 1113
+tag = "bert-base-uncased-emotion.addmm_56_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_clamp"
+id = 1114
+tag = "bert-base-uncased-emotion.addmm_56_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56_activation_int8"
+id = 1115
+tag = "bert-base-uncased-emotion.addmm_56_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_56"
+id = 1118
+tag = "bert-base-uncased-emotion.addmm_56"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_205"
+id = 1119
+tag = "bert-base-uncased-emotion.view_205"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_206"
+id = 1120
+tag = "bert-base-uncased-emotion.view_206"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_47"
+id = 1121
+tag = "bert-base-uncased-emotion.transpose_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_48"
+id = 1122
+tag = "bert-base-uncased-emotion.transpose_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_36"
+id = 1123
+tag = "bert-base-uncased-emotion.expand_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_207"
+id = 1124
+tag = "bert-base-uncased-emotion.view_207"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_37"
+id = 1125
+tag = "bert-base-uncased-emotion.expand_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_208"
+id = 1126
+tag = "bert-base-uncased-emotion.view_208"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_18"
+id = 1127
+tag = "bert-base-uncased-emotion.bmm_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_209"
+id = 1128
+tag = "bert-base-uncased-emotion.view_209"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_10"
+id = 1129
+tag = "bert-base-uncased-emotion.mul_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_29"
+id = 1130
+tag = "bert-base-uncased-emotion.add_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_9"
+id = 1131
+tag = "bert-base-uncased-emotion._softmax_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_37"
+id = 1132
+tag = "bert-base-uncased-emotion.clone_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_38"
+id = 1133
+tag = "bert-base-uncased-emotion.expand_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_210"
+id = 1134
+tag = "bert-base-uncased-emotion.view_210"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_39"
+id = 1135
+tag = "bert-base-uncased-emotion.expand_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_211"
+id = 1136
+tag = "bert-base-uncased-emotion.view_211"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_19"
+id = 1137
+tag = "bert-base-uncased-emotion.bmm_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_212"
+id = 1138
+tag = "bert-base-uncased-emotion.view_212"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_49"
+id = 1139
+tag = "bert-base-uncased-emotion.transpose_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_38"
+id = 1140
+tag = "bert-base-uncased-emotion.clone_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_213"
+id = 1141
+tag = "bert-base-uncased-emotion.view_213"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_214"
+id = 1142
+tag = "bert-base-uncased-emotion.view_214"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_abs"
+id = 1143
+tag = "bert-base-uncased-emotion.addmm_57_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_max"
+id = 1144
+tag = "bert-base-uncased-emotion.addmm_57_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_raw_scale"
+id = 1145
+tag = "bert-base-uncased-emotion.addmm_57_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_zero"
+id = 1146
+tag = "bert-base-uncased-emotion.addmm_57_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_scale"
+id = 1147
+tag = "bert-base-uncased-emotion.addmm_57_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_normalized"
+id = 1148
+tag = "bert-base-uncased-emotion.addmm_57_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_round"
+id = 1149
+tag = "bert-base-uncased-emotion.addmm_57_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_clamp"
+id = 1150
+tag = "bert-base-uncased-emotion.addmm_57_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57_activation_int8"
+id = 1151
+tag = "bert-base-uncased-emotion.addmm_57_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_57"
+id = 1154
+tag = "bert-base-uncased-emotion.addmm_57"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_215"
+id = 1155
+tag = "bert-base-uncased-emotion.view_215"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_39"
+id = 1156
+tag = "bert-base-uncased-emotion.clone_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_30"
+id = 1157
+tag = "bert-base-uncased-emotion.add_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_19"
+id = 1158
+tag = "bert-base-uncased-emotion.native_layer_norm_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_216"
+id = 1159
+tag = "bert-base-uncased-emotion.view_216"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_abs"
+id = 1160
+tag = "bert-base-uncased-emotion.addmm_58_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_max"
+id = 1161
+tag = "bert-base-uncased-emotion.addmm_58_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_raw_scale"
+id = 1162
+tag = "bert-base-uncased-emotion.addmm_58_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_zero"
+id = 1163
+tag = "bert-base-uncased-emotion.addmm_58_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_scale"
+id = 1164
+tag = "bert-base-uncased-emotion.addmm_58_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_normalized"
+id = 1165
+tag = "bert-base-uncased-emotion.addmm_58_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_round"
+id = 1166
+tag = "bert-base-uncased-emotion.addmm_58_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_clamp"
+id = 1167
+tag = "bert-base-uncased-emotion.addmm_58_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58_activation_int8"
+id = 1168
+tag = "bert-base-uncased-emotion.addmm_58_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_58"
+id = 1171
+tag = "bert-base-uncased-emotion.addmm_58"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_217"
+id = 1172
+tag = "bert-base-uncased-emotion.view_217"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_9"
+id = 1173
+tag = "bert-base-uncased-emotion.gelu_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_218"
+id = 1174
+tag = "bert-base-uncased-emotion.view_218"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_abs"
+id = 1175
+tag = "bert-base-uncased-emotion.addmm_59_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_max"
+id = 1176
+tag = "bert-base-uncased-emotion.addmm_59_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_raw_scale"
+id = 1177
+tag = "bert-base-uncased-emotion.addmm_59_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_zero"
+id = 1178
+tag = "bert-base-uncased-emotion.addmm_59_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_scale"
+id = 1179
+tag = "bert-base-uncased-emotion.addmm_59_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_normalized"
+id = 1180
+tag = "bert-base-uncased-emotion.addmm_59_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_round"
+id = 1181
+tag = "bert-base-uncased-emotion.addmm_59_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_clamp"
+id = 1182
+tag = "bert-base-uncased-emotion.addmm_59_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59_activation_int8"
+id = 1183
+tag = "bert-base-uncased-emotion.addmm_59_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_59"
+id = 1186
+tag = "bert-base-uncased-emotion.addmm_59"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_219"
+id = 1187
+tag = "bert-base-uncased-emotion.view_219"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_40"
+id = 1188
+tag = "bert-base-uncased-emotion.clone_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_31"
+id = 1189
+tag = "bert-base-uncased-emotion.add_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_20"
+id = 1190
+tag = "bert-base-uncased-emotion.native_layer_norm_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_220"
+id = 1191
+tag = "bert-base-uncased-emotion.view_220"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_abs"
+id = 1192
+tag = "bert-base-uncased-emotion.addmm_60_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_max"
+id = 1193
+tag = "bert-base-uncased-emotion.addmm_60_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_raw_scale"
+id = 1194
+tag = "bert-base-uncased-emotion.addmm_60_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_zero"
+id = 1195
+tag = "bert-base-uncased-emotion.addmm_60_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_scale"
+id = 1196
+tag = "bert-base-uncased-emotion.addmm_60_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_normalized"
+id = 1197
+tag = "bert-base-uncased-emotion.addmm_60_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_round"
+id = 1198
+tag = "bert-base-uncased-emotion.addmm_60_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_clamp"
+id = 1199
+tag = "bert-base-uncased-emotion.addmm_60_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60_activation_int8"
+id = 1200
+tag = "bert-base-uncased-emotion.addmm_60_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_60"
+id = 1203
+tag = "bert-base-uncased-emotion.addmm_60"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_221"
+id = 1204
+tag = "bert-base-uncased-emotion.view_221"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_222"
+id = 1205
+tag = "bert-base-uncased-emotion.view_222"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_50"
+id = 1206
+tag = "bert-base-uncased-emotion.transpose_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_223"
+id = 1207
+tag = "bert-base-uncased-emotion.view_223"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_abs"
+id = 1208
+tag = "bert-base-uncased-emotion.addmm_61_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_max"
+id = 1209
+tag = "bert-base-uncased-emotion.addmm_61_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_raw_scale"
+id = 1210
+tag = "bert-base-uncased-emotion.addmm_61_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_zero"
+id = 1211
+tag = "bert-base-uncased-emotion.addmm_61_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_scale"
+id = 1212
+tag = "bert-base-uncased-emotion.addmm_61_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_normalized"
+id = 1213
+tag = "bert-base-uncased-emotion.addmm_61_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_round"
+id = 1214
+tag = "bert-base-uncased-emotion.addmm_61_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_clamp"
+id = 1215
+tag = "bert-base-uncased-emotion.addmm_61_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61_activation_int8"
+id = 1216
+tag = "bert-base-uncased-emotion.addmm_61_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_61"
+id = 1219
+tag = "bert-base-uncased-emotion.addmm_61"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_224"
+id = 1220
+tag = "bert-base-uncased-emotion.view_224"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_225"
+id = 1221
+tag = "bert-base-uncased-emotion.view_225"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_51"
+id = 1222
+tag = "bert-base-uncased-emotion.transpose_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_226"
+id = 1223
+tag = "bert-base-uncased-emotion.view_226"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_abs"
+id = 1224
+tag = "bert-base-uncased-emotion.addmm_62_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_max"
+id = 1225
+tag = "bert-base-uncased-emotion.addmm_62_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_raw_scale"
+id = 1226
+tag = "bert-base-uncased-emotion.addmm_62_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_zero"
+id = 1227
+tag = "bert-base-uncased-emotion.addmm_62_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_scale"
+id = 1228
+tag = "bert-base-uncased-emotion.addmm_62_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_normalized"
+id = 1229
+tag = "bert-base-uncased-emotion.addmm_62_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_round"
+id = 1230
+tag = "bert-base-uncased-emotion.addmm_62_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_clamp"
+id = 1231
+tag = "bert-base-uncased-emotion.addmm_62_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62_activation_int8"
+id = 1232
+tag = "bert-base-uncased-emotion.addmm_62_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_62"
+id = 1235
+tag = "bert-base-uncased-emotion.addmm_62"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_227"
+id = 1236
+tag = "bert-base-uncased-emotion.view_227"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_228"
+id = 1237
+tag = "bert-base-uncased-emotion.view_228"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_52"
+id = 1238
+tag = "bert-base-uncased-emotion.transpose_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_53"
+id = 1239
+tag = "bert-base-uncased-emotion.transpose_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_40"
+id = 1240
+tag = "bert-base-uncased-emotion.expand_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_229"
+id = 1241
+tag = "bert-base-uncased-emotion.view_229"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_41"
+id = 1242
+tag = "bert-base-uncased-emotion.expand_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_230"
+id = 1243
+tag = "bert-base-uncased-emotion.view_230"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_20"
+id = 1244
+tag = "bert-base-uncased-emotion.bmm_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_231"
+id = 1245
+tag = "bert-base-uncased-emotion.view_231"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_11"
+id = 1246
+tag = "bert-base-uncased-emotion.mul_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_32"
+id = 1247
+tag = "bert-base-uncased-emotion.add_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_10"
+id = 1248
+tag = "bert-base-uncased-emotion._softmax_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_41"
+id = 1249
+tag = "bert-base-uncased-emotion.clone_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_42"
+id = 1250
+tag = "bert-base-uncased-emotion.expand_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_232"
+id = 1251
+tag = "bert-base-uncased-emotion.view_232"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_43"
+id = 1252
+tag = "bert-base-uncased-emotion.expand_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_233"
+id = 1253
+tag = "bert-base-uncased-emotion.view_233"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_21"
+id = 1254
+tag = "bert-base-uncased-emotion.bmm_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_234"
+id = 1255
+tag = "bert-base-uncased-emotion.view_234"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_54"
+id = 1256
+tag = "bert-base-uncased-emotion.transpose_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_42"
+id = 1257
+tag = "bert-base-uncased-emotion.clone_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_235"
+id = 1258
+tag = "bert-base-uncased-emotion.view_235"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_236"
+id = 1259
+tag = "bert-base-uncased-emotion.view_236"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_abs"
+id = 1260
+tag = "bert-base-uncased-emotion.addmm_63_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_max"
+id = 1261
+tag = "bert-base-uncased-emotion.addmm_63_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_raw_scale"
+id = 1262
+tag = "bert-base-uncased-emotion.addmm_63_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_zero"
+id = 1263
+tag = "bert-base-uncased-emotion.addmm_63_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_scale"
+id = 1264
+tag = "bert-base-uncased-emotion.addmm_63_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_normalized"
+id = 1265
+tag = "bert-base-uncased-emotion.addmm_63_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_round"
+id = 1266
+tag = "bert-base-uncased-emotion.addmm_63_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_clamp"
+id = 1267
+tag = "bert-base-uncased-emotion.addmm_63_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63_activation_int8"
+id = 1268
+tag = "bert-base-uncased-emotion.addmm_63_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_63"
+id = 1271
+tag = "bert-base-uncased-emotion.addmm_63"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_237"
+id = 1272
+tag = "bert-base-uncased-emotion.view_237"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_43"
+id = 1273
+tag = "bert-base-uncased-emotion.clone_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_33"
+id = 1274
+tag = "bert-base-uncased-emotion.add_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_21"
+id = 1275
+tag = "bert-base-uncased-emotion.native_layer_norm_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_238"
+id = 1276
+tag = "bert-base-uncased-emotion.view_238"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_abs"
+id = 1277
+tag = "bert-base-uncased-emotion.addmm_64_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_max"
+id = 1278
+tag = "bert-base-uncased-emotion.addmm_64_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_raw_scale"
+id = 1279
+tag = "bert-base-uncased-emotion.addmm_64_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_zero"
+id = 1280
+tag = "bert-base-uncased-emotion.addmm_64_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_scale"
+id = 1281
+tag = "bert-base-uncased-emotion.addmm_64_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_normalized"
+id = 1282
+tag = "bert-base-uncased-emotion.addmm_64_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_round"
+id = 1283
+tag = "bert-base-uncased-emotion.addmm_64_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_clamp"
+id = 1284
+tag = "bert-base-uncased-emotion.addmm_64_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64_activation_int8"
+id = 1285
+tag = "bert-base-uncased-emotion.addmm_64_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_64"
+id = 1288
+tag = "bert-base-uncased-emotion.addmm_64"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_239"
+id = 1289
+tag = "bert-base-uncased-emotion.view_239"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_10"
+id = 1290
+tag = "bert-base-uncased-emotion.gelu_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_240"
+id = 1291
+tag = "bert-base-uncased-emotion.view_240"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_abs"
+id = 1292
+tag = "bert-base-uncased-emotion.addmm_65_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_max"
+id = 1293
+tag = "bert-base-uncased-emotion.addmm_65_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_raw_scale"
+id = 1294
+tag = "bert-base-uncased-emotion.addmm_65_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_zero"
+id = 1295
+tag = "bert-base-uncased-emotion.addmm_65_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_scale"
+id = 1296
+tag = "bert-base-uncased-emotion.addmm_65_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_normalized"
+id = 1297
+tag = "bert-base-uncased-emotion.addmm_65_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_round"
+id = 1298
+tag = "bert-base-uncased-emotion.addmm_65_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_clamp"
+id = 1299
+tag = "bert-base-uncased-emotion.addmm_65_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65_activation_int8"
+id = 1300
+tag = "bert-base-uncased-emotion.addmm_65_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_65"
+id = 1303
+tag = "bert-base-uncased-emotion.addmm_65"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_241"
+id = 1304
+tag = "bert-base-uncased-emotion.view_241"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_44"
+id = 1305
+tag = "bert-base-uncased-emotion.clone_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_34"
+id = 1306
+tag = "bert-base-uncased-emotion.add_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_22"
+id = 1307
+tag = "bert-base-uncased-emotion.native_layer_norm_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_242"
+id = 1308
+tag = "bert-base-uncased-emotion.view_242"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_abs"
+id = 1309
+tag = "bert-base-uncased-emotion.addmm_66_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_max"
+id = 1310
+tag = "bert-base-uncased-emotion.addmm_66_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_raw_scale"
+id = 1311
+tag = "bert-base-uncased-emotion.addmm_66_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_zero"
+id = 1312
+tag = "bert-base-uncased-emotion.addmm_66_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_scale"
+id = 1313
+tag = "bert-base-uncased-emotion.addmm_66_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_normalized"
+id = 1314
+tag = "bert-base-uncased-emotion.addmm_66_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_round"
+id = 1315
+tag = "bert-base-uncased-emotion.addmm_66_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_clamp"
+id = 1316
+tag = "bert-base-uncased-emotion.addmm_66_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66_activation_int8"
+id = 1317
+tag = "bert-base-uncased-emotion.addmm_66_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_66"
+id = 1320
+tag = "bert-base-uncased-emotion.addmm_66"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_243"
+id = 1321
+tag = "bert-base-uncased-emotion.view_243"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_244"
+id = 1322
+tag = "bert-base-uncased-emotion.view_244"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_55"
+id = 1323
+tag = "bert-base-uncased-emotion.transpose_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_245"
+id = 1324
+tag = "bert-base-uncased-emotion.view_245"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_abs"
+id = 1325
+tag = "bert-base-uncased-emotion.addmm_67_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_max"
+id = 1326
+tag = "bert-base-uncased-emotion.addmm_67_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_raw_scale"
+id = 1327
+tag = "bert-base-uncased-emotion.addmm_67_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_zero"
+id = 1328
+tag = "bert-base-uncased-emotion.addmm_67_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_scale"
+id = 1329
+tag = "bert-base-uncased-emotion.addmm_67_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_normalized"
+id = 1330
+tag = "bert-base-uncased-emotion.addmm_67_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_round"
+id = 1331
+tag = "bert-base-uncased-emotion.addmm_67_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_clamp"
+id = 1332
+tag = "bert-base-uncased-emotion.addmm_67_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67_activation_int8"
+id = 1333
+tag = "bert-base-uncased-emotion.addmm_67_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_67"
+id = 1336
+tag = "bert-base-uncased-emotion.addmm_67"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_246"
+id = 1337
+tag = "bert-base-uncased-emotion.view_246"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_247"
+id = 1338
+tag = "bert-base-uncased-emotion.view_247"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_56"
+id = 1339
+tag = "bert-base-uncased-emotion.transpose_56"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_248"
+id = 1340
+tag = "bert-base-uncased-emotion.view_248"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_abs"
+id = 1341
+tag = "bert-base-uncased-emotion.addmm_68_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_max"
+id = 1342
+tag = "bert-base-uncased-emotion.addmm_68_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_raw_scale"
+id = 1343
+tag = "bert-base-uncased-emotion.addmm_68_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_zero"
+id = 1344
+tag = "bert-base-uncased-emotion.addmm_68_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_scale"
+id = 1345
+tag = "bert-base-uncased-emotion.addmm_68_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_normalized"
+id = 1346
+tag = "bert-base-uncased-emotion.addmm_68_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_round"
+id = 1347
+tag = "bert-base-uncased-emotion.addmm_68_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_clamp"
+id = 1348
+tag = "bert-base-uncased-emotion.addmm_68_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68_activation_int8"
+id = 1349
+tag = "bert-base-uncased-emotion.addmm_68_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_68"
+id = 1352
+tag = "bert-base-uncased-emotion.addmm_68"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_249"
+id = 1353
+tag = "bert-base-uncased-emotion.view_249"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_250"
+id = 1354
+tag = "bert-base-uncased-emotion.view_250"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_57"
+id = 1355
+tag = "bert-base-uncased-emotion.transpose_57"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_58"
+id = 1356
+tag = "bert-base-uncased-emotion.transpose_58"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_44"
+id = 1357
+tag = "bert-base-uncased-emotion.expand_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_251"
+id = 1358
+tag = "bert-base-uncased-emotion.view_251"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_45"
+id = 1359
+tag = "bert-base-uncased-emotion.expand_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_252"
+id = 1360
+tag = "bert-base-uncased-emotion.view_252"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_22"
+id = 1361
+tag = "bert-base-uncased-emotion.bmm_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_253"
+id = 1362
+tag = "bert-base-uncased-emotion.view_253"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_12"
+id = 1363
+tag = "bert-base-uncased-emotion.mul_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_35"
+id = 1364
+tag = "bert-base-uncased-emotion.add_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_11"
+id = 1365
+tag = "bert-base-uncased-emotion._softmax_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_45"
+id = 1366
+tag = "bert-base-uncased-emotion.clone_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_46"
+id = 1367
+tag = "bert-base-uncased-emotion.expand_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_254"
+id = 1368
+tag = "bert-base-uncased-emotion.view_254"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_47"
+id = 1369
+tag = "bert-base-uncased-emotion.expand_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_255"
+id = 1370
+tag = "bert-base-uncased-emotion.view_255"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_23"
+id = 1371
+tag = "bert-base-uncased-emotion.bmm_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_256"
+id = 1372
+tag = "bert-base-uncased-emotion.view_256"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_59"
+id = 1373
+tag = "bert-base-uncased-emotion.transpose_59"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_46"
+id = 1374
+tag = "bert-base-uncased-emotion.clone_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_257"
+id = 1375
+tag = "bert-base-uncased-emotion.view_257"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_258"
+id = 1376
+tag = "bert-base-uncased-emotion.view_258"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_abs"
+id = 1377
+tag = "bert-base-uncased-emotion.addmm_69_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_max"
+id = 1378
+tag = "bert-base-uncased-emotion.addmm_69_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_raw_scale"
+id = 1379
+tag = "bert-base-uncased-emotion.addmm_69_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_zero"
+id = 1380
+tag = "bert-base-uncased-emotion.addmm_69_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_scale"
+id = 1381
+tag = "bert-base-uncased-emotion.addmm_69_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_normalized"
+id = 1382
+tag = "bert-base-uncased-emotion.addmm_69_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_round"
+id = 1383
+tag = "bert-base-uncased-emotion.addmm_69_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_clamp"
+id = 1384
+tag = "bert-base-uncased-emotion.addmm_69_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69_activation_int8"
+id = 1385
+tag = "bert-base-uncased-emotion.addmm_69_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_69"
+id = 1388
+tag = "bert-base-uncased-emotion.addmm_69"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_259"
+id = 1389
+tag = "bert-base-uncased-emotion.view_259"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_47"
+id = 1390
+tag = "bert-base-uncased-emotion.clone_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_36"
+id = 1391
+tag = "bert-base-uncased-emotion.add_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_23"
+id = 1392
+tag = "bert-base-uncased-emotion.native_layer_norm_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_260"
+id = 1393
+tag = "bert-base-uncased-emotion.view_260"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_abs"
+id = 1394
+tag = "bert-base-uncased-emotion.addmm_70_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_max"
+id = 1395
+tag = "bert-base-uncased-emotion.addmm_70_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_raw_scale"
+id = 1396
+tag = "bert-base-uncased-emotion.addmm_70_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_zero"
+id = 1397
+tag = "bert-base-uncased-emotion.addmm_70_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_scale"
+id = 1398
+tag = "bert-base-uncased-emotion.addmm_70_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_normalized"
+id = 1399
+tag = "bert-base-uncased-emotion.addmm_70_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_round"
+id = 1400
+tag = "bert-base-uncased-emotion.addmm_70_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_clamp"
+id = 1401
+tag = "bert-base-uncased-emotion.addmm_70_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70_activation_int8"
+id = 1402
+tag = "bert-base-uncased-emotion.addmm_70_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_70"
+id = 1405
+tag = "bert-base-uncased-emotion.addmm_70"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_261"
+id = 1406
+tag = "bert-base-uncased-emotion.view_261"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "gelu_11"
+id = 1407
+tag = "bert-base-uncased-emotion.gelu_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_262"
+id = 1408
+tag = "bert-base-uncased-emotion.view_262"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_abs"
+id = 1409
+tag = "bert-base-uncased-emotion.addmm_71_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_max"
+id = 1410
+tag = "bert-base-uncased-emotion.addmm_71_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_raw_scale"
+id = 1411
+tag = "bert-base-uncased-emotion.addmm_71_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_zero"
+id = 1412
+tag = "bert-base-uncased-emotion.addmm_71_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_scale"
+id = 1413
+tag = "bert-base-uncased-emotion.addmm_71_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_normalized"
+id = 1414
+tag = "bert-base-uncased-emotion.addmm_71_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_round"
+id = 1415
+tag = "bert-base-uncased-emotion.addmm_71_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_clamp"
+id = 1416
+tag = "bert-base-uncased-emotion.addmm_71_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71_activation_int8"
+id = 1417
+tag = "bert-base-uncased-emotion.addmm_71_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_71"
+id = 1420
+tag = "bert-base-uncased-emotion.addmm_71"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_263"
+id = 1421
+tag = "bert-base-uncased-emotion.view_263"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_48"
+id = 1422
+tag = "bert-base-uncased-emotion.clone_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_37"
+id = 1423
+tag = "bert-base-uncased-emotion.add_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "native_layer_norm_24"
+id = 1424
+tag = "bert-base-uncased-emotion.native_layer_norm_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "select"
+id = 1425
+tag = "bert-base-uncased-emotion.select"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_abs"
+id = 1426
+tag = "bert-base-uncased-emotion.addmm_72_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_max"
+id = 1427
+tag = "bert-base-uncased-emotion.addmm_72_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_raw_scale"
+id = 1428
+tag = "bert-base-uncased-emotion.addmm_72_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_zero"
+id = 1429
+tag = "bert-base-uncased-emotion.addmm_72_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_scale"
+id = 1430
+tag = "bert-base-uncased-emotion.addmm_72_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_normalized"
+id = 1431
+tag = "bert-base-uncased-emotion.addmm_72_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_round"
+id = 1432
+tag = "bert-base-uncased-emotion.addmm_72_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_clamp"
+id = 1433
+tag = "bert-base-uncased-emotion.addmm_72_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72_activation_int8"
+id = 1434
+tag = "bert-base-uncased-emotion.addmm_72_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_72"
+id = 1437
+tag = "bert-base-uncased-emotion.addmm_72"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "tanh"
+id = 1438
+tag = "bert-base-uncased-emotion.tanh"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_49"
+id = 1439
+tag = "bert-base-uncased-emotion.clone_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_abs"
+id = 1440
+tag = "bert-base-uncased-emotion.addmm_73_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_max"
+id = 1441
+tag = "bert-base-uncased-emotion.addmm_73_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_raw_scale"
+id = 1442
+tag = "bert-base-uncased-emotion.addmm_73_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_zero"
+id = 1443
+tag = "bert-base-uncased-emotion.addmm_73_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_scale"
+id = 1444
+tag = "bert-base-uncased-emotion.addmm_73_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_normalized"
+id = 1445
+tag = "bert-base-uncased-emotion.addmm_73_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_round"
+id = 1446
+tag = "bert-base-uncased-emotion.addmm_73_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_clamp"
+id = 1447
+tag = "bert-base-uncased-emotion.addmm_73_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73_activation_int8"
+id = 1448
+tag = "bert-base-uncased-emotion.addmm_73_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_73"
+id = 1451
+tag = "bert-base-uncased-emotion.addmm_73"
+cycle = true
+tensor = false

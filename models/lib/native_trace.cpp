@@ -1,4 +1,4 @@
-#include "runtime.h"
+#include "location.h"
 #include <cstdlib>
 #include <sched.h>
 
@@ -21,7 +21,7 @@ void native_trace_bind() {
     std::abort();
   controller = cpu;
 }
-extern "C" core_location_t core_location() {
+extern "C" thread_location_t thread_location() {
   int cpu = sched_getcpu();
   if (cpu < 0)
     std::abort();

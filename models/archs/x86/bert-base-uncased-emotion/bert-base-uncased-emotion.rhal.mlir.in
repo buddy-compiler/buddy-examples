@@ -1,0 +1,19 @@
+rhal.module @bert_base_uncased_emotion attributes {
+  version = "0.1.0",
+  model_name = "bert_base_uncased_emotion_x86",
+  runner_library = "file:libbert-base-uncased-emotion-x86-runner.so",
+  vocab_uri = "file:@MODEL_DIR@/bert-base-uncased-emotion/vocab.txt"
+} {
+  rhal.constant @params {id = 1 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "file:arg0.data"}
+  rhal.constant @quantized_weights {id = 2 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:arg1.data"}
+  rhal.constant @vocab {id = 3 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:@MODEL_DIR@/bert-base-uncased-emotion/vocab.txt"}
+  rhal.codeobj @model_kernels {id = 1 : i32, kind = "host_shared_lib",
+    backend = "cpu", uri = "file:libbert-base-uncased-emotion-x86-model.so"}
+  rhal.codeobj @mlir_c_runner_utils {id = 2 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:@BUDDY_SOURCE@/llvm/build/lib/libmlir_c_runner_utils.so"}
+  rhal.codeobj @mlir_runner_utils {id = 3 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:@BUDDY_SOURCE@/llvm/build/lib/libmlir_runner_utils.so"}
+}

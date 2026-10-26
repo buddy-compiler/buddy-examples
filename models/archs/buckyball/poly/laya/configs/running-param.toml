@@ -1,5 +1,0 @@
-inputs = ["../trace/requests.json"]
-core_indices = [1]
-timeout = 7200
-memory_mib = 3072
-record_io = false

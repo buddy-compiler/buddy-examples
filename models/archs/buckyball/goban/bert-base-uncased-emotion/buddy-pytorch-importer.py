@@ -1,3 +1,5 @@
+from stack.compiler.frontend.trace import trace
+from frontend.partition import partition
 from importlib import import_module
 
 # ===- importer.py ----------------------------------------------------------
@@ -21,12 +23,9 @@ from importlib import import_module
 # ===---------------------------------------------------------------------------
 
 import os
-import sys
-import hashlib
 import json
 import tomllib
 from pathlib import Path
-import numpy as np
 import torch
 from torch._inductor.decomposition import decompositions as inductor_decomp
 from transformers import BertForSequenceClassification, BertTokenizer
@@ -37,26 +36,24 @@ import argparse
 parser = argparse.ArgumentParser(description="BERT model AOT importer")
 parser.add_argument("--output-dir", type=Path, required=True)
 parser.add_argument("--compiler-build", type=Path, required=True)
-parser.add_argument("--chip-pb", type=Path, required=True)
+parser.add_argument("--design-pb", type=Path, required=True)
 parser.add_argument("--partition-count", type=int, required=True)
 parser.add_argument("--sequence-length", type=int, required=True)
 parser.add_argument("--repo-root", type=Path, required=True)
 args = parser.parse_args()
-sys.path.insert(0, str(args.repo_root.resolve()))
 
 args.compiler_build = args.compiler_build.resolve()
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
-import __init__ as design
-from quant import quantize as quant
+import __init__ as recipe
+from stack.compiler.frontend.quant.importer import quantize_model_graph
+from stack.compiler.frontend.quant.offline.activations import calibrate_layer_ranges
+from quant.calibration import EmotionCalibration
 
-design_dir = Path(__file__).parent
+recipe_dir = Path(__file__).parent
 
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.ops import tosa
-from buddy.compiler.trace import TraceConfig, load_trace_config
-from stack.runtime.scripts.tasks import dispatch
+from stack.compiler.frontend.ops import tosa
 
 if args.partition_count < 1:
     parser.error("--partition-count must be positive")
@@ -66,12 +63,13 @@ output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
 model_dir = Path(__file__).resolve().parent
 
-trace = TraceConfig(load_trace_config(design_dir / "trace" / "trace.toml"))
 verbose = False
 verbose_path = None
 
 model = BertForSequenceClassification.from_pretrained(
-    "bhadresh-savani/bert-base-uncased-emotion", attn_implementation="eager"
+    model_dir
+    / "../../../../models/bert-base-uncased-emotion/output/bert-base-uncased-emotion",
+    attn_implementation="eager",
 )
 model.eval()
 model_config = model.config
@@ -102,134 +100,44 @@ dynamo_compiler = DynamoCompiler(
     aot_autograd_decomposition=inductor_decomp,
     verbose=verbose,
     verbose_path=verbose_path,
-    trace=trace,
+    trace=None,
 )
 
-tokenizer = BertTokenizer.from_pretrained("bhadresh-savani/bert-base-uncased-emotion")
-inputs, calibration = quant.prepare(model, tokenizer, args.sequence_length)
+dataset = EmotionCalibration(args.sequence_length)
+tokenizer = dataset.tokenizer
+config = tomllib.loads((model_dir / "quant/quant.toml").read_text())
+calibration = calibrate_layer_ranges(model, dataset, **config["calibration"])
+inputs = {name: value[None] for name, value in dataset[0][0].items()}
 with torch.no_grad():
     graphs = dynamo_compiler.importer(model, **inputs)
 
 assert len(graphs) == 1
 graph = graphs[0]
+graph.order_inputs(
+    inputs[name]
+    for name in ("input_ids", "token_type_ids", "attention_mask", "position_ids")
+)
 params = dynamo_compiler.imported_params[graph]
 parameter_names = {
     parameter.data_ptr(): name for name, parameter in model.named_parameters()
 }
-input_nodes = {
-    value.data_ptr(): index
-    for value, index in zip(graph._runtime_inputs_ref, graph._inputs)
-}
-graph._inputs = [input_nodes[value.data_ptr()] for value in inputs.values()]
+graph.order_inputs(inputs.values())
 graph._runtime_inputs_ref = list(inputs.values())
-pattern_list = [simply_fuse]
-graphs[0].fuse_ops(pattern_list)
 graph = graphs[0]
-metadata = {
-    "chip": design.chip,
-    "version": 1,
-    "model": "bhadresh-savani/bert-base-uncased-emotion",
-    "sequence_length": args.sequence_length,
-    "num_labels": model_config.num_labels,
-    "labels": [
-        model_config.id2label[index] for index in range(model_config.num_labels)
-    ],
-    "vocab_size": model_config.vocab_size,
-    "parameter_sha256": {
-        name: hashlib.sha256(
-            value.detach().cpu().contiguous().numpy().tobytes()
-        ).hexdigest()
-        for name, value in model.named_parameters()
-    },
-}
-running = tomllib.loads((design_dir / "configs/running-param.toml").read_text())
-validation = []
-validation_assets = {}
-for index, text in enumerate(running["inputs"]):
-    request = dict(
-        tokenizer(
-            text,
-            padding="max_length",
-            truncation=True,
-            max_length=args.sequence_length,
-            return_tensors="pt",
-        )
-    )
-    request["position_ids"] = torch.arange(args.sequence_length).reshape(1, -1)
-    with torch.no_grad():
-        reference = model(**request).reshape(-1).tolist()
-    name = f"input{index}.bin"
-    validation_assets[name] = (
-        np.stack(
-            [
-                request[key].numpy()[0]
-                for key in (
-                    "input_ids",
-                    "token_type_ids",
-                    "attention_mask",
-                    "position_ids",
-                )
-            ]
-        )
-        .astype("<i8")
-        .tobytes()
-    )
-    validation.append(
-        {
-            "text": text,
-            "resource": f"bert.payload/{name}",
-            "reference_logits": reference,
-        }
-    )
-metadata["validation_inputs"] = validation
-quant.quantize(
+quantize_model_graph(
     graph,
     params,
     [parameter_names[parameter.data_ptr()] for parameter in params],
     output_dir,
     "bert",
     calibration,
-    args.compiler_build / "bin/rax-pack",
-    assets={
-        "model.json": json.dumps(metadata, sort_keys=True).encode(),
-        **validation_assets,
-    },
 )
-fused_ops = graph.op_groups.pop("subgraph0")
-body_order = {node.name: index for index, node in enumerate(graph.body)}
-fused_ops.sort(key=lambda node: body_order[node.name])
-op_order = {node.name: index for index, node in enumerate(fused_ops)}
-cut_points = set(range(1, len(fused_ops) + 1))
-for index, node in enumerate(fused_ops):
-    if isinstance(node.tensor_meta.get("dtype"), (tuple, list)):
-        end = max(
-            [index] + [op_order[name] for name in node._children if name in op_order]
-        )
-        cut_points.difference_update(range(index + 1, end + 1))
-if args.partition_count > len(fused_ops):
-    raise ValueError(
-        f"cannot split {len(fused_ops)} fused BERT operations across "
-        f"{args.partition_count} partitions"
-    )
-
-# Compile ordered subgraphs for one core type; the runtime selects each core.
-base, remainder = divmod(len(fused_ops), args.partition_count)
-offset = 0
-for partition_id in range(args.partition_count):
-    chunk_size = base + (1 if partition_id < remainder else 0)
-    name = f"subgraph{partition_id}"
-    end = (
-        len(fused_ops)
-        if partition_id + 1 == args.partition_count
-        else offset + chunk_size
-    )
-    while end < len(fused_ops) and end not in cut_points:
-        end += 1
-    if end > len(fused_ops) - (args.partition_count - partition_id - 1):
-        raise ValueError("cannot partition BERT without splitting a tuple result")
-    graph.op_groups[name] = fused_ops[offset:end]
-    graph.group_map_device[name] = graph.group_map_device.get("subgraph0", graph.device)
-    offset = end
+graph.dump(output_dir / "03-quanted.txt")
+graph.fuse_ops([simply_fuse])
+partition(graph, args.partition_count)
+graph.dump(output_dir / "04-fusion.txt")
+trace(graph, Path(__file__).parent / "trace/trace.toml")
+graph.dump(output_dir / "05-traced.txt")
 
 driver = GraphDriver(graph)
 for subgraph in driver.subgraphs:
@@ -242,27 +150,15 @@ for partition_id, subgraph in enumerate(driver.subgraphs):
     ) as module_file:
         print(subgraph._imported_module, file=module_file)
 forward = str(driver.construct_main_graph(True))
-if design.dispatch_tasks:
-    for partition_id in range(len(driver.subgraphs)):
-        task = Path(output_dir) / f"subgraph{partition_id}-task.c"
-        forward = dispatch(
-            forward,
-            f"subgraph{partition_id}",
-            args.chip_pb,
-            design.targets["encoder"],
-            task,
-        )
 (Path(output_dir) / "forward.mlir").write_text(forward)
 
-params = dynamo_compiler.imported_params[graph]
 
-float_count = sum(param.numel() for param in params if param.dtype == torch.float32)
-int8_count = sum(param.numel() for param in params if param.dtype == torch.int8)
-if any(param.dtype not in (torch.float32, torch.int8) for param in params):
-    raise ValueError("unexpected parameter dtype in quantized BERT")
-(output_dir / "bert-parameters.h").write_text(
-    f"#define BERT_F32_ELEMENTS {float_count}\n"
-    f"#define BERT_I8_ELEMENTS {int8_count}\n"
-    f"#define BERT_SEQUENCE_LENGTH {args.sequence_length}\n"
-    f"#define BERT_NUM_LABELS {model_config.num_labels}\n"
+(output_dir / "params.f32").replace(output_dir / "arg0.data")
+(output_dir / "weights.bin").replace(output_dir / "arg1.data")
+(output_dir / "vocab.txt").write_text(
+    "\n".join(
+        token
+        for token, _ in sorted(tokenizer.get_vocab().items(), key=lambda item: item[1])
+    )
+    + "\n"
 )

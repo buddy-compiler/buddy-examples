@@ -1,0 +1,6 @@
+[cache]
+capacity = 512
+
+[calibration]
+samples = 128
+batch_size = 4

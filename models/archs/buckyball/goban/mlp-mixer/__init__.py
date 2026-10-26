@@ -1,2 +1,2 @@
-chip = "goban"
-targets = {"mixer": "goban"}
+design = "goban"
+targets = {"mixer": "matmul"}

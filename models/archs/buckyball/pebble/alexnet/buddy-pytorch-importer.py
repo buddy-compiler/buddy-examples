@@ -1,9 +1,13 @@
+from stack.compiler.frontend.trace import trace
+import numpy as np
+from PIL import Image
+from torchvision.models import AlexNet_Weights, alexnet
 import argparse
 from importlib import import_module
 import json
+import tomllib
 from math import prod
 from pathlib import Path
-import sys
 
 import torch
 from torch._decomp import remove_decompositions
@@ -14,52 +18,85 @@ def main():
     parser = argparse.ArgumentParser(description="AlexNet AOT importer")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--compiler-build", type=Path, required=True)
-    parser.add_argument("--chip", required=True)
-    parser.add_argument("--weights", type=str, required=True)
+    parser.add_argument("--design", required=True)
     parser.add_argument("--repo-root", type=Path, required=True)
     args = parser.parse_args()
-    sys.path.insert(0, str(args.repo_root.resolve()))
-    prepare = import_module("stack.models.models.alexnet.prepare")
-    load_input = prepare.load_input
-    load_model = prepare.load_model
     compiler = args.compiler_build.resolve()
-    sys.path.insert(0, str(compiler / "python_packages"))
     from buddy.compiler.frontend import DynamoCompiler
     from buddy.compiler.graph import GraphDriver
     from buddy.compiler.graph.transform import simply_fuse
-    from buddy.compiler.ops import tosa
-    from buddy.compiler.trace import TraceConfig, load_trace_config
+    from examples.designs.pebble.stack.midend import ops as pebble
 
-    torch.set_num_threads(4)
-    model = load_model(args.weights)
-    data = load_input(args.repo_root / "stack/models/models/alexnet/images/dog.bmp")
-    with torch.no_grad():
-        reference = model(data).numpy()
-    import __init__ as design
-    from quant import quantize as quant
+    # ===----------------------------------------------------------------------===
+    # Step 1: Load the trained model and prepare the graph capture input.
+    # ===----------------------------------------------------------------------===
+    model = alexnet(weights=None).eval()
+    model.load_state_dict(
+        torch.load(
+            args.repo_root / "stack/models/models/alexnet/output/alexnet/model.pth",
+            weights_only=True,
+        )
+    )
+    for module in model.modules():
+        if isinstance(module, torch.nn.ReLU):
+            module.inplace = False
+    pixels = np.asarray(
+        Image.open(
+            args.repo_root / "stack/models/models/alexnet/images/dog.bmp"
+        ).convert("RGB"),
+        dtype=np.float32,
+    )
+    if pixels.shape != (224, 224, 3):
+        raise ValueError(f"AlexNet input must be 224x224 RGB, got {pixels.shape}")
+    value = pixels / np.float32(255.0)
+    value = (value - np.asarray([0.485, 0.456, 0.406], dtype=np.float32)) / np.asarray(
+        [0.229, 0.224, 0.225], dtype=np.float32
+    )
+    data = torch.from_numpy(value.transpose(2, 0, 1).copy())[None]
+    from quant.calibration import ImageNetCalibration
+    from stack.compiler.frontend.quant.offline.activations import calibrate_layer_ranges
+    from stack.compiler.frontend.quant.offline.weights import quantize_weights
+    from stack.compiler.frontend.quant.importer import quantize_model_graph
 
-    calibration = quant.prepare(model, data)
+    # ===----------------------------------------------------------------------===
+    # Step 1.1: Calibrate offline activation scales.
+    # ===----------------------------------------------------------------------===
+    config = tomllib.loads((Path(__file__).parent / "quant/quant.toml").read_text())
+    if config["activations"]["scale_mode"] != "offline":
+        raise ValueError("Pebble requires offline activation scales")
+    weights = quantize_weights(model.state_dict(), config["weights"])
+    calibration = calibrate_layer_ranges(
+        model, ImageNetCalibration(), quantized=weights, **config["calibration"]
+    )
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    trace = TraceConfig(load_trace_config(Path(__file__).parent / "trace/trace.toml"))
+
+    # ===----------------------------------------------------------------------===
+    # Step 2: Import the model with the configured trace nodes.
+    # ===----------------------------------------------------------------------===
+
     decompositions = dict(inductor_decomp)
     remove_decompositions(
         decompositions, [torch.ops.aten.max_pool2d_with_indices.default]
     )
     importer = DynamoCompiler(
-        primary_registry=tosa.ops_registry,
+        primary_registry=pebble.ops_registry,
         aot_autograd_decomposition=decompositions,
-        trace=trace,
+        trace=None,
     )
     with torch.no_grad():
         graphs = importer.importer(model, data)
     if len(graphs) != 1:
         raise ValueError(f"AlexNet must import as one graph, got {len(graphs)}")
     graph = graphs[0]
+
+    # ===----------------------------------------------------------------------===
+    # Step 2.1: Export the imported graph.
+    # ===----------------------------------------------------------------------===
     params = importer.imported_params[graph]
+    graph.dump(output / "01-import.txt")
     parameter_names = {id(value): name for name, value in model.named_parameters()}
     names = [parameter_names[id(value)] for value in params]
-    graph.fuse_ops([simply_fuse])
     (output / "graph.json").write_text(
         json.dumps(
             [
@@ -75,50 +112,47 @@ def main():
             indent=2,
         )
     )
-    quant.quantize(
+
+    # ===----------------------------------------------------------------------===
+    # Step 2.2: Quantize and lower the graph using the target weight layout.
+    # ===----------------------------------------------------------------------===
+    quantize_model_graph(
         graph,
         params,
         names,
         output,
         "alexnet",
         calibration,
-        rax_pack=compiler / "bin/rax-pack",
+        weight_scales={
+            name: scale.numpy() for name, scale in weights["scales"].items()
+        },
     )
+    graph.dump(output / "03-quanted.txt")
+    graph.fuse_ops([simply_fuse])
+    graph.dump(output / "04-fusion.txt")
+    trace(graph, Path(__file__).parent / "trace/trace.toml")
+    graph.dump(output / "05-traced.txt")
+    graph.dump(output / "02-quanted.txt")
+
+    # ===----------------------------------------------------------------------===
+    # Step 3: Export the target subgraphs and entry point to MLIR.
+    # ===----------------------------------------------------------------------===
     driver = GraphDriver(graph)
     for index, subgraph in enumerate(driver.subgraphs):
-        subgraph.lower_to_top_level_ir()
-        # Chip layouts are already contiguous in the packed payload. Retain
+        subgraph.lower_to_top_level_ir(buffer_layout="contiguous")
+        # Design layouts are already contiguous in the packed payload. Retain
         # their strides while allowing nonzero offsets into that payload.
-        from buddy_mlir import ir
-
-        module = subgraph._imported_module
-        with module.context:
-            function = next(
-                op for op in module.body.operations if op.operation.name == "func.func"
-            )
-            attributes = []
-            for argument in function.regions[0].blocks[0].arguments:
-                shape = list(ir.RankedTensorType(argument.type).shape)
-                strides = [prod(shape[i + 1 :]) for i in range(len(shape))]
-                attributes.append(
-                    ir.DictAttr.get(
-                        {
-                            "bufferization.buffer_layout": ir.Attribute.parse(
-                                f"strided<{strides}, offset: ?>"
-                            )
-                        }
-                    )
-                )
-            function.attributes["arg_attrs"] = ir.ArrayAttr.get(attributes)
         (output / f"subgraph{index}.mlir").write_text(str(subgraph._imported_module))
     (output / "forward.mlir").write_text(str(driver.construct_main_graph(True)))
-    data.numpy().tofile(output / "input.f32")
-    reference.tofile(output / "reference.f32")
+
+    # ===----------------------------------------------------------------------===
+    # Step 4: Export model metadata.
+    # ===----------------------------------------------------------------------===
     metadata = {
         "version": 1,
-        "chip": args.chip,
+        "design": args.design,
         "model": "alexnet",
-        "checkpoint": "AlexNet_Weights." + args.weights,
+        "checkpoint": "models/models/alexnet/output/alexnet/model.pth",
         "input_shape": [1, 3, 224, 224],
     }
     (output / "model.json").write_text(json.dumps(metadata))

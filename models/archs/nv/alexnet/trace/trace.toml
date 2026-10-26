@@ -1,0 +1,377 @@
+[[trace.node]]
+node = "convolution_activation_normalized"
+id = 0
+tag = "alexnet.convolution_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_round"
+id = 1
+tag = "alexnet.convolution_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_clamp"
+id = 2
+tag = "alexnet.convolution_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_int8"
+id = 3
+tag = "alexnet.convolution_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution"
+id = 5
+tag = "alexnet.convolution"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu"
+id = 6
+tag = "alexnet.relu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem"
+id = 7
+tag = "alexnet.getitem"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_normalized"
+id = 8
+tag = "alexnet.convolution_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_round"
+id = 9
+tag = "alexnet.convolution_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_clamp"
+id = 10
+tag = "alexnet.convolution_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_int8"
+id = 11
+tag = "alexnet.convolution_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1"
+id = 13
+tag = "alexnet.convolution_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_1"
+id = 14
+tag = "alexnet.relu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_2"
+id = 15
+tag = "alexnet.getitem_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_normalized"
+id = 16
+tag = "alexnet.convolution_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_round"
+id = 17
+tag = "alexnet.convolution_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_clamp"
+id = 18
+tag = "alexnet.convolution_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_int8"
+id = 19
+tag = "alexnet.convolution_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2"
+id = 21
+tag = "alexnet.convolution_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_2"
+id = 22
+tag = "alexnet.relu_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_normalized"
+id = 23
+tag = "alexnet.convolution_3_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_round"
+id = 24
+tag = "alexnet.convolution_3_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_clamp"
+id = 25
+tag = "alexnet.convolution_3_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_int8"
+id = 26
+tag = "alexnet.convolution_3_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3"
+id = 28
+tag = "alexnet.convolution_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_3"
+id = 29
+tag = "alexnet.relu_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_normalized"
+id = 30
+tag = "alexnet.convolution_4_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_round"
+id = 31
+tag = "alexnet.convolution_4_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_clamp"
+id = 32
+tag = "alexnet.convolution_4_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_int8"
+id = 33
+tag = "alexnet.convolution_4_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4"
+id = 35
+tag = "alexnet.convolution_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_4"
+id = 36
+tag = "alexnet.relu_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_4"
+id = 37
+tag = "alexnet.getitem_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_adaptive_avg_pool2d"
+id = 38
+tag = "alexnet._adaptive_avg_pool2d"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 39
+tag = "alexnet.view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone"
+id = 40
+tag = "alexnet.clone"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_normalized"
+id = 41
+tag = "alexnet.addmm_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_round"
+id = 42
+tag = "alexnet.addmm_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_clamp"
+id = 43
+tag = "alexnet.addmm_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_int8"
+id = 44
+tag = "alexnet.addmm_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm"
+id = 47
+tag = "alexnet.addmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_5"
+id = 48
+tag = "alexnet.relu_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_1"
+id = 49
+tag = "alexnet.clone_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_normalized"
+id = 50
+tag = "alexnet.addmm_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_round"
+id = 51
+tag = "alexnet.addmm_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_clamp"
+id = 52
+tag = "alexnet.addmm_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_int8"
+id = 53
+tag = "alexnet.addmm_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1"
+id = 56
+tag = "alexnet.addmm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_6"
+id = 57
+tag = "alexnet.relu_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_normalized"
+id = 58
+tag = "alexnet.addmm_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_round"
+id = 59
+tag = "alexnet.addmm_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_clamp"
+id = 60
+tag = "alexnet.addmm_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_int8"
+id = 61
+tag = "alexnet.addmm_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2"
+id = 64
+tag = "alexnet.addmm_2"
+cycle = true
+tensor = false

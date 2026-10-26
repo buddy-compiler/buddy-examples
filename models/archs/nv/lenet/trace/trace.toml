@@ -1,2 +1,223 @@
-[trace]
-node = []
+[[trace.node]]
+node = "convolution_activation_normalized"
+id = 0
+tag = "lenet.convolution_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_round"
+id = 1
+tag = "lenet.convolution_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_clamp"
+id = 2
+tag = "lenet.convolution_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_int8"
+id = 3
+tag = "lenet.convolution_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution"
+id = 5
+tag = "lenet.convolution"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu"
+id = 6
+tag = "lenet.relu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem"
+id = 7
+tag = "lenet.getitem"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_normalized"
+id = 8
+tag = "lenet.convolution_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_round"
+id = 9
+tag = "lenet.convolution_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_clamp"
+id = 10
+tag = "lenet.convolution_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_int8"
+id = 11
+tag = "lenet.convolution_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1"
+id = 13
+tag = "lenet.convolution_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_1"
+id = 14
+tag = "lenet.relu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_2"
+id = 15
+tag = "lenet.getitem_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 16
+tag = "lenet.view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_normalized"
+id = 17
+tag = "lenet.addmm_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_round"
+id = 18
+tag = "lenet.addmm_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_clamp"
+id = 19
+tag = "lenet.addmm_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_int8"
+id = 20
+tag = "lenet.addmm_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm"
+id = 23
+tag = "lenet.addmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_2"
+id = 24
+tag = "lenet.relu_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_normalized"
+id = 25
+tag = "lenet.addmm_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_round"
+id = 26
+tag = "lenet.addmm_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_clamp"
+id = 27
+tag = "lenet.addmm_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_int8"
+id = 28
+tag = "lenet.addmm_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1"
+id = 31
+tag = "lenet.addmm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_3"
+id = 32
+tag = "lenet.relu_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_normalized"
+id = 33
+tag = "lenet.addmm_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_round"
+id = 34
+tag = "lenet.addmm_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_clamp"
+id = 35
+tag = "lenet.addmm_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2_activation_int8"
+id = 36
+tag = "lenet.addmm_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_2"
+id = 39
+tag = "lenet.addmm_2"
+cycle = true
+tensor = false

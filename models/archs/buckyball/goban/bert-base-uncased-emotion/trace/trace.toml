@@ -132,13 +132,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute"
-id = 31
-tag = "permute"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm"
 id = 32
 tag = "addmm"
@@ -174,13 +167,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_2"
-id = 37
-tag = "permute_2"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_1"
 id = 38
 tag = "addmm_1"
@@ -212,13 +198,6 @@ tensor = false
 node = "view_6"
 id = 42
 tag = "view_6"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_4"
-id = 43
-tag = "permute_4"
 cycle = true
 tensor = false
 
@@ -356,13 +335,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_8"
-id = 64
-tag = "permute_8"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_4"
 id = 65
 tag = "addmm_4"
@@ -415,13 +387,6 @@ tensor = false
 node = "view_14"
 id = 72
 tag = "view_14"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_9"
-id = 73
-tag = "permute_9"
 cycle = true
 tensor = false
 
@@ -503,13 +468,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_10"
-id = 85
-tag = "permute_10"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_6"
 id = 86
 tag = "addmm_6"
@@ -527,13 +485,6 @@ tensor = false
 node = "view_18"
 id = 88
 tag = "view_18"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_11"
-id = 89
-tag = "permute_11"
 cycle = true
 tensor = false
 
@@ -573,13 +524,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_13"
-id = 95
-tag = "permute_13"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_22"
 id = 96
 tag = "view_22"
@@ -611,13 +555,6 @@ tensor = false
 node = "view_24"
 id = 100
 tag = "view_24"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_15"
-id = 101
-tag = "permute_15"
 cycle = true
 tensor = false
 
@@ -790,13 +727,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_19"
-id = 127
-tag = "permute_19"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_11"
 id = 128
 tag = "addmm_11"
@@ -874,13 +804,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_20"
-id = 139
-tag = "permute_20"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_12"
 id = 140
 tag = "addmm_12"
@@ -902,23 +825,9 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_21"
-id = 143
-tag = "permute_21"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_35"
 id = 144
 tag = "view_35"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_22"
-id = 145
-tag = "permute_22"
 cycle = true
 tensor = false
 
@@ -958,13 +867,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_24"
-id = 151
-tag = "permute_24"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_14"
 id = 152
 tag = "addmm_14"
@@ -989,13 +891,6 @@ tensor = false
 node = "permute_25"
 id = 155
 tag = "permute_25"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_26"
-id = 157
-tag = "permute_26"
 cycle = true
 tensor = false
 
@@ -1245,13 +1140,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_30"
-id = 193
-tag = "permute_30"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_18"
 id = 194
 tag = "addmm_18"
@@ -1273,23 +1161,9 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_31"
-id = 197
-tag = "permute_31"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_51"
 id = 198
 tag = "view_51"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_32"
-id = 199
-tag = "permute_32"
 cycle = true
 tensor = false
 
@@ -1311,13 +1185,6 @@ tensor = false
 node = "view_53"
 id = 202
 tag = "view_53"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_33"
-id = 203
-tag = "permute_33"
 cycle = true
 tensor = false
 
@@ -1357,13 +1224,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_35"
-id = 209
-tag = "permute_35"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "permute_36"
 id = 211
 tag = "permute_36"
@@ -1381,13 +1241,6 @@ tensor = false
 node = "view_58"
 id = 213
 tag = "view_58"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_37"
-id = 214
-tag = "permute_37"
 cycle = true
 tensor = false
 
@@ -1644,23 +1497,9 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_41"
-id = 251
-tag = "permute_41"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_67"
 id = 252
 tag = "view_67"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_42"
-id = 253
-tag = "permute_42"
 cycle = true
 tensor = false
 
@@ -1686,23 +1525,9 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_43"
-id = 257
-tag = "permute_43"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_70"
 id = 258
 tag = "view_70"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_44"
-id = 259
-tag = "permute_44"
 cycle = true
 tensor = false
 
@@ -1731,13 +1556,6 @@ tensor = false
 node = "permute_45"
 id = 263
 tag = "permute_45"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_46"
-id = 265
-tag = "permute_46"
 cycle = true
 tensor = false
 
@@ -1836,13 +1654,6 @@ tensor = false
 node = "view_76"
 id = 279
 tag = "view_76"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_48"
-id = 280
-tag = "permute_48"
 cycle = true
 tensor = false
 
@@ -2029,13 +1840,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_52"
-id = 307
-tag = "permute_52"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_31"
 id = 308
 tag = "addmm_31"
@@ -2057,23 +1861,9 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_53"
-id = 311
-tag = "permute_53"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_86"
 id = 312
 tag = "view_86"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_54"
-id = 313
-tag = "permute_54"
 cycle = true
 tensor = false
 
@@ -2099,13 +1889,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_55"
-id = 317
-tag = "permute_55"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "permute_56"
 id = 319
 tag = "permute_56"
@@ -2123,13 +1906,6 @@ tensor = false
 node = "view_90"
 id = 321
 tag = "view_90"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_57"
-id = 322
-tag = "permute_57"
 cycle = true
 tensor = false
 
@@ -2270,13 +2046,6 @@ tensor = false
 node = "view_94"
 id = 342
 tag = "view_94"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_59"
-id = 343
-tag = "permute_59"
 cycle = true
 tensor = false
 
@@ -2428,23 +2197,9 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_63"
-id = 365
-tag = "permute_63"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_102"
 id = 366
 tag = "view_102"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_64"
-id = 367
-tag = "permute_64"
 cycle = true
 tensor = false
 
@@ -2466,20 +2221,6 @@ tensor = false
 node = "view_104"
 id = 370
 tag = "view_104"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_65"
-id = 371
-tag = "permute_65"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_66"
-id = 373
-tag = "permute_66"
 cycle = true
 tensor = false
 
@@ -2578,13 +2319,6 @@ tensor = false
 node = "view_108"
 id = 387
 tag = "view_108"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_68"
-id = 388
-tag = "permute_68"
 cycle = true
 tensor = false
 
@@ -2729,13 +2463,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_70"
-id = 409
-tag = "permute_70"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_42"
 id = 410
 tag = "addmm_42"
@@ -2813,13 +2540,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_74"
-id = 421
-tag = "permute_74"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_44"
 id = 422
 tag = "addmm_44"
@@ -2841,20 +2561,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_75"
-id = 425
-tag = "permute_75"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_76"
-id = 427
-tag = "permute_76"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_121"
 id = 428
 tag = "view_121"
@@ -2865,13 +2571,6 @@ tensor = false
 node = "view_122"
 id = 429
 tag = "view_122"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_77"
-id = 430
-tag = "permute_77"
 cycle = true
 tensor = false
 
@@ -3016,13 +2715,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_79"
-id = 451
-tag = "permute_79"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_47"
 id = 452
 tag = "addmm_47"
@@ -3128,13 +2820,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_81"
-id = 467
-tag = "permute_81"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_131"
 id = 468
 tag = "view_131"
@@ -3212,20 +2897,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_85"
-id = 479
-tag = "permute_85"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_86"
-id = 481
-tag = "permute_86"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_137"
 id = 482
 tag = "view_137"
@@ -3236,13 +2907,6 @@ tensor = false
 node = "view_138"
 id = 483
 tag = "view_138"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_87"
-id = 484
-tag = "permute_87"
 cycle = true
 tensor = false
 
@@ -3320,13 +2984,6 @@ tensor = false
 node = "view_140"
 id = 495
 tag = "view_140"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_88"
-id = 496
-tag = "permute_88"
 cycle = true
 tensor = false
 
@@ -3471,13 +3128,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_90"
-id = 517
-tag = "permute_90"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_54"
 id = 518
 tag = "addmm_54"
@@ -3509,13 +3159,6 @@ tensor = false
 node = "view_147"
 id = 522
 tag = "view_147"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_92"
-id = 523
-tag = "permute_92"
 cycle = true
 tensor = false
 
@@ -3590,13 +3233,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_96"
-id = 535
-tag = "permute_96"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_153"
 id = 536
 tag = "view_153"
@@ -3607,13 +3243,6 @@ tensor = false
 node = "view_154"
 id = 537
 tag = "view_154"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_97"
-id = 538
-tag = "permute_97"
 cycle = true
 tensor = false
 
@@ -3695,13 +3324,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_98"
-id = 550
-tag = "permute_98"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_58"
 id = 551
 tag = "addmm_58"
@@ -3754,13 +3376,6 @@ tensor = false
 node = "view_158"
 id = 558
 tag = "view_158"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_99"
-id = 559
-tag = "permute_99"
 cycle = true
 tensor = false
 
@@ -3870,13 +3485,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_101"
-id = 575
-tag = "permute_101"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "view_163"
 id = 576
 tag = "view_163"
@@ -3908,13 +3516,6 @@ tensor = false
 node = "view_165"
 id = 580
 tag = "view_165"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_103"
-id = 581
-tag = "permute_103"
 cycle = true
 tensor = false
 
@@ -3978,13 +3579,6 @@ tensor = false
 node = "view_170"
 id = 591
 tag = "view_170"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_107"
-id = 592
-tag = "permute_107"
 cycle = true
 tensor = false
 
@@ -4066,13 +3660,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_108"
-id = 604
-tag = "permute_108"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_64"
 id = 605
 tag = "addmm_64"
@@ -4125,13 +3712,6 @@ tensor = false
 node = "view_174"
 id = 612
 tag = "view_174"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_109"
-id = 613
-tag = "permute_109"
 cycle = true
 tensor = false
 
@@ -4213,13 +3793,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_110"
-id = 625
-tag = "permute_110"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_66"
 id = 626
 tag = "addmm_66"
@@ -4255,13 +3828,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_112"
-id = 631
-tag = "permute_112"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_67"
 id = 632
 tag = "addmm_67"
@@ -4293,13 +3859,6 @@ tensor = false
 node = "view_182"
 id = 636
 tag = "view_182"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_114"
-id = 637
-tag = "permute_114"
 cycle = true
 tensor = false
 
@@ -4437,13 +3996,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_118"
-id = 658
-tag = "permute_118"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_70"
 id = 659
 tag = "addmm_70"
@@ -4496,13 +4048,6 @@ tensor = false
 node = "view_190"
 id = 666
 tag = "view_190"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_119"
-id = 667
-tag = "permute_119"
 cycle = true
 tensor = false
 
@@ -4584,13 +4129,6 @@ cycle = true
 tensor = false
 
 [[trace.node]]
-node = "permute_120"
-id = 679
-tag = "permute_120"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "addmm_72"
 id = 680
 tag = "addmm_72"
@@ -4608,13 +4146,6 @@ tensor = false
 node = "clone_25"
 id = 682
 tag = "clone_25"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "permute_121"
-id = 683
-tag = "permute_121"
 cycle = true
 tensor = false
 

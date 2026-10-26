@@ -1,2 +1,5214 @@
-[trace]
-node = []
+[[trace.node]]
+node = "convolution_activation_abs"
+id = 0
+tag = "mobilenet-v3-small.convolution_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_max"
+id = 1
+tag = "mobilenet-v3-small.convolution_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_raw_scale"
+id = 2
+tag = "mobilenet-v3-small.convolution_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_zero"
+id = 3
+tag = "mobilenet-v3-small.convolution_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_scale"
+id = 4
+tag = "mobilenet-v3-small.convolution_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_normalized"
+id = 5
+tag = "mobilenet-v3-small.convolution_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_round"
+id = 6
+tag = "mobilenet-v3-small.convolution_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_clamp"
+id = 7
+tag = "mobilenet-v3-small.convolution_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_int8"
+id = 8
+tag = "mobilenet-v3-small.convolution_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution"
+id = 10
+tag = "mobilenet-v3-small.convolution"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training"
+id = 11
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add"
+id = 12
+tag = "mobilenet-v3-small.add"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp"
+id = 13
+tag = "mobilenet-v3-small.clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_1"
+id = 14
+tag = "mobilenet-v3-small.clamp_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul"
+id = 15
+tag = "mobilenet-v3-small.mul"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div"
+id = 16
+tag = "mobilenet-v3-small.div"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_abs"
+id = 17
+tag = "mobilenet-v3-small.convolution_1_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_max"
+id = 18
+tag = "mobilenet-v3-small.convolution_1_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_raw_scale"
+id = 19
+tag = "mobilenet-v3-small.convolution_1_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_zero"
+id = 20
+tag = "mobilenet-v3-small.convolution_1_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_scale"
+id = 21
+tag = "mobilenet-v3-small.convolution_1_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_normalized"
+id = 22
+tag = "mobilenet-v3-small.convolution_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_round"
+id = 23
+tag = "mobilenet-v3-small.convolution_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_clamp"
+id = 24
+tag = "mobilenet-v3-small.convolution_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_int8"
+id = 25
+tag = "mobilenet-v3-small.convolution_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1"
+id = 27
+tag = "mobilenet-v3-small.convolution_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_1"
+id = 28
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu"
+id = 29
+tag = "mobilenet-v3-small.relu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean"
+id = 30
+tag = "mobilenet-v3-small.mean"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_abs"
+id = 31
+tag = "mobilenet-v3-small.convolution_2_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_max"
+id = 32
+tag = "mobilenet-v3-small.convolution_2_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_raw_scale"
+id = 33
+tag = "mobilenet-v3-small.convolution_2_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_zero"
+id = 34
+tag = "mobilenet-v3-small.convolution_2_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_scale"
+id = 35
+tag = "mobilenet-v3-small.convolution_2_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_normalized"
+id = 36
+tag = "mobilenet-v3-small.convolution_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_round"
+id = 37
+tag = "mobilenet-v3-small.convolution_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_clamp"
+id = 38
+tag = "mobilenet-v3-small.convolution_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_int8"
+id = 39
+tag = "mobilenet-v3-small.convolution_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2"
+id = 41
+tag = "mobilenet-v3-small.convolution_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_1"
+id = 42
+tag = "mobilenet-v3-small.relu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_abs"
+id = 43
+tag = "mobilenet-v3-small.convolution_3_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_max"
+id = 44
+tag = "mobilenet-v3-small.convolution_3_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_raw_scale"
+id = 45
+tag = "mobilenet-v3-small.convolution_3_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_zero"
+id = 46
+tag = "mobilenet-v3-small.convolution_3_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_scale"
+id = 47
+tag = "mobilenet-v3-small.convolution_3_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_normalized"
+id = 48
+tag = "mobilenet-v3-small.convolution_3_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_round"
+id = 49
+tag = "mobilenet-v3-small.convolution_3_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_clamp"
+id = 50
+tag = "mobilenet-v3-small.convolution_3_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_int8"
+id = 51
+tag = "mobilenet-v3-small.convolution_3_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3"
+id = 53
+tag = "mobilenet-v3-small.convolution_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_1"
+id = 54
+tag = "mobilenet-v3-small.add_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_2"
+id = 55
+tag = "mobilenet-v3-small.clamp_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_3"
+id = 56
+tag = "mobilenet-v3-small.clamp_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_1"
+id = 57
+tag = "mobilenet-v3-small.div_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_1"
+id = 58
+tag = "mobilenet-v3-small.mul_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_abs"
+id = 59
+tag = "mobilenet-v3-small.convolution_4_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_max"
+id = 60
+tag = "mobilenet-v3-small.convolution_4_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_raw_scale"
+id = 61
+tag = "mobilenet-v3-small.convolution_4_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_zero"
+id = 62
+tag = "mobilenet-v3-small.convolution_4_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_scale"
+id = 63
+tag = "mobilenet-v3-small.convolution_4_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_normalized"
+id = 64
+tag = "mobilenet-v3-small.convolution_4_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_round"
+id = 65
+tag = "mobilenet-v3-small.convolution_4_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_clamp"
+id = 66
+tag = "mobilenet-v3-small.convolution_4_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_int8"
+id = 67
+tag = "mobilenet-v3-small.convolution_4_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4"
+id = 69
+tag = "mobilenet-v3-small.convolution_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_2"
+id = 70
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_abs"
+id = 71
+tag = "mobilenet-v3-small.convolution_5_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_max"
+id = 72
+tag = "mobilenet-v3-small.convolution_5_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_raw_scale"
+id = 73
+tag = "mobilenet-v3-small.convolution_5_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_zero"
+id = 74
+tag = "mobilenet-v3-small.convolution_5_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_scale"
+id = 75
+tag = "mobilenet-v3-small.convolution_5_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_normalized"
+id = 76
+tag = "mobilenet-v3-small.convolution_5_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_round"
+id = 77
+tag = "mobilenet-v3-small.convolution_5_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_clamp"
+id = 78
+tag = "mobilenet-v3-small.convolution_5_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_int8"
+id = 79
+tag = "mobilenet-v3-small.convolution_5_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5"
+id = 81
+tag = "mobilenet-v3-small.convolution_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_3"
+id = 82
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_2"
+id = 83
+tag = "mobilenet-v3-small.relu_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_abs"
+id = 84
+tag = "mobilenet-v3-small.convolution_6_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_max"
+id = 85
+tag = "mobilenet-v3-small.convolution_6_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_raw_scale"
+id = 86
+tag = "mobilenet-v3-small.convolution_6_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_zero"
+id = 87
+tag = "mobilenet-v3-small.convolution_6_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_scale"
+id = 88
+tag = "mobilenet-v3-small.convolution_6_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_normalized"
+id = 89
+tag = "mobilenet-v3-small.convolution_6_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_round"
+id = 90
+tag = "mobilenet-v3-small.convolution_6_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_clamp"
+id = 91
+tag = "mobilenet-v3-small.convolution_6_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_int8"
+id = 92
+tag = "mobilenet-v3-small.convolution_6_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6"
+id = 94
+tag = "mobilenet-v3-small.convolution_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_4"
+id = 95
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_3"
+id = 96
+tag = "mobilenet-v3-small.relu_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_abs"
+id = 97
+tag = "mobilenet-v3-small.convolution_7_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_max"
+id = 98
+tag = "mobilenet-v3-small.convolution_7_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_raw_scale"
+id = 99
+tag = "mobilenet-v3-small.convolution_7_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_zero"
+id = 100
+tag = "mobilenet-v3-small.convolution_7_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_scale"
+id = 101
+tag = "mobilenet-v3-small.convolution_7_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_normalized"
+id = 102
+tag = "mobilenet-v3-small.convolution_7_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_round"
+id = 103
+tag = "mobilenet-v3-small.convolution_7_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_clamp"
+id = 104
+tag = "mobilenet-v3-small.convolution_7_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_int8"
+id = 105
+tag = "mobilenet-v3-small.convolution_7_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7"
+id = 107
+tag = "mobilenet-v3-small.convolution_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_5"
+id = 108
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_abs"
+id = 109
+tag = "mobilenet-v3-small.convolution_8_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_max"
+id = 110
+tag = "mobilenet-v3-small.convolution_8_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_raw_scale"
+id = 111
+tag = "mobilenet-v3-small.convolution_8_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_zero"
+id = 112
+tag = "mobilenet-v3-small.convolution_8_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_scale"
+id = 113
+tag = "mobilenet-v3-small.convolution_8_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_normalized"
+id = 114
+tag = "mobilenet-v3-small.convolution_8_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_round"
+id = 115
+tag = "mobilenet-v3-small.convolution_8_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_clamp"
+id = 116
+tag = "mobilenet-v3-small.convolution_8_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_int8"
+id = 117
+tag = "mobilenet-v3-small.convolution_8_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8"
+id = 119
+tag = "mobilenet-v3-small.convolution_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_6"
+id = 120
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_4"
+id = 121
+tag = "mobilenet-v3-small.relu_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_abs"
+id = 122
+tag = "mobilenet-v3-small.convolution_9_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_max"
+id = 123
+tag = "mobilenet-v3-small.convolution_9_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_raw_scale"
+id = 124
+tag = "mobilenet-v3-small.convolution_9_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_zero"
+id = 125
+tag = "mobilenet-v3-small.convolution_9_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_scale"
+id = 126
+tag = "mobilenet-v3-small.convolution_9_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_normalized"
+id = 127
+tag = "mobilenet-v3-small.convolution_9_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_round"
+id = 128
+tag = "mobilenet-v3-small.convolution_9_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_clamp"
+id = 129
+tag = "mobilenet-v3-small.convolution_9_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_int8"
+id = 130
+tag = "mobilenet-v3-small.convolution_9_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9"
+id = 132
+tag = "mobilenet-v3-small.convolution_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_7"
+id = 133
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_5"
+id = 134
+tag = "mobilenet-v3-small.relu_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_abs"
+id = 135
+tag = "mobilenet-v3-small.convolution_10_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_max"
+id = 136
+tag = "mobilenet-v3-small.convolution_10_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_raw_scale"
+id = 137
+tag = "mobilenet-v3-small.convolution_10_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_zero"
+id = 138
+tag = "mobilenet-v3-small.convolution_10_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_scale"
+id = 139
+tag = "mobilenet-v3-small.convolution_10_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_normalized"
+id = 140
+tag = "mobilenet-v3-small.convolution_10_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_round"
+id = 141
+tag = "mobilenet-v3-small.convolution_10_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_clamp"
+id = 142
+tag = "mobilenet-v3-small.convolution_10_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_int8"
+id = 143
+tag = "mobilenet-v3-small.convolution_10_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10"
+id = 145
+tag = "mobilenet-v3-small.convolution_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_8"
+id = 146
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_2"
+id = 147
+tag = "mobilenet-v3-small.add_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_abs"
+id = 148
+tag = "mobilenet-v3-small.convolution_11_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_max"
+id = 149
+tag = "mobilenet-v3-small.convolution_11_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_raw_scale"
+id = 150
+tag = "mobilenet-v3-small.convolution_11_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_zero"
+id = 151
+tag = "mobilenet-v3-small.convolution_11_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_scale"
+id = 152
+tag = "mobilenet-v3-small.convolution_11_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_normalized"
+id = 153
+tag = "mobilenet-v3-small.convolution_11_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_round"
+id = 154
+tag = "mobilenet-v3-small.convolution_11_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_clamp"
+id = 155
+tag = "mobilenet-v3-small.convolution_11_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_int8"
+id = 156
+tag = "mobilenet-v3-small.convolution_11_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11"
+id = 158
+tag = "mobilenet-v3-small.convolution_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_9"
+id = 159
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_3"
+id = 160
+tag = "mobilenet-v3-small.add_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_4"
+id = 161
+tag = "mobilenet-v3-small.clamp_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_5"
+id = 162
+tag = "mobilenet-v3-small.clamp_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_2"
+id = 163
+tag = "mobilenet-v3-small.mul_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_2"
+id = 164
+tag = "mobilenet-v3-small.div_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_abs"
+id = 165
+tag = "mobilenet-v3-small.convolution_12_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_max"
+id = 166
+tag = "mobilenet-v3-small.convolution_12_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_raw_scale"
+id = 167
+tag = "mobilenet-v3-small.convolution_12_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_zero"
+id = 168
+tag = "mobilenet-v3-small.convolution_12_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_scale"
+id = 169
+tag = "mobilenet-v3-small.convolution_12_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_normalized"
+id = 170
+tag = "mobilenet-v3-small.convolution_12_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_round"
+id = 171
+tag = "mobilenet-v3-small.convolution_12_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_clamp"
+id = 172
+tag = "mobilenet-v3-small.convolution_12_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_int8"
+id = 173
+tag = "mobilenet-v3-small.convolution_12_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12"
+id = 175
+tag = "mobilenet-v3-small.convolution_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_10"
+id = 176
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_4"
+id = 177
+tag = "mobilenet-v3-small.add_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_6"
+id = 178
+tag = "mobilenet-v3-small.clamp_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_7"
+id = 179
+tag = "mobilenet-v3-small.clamp_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_3"
+id = 180
+tag = "mobilenet-v3-small.mul_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_3"
+id = 181
+tag = "mobilenet-v3-small.div_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_1"
+id = 182
+tag = "mobilenet-v3-small.mean_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_abs"
+id = 183
+tag = "mobilenet-v3-small.convolution_13_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_max"
+id = 184
+tag = "mobilenet-v3-small.convolution_13_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_raw_scale"
+id = 185
+tag = "mobilenet-v3-small.convolution_13_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_zero"
+id = 186
+tag = "mobilenet-v3-small.convolution_13_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_scale"
+id = 187
+tag = "mobilenet-v3-small.convolution_13_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_normalized"
+id = 188
+tag = "mobilenet-v3-small.convolution_13_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_round"
+id = 189
+tag = "mobilenet-v3-small.convolution_13_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_clamp"
+id = 190
+tag = "mobilenet-v3-small.convolution_13_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_int8"
+id = 191
+tag = "mobilenet-v3-small.convolution_13_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13"
+id = 193
+tag = "mobilenet-v3-small.convolution_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_6"
+id = 194
+tag = "mobilenet-v3-small.relu_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_abs"
+id = 195
+tag = "mobilenet-v3-small.convolution_14_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_max"
+id = 196
+tag = "mobilenet-v3-small.convolution_14_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_raw_scale"
+id = 197
+tag = "mobilenet-v3-small.convolution_14_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_zero"
+id = 198
+tag = "mobilenet-v3-small.convolution_14_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_scale"
+id = 199
+tag = "mobilenet-v3-small.convolution_14_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_normalized"
+id = 200
+tag = "mobilenet-v3-small.convolution_14_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_round"
+id = 201
+tag = "mobilenet-v3-small.convolution_14_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_clamp"
+id = 202
+tag = "mobilenet-v3-small.convolution_14_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_int8"
+id = 203
+tag = "mobilenet-v3-small.convolution_14_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14"
+id = 205
+tag = "mobilenet-v3-small.convolution_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_5"
+id = 206
+tag = "mobilenet-v3-small.add_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_8"
+id = 207
+tag = "mobilenet-v3-small.clamp_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_9"
+id = 208
+tag = "mobilenet-v3-small.clamp_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_4"
+id = 209
+tag = "mobilenet-v3-small.div_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_4"
+id = 210
+tag = "mobilenet-v3-small.mul_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_abs"
+id = 211
+tag = "mobilenet-v3-small.convolution_15_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_max"
+id = 212
+tag = "mobilenet-v3-small.convolution_15_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_raw_scale"
+id = 213
+tag = "mobilenet-v3-small.convolution_15_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_zero"
+id = 214
+tag = "mobilenet-v3-small.convolution_15_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_scale"
+id = 215
+tag = "mobilenet-v3-small.convolution_15_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_normalized"
+id = 216
+tag = "mobilenet-v3-small.convolution_15_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_round"
+id = 217
+tag = "mobilenet-v3-small.convolution_15_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_clamp"
+id = 218
+tag = "mobilenet-v3-small.convolution_15_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_int8"
+id = 219
+tag = "mobilenet-v3-small.convolution_15_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15"
+id = 221
+tag = "mobilenet-v3-small.convolution_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_11"
+id = 222
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_abs"
+id = 223
+tag = "mobilenet-v3-small.convolution_16_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_max"
+id = 224
+tag = "mobilenet-v3-small.convolution_16_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_raw_scale"
+id = 225
+tag = "mobilenet-v3-small.convolution_16_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_zero"
+id = 226
+tag = "mobilenet-v3-small.convolution_16_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_scale"
+id = 227
+tag = "mobilenet-v3-small.convolution_16_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_normalized"
+id = 228
+tag = "mobilenet-v3-small.convolution_16_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_round"
+id = 229
+tag = "mobilenet-v3-small.convolution_16_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_clamp"
+id = 230
+tag = "mobilenet-v3-small.convolution_16_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_int8"
+id = 231
+tag = "mobilenet-v3-small.convolution_16_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16"
+id = 233
+tag = "mobilenet-v3-small.convolution_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_12"
+id = 234
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_6"
+id = 235
+tag = "mobilenet-v3-small.add_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_10"
+id = 236
+tag = "mobilenet-v3-small.clamp_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_11"
+id = 237
+tag = "mobilenet-v3-small.clamp_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_5"
+id = 238
+tag = "mobilenet-v3-small.mul_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_5"
+id = 239
+tag = "mobilenet-v3-small.div_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_abs"
+id = 240
+tag = "mobilenet-v3-small.convolution_17_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_max"
+id = 241
+tag = "mobilenet-v3-small.convolution_17_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_raw_scale"
+id = 242
+tag = "mobilenet-v3-small.convolution_17_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_zero"
+id = 243
+tag = "mobilenet-v3-small.convolution_17_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_scale"
+id = 244
+tag = "mobilenet-v3-small.convolution_17_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_normalized"
+id = 245
+tag = "mobilenet-v3-small.convolution_17_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_round"
+id = 246
+tag = "mobilenet-v3-small.convolution_17_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_clamp"
+id = 247
+tag = "mobilenet-v3-small.convolution_17_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_int8"
+id = 248
+tag = "mobilenet-v3-small.convolution_17_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17"
+id = 250
+tag = "mobilenet-v3-small.convolution_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_13"
+id = 251
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_7"
+id = 252
+tag = "mobilenet-v3-small.add_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_12"
+id = 253
+tag = "mobilenet-v3-small.clamp_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_13"
+id = 254
+tag = "mobilenet-v3-small.clamp_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_6"
+id = 255
+tag = "mobilenet-v3-small.mul_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_6"
+id = 256
+tag = "mobilenet-v3-small.div_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_2"
+id = 257
+tag = "mobilenet-v3-small.mean_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_abs"
+id = 258
+tag = "mobilenet-v3-small.convolution_18_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_max"
+id = 259
+tag = "mobilenet-v3-small.convolution_18_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_raw_scale"
+id = 260
+tag = "mobilenet-v3-small.convolution_18_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_zero"
+id = 261
+tag = "mobilenet-v3-small.convolution_18_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_scale"
+id = 262
+tag = "mobilenet-v3-small.convolution_18_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_normalized"
+id = 263
+tag = "mobilenet-v3-small.convolution_18_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_round"
+id = 264
+tag = "mobilenet-v3-small.convolution_18_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_clamp"
+id = 265
+tag = "mobilenet-v3-small.convolution_18_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_int8"
+id = 266
+tag = "mobilenet-v3-small.convolution_18_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18"
+id = 268
+tag = "mobilenet-v3-small.convolution_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_7"
+id = 269
+tag = "mobilenet-v3-small.relu_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_abs"
+id = 270
+tag = "mobilenet-v3-small.convolution_19_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_max"
+id = 271
+tag = "mobilenet-v3-small.convolution_19_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_raw_scale"
+id = 272
+tag = "mobilenet-v3-small.convolution_19_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_zero"
+id = 273
+tag = "mobilenet-v3-small.convolution_19_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_scale"
+id = 274
+tag = "mobilenet-v3-small.convolution_19_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_normalized"
+id = 275
+tag = "mobilenet-v3-small.convolution_19_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_round"
+id = 276
+tag = "mobilenet-v3-small.convolution_19_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_clamp"
+id = 277
+tag = "mobilenet-v3-small.convolution_19_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_int8"
+id = 278
+tag = "mobilenet-v3-small.convolution_19_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19"
+id = 280
+tag = "mobilenet-v3-small.convolution_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_8"
+id = 281
+tag = "mobilenet-v3-small.add_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_14"
+id = 282
+tag = "mobilenet-v3-small.clamp_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_15"
+id = 283
+tag = "mobilenet-v3-small.clamp_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_7"
+id = 284
+tag = "mobilenet-v3-small.div_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_7"
+id = 285
+tag = "mobilenet-v3-small.mul_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_abs"
+id = 286
+tag = "mobilenet-v3-small.convolution_20_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_max"
+id = 287
+tag = "mobilenet-v3-small.convolution_20_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_raw_scale"
+id = 288
+tag = "mobilenet-v3-small.convolution_20_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_zero"
+id = 289
+tag = "mobilenet-v3-small.convolution_20_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_scale"
+id = 290
+tag = "mobilenet-v3-small.convolution_20_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_normalized"
+id = 291
+tag = "mobilenet-v3-small.convolution_20_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_round"
+id = 292
+tag = "mobilenet-v3-small.convolution_20_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_clamp"
+id = 293
+tag = "mobilenet-v3-small.convolution_20_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_int8"
+id = 294
+tag = "mobilenet-v3-small.convolution_20_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20"
+id = 296
+tag = "mobilenet-v3-small.convolution_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_14"
+id = 297
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_9"
+id = 298
+tag = "mobilenet-v3-small.add_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_abs"
+id = 299
+tag = "mobilenet-v3-small.convolution_21_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_max"
+id = 300
+tag = "mobilenet-v3-small.convolution_21_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_raw_scale"
+id = 301
+tag = "mobilenet-v3-small.convolution_21_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_zero"
+id = 302
+tag = "mobilenet-v3-small.convolution_21_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_scale"
+id = 303
+tag = "mobilenet-v3-small.convolution_21_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_normalized"
+id = 304
+tag = "mobilenet-v3-small.convolution_21_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_round"
+id = 305
+tag = "mobilenet-v3-small.convolution_21_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_clamp"
+id = 306
+tag = "mobilenet-v3-small.convolution_21_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_int8"
+id = 307
+tag = "mobilenet-v3-small.convolution_21_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21"
+id = 309
+tag = "mobilenet-v3-small.convolution_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_15"
+id = 310
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_10"
+id = 311
+tag = "mobilenet-v3-small.add_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_16"
+id = 312
+tag = "mobilenet-v3-small.clamp_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_17"
+id = 313
+tag = "mobilenet-v3-small.clamp_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_8"
+id = 314
+tag = "mobilenet-v3-small.mul_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_8"
+id = 315
+tag = "mobilenet-v3-small.div_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_abs"
+id = 316
+tag = "mobilenet-v3-small.convolution_22_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_max"
+id = 317
+tag = "mobilenet-v3-small.convolution_22_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_raw_scale"
+id = 318
+tag = "mobilenet-v3-small.convolution_22_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_zero"
+id = 319
+tag = "mobilenet-v3-small.convolution_22_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_scale"
+id = 320
+tag = "mobilenet-v3-small.convolution_22_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_normalized"
+id = 321
+tag = "mobilenet-v3-small.convolution_22_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_round"
+id = 322
+tag = "mobilenet-v3-small.convolution_22_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_clamp"
+id = 323
+tag = "mobilenet-v3-small.convolution_22_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_int8"
+id = 324
+tag = "mobilenet-v3-small.convolution_22_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22"
+id = 326
+tag = "mobilenet-v3-small.convolution_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_16"
+id = 327
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_11"
+id = 328
+tag = "mobilenet-v3-small.add_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_18"
+id = 329
+tag = "mobilenet-v3-small.clamp_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_19"
+id = 330
+tag = "mobilenet-v3-small.clamp_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_9"
+id = 331
+tag = "mobilenet-v3-small.mul_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_9"
+id = 332
+tag = "mobilenet-v3-small.div_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_3"
+id = 333
+tag = "mobilenet-v3-small.mean_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_abs"
+id = 334
+tag = "mobilenet-v3-small.convolution_23_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_max"
+id = 335
+tag = "mobilenet-v3-small.convolution_23_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_raw_scale"
+id = 336
+tag = "mobilenet-v3-small.convolution_23_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_zero"
+id = 337
+tag = "mobilenet-v3-small.convolution_23_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_scale"
+id = 338
+tag = "mobilenet-v3-small.convolution_23_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_normalized"
+id = 339
+tag = "mobilenet-v3-small.convolution_23_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_round"
+id = 340
+tag = "mobilenet-v3-small.convolution_23_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_clamp"
+id = 341
+tag = "mobilenet-v3-small.convolution_23_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_int8"
+id = 342
+tag = "mobilenet-v3-small.convolution_23_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23"
+id = 344
+tag = "mobilenet-v3-small.convolution_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_8"
+id = 345
+tag = "mobilenet-v3-small.relu_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_abs"
+id = 346
+tag = "mobilenet-v3-small.convolution_24_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_max"
+id = 347
+tag = "mobilenet-v3-small.convolution_24_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_raw_scale"
+id = 348
+tag = "mobilenet-v3-small.convolution_24_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_zero"
+id = 349
+tag = "mobilenet-v3-small.convolution_24_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_scale"
+id = 350
+tag = "mobilenet-v3-small.convolution_24_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_normalized"
+id = 351
+tag = "mobilenet-v3-small.convolution_24_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_round"
+id = 352
+tag = "mobilenet-v3-small.convolution_24_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_clamp"
+id = 353
+tag = "mobilenet-v3-small.convolution_24_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_int8"
+id = 354
+tag = "mobilenet-v3-small.convolution_24_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24"
+id = 356
+tag = "mobilenet-v3-small.convolution_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_12"
+id = 357
+tag = "mobilenet-v3-small.add_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_20"
+id = 358
+tag = "mobilenet-v3-small.clamp_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_21"
+id = 359
+tag = "mobilenet-v3-small.clamp_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_10"
+id = 360
+tag = "mobilenet-v3-small.div_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_10"
+id = 361
+tag = "mobilenet-v3-small.mul_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_abs"
+id = 362
+tag = "mobilenet-v3-small.convolution_25_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_max"
+id = 363
+tag = "mobilenet-v3-small.convolution_25_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_raw_scale"
+id = 364
+tag = "mobilenet-v3-small.convolution_25_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_zero"
+id = 365
+tag = "mobilenet-v3-small.convolution_25_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_scale"
+id = 366
+tag = "mobilenet-v3-small.convolution_25_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_normalized"
+id = 367
+tag = "mobilenet-v3-small.convolution_25_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_round"
+id = 368
+tag = "mobilenet-v3-small.convolution_25_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_clamp"
+id = 369
+tag = "mobilenet-v3-small.convolution_25_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_int8"
+id = 370
+tag = "mobilenet-v3-small.convolution_25_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25"
+id = 372
+tag = "mobilenet-v3-small.convolution_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_17"
+id = 373
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_13"
+id = 374
+tag = "mobilenet-v3-small.add_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_abs"
+id = 375
+tag = "mobilenet-v3-small.convolution_26_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_max"
+id = 376
+tag = "mobilenet-v3-small.convolution_26_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_raw_scale"
+id = 377
+tag = "mobilenet-v3-small.convolution_26_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_zero"
+id = 378
+tag = "mobilenet-v3-small.convolution_26_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_scale"
+id = 379
+tag = "mobilenet-v3-small.convolution_26_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_normalized"
+id = 380
+tag = "mobilenet-v3-small.convolution_26_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_round"
+id = 381
+tag = "mobilenet-v3-small.convolution_26_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_clamp"
+id = 382
+tag = "mobilenet-v3-small.convolution_26_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_int8"
+id = 383
+tag = "mobilenet-v3-small.convolution_26_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26"
+id = 385
+tag = "mobilenet-v3-small.convolution_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_18"
+id = 386
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_14"
+id = 387
+tag = "mobilenet-v3-small.add_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_22"
+id = 388
+tag = "mobilenet-v3-small.clamp_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_23"
+id = 389
+tag = "mobilenet-v3-small.clamp_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_11"
+id = 390
+tag = "mobilenet-v3-small.mul_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_11"
+id = 391
+tag = "mobilenet-v3-small.div_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_abs"
+id = 392
+tag = "mobilenet-v3-small.convolution_27_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_max"
+id = 393
+tag = "mobilenet-v3-small.convolution_27_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_raw_scale"
+id = 394
+tag = "mobilenet-v3-small.convolution_27_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_zero"
+id = 395
+tag = "mobilenet-v3-small.convolution_27_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_scale"
+id = 396
+tag = "mobilenet-v3-small.convolution_27_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_normalized"
+id = 397
+tag = "mobilenet-v3-small.convolution_27_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_round"
+id = 398
+tag = "mobilenet-v3-small.convolution_27_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_clamp"
+id = 399
+tag = "mobilenet-v3-small.convolution_27_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_int8"
+id = 400
+tag = "mobilenet-v3-small.convolution_27_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27"
+id = 402
+tag = "mobilenet-v3-small.convolution_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_19"
+id = 403
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_15"
+id = 404
+tag = "mobilenet-v3-small.add_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_24"
+id = 405
+tag = "mobilenet-v3-small.clamp_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_25"
+id = 406
+tag = "mobilenet-v3-small.clamp_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_12"
+id = 407
+tag = "mobilenet-v3-small.mul_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_12"
+id = 408
+tag = "mobilenet-v3-small.div_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_4"
+id = 409
+tag = "mobilenet-v3-small.mean_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_abs"
+id = 410
+tag = "mobilenet-v3-small.convolution_28_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_max"
+id = 411
+tag = "mobilenet-v3-small.convolution_28_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_raw_scale"
+id = 412
+tag = "mobilenet-v3-small.convolution_28_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_zero"
+id = 413
+tag = "mobilenet-v3-small.convolution_28_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_scale"
+id = 414
+tag = "mobilenet-v3-small.convolution_28_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_normalized"
+id = 415
+tag = "mobilenet-v3-small.convolution_28_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_round"
+id = 416
+tag = "mobilenet-v3-small.convolution_28_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_clamp"
+id = 417
+tag = "mobilenet-v3-small.convolution_28_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_int8"
+id = 418
+tag = "mobilenet-v3-small.convolution_28_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28"
+id = 420
+tag = "mobilenet-v3-small.convolution_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_9"
+id = 421
+tag = "mobilenet-v3-small.relu_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_abs"
+id = 422
+tag = "mobilenet-v3-small.convolution_29_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_max"
+id = 423
+tag = "mobilenet-v3-small.convolution_29_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_raw_scale"
+id = 424
+tag = "mobilenet-v3-small.convolution_29_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_zero"
+id = 425
+tag = "mobilenet-v3-small.convolution_29_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_scale"
+id = 426
+tag = "mobilenet-v3-small.convolution_29_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_normalized"
+id = 427
+tag = "mobilenet-v3-small.convolution_29_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_round"
+id = 428
+tag = "mobilenet-v3-small.convolution_29_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_clamp"
+id = 429
+tag = "mobilenet-v3-small.convolution_29_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_int8"
+id = 430
+tag = "mobilenet-v3-small.convolution_29_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29"
+id = 432
+tag = "mobilenet-v3-small.convolution_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_16"
+id = 433
+tag = "mobilenet-v3-small.add_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_26"
+id = 434
+tag = "mobilenet-v3-small.clamp_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_27"
+id = 435
+tag = "mobilenet-v3-small.clamp_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_13"
+id = 436
+tag = "mobilenet-v3-small.div_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_13"
+id = 437
+tag = "mobilenet-v3-small.mul_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_abs"
+id = 438
+tag = "mobilenet-v3-small.convolution_30_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_max"
+id = 439
+tag = "mobilenet-v3-small.convolution_30_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_raw_scale"
+id = 440
+tag = "mobilenet-v3-small.convolution_30_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_zero"
+id = 441
+tag = "mobilenet-v3-small.convolution_30_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_scale"
+id = 442
+tag = "mobilenet-v3-small.convolution_30_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_normalized"
+id = 443
+tag = "mobilenet-v3-small.convolution_30_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_round"
+id = 444
+tag = "mobilenet-v3-small.convolution_30_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_clamp"
+id = 445
+tag = "mobilenet-v3-small.convolution_30_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_int8"
+id = 446
+tag = "mobilenet-v3-small.convolution_30_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30"
+id = 448
+tag = "mobilenet-v3-small.convolution_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_20"
+id = 449
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_abs"
+id = 450
+tag = "mobilenet-v3-small.convolution_31_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_max"
+id = 451
+tag = "mobilenet-v3-small.convolution_31_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_raw_scale"
+id = 452
+tag = "mobilenet-v3-small.convolution_31_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_zero"
+id = 453
+tag = "mobilenet-v3-small.convolution_31_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_scale"
+id = 454
+tag = "mobilenet-v3-small.convolution_31_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_normalized"
+id = 455
+tag = "mobilenet-v3-small.convolution_31_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_round"
+id = 456
+tag = "mobilenet-v3-small.convolution_31_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_clamp"
+id = 457
+tag = "mobilenet-v3-small.convolution_31_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_int8"
+id = 458
+tag = "mobilenet-v3-small.convolution_31_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31"
+id = 460
+tag = "mobilenet-v3-small.convolution_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_21"
+id = 461
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_17"
+id = 462
+tag = "mobilenet-v3-small.add_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_28"
+id = 463
+tag = "mobilenet-v3-small.clamp_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_29"
+id = 464
+tag = "mobilenet-v3-small.clamp_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_14"
+id = 465
+tag = "mobilenet-v3-small.mul_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_14"
+id = 466
+tag = "mobilenet-v3-small.div_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_abs"
+id = 467
+tag = "mobilenet-v3-small.convolution_32_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_max"
+id = 468
+tag = "mobilenet-v3-small.convolution_32_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_raw_scale"
+id = 469
+tag = "mobilenet-v3-small.convolution_32_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_zero"
+id = 470
+tag = "mobilenet-v3-small.convolution_32_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_scale"
+id = 471
+tag = "mobilenet-v3-small.convolution_32_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_normalized"
+id = 472
+tag = "mobilenet-v3-small.convolution_32_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_round"
+id = 473
+tag = "mobilenet-v3-small.convolution_32_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_clamp"
+id = 474
+tag = "mobilenet-v3-small.convolution_32_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_int8"
+id = 475
+tag = "mobilenet-v3-small.convolution_32_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32"
+id = 477
+tag = "mobilenet-v3-small.convolution_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_22"
+id = 478
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_18"
+id = 479
+tag = "mobilenet-v3-small.add_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_30"
+id = 480
+tag = "mobilenet-v3-small.clamp_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_31"
+id = 481
+tag = "mobilenet-v3-small.clamp_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_15"
+id = 482
+tag = "mobilenet-v3-small.mul_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_15"
+id = 483
+tag = "mobilenet-v3-small.div_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_5"
+id = 484
+tag = "mobilenet-v3-small.mean_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_abs"
+id = 485
+tag = "mobilenet-v3-small.convolution_33_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_max"
+id = 486
+tag = "mobilenet-v3-small.convolution_33_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_raw_scale"
+id = 487
+tag = "mobilenet-v3-small.convolution_33_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_zero"
+id = 488
+tag = "mobilenet-v3-small.convolution_33_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_scale"
+id = 489
+tag = "mobilenet-v3-small.convolution_33_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_normalized"
+id = 490
+tag = "mobilenet-v3-small.convolution_33_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_round"
+id = 491
+tag = "mobilenet-v3-small.convolution_33_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_clamp"
+id = 492
+tag = "mobilenet-v3-small.convolution_33_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_int8"
+id = 493
+tag = "mobilenet-v3-small.convolution_33_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33"
+id = 495
+tag = "mobilenet-v3-small.convolution_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_10"
+id = 496
+tag = "mobilenet-v3-small.relu_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_abs"
+id = 497
+tag = "mobilenet-v3-small.convolution_34_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_max"
+id = 498
+tag = "mobilenet-v3-small.convolution_34_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_raw_scale"
+id = 499
+tag = "mobilenet-v3-small.convolution_34_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_zero"
+id = 500
+tag = "mobilenet-v3-small.convolution_34_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_scale"
+id = 501
+tag = "mobilenet-v3-small.convolution_34_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_normalized"
+id = 502
+tag = "mobilenet-v3-small.convolution_34_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_round"
+id = 503
+tag = "mobilenet-v3-small.convolution_34_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_clamp"
+id = 504
+tag = "mobilenet-v3-small.convolution_34_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_int8"
+id = 505
+tag = "mobilenet-v3-small.convolution_34_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34"
+id = 507
+tag = "mobilenet-v3-small.convolution_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_19"
+id = 508
+tag = "mobilenet-v3-small.add_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_32"
+id = 509
+tag = "mobilenet-v3-small.clamp_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_33"
+id = 510
+tag = "mobilenet-v3-small.clamp_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_16"
+id = 511
+tag = "mobilenet-v3-small.div_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_16"
+id = 512
+tag = "mobilenet-v3-small.mul_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_abs"
+id = 513
+tag = "mobilenet-v3-small.convolution_35_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_max"
+id = 514
+tag = "mobilenet-v3-small.convolution_35_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_raw_scale"
+id = 515
+tag = "mobilenet-v3-small.convolution_35_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_zero"
+id = 516
+tag = "mobilenet-v3-small.convolution_35_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_scale"
+id = 517
+tag = "mobilenet-v3-small.convolution_35_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_normalized"
+id = 518
+tag = "mobilenet-v3-small.convolution_35_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_round"
+id = 519
+tag = "mobilenet-v3-small.convolution_35_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_clamp"
+id = 520
+tag = "mobilenet-v3-small.convolution_35_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_int8"
+id = 521
+tag = "mobilenet-v3-small.convolution_35_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35"
+id = 523
+tag = "mobilenet-v3-small.convolution_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_23"
+id = 524
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_20"
+id = 525
+tag = "mobilenet-v3-small.add_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_abs"
+id = 526
+tag = "mobilenet-v3-small.convolution_36_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_max"
+id = 527
+tag = "mobilenet-v3-small.convolution_36_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_raw_scale"
+id = 528
+tag = "mobilenet-v3-small.convolution_36_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_zero"
+id = 529
+tag = "mobilenet-v3-small.convolution_36_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_scale"
+id = 530
+tag = "mobilenet-v3-small.convolution_36_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_normalized"
+id = 531
+tag = "mobilenet-v3-small.convolution_36_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_round"
+id = 532
+tag = "mobilenet-v3-small.convolution_36_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_clamp"
+id = 533
+tag = "mobilenet-v3-small.convolution_36_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_int8"
+id = 534
+tag = "mobilenet-v3-small.convolution_36_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36"
+id = 536
+tag = "mobilenet-v3-small.convolution_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_24"
+id = 537
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_21"
+id = 538
+tag = "mobilenet-v3-small.add_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_34"
+id = 539
+tag = "mobilenet-v3-small.clamp_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_35"
+id = 540
+tag = "mobilenet-v3-small.clamp_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_17"
+id = 541
+tag = "mobilenet-v3-small.mul_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_17"
+id = 542
+tag = "mobilenet-v3-small.div_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_abs"
+id = 543
+tag = "mobilenet-v3-small.convolution_37_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_max"
+id = 544
+tag = "mobilenet-v3-small.convolution_37_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_raw_scale"
+id = 545
+tag = "mobilenet-v3-small.convolution_37_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_zero"
+id = 546
+tag = "mobilenet-v3-small.convolution_37_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_scale"
+id = 547
+tag = "mobilenet-v3-small.convolution_37_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_normalized"
+id = 548
+tag = "mobilenet-v3-small.convolution_37_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_round"
+id = 549
+tag = "mobilenet-v3-small.convolution_37_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_clamp"
+id = 550
+tag = "mobilenet-v3-small.convolution_37_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_int8"
+id = 551
+tag = "mobilenet-v3-small.convolution_37_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37"
+id = 553
+tag = "mobilenet-v3-small.convolution_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_25"
+id = 554
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_22"
+id = 555
+tag = "mobilenet-v3-small.add_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_36"
+id = 556
+tag = "mobilenet-v3-small.clamp_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_37"
+id = 557
+tag = "mobilenet-v3-small.clamp_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_18"
+id = 558
+tag = "mobilenet-v3-small.mul_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_18"
+id = 559
+tag = "mobilenet-v3-small.div_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_6"
+id = 560
+tag = "mobilenet-v3-small.mean_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_abs"
+id = 561
+tag = "mobilenet-v3-small.convolution_38_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_max"
+id = 562
+tag = "mobilenet-v3-small.convolution_38_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_raw_scale"
+id = 563
+tag = "mobilenet-v3-small.convolution_38_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_zero"
+id = 564
+tag = "mobilenet-v3-small.convolution_38_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_scale"
+id = 565
+tag = "mobilenet-v3-small.convolution_38_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_normalized"
+id = 566
+tag = "mobilenet-v3-small.convolution_38_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_round"
+id = 567
+tag = "mobilenet-v3-small.convolution_38_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_clamp"
+id = 568
+tag = "mobilenet-v3-small.convolution_38_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_int8"
+id = 569
+tag = "mobilenet-v3-small.convolution_38_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38"
+id = 571
+tag = "mobilenet-v3-small.convolution_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_11"
+id = 572
+tag = "mobilenet-v3-small.relu_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_abs"
+id = 573
+tag = "mobilenet-v3-small.convolution_39_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_max"
+id = 574
+tag = "mobilenet-v3-small.convolution_39_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_raw_scale"
+id = 575
+tag = "mobilenet-v3-small.convolution_39_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_zero"
+id = 576
+tag = "mobilenet-v3-small.convolution_39_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_scale"
+id = 577
+tag = "mobilenet-v3-small.convolution_39_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_normalized"
+id = 578
+tag = "mobilenet-v3-small.convolution_39_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_round"
+id = 579
+tag = "mobilenet-v3-small.convolution_39_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_clamp"
+id = 580
+tag = "mobilenet-v3-small.convolution_39_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_int8"
+id = 581
+tag = "mobilenet-v3-small.convolution_39_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39"
+id = 583
+tag = "mobilenet-v3-small.convolution_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_23"
+id = 584
+tag = "mobilenet-v3-small.add_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_38"
+id = 585
+tag = "mobilenet-v3-small.clamp_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_39"
+id = 586
+tag = "mobilenet-v3-small.clamp_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_19"
+id = 587
+tag = "mobilenet-v3-small.div_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_19"
+id = 588
+tag = "mobilenet-v3-small.mul_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_abs"
+id = 589
+tag = "mobilenet-v3-small.convolution_40_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_max"
+id = 590
+tag = "mobilenet-v3-small.convolution_40_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_raw_scale"
+id = 591
+tag = "mobilenet-v3-small.convolution_40_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_zero"
+id = 592
+tag = "mobilenet-v3-small.convolution_40_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_scale"
+id = 593
+tag = "mobilenet-v3-small.convolution_40_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_normalized"
+id = 594
+tag = "mobilenet-v3-small.convolution_40_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_round"
+id = 595
+tag = "mobilenet-v3-small.convolution_40_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_clamp"
+id = 596
+tag = "mobilenet-v3-small.convolution_40_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_int8"
+id = 597
+tag = "mobilenet-v3-small.convolution_40_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40"
+id = 599
+tag = "mobilenet-v3-small.convolution_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_26"
+id = 600
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_abs"
+id = 601
+tag = "mobilenet-v3-small.convolution_41_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_max"
+id = 602
+tag = "mobilenet-v3-small.convolution_41_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_raw_scale"
+id = 603
+tag = "mobilenet-v3-small.convolution_41_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_zero"
+id = 604
+tag = "mobilenet-v3-small.convolution_41_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_scale"
+id = 605
+tag = "mobilenet-v3-small.convolution_41_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_normalized"
+id = 606
+tag = "mobilenet-v3-small.convolution_41_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_round"
+id = 607
+tag = "mobilenet-v3-small.convolution_41_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_clamp"
+id = 608
+tag = "mobilenet-v3-small.convolution_41_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_int8"
+id = 609
+tag = "mobilenet-v3-small.convolution_41_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41"
+id = 611
+tag = "mobilenet-v3-small.convolution_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_27"
+id = 612
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_24"
+id = 613
+tag = "mobilenet-v3-small.add_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_40"
+id = 614
+tag = "mobilenet-v3-small.clamp_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_41"
+id = 615
+tag = "mobilenet-v3-small.clamp_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_20"
+id = 616
+tag = "mobilenet-v3-small.mul_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_20"
+id = 617
+tag = "mobilenet-v3-small.div_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_abs"
+id = 618
+tag = "mobilenet-v3-small.convolution_42_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_max"
+id = 619
+tag = "mobilenet-v3-small.convolution_42_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_raw_scale"
+id = 620
+tag = "mobilenet-v3-small.convolution_42_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_zero"
+id = 621
+tag = "mobilenet-v3-small.convolution_42_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_scale"
+id = 622
+tag = "mobilenet-v3-small.convolution_42_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_normalized"
+id = 623
+tag = "mobilenet-v3-small.convolution_42_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_round"
+id = 624
+tag = "mobilenet-v3-small.convolution_42_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_clamp"
+id = 625
+tag = "mobilenet-v3-small.convolution_42_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_int8"
+id = 626
+tag = "mobilenet-v3-small.convolution_42_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42"
+id = 628
+tag = "mobilenet-v3-small.convolution_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_28"
+id = 629
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_25"
+id = 630
+tag = "mobilenet-v3-small.add_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_42"
+id = 631
+tag = "mobilenet-v3-small.clamp_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_43"
+id = 632
+tag = "mobilenet-v3-small.clamp_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_21"
+id = 633
+tag = "mobilenet-v3-small.mul_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_21"
+id = 634
+tag = "mobilenet-v3-small.div_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_7"
+id = 635
+tag = "mobilenet-v3-small.mean_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_abs"
+id = 636
+tag = "mobilenet-v3-small.convolution_43_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_max"
+id = 637
+tag = "mobilenet-v3-small.convolution_43_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_raw_scale"
+id = 638
+tag = "mobilenet-v3-small.convolution_43_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_zero"
+id = 639
+tag = "mobilenet-v3-small.convolution_43_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_scale"
+id = 640
+tag = "mobilenet-v3-small.convolution_43_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_normalized"
+id = 641
+tag = "mobilenet-v3-small.convolution_43_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_round"
+id = 642
+tag = "mobilenet-v3-small.convolution_43_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_clamp"
+id = 643
+tag = "mobilenet-v3-small.convolution_43_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_int8"
+id = 644
+tag = "mobilenet-v3-small.convolution_43_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43"
+id = 646
+tag = "mobilenet-v3-small.convolution_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_12"
+id = 647
+tag = "mobilenet-v3-small.relu_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_abs"
+id = 648
+tag = "mobilenet-v3-small.convolution_44_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_max"
+id = 649
+tag = "mobilenet-v3-small.convolution_44_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_raw_scale"
+id = 650
+tag = "mobilenet-v3-small.convolution_44_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_zero"
+id = 651
+tag = "mobilenet-v3-small.convolution_44_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_scale"
+id = 652
+tag = "mobilenet-v3-small.convolution_44_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_normalized"
+id = 653
+tag = "mobilenet-v3-small.convolution_44_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_round"
+id = 654
+tag = "mobilenet-v3-small.convolution_44_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_clamp"
+id = 655
+tag = "mobilenet-v3-small.convolution_44_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_int8"
+id = 656
+tag = "mobilenet-v3-small.convolution_44_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44"
+id = 658
+tag = "mobilenet-v3-small.convolution_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_26"
+id = 659
+tag = "mobilenet-v3-small.add_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_44"
+id = 660
+tag = "mobilenet-v3-small.clamp_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_45"
+id = 661
+tag = "mobilenet-v3-small.clamp_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_22"
+id = 662
+tag = "mobilenet-v3-small.div_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_22"
+id = 663
+tag = "mobilenet-v3-small.mul_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_abs"
+id = 664
+tag = "mobilenet-v3-small.convolution_45_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_max"
+id = 665
+tag = "mobilenet-v3-small.convolution_45_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_raw_scale"
+id = 666
+tag = "mobilenet-v3-small.convolution_45_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_zero"
+id = 667
+tag = "mobilenet-v3-small.convolution_45_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_scale"
+id = 668
+tag = "mobilenet-v3-small.convolution_45_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_normalized"
+id = 669
+tag = "mobilenet-v3-small.convolution_45_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_round"
+id = 670
+tag = "mobilenet-v3-small.convolution_45_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_clamp"
+id = 671
+tag = "mobilenet-v3-small.convolution_45_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_int8"
+id = 672
+tag = "mobilenet-v3-small.convolution_45_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45"
+id = 674
+tag = "mobilenet-v3-small.convolution_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_29"
+id = 675
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_27"
+id = 676
+tag = "mobilenet-v3-small.add_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_abs"
+id = 677
+tag = "mobilenet-v3-small.convolution_46_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_max"
+id = 678
+tag = "mobilenet-v3-small.convolution_46_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_raw_scale"
+id = 679
+tag = "mobilenet-v3-small.convolution_46_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_zero"
+id = 680
+tag = "mobilenet-v3-small.convolution_46_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_scale"
+id = 681
+tag = "mobilenet-v3-small.convolution_46_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_normalized"
+id = 682
+tag = "mobilenet-v3-small.convolution_46_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_round"
+id = 683
+tag = "mobilenet-v3-small.convolution_46_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_clamp"
+id = 684
+tag = "mobilenet-v3-small.convolution_46_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_int8"
+id = 685
+tag = "mobilenet-v3-small.convolution_46_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46"
+id = 687
+tag = "mobilenet-v3-small.convolution_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_30"
+id = 688
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_28"
+id = 689
+tag = "mobilenet-v3-small.add_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_46"
+id = 690
+tag = "mobilenet-v3-small.clamp_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_47"
+id = 691
+tag = "mobilenet-v3-small.clamp_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_23"
+id = 692
+tag = "mobilenet-v3-small.mul_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_23"
+id = 693
+tag = "mobilenet-v3-small.div_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_abs"
+id = 694
+tag = "mobilenet-v3-small.convolution_47_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_max"
+id = 695
+tag = "mobilenet-v3-small.convolution_47_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_raw_scale"
+id = 696
+tag = "mobilenet-v3-small.convolution_47_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_zero"
+id = 697
+tag = "mobilenet-v3-small.convolution_47_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_scale"
+id = 698
+tag = "mobilenet-v3-small.convolution_47_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_normalized"
+id = 699
+tag = "mobilenet-v3-small.convolution_47_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_round"
+id = 700
+tag = "mobilenet-v3-small.convolution_47_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_clamp"
+id = 701
+tag = "mobilenet-v3-small.convolution_47_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_int8"
+id = 702
+tag = "mobilenet-v3-small.convolution_47_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47"
+id = 704
+tag = "mobilenet-v3-small.convolution_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_31"
+id = 705
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_29"
+id = 706
+tag = "mobilenet-v3-small.add_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_48"
+id = 707
+tag = "mobilenet-v3-small.clamp_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_49"
+id = 708
+tag = "mobilenet-v3-small.clamp_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_24"
+id = 709
+tag = "mobilenet-v3-small.mul_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_24"
+id = 710
+tag = "mobilenet-v3-small.div_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_8"
+id = 711
+tag = "mobilenet-v3-small.mean_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_abs"
+id = 712
+tag = "mobilenet-v3-small.convolution_48_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_max"
+id = 713
+tag = "mobilenet-v3-small.convolution_48_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_raw_scale"
+id = 714
+tag = "mobilenet-v3-small.convolution_48_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_zero"
+id = 715
+tag = "mobilenet-v3-small.convolution_48_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_scale"
+id = 716
+tag = "mobilenet-v3-small.convolution_48_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_normalized"
+id = 717
+tag = "mobilenet-v3-small.convolution_48_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_round"
+id = 718
+tag = "mobilenet-v3-small.convolution_48_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_clamp"
+id = 719
+tag = "mobilenet-v3-small.convolution_48_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_int8"
+id = 720
+tag = "mobilenet-v3-small.convolution_48_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48"
+id = 722
+tag = "mobilenet-v3-small.convolution_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_13"
+id = 723
+tag = "mobilenet-v3-small.relu_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_abs"
+id = 724
+tag = "mobilenet-v3-small.convolution_49_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_max"
+id = 725
+tag = "mobilenet-v3-small.convolution_49_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_raw_scale"
+id = 726
+tag = "mobilenet-v3-small.convolution_49_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_zero"
+id = 727
+tag = "mobilenet-v3-small.convolution_49_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_scale"
+id = 728
+tag = "mobilenet-v3-small.convolution_49_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_normalized"
+id = 729
+tag = "mobilenet-v3-small.convolution_49_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_round"
+id = 730
+tag = "mobilenet-v3-small.convolution_49_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_clamp"
+id = 731
+tag = "mobilenet-v3-small.convolution_49_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_int8"
+id = 732
+tag = "mobilenet-v3-small.convolution_49_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49"
+id = 734
+tag = "mobilenet-v3-small.convolution_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_30"
+id = 735
+tag = "mobilenet-v3-small.add_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_50"
+id = 736
+tag = "mobilenet-v3-small.clamp_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_51"
+id = 737
+tag = "mobilenet-v3-small.clamp_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_25"
+id = 738
+tag = "mobilenet-v3-small.div_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_25"
+id = 739
+tag = "mobilenet-v3-small.mul_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_abs"
+id = 740
+tag = "mobilenet-v3-small.convolution_50_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_max"
+id = 741
+tag = "mobilenet-v3-small.convolution_50_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_raw_scale"
+id = 742
+tag = "mobilenet-v3-small.convolution_50_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_zero"
+id = 743
+tag = "mobilenet-v3-small.convolution_50_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_scale"
+id = 744
+tag = "mobilenet-v3-small.convolution_50_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_normalized"
+id = 745
+tag = "mobilenet-v3-small.convolution_50_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_round"
+id = 746
+tag = "mobilenet-v3-small.convolution_50_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_clamp"
+id = 747
+tag = "mobilenet-v3-small.convolution_50_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_int8"
+id = 748
+tag = "mobilenet-v3-small.convolution_50_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50"
+id = 750
+tag = "mobilenet-v3-small.convolution_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_32"
+id = 751
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_31"
+id = 752
+tag = "mobilenet-v3-small.add_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_abs"
+id = 753
+tag = "mobilenet-v3-small.convolution_51_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_max"
+id = 754
+tag = "mobilenet-v3-small.convolution_51_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_raw_scale"
+id = 755
+tag = "mobilenet-v3-small.convolution_51_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_zero"
+id = 756
+tag = "mobilenet-v3-small.convolution_51_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_scale"
+id = 757
+tag = "mobilenet-v3-small.convolution_51_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_normalized"
+id = 758
+tag = "mobilenet-v3-small.convolution_51_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_round"
+id = 759
+tag = "mobilenet-v3-small.convolution_51_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_clamp"
+id = 760
+tag = "mobilenet-v3-small.convolution_51_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_int8"
+id = 761
+tag = "mobilenet-v3-small.convolution_51_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51"
+id = 763
+tag = "mobilenet-v3-small.convolution_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_33"
+id = 764
+tag = "mobilenet-v3-small._native_batch_norm_legit_no_training_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_32"
+id = 765
+tag = "mobilenet-v3-small.add_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_52"
+id = 766
+tag = "mobilenet-v3-small.clamp_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_53"
+id = 767
+tag = "mobilenet-v3-small.clamp_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_26"
+id = 768
+tag = "mobilenet-v3-small.mul_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_26"
+id = 769
+tag = "mobilenet-v3-small.div_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean_9"
+id = 770
+tag = "mobilenet-v3-small.mean_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 771
+tag = "mobilenet-v3-small.view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_abs"
+id = 772
+tag = "mobilenet-v3-small.addmm_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_max"
+id = 773
+tag = "mobilenet-v3-small.addmm_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_raw_scale"
+id = 774
+tag = "mobilenet-v3-small.addmm_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_zero"
+id = 775
+tag = "mobilenet-v3-small.addmm_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_scale"
+id = 776
+tag = "mobilenet-v3-small.addmm_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_normalized"
+id = 777
+tag = "mobilenet-v3-small.addmm_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_round"
+id = 778
+tag = "mobilenet-v3-small.addmm_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_clamp"
+id = 779
+tag = "mobilenet-v3-small.addmm_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_int8"
+id = 780
+tag = "mobilenet-v3-small.addmm_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm"
+id = 783
+tag = "mobilenet-v3-small.addmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_33"
+id = 784
+tag = "mobilenet-v3-small.add_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_54"
+id = 785
+tag = "mobilenet-v3-small.clamp_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clamp_55"
+id = 786
+tag = "mobilenet-v3-small.clamp_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_27"
+id = 787
+tag = "mobilenet-v3-small.mul_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "div_27"
+id = 788
+tag = "mobilenet-v3-small.div_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_abs"
+id = 789
+tag = "mobilenet-v3-small.addmm_1_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_max"
+id = 790
+tag = "mobilenet-v3-small.addmm_1_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_raw_scale"
+id = 791
+tag = "mobilenet-v3-small.addmm_1_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_zero"
+id = 792
+tag = "mobilenet-v3-small.addmm_1_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_scale"
+id = 793
+tag = "mobilenet-v3-small.addmm_1_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_normalized"
+id = 794
+tag = "mobilenet-v3-small.addmm_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_round"
+id = 795
+tag = "mobilenet-v3-small.addmm_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_clamp"
+id = 796
+tag = "mobilenet-v3-small.addmm_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1_activation_int8"
+id = 797
+tag = "mobilenet-v3-small.addmm_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_1"
+id = 800
+tag = "mobilenet-v3-small.addmm_1"
+cycle = true
+tensor = false

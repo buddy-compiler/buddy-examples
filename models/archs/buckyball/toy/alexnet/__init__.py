@@ -1,1 +1,1 @@
-chip = "toy"
+design = "toy"

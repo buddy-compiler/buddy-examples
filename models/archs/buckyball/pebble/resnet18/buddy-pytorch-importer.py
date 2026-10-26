@@ -1,3 +1,4 @@
+from stack.compiler.frontend.trace import trace
 from importlib import import_module
 
 # ===- buddy-pytorch-importer.py --------------------------------------------------
@@ -22,7 +23,6 @@ from importlib import import_module
 
 import os
 from pathlib import Path
-import sys
 import torch
 import torchvision.models as models
 import torch._inductor.lowering
@@ -35,38 +35,43 @@ import argparse
 parser = argparse.ArgumentParser(description="ResNet18 model AOT importer")
 parser.add_argument("--output-dir", type=Path, required=True)
 parser.add_argument("--compiler-build", type=Path, required=True)
-parser.add_argument("--weights", type=str, required=True)
 parser.add_argument("--repo-root", type=Path, required=True)
 args = parser.parse_args()
-sys.path.insert(0, str(args.repo_root.resolve()))
 
 args.compiler_build = args.compiler_build.resolve()
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.ops import tosa
-from buddy.compiler.trace import TraceConfig, load_trace_config
-from buddy.compiler.graph.transform.quantization.normalize import fold_batch_norms
+from stack.compiler.frontend.ops import tosa
 
-import __init__ as design
-from quant import quantize as quant
+from stack.compiler.frontend.quant.transforms.normalize import fold_batch_norms
 
-design_dir = Path(__file__).parent
-torch.set_num_threads(4)
+import __init__ as recipe
+from stack.compiler.frontend.quant.importer import quantize_model_graph
+from stack.compiler.frontend.quant.offline.activations import calibrate_layer_ranges
+from quant.calibration import ImageNetCalibration
+import tomllib
+
+recipe_dir = Path(__file__).parent
 
 # Ensure output directory exists
 output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
 model_dir = Path(__file__).resolve().parent
-trace = TraceConfig(load_trace_config(design_dir / "trace/trace.toml"))
+
 verbose = False
 verbose_path = None
 
 # Retrieve the ResNet18 model path.
 model_path = str(model_dir)
 
-model = models.resnet18(weights=models.ResNet18_Weights[args.weights])
+model = models.resnet18(weights=None)
+model.load_state_dict(
+    torch.load(
+        model_dir / "../../../../models/resnet18/output/resnet18/model.pth",
+        weights_only=True,
+    )
+)
 model = model.eval()
 for layer in model.modules():
     if isinstance(layer, torch.nn.ReLU):
@@ -91,18 +96,21 @@ dynamo_compiler = DynamoCompiler(
     aot_autograd_decomposition=inductor_decomp,
     verbose=verbose,
     verbose_path=verbose_path,
-    trace=trace,
+    trace=None,
 )
-data, calibration = quant.prepare(model)
+config = tomllib.loads((model_dir / "quant/quant.toml").read_text())
+calibration = calibrate_layer_ranges(
+    model, ImageNetCalibration(), **config["calibration"]
+)
+# Shape-only graph capture is independent of dataset calibration.
+data = torch.zeros(1, 3, 224, 224)
 # Import the model into MLIR module and parameters.
 with torch.no_grad():
     graphs = dynamo_compiler.importer(model, data)
 assert len(graphs) == 1
 graph = graphs[0]
 params = dynamo_compiler.imported_params[graph]
-pattern_list = [simply_fuse]
-graphs[0].fuse_ops(pattern_list)
-quant.quantize(
+quantize_model_graph(
     graph,
     params,
     [name for name, _ in model.named_parameters()]
@@ -110,8 +118,12 @@ quant.quantize(
     output_dir,
     "resnet18",
     calibration,
-    rax_pack=args.compiler_build / "bin/rax-pack",
 )
+graph.dump(output_dir / "03-quanted.txt")
+graph.fuse_ops([simply_fuse])
+graph.dump(output_dir / "04-fusion.txt")
+trace(graph, Path(__file__).parent / "trace/trace.toml")
+graph.dump(output_dir / "05-traced.txt")
 driver = GraphDriver(graphs[0])
 driver.subgraphs[0].lower_to_top_level_ir()
 
@@ -123,5 +135,22 @@ with open(output_dir / "forward.mlir", "w") as module_file:
 
 import json
 
-metadata = {"version": 1, "chip": design.chip, "model": "resnet18"}
+(output_dir / "activation-scales.json").write_text(
+    json.dumps(
+        {
+            name: [[value.tolist() for value in record] for record in records]
+            for name, records in calibration.items()
+        },
+        indent=2,
+    )
+    + "\n"
+)
+
+metadata = {"version": 1, "design": recipe.design, "model": "resnet18"}
 (output_dir / "model.json").write_text(json.dumps(metadata))
+
+(output_dir / "params.f32").replace(output_dir / "arg0.data")
+(output_dir / "weights.bin").replace(output_dir / "arg1.data")
+(output_dir / "Labels.txt").write_text(
+    "\n".join(models.ResNet18_Weights.DEFAULT.meta["categories"]) + "\n"
+)

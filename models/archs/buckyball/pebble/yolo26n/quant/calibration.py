@@ -1,5 +1,8 @@
 import numpy as np
 from PIL import Image
+from pathlib import Path
+import torch
+from torch.utils.data import Dataset
 
 
 def load_calibration_images(paths, size):
@@ -32,3 +35,23 @@ def load_calibration_images(paths, size):
         sample[:, top : top + out_h, left : left + out_w] = resized.transpose(2, 0, 1)
         samples.append(sample)
     return np.stack(samples)
+
+
+class CocoCalibration(Dataset):
+    def __init__(self, size):
+        directory = (
+            Path(__file__).resolve().parents[5] / "datasets/coco128/images/train2017"
+        )
+        self.images = sorted(directory.glob("*.jpg"))
+        self.size = size
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        return (
+            torch.from_numpy(
+                load_calibration_images([self.images[index]], self.size)[0]
+            ),
+            0,
+        )

@@ -1,0 +1,9414 @@
+[[trace.node]]
+node = "convolution_activation_abs"
+id = 0
+tag = "yolo26n.convolution_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_max"
+id = 1
+tag = "yolo26n.convolution_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_raw_scale"
+id = 2
+tag = "yolo26n.convolution_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_zero"
+id = 3
+tag = "yolo26n.convolution_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_scale"
+id = 4
+tag = "yolo26n.convolution_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_normalized"
+id = 5
+tag = "yolo26n.convolution_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_round"
+id = 6
+tag = "yolo26n.convolution_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_clamp"
+id = 7
+tag = "yolo26n.convolution_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_int8"
+id = 8
+tag = "yolo26n.convolution_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution"
+id = 10
+tag = "yolo26n.convolution"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training"
+id = 11
+tag = "yolo26n._native_batch_norm_legit_no_training"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu"
+id = 12
+tag = "yolo26n.silu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_abs"
+id = 13
+tag = "yolo26n.convolution_1_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_max"
+id = 14
+tag = "yolo26n.convolution_1_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_raw_scale"
+id = 15
+tag = "yolo26n.convolution_1_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_zero"
+id = 16
+tag = "yolo26n.convolution_1_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_scale"
+id = 17
+tag = "yolo26n.convolution_1_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_normalized"
+id = 18
+tag = "yolo26n.convolution_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_round"
+id = 19
+tag = "yolo26n.convolution_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_clamp"
+id = 20
+tag = "yolo26n.convolution_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_int8"
+id = 21
+tag = "yolo26n.convolution_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1"
+id = 23
+tag = "yolo26n.convolution_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_1"
+id = 24
+tag = "yolo26n._native_batch_norm_legit_no_training_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_1"
+id = 25
+tag = "yolo26n.silu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_abs"
+id = 26
+tag = "yolo26n.convolution_2_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_max"
+id = 27
+tag = "yolo26n.convolution_2_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_raw_scale"
+id = 28
+tag = "yolo26n.convolution_2_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_zero"
+id = 29
+tag = "yolo26n.convolution_2_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_scale"
+id = 30
+tag = "yolo26n.convolution_2_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_normalized"
+id = 31
+tag = "yolo26n.convolution_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_round"
+id = 32
+tag = "yolo26n.convolution_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_clamp"
+id = 33
+tag = "yolo26n.convolution_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_int8"
+id = 34
+tag = "yolo26n.convolution_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2"
+id = 36
+tag = "yolo26n.convolution_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_2"
+id = 37
+tag = "yolo26n._native_batch_norm_legit_no_training_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_2"
+id = 38
+tag = "yolo26n.silu_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_1"
+id = 39
+tag = "yolo26n.split_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_abs"
+id = 40
+tag = "yolo26n.convolution_3_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_max"
+id = 41
+tag = "yolo26n.convolution_3_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_raw_scale"
+id = 42
+tag = "yolo26n.convolution_3_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_zero"
+id = 43
+tag = "yolo26n.convolution_3_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_scale"
+id = 44
+tag = "yolo26n.convolution_3_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_normalized"
+id = 45
+tag = "yolo26n.convolution_3_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_round"
+id = 46
+tag = "yolo26n.convolution_3_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_clamp"
+id = 47
+tag = "yolo26n.convolution_3_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_int8"
+id = 48
+tag = "yolo26n.convolution_3_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3"
+id = 50
+tag = "yolo26n.convolution_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_3"
+id = 51
+tag = "yolo26n._native_batch_norm_legit_no_training_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_3"
+id = 52
+tag = "yolo26n.silu_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_abs"
+id = 53
+tag = "yolo26n.convolution_4_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_max"
+id = 54
+tag = "yolo26n.convolution_4_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_raw_scale"
+id = 55
+tag = "yolo26n.convolution_4_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_zero"
+id = 56
+tag = "yolo26n.convolution_4_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_scale"
+id = 57
+tag = "yolo26n.convolution_4_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_normalized"
+id = 58
+tag = "yolo26n.convolution_4_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_round"
+id = 59
+tag = "yolo26n.convolution_4_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_clamp"
+id = 60
+tag = "yolo26n.convolution_4_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_int8"
+id = 61
+tag = "yolo26n.convolution_4_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4"
+id = 63
+tag = "yolo26n.convolution_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_4"
+id = 64
+tag = "yolo26n._native_batch_norm_legit_no_training_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_4"
+id = 65
+tag = "yolo26n.silu_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add"
+id = 66
+tag = "yolo26n.add"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_2"
+id = 67
+tag = "yolo26n.split_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat"
+id = 68
+tag = "yolo26n.cat"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_abs"
+id = 69
+tag = "yolo26n.convolution_5_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_max"
+id = 70
+tag = "yolo26n.convolution_5_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_raw_scale"
+id = 71
+tag = "yolo26n.convolution_5_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_zero"
+id = 72
+tag = "yolo26n.convolution_5_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_scale"
+id = 73
+tag = "yolo26n.convolution_5_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_normalized"
+id = 74
+tag = "yolo26n.convolution_5_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_round"
+id = 75
+tag = "yolo26n.convolution_5_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_clamp"
+id = 76
+tag = "yolo26n.convolution_5_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_int8"
+id = 77
+tag = "yolo26n.convolution_5_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5"
+id = 79
+tag = "yolo26n.convolution_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_5"
+id = 80
+tag = "yolo26n._native_batch_norm_legit_no_training_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_5"
+id = 81
+tag = "yolo26n.silu_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_abs"
+id = 82
+tag = "yolo26n.convolution_6_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_max"
+id = 83
+tag = "yolo26n.convolution_6_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_raw_scale"
+id = 84
+tag = "yolo26n.convolution_6_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_zero"
+id = 85
+tag = "yolo26n.convolution_6_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_scale"
+id = 86
+tag = "yolo26n.convolution_6_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_normalized"
+id = 87
+tag = "yolo26n.convolution_6_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_round"
+id = 88
+tag = "yolo26n.convolution_6_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_clamp"
+id = 89
+tag = "yolo26n.convolution_6_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_int8"
+id = 90
+tag = "yolo26n.convolution_6_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6"
+id = 92
+tag = "yolo26n.convolution_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_6"
+id = 93
+tag = "yolo26n._native_batch_norm_legit_no_training_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_6"
+id = 94
+tag = "yolo26n.silu_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_abs"
+id = 95
+tag = "yolo26n.convolution_7_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_max"
+id = 96
+tag = "yolo26n.convolution_7_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_raw_scale"
+id = 97
+tag = "yolo26n.convolution_7_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_zero"
+id = 98
+tag = "yolo26n.convolution_7_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_scale"
+id = 99
+tag = "yolo26n.convolution_7_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_normalized"
+id = 100
+tag = "yolo26n.convolution_7_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_round"
+id = 101
+tag = "yolo26n.convolution_7_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_clamp"
+id = 102
+tag = "yolo26n.convolution_7_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_int8"
+id = 103
+tag = "yolo26n.convolution_7_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7"
+id = 105
+tag = "yolo26n.convolution_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_7"
+id = 106
+tag = "yolo26n._native_batch_norm_legit_no_training_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_7"
+id = 107
+tag = "yolo26n.silu_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_4"
+id = 108
+tag = "yolo26n.split_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_abs"
+id = 109
+tag = "yolo26n.convolution_8_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_max"
+id = 110
+tag = "yolo26n.convolution_8_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_raw_scale"
+id = 111
+tag = "yolo26n.convolution_8_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_zero"
+id = 112
+tag = "yolo26n.convolution_8_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_scale"
+id = 113
+tag = "yolo26n.convolution_8_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_normalized"
+id = 114
+tag = "yolo26n.convolution_8_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_round"
+id = 115
+tag = "yolo26n.convolution_8_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_clamp"
+id = 116
+tag = "yolo26n.convolution_8_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_int8"
+id = 117
+tag = "yolo26n.convolution_8_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8"
+id = 119
+tag = "yolo26n.convolution_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_8"
+id = 120
+tag = "yolo26n._native_batch_norm_legit_no_training_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_8"
+id = 121
+tag = "yolo26n.silu_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_abs"
+id = 122
+tag = "yolo26n.convolution_9_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_max"
+id = 123
+tag = "yolo26n.convolution_9_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_raw_scale"
+id = 124
+tag = "yolo26n.convolution_9_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_zero"
+id = 125
+tag = "yolo26n.convolution_9_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_scale"
+id = 126
+tag = "yolo26n.convolution_9_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_normalized"
+id = 127
+tag = "yolo26n.convolution_9_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_round"
+id = 128
+tag = "yolo26n.convolution_9_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_clamp"
+id = 129
+tag = "yolo26n.convolution_9_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_int8"
+id = 130
+tag = "yolo26n.convolution_9_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9"
+id = 132
+tag = "yolo26n.convolution_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_9"
+id = 133
+tag = "yolo26n._native_batch_norm_legit_no_training_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_9"
+id = 134
+tag = "yolo26n.silu_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_1"
+id = 135
+tag = "yolo26n.add_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_5"
+id = 136
+tag = "yolo26n.split_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_1"
+id = 137
+tag = "yolo26n.cat_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_abs"
+id = 138
+tag = "yolo26n.convolution_10_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_max"
+id = 139
+tag = "yolo26n.convolution_10_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_raw_scale"
+id = 140
+tag = "yolo26n.convolution_10_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_zero"
+id = 141
+tag = "yolo26n.convolution_10_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_scale"
+id = 142
+tag = "yolo26n.convolution_10_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_normalized"
+id = 143
+tag = "yolo26n.convolution_10_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_round"
+id = 144
+tag = "yolo26n.convolution_10_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_clamp"
+id = 145
+tag = "yolo26n.convolution_10_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_int8"
+id = 146
+tag = "yolo26n.convolution_10_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10"
+id = 148
+tag = "yolo26n.convolution_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_10"
+id = 149
+tag = "yolo26n._native_batch_norm_legit_no_training_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_10"
+id = 150
+tag = "yolo26n.silu_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_abs"
+id = 151
+tag = "yolo26n.convolution_11_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_max"
+id = 152
+tag = "yolo26n.convolution_11_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_raw_scale"
+id = 153
+tag = "yolo26n.convolution_11_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_zero"
+id = 154
+tag = "yolo26n.convolution_11_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_scale"
+id = 155
+tag = "yolo26n.convolution_11_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_normalized"
+id = 156
+tag = "yolo26n.convolution_11_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_round"
+id = 157
+tag = "yolo26n.convolution_11_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_clamp"
+id = 158
+tag = "yolo26n.convolution_11_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_int8"
+id = 159
+tag = "yolo26n.convolution_11_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11"
+id = 161
+tag = "yolo26n.convolution_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_11"
+id = 162
+tag = "yolo26n._native_batch_norm_legit_no_training_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_11"
+id = 163
+tag = "yolo26n.silu_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_abs"
+id = 164
+tag = "yolo26n.convolution_12_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_max"
+id = 165
+tag = "yolo26n.convolution_12_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_raw_scale"
+id = 166
+tag = "yolo26n.convolution_12_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_zero"
+id = 167
+tag = "yolo26n.convolution_12_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_scale"
+id = 168
+tag = "yolo26n.convolution_12_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_normalized"
+id = 169
+tag = "yolo26n.convolution_12_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_round"
+id = 170
+tag = "yolo26n.convolution_12_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_clamp"
+id = 171
+tag = "yolo26n.convolution_12_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_int8"
+id = 172
+tag = "yolo26n.convolution_12_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12"
+id = 174
+tag = "yolo26n.convolution_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_12"
+id = 175
+tag = "yolo26n._native_batch_norm_legit_no_training_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_12"
+id = 176
+tag = "yolo26n.silu_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_7"
+id = 177
+tag = "yolo26n.split_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_abs"
+id = 178
+tag = "yolo26n.convolution_13_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_max"
+id = 179
+tag = "yolo26n.convolution_13_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_raw_scale"
+id = 180
+tag = "yolo26n.convolution_13_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_zero"
+id = 181
+tag = "yolo26n.convolution_13_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_scale"
+id = 182
+tag = "yolo26n.convolution_13_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_normalized"
+id = 183
+tag = "yolo26n.convolution_13_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_round"
+id = 184
+tag = "yolo26n.convolution_13_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_clamp"
+id = 185
+tag = "yolo26n.convolution_13_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_int8"
+id = 186
+tag = "yolo26n.convolution_13_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13"
+id = 188
+tag = "yolo26n.convolution_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_13"
+id = 189
+tag = "yolo26n._native_batch_norm_legit_no_training_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_13"
+id = 190
+tag = "yolo26n.silu_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_abs"
+id = 191
+tag = "yolo26n.convolution_14_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_max"
+id = 192
+tag = "yolo26n.convolution_14_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_raw_scale"
+id = 193
+tag = "yolo26n.convolution_14_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_zero"
+id = 194
+tag = "yolo26n.convolution_14_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_scale"
+id = 195
+tag = "yolo26n.convolution_14_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_normalized"
+id = 196
+tag = "yolo26n.convolution_14_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_round"
+id = 197
+tag = "yolo26n.convolution_14_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_clamp"
+id = 198
+tag = "yolo26n.convolution_14_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_int8"
+id = 199
+tag = "yolo26n.convolution_14_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14"
+id = 201
+tag = "yolo26n.convolution_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_14"
+id = 202
+tag = "yolo26n._native_batch_norm_legit_no_training_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_14"
+id = 203
+tag = "yolo26n.silu_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_abs"
+id = 204
+tag = "yolo26n.convolution_15_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_max"
+id = 205
+tag = "yolo26n.convolution_15_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_raw_scale"
+id = 206
+tag = "yolo26n.convolution_15_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_zero"
+id = 207
+tag = "yolo26n.convolution_15_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_scale"
+id = 208
+tag = "yolo26n.convolution_15_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_normalized"
+id = 209
+tag = "yolo26n.convolution_15_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_round"
+id = 210
+tag = "yolo26n.convolution_15_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_clamp"
+id = 211
+tag = "yolo26n.convolution_15_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_int8"
+id = 212
+tag = "yolo26n.convolution_15_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15"
+id = 214
+tag = "yolo26n.convolution_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_15"
+id = 215
+tag = "yolo26n._native_batch_norm_legit_no_training_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_15"
+id = 216
+tag = "yolo26n.silu_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_2"
+id = 217
+tag = "yolo26n.add_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_abs"
+id = 218
+tag = "yolo26n.convolution_16_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_max"
+id = 219
+tag = "yolo26n.convolution_16_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_raw_scale"
+id = 220
+tag = "yolo26n.convolution_16_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_zero"
+id = 221
+tag = "yolo26n.convolution_16_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_scale"
+id = 222
+tag = "yolo26n.convolution_16_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_normalized"
+id = 223
+tag = "yolo26n.convolution_16_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_round"
+id = 224
+tag = "yolo26n.convolution_16_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_clamp"
+id = 225
+tag = "yolo26n.convolution_16_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_int8"
+id = 226
+tag = "yolo26n.convolution_16_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16"
+id = 228
+tag = "yolo26n.convolution_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_16"
+id = 229
+tag = "yolo26n._native_batch_norm_legit_no_training_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_16"
+id = 230
+tag = "yolo26n.silu_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_abs"
+id = 231
+tag = "yolo26n.convolution_17_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_max"
+id = 232
+tag = "yolo26n.convolution_17_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_raw_scale"
+id = 233
+tag = "yolo26n.convolution_17_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_zero"
+id = 234
+tag = "yolo26n.convolution_17_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_scale"
+id = 235
+tag = "yolo26n.convolution_17_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_normalized"
+id = 236
+tag = "yolo26n.convolution_17_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_round"
+id = 237
+tag = "yolo26n.convolution_17_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_clamp"
+id = 238
+tag = "yolo26n.convolution_17_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_int8"
+id = 239
+tag = "yolo26n.convolution_17_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17"
+id = 241
+tag = "yolo26n.convolution_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_17"
+id = 242
+tag = "yolo26n._native_batch_norm_legit_no_training_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_17"
+id = 243
+tag = "yolo26n.silu_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_3"
+id = 244
+tag = "yolo26n.add_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_abs"
+id = 245
+tag = "yolo26n.convolution_18_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_max"
+id = 246
+tag = "yolo26n.convolution_18_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_raw_scale"
+id = 247
+tag = "yolo26n.convolution_18_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_zero"
+id = 248
+tag = "yolo26n.convolution_18_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_scale"
+id = 249
+tag = "yolo26n.convolution_18_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_normalized"
+id = 250
+tag = "yolo26n.convolution_18_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_round"
+id = 251
+tag = "yolo26n.convolution_18_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_clamp"
+id = 252
+tag = "yolo26n.convolution_18_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_int8"
+id = 253
+tag = "yolo26n.convolution_18_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18"
+id = 255
+tag = "yolo26n.convolution_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_18"
+id = 256
+tag = "yolo26n._native_batch_norm_legit_no_training_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_18"
+id = 257
+tag = "yolo26n.silu_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_2"
+id = 258
+tag = "yolo26n.cat_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_abs"
+id = 259
+tag = "yolo26n.convolution_19_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_max"
+id = 260
+tag = "yolo26n.convolution_19_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_raw_scale"
+id = 261
+tag = "yolo26n.convolution_19_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_zero"
+id = 262
+tag = "yolo26n.convolution_19_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_scale"
+id = 263
+tag = "yolo26n.convolution_19_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_normalized"
+id = 264
+tag = "yolo26n.convolution_19_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_round"
+id = 265
+tag = "yolo26n.convolution_19_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_clamp"
+id = 266
+tag = "yolo26n.convolution_19_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_int8"
+id = 267
+tag = "yolo26n.convolution_19_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19"
+id = 269
+tag = "yolo26n.convolution_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_19"
+id = 270
+tag = "yolo26n._native_batch_norm_legit_no_training_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_19"
+id = 271
+tag = "yolo26n.silu_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_8"
+id = 272
+tag = "yolo26n.split_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_3"
+id = 273
+tag = "yolo26n.cat_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_abs"
+id = 274
+tag = "yolo26n.convolution_20_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_max"
+id = 275
+tag = "yolo26n.convolution_20_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_raw_scale"
+id = 276
+tag = "yolo26n.convolution_20_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_zero"
+id = 277
+tag = "yolo26n.convolution_20_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_scale"
+id = 278
+tag = "yolo26n.convolution_20_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_normalized"
+id = 279
+tag = "yolo26n.convolution_20_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_round"
+id = 280
+tag = "yolo26n.convolution_20_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_clamp"
+id = 281
+tag = "yolo26n.convolution_20_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20_activation_int8"
+id = 282
+tag = "yolo26n.convolution_20_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_20"
+id = 284
+tag = "yolo26n.convolution_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_20"
+id = 285
+tag = "yolo26n._native_batch_norm_legit_no_training_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_20"
+id = 286
+tag = "yolo26n.silu_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_abs"
+id = 287
+tag = "yolo26n.convolution_21_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_max"
+id = 288
+tag = "yolo26n.convolution_21_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_raw_scale"
+id = 289
+tag = "yolo26n.convolution_21_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_zero"
+id = 290
+tag = "yolo26n.convolution_21_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_scale"
+id = 291
+tag = "yolo26n.convolution_21_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_normalized"
+id = 292
+tag = "yolo26n.convolution_21_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_round"
+id = 293
+tag = "yolo26n.convolution_21_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_clamp"
+id = 294
+tag = "yolo26n.convolution_21_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21_activation_int8"
+id = 295
+tag = "yolo26n.convolution_21_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_21"
+id = 297
+tag = "yolo26n.convolution_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_21"
+id = 298
+tag = "yolo26n._native_batch_norm_legit_no_training_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_21"
+id = 299
+tag = "yolo26n.silu_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_abs"
+id = 300
+tag = "yolo26n.convolution_22_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_max"
+id = 301
+tag = "yolo26n.convolution_22_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_raw_scale"
+id = 302
+tag = "yolo26n.convolution_22_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_zero"
+id = 303
+tag = "yolo26n.convolution_22_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_scale"
+id = 304
+tag = "yolo26n.convolution_22_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_normalized"
+id = 305
+tag = "yolo26n.convolution_22_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_round"
+id = 306
+tag = "yolo26n.convolution_22_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_clamp"
+id = 307
+tag = "yolo26n.convolution_22_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22_activation_int8"
+id = 308
+tag = "yolo26n.convolution_22_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_22"
+id = 310
+tag = "yolo26n.convolution_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_22"
+id = 311
+tag = "yolo26n._native_batch_norm_legit_no_training_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_22"
+id = 312
+tag = "yolo26n.silu_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_10"
+id = 313
+tag = "yolo26n.split_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_abs"
+id = 314
+tag = "yolo26n.convolution_23_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_max"
+id = 315
+tag = "yolo26n.convolution_23_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_raw_scale"
+id = 316
+tag = "yolo26n.convolution_23_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_zero"
+id = 317
+tag = "yolo26n.convolution_23_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_scale"
+id = 318
+tag = "yolo26n.convolution_23_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_normalized"
+id = 319
+tag = "yolo26n.convolution_23_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_round"
+id = 320
+tag = "yolo26n.convolution_23_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_clamp"
+id = 321
+tag = "yolo26n.convolution_23_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23_activation_int8"
+id = 322
+tag = "yolo26n.convolution_23_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_23"
+id = 324
+tag = "yolo26n.convolution_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_23"
+id = 325
+tag = "yolo26n._native_batch_norm_legit_no_training_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_23"
+id = 326
+tag = "yolo26n.silu_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_abs"
+id = 327
+tag = "yolo26n.convolution_24_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_max"
+id = 328
+tag = "yolo26n.convolution_24_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_raw_scale"
+id = 329
+tag = "yolo26n.convolution_24_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_zero"
+id = 330
+tag = "yolo26n.convolution_24_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_scale"
+id = 331
+tag = "yolo26n.convolution_24_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_normalized"
+id = 332
+tag = "yolo26n.convolution_24_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_round"
+id = 333
+tag = "yolo26n.convolution_24_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_clamp"
+id = 334
+tag = "yolo26n.convolution_24_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24_activation_int8"
+id = 335
+tag = "yolo26n.convolution_24_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_24"
+id = 337
+tag = "yolo26n.convolution_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_24"
+id = 338
+tag = "yolo26n._native_batch_norm_legit_no_training_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_24"
+id = 339
+tag = "yolo26n.silu_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_abs"
+id = 340
+tag = "yolo26n.convolution_25_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_max"
+id = 341
+tag = "yolo26n.convolution_25_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_raw_scale"
+id = 342
+tag = "yolo26n.convolution_25_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_zero"
+id = 343
+tag = "yolo26n.convolution_25_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_scale"
+id = 344
+tag = "yolo26n.convolution_25_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_normalized"
+id = 345
+tag = "yolo26n.convolution_25_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_round"
+id = 346
+tag = "yolo26n.convolution_25_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_clamp"
+id = 347
+tag = "yolo26n.convolution_25_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25_activation_int8"
+id = 348
+tag = "yolo26n.convolution_25_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_25"
+id = 350
+tag = "yolo26n.convolution_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_25"
+id = 351
+tag = "yolo26n._native_batch_norm_legit_no_training_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_25"
+id = 352
+tag = "yolo26n.silu_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_4"
+id = 353
+tag = "yolo26n.add_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_abs"
+id = 354
+tag = "yolo26n.convolution_26_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_max"
+id = 355
+tag = "yolo26n.convolution_26_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_raw_scale"
+id = 356
+tag = "yolo26n.convolution_26_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_zero"
+id = 357
+tag = "yolo26n.convolution_26_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_scale"
+id = 358
+tag = "yolo26n.convolution_26_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_normalized"
+id = 359
+tag = "yolo26n.convolution_26_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_round"
+id = 360
+tag = "yolo26n.convolution_26_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_clamp"
+id = 361
+tag = "yolo26n.convolution_26_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26_activation_int8"
+id = 362
+tag = "yolo26n.convolution_26_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_26"
+id = 364
+tag = "yolo26n.convolution_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_26"
+id = 365
+tag = "yolo26n._native_batch_norm_legit_no_training_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_26"
+id = 366
+tag = "yolo26n.silu_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_abs"
+id = 367
+tag = "yolo26n.convolution_27_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_max"
+id = 368
+tag = "yolo26n.convolution_27_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_raw_scale"
+id = 369
+tag = "yolo26n.convolution_27_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_zero"
+id = 370
+tag = "yolo26n.convolution_27_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_scale"
+id = 371
+tag = "yolo26n.convolution_27_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_normalized"
+id = 372
+tag = "yolo26n.convolution_27_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_round"
+id = 373
+tag = "yolo26n.convolution_27_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_clamp"
+id = 374
+tag = "yolo26n.convolution_27_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27_activation_int8"
+id = 375
+tag = "yolo26n.convolution_27_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_27"
+id = 377
+tag = "yolo26n.convolution_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_27"
+id = 378
+tag = "yolo26n._native_batch_norm_legit_no_training_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_27"
+id = 379
+tag = "yolo26n.silu_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_5"
+id = 380
+tag = "yolo26n.add_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_abs"
+id = 381
+tag = "yolo26n.convolution_28_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_max"
+id = 382
+tag = "yolo26n.convolution_28_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_raw_scale"
+id = 383
+tag = "yolo26n.convolution_28_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_zero"
+id = 384
+tag = "yolo26n.convolution_28_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_scale"
+id = 385
+tag = "yolo26n.convolution_28_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_normalized"
+id = 386
+tag = "yolo26n.convolution_28_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_round"
+id = 387
+tag = "yolo26n.convolution_28_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_clamp"
+id = 388
+tag = "yolo26n.convolution_28_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28_activation_int8"
+id = 389
+tag = "yolo26n.convolution_28_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_28"
+id = 391
+tag = "yolo26n.convolution_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_28"
+id = 392
+tag = "yolo26n._native_batch_norm_legit_no_training_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_28"
+id = 393
+tag = "yolo26n.silu_28"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_4"
+id = 394
+tag = "yolo26n.cat_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_abs"
+id = 395
+tag = "yolo26n.convolution_29_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_max"
+id = 396
+tag = "yolo26n.convolution_29_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_raw_scale"
+id = 397
+tag = "yolo26n.convolution_29_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_zero"
+id = 398
+tag = "yolo26n.convolution_29_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_scale"
+id = 399
+tag = "yolo26n.convolution_29_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_normalized"
+id = 400
+tag = "yolo26n.convolution_29_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_round"
+id = 401
+tag = "yolo26n.convolution_29_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_clamp"
+id = 402
+tag = "yolo26n.convolution_29_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29_activation_int8"
+id = 403
+tag = "yolo26n.convolution_29_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_29"
+id = 405
+tag = "yolo26n.convolution_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_29"
+id = 406
+tag = "yolo26n._native_batch_norm_legit_no_training_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_29"
+id = 407
+tag = "yolo26n.silu_29"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_11"
+id = 408
+tag = "yolo26n.split_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_5"
+id = 409
+tag = "yolo26n.cat_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_abs"
+id = 410
+tag = "yolo26n.convolution_30_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_max"
+id = 411
+tag = "yolo26n.convolution_30_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_raw_scale"
+id = 412
+tag = "yolo26n.convolution_30_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_zero"
+id = 413
+tag = "yolo26n.convolution_30_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_scale"
+id = 414
+tag = "yolo26n.convolution_30_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_normalized"
+id = 415
+tag = "yolo26n.convolution_30_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_round"
+id = 416
+tag = "yolo26n.convolution_30_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_clamp"
+id = 417
+tag = "yolo26n.convolution_30_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30_activation_int8"
+id = 418
+tag = "yolo26n.convolution_30_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_30"
+id = 420
+tag = "yolo26n.convolution_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_30"
+id = 421
+tag = "yolo26n._native_batch_norm_legit_no_training_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_30"
+id = 422
+tag = "yolo26n.silu_30"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_abs"
+id = 423
+tag = "yolo26n.convolution_31_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_max"
+id = 424
+tag = "yolo26n.convolution_31_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_raw_scale"
+id = 425
+tag = "yolo26n.convolution_31_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_zero"
+id = 426
+tag = "yolo26n.convolution_31_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_scale"
+id = 427
+tag = "yolo26n.convolution_31_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_normalized"
+id = 428
+tag = "yolo26n.convolution_31_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_round"
+id = 429
+tag = "yolo26n.convolution_31_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_clamp"
+id = 430
+tag = "yolo26n.convolution_31_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31_activation_int8"
+id = 431
+tag = "yolo26n.convolution_31_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_31"
+id = 433
+tag = "yolo26n.convolution_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_31"
+id = 434
+tag = "yolo26n._native_batch_norm_legit_no_training_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_120"
+id = 435
+tag = "yolo26n.getitem_120"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_122"
+id = 436
+tag = "yolo26n.getitem_122"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_124"
+id = 437
+tag = "yolo26n.getitem_124"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_6"
+id = 438
+tag = "yolo26n.cat_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_abs"
+id = 439
+tag = "yolo26n.convolution_32_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_max"
+id = 440
+tag = "yolo26n.convolution_32_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_raw_scale"
+id = 441
+tag = "yolo26n.convolution_32_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_zero"
+id = 442
+tag = "yolo26n.convolution_32_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_scale"
+id = 443
+tag = "yolo26n.convolution_32_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_normalized"
+id = 444
+tag = "yolo26n.convolution_32_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_round"
+id = 445
+tag = "yolo26n.convolution_32_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_clamp"
+id = 446
+tag = "yolo26n.convolution_32_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32_activation_int8"
+id = 447
+tag = "yolo26n.convolution_32_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_32"
+id = 449
+tag = "yolo26n.convolution_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_32"
+id = 450
+tag = "yolo26n._native_batch_norm_legit_no_training_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_31"
+id = 451
+tag = "yolo26n.silu_31"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_6"
+id = 452
+tag = "yolo26n.add_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_abs"
+id = 453
+tag = "yolo26n.convolution_33_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_max"
+id = 454
+tag = "yolo26n.convolution_33_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_raw_scale"
+id = 455
+tag = "yolo26n.convolution_33_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_zero"
+id = 456
+tag = "yolo26n.convolution_33_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_scale"
+id = 457
+tag = "yolo26n.convolution_33_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_normalized"
+id = 458
+tag = "yolo26n.convolution_33_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_round"
+id = 459
+tag = "yolo26n.convolution_33_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_clamp"
+id = 460
+tag = "yolo26n.convolution_33_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33_activation_int8"
+id = 461
+tag = "yolo26n.convolution_33_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_33"
+id = 463
+tag = "yolo26n.convolution_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_33"
+id = 464
+tag = "yolo26n._native_batch_norm_legit_no_training_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_32"
+id = 465
+tag = "yolo26n.silu_32"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_with_sizes_1"
+id = 466
+tag = "yolo26n.split_with_sizes_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_abs"
+id = 467
+tag = "yolo26n.convolution_34_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_max"
+id = 468
+tag = "yolo26n.convolution_34_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_raw_scale"
+id = 469
+tag = "yolo26n.convolution_34_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_zero"
+id = 470
+tag = "yolo26n.convolution_34_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_scale"
+id = 471
+tag = "yolo26n.convolution_34_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_normalized"
+id = 472
+tag = "yolo26n.convolution_34_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_round"
+id = 473
+tag = "yolo26n.convolution_34_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_clamp"
+id = 474
+tag = "yolo26n.convolution_34_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34_activation_int8"
+id = 475
+tag = "yolo26n.convolution_34_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_34"
+id = 477
+tag = "yolo26n.convolution_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_34"
+id = 478
+tag = "yolo26n._native_batch_norm_legit_no_training_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 479
+tag = "yolo26n.view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_with_sizes_2"
+id = 480
+tag = "yolo26n.split_with_sizes_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose"
+id = 481
+tag = "yolo26n.transpose"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand"
+id = 482
+tag = "yolo26n.expand"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_1"
+id = 483
+tag = "yolo26n.view_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_1"
+id = 484
+tag = "yolo26n.expand_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_2"
+id = 485
+tag = "yolo26n.view_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm"
+id = 486
+tag = "yolo26n.bmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_3"
+id = 487
+tag = "yolo26n.view_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul"
+id = 488
+tag = "yolo26n.mul"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax"
+id = 489
+tag = "yolo26n._softmax"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_1"
+id = 490
+tag = "yolo26n.transpose_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_2"
+id = 491
+tag = "yolo26n.expand_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_4"
+id = 492
+tag = "yolo26n.view_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_3"
+id = 493
+tag = "yolo26n.expand_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_5"
+id = 494
+tag = "yolo26n.view_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_1"
+id = 495
+tag = "yolo26n.bmm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_6"
+id = 496
+tag = "yolo26n.view_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_7"
+id = 497
+tag = "yolo26n.view_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone"
+id = 498
+tag = "yolo26n.clone"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_unsafe_view"
+id = 499
+tag = "yolo26n._unsafe_view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_abs"
+id = 500
+tag = "yolo26n.convolution_35_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_max"
+id = 501
+tag = "yolo26n.convolution_35_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_raw_scale"
+id = 502
+tag = "yolo26n.convolution_35_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_zero"
+id = 503
+tag = "yolo26n.convolution_35_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_scale"
+id = 504
+tag = "yolo26n.convolution_35_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_normalized"
+id = 505
+tag = "yolo26n.convolution_35_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_round"
+id = 506
+tag = "yolo26n.convolution_35_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_clamp"
+id = 507
+tag = "yolo26n.convolution_35_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35_activation_int8"
+id = 508
+tag = "yolo26n.convolution_35_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_35"
+id = 510
+tag = "yolo26n.convolution_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_35"
+id = 511
+tag = "yolo26n._native_batch_norm_legit_no_training_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_7"
+id = 512
+tag = "yolo26n.add_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_abs"
+id = 513
+tag = "yolo26n.convolution_36_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_max"
+id = 514
+tag = "yolo26n.convolution_36_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_raw_scale"
+id = 515
+tag = "yolo26n.convolution_36_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_zero"
+id = 516
+tag = "yolo26n.convolution_36_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_scale"
+id = 517
+tag = "yolo26n.convolution_36_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_normalized"
+id = 518
+tag = "yolo26n.convolution_36_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_round"
+id = 519
+tag = "yolo26n.convolution_36_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_clamp"
+id = 520
+tag = "yolo26n.convolution_36_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36_activation_int8"
+id = 521
+tag = "yolo26n.convolution_36_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_36"
+id = 523
+tag = "yolo26n.convolution_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_36"
+id = 524
+tag = "yolo26n._native_batch_norm_legit_no_training_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_8"
+id = 525
+tag = "yolo26n.add_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_abs"
+id = 526
+tag = "yolo26n.convolution_37_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_max"
+id = 527
+tag = "yolo26n.convolution_37_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_raw_scale"
+id = 528
+tag = "yolo26n.convolution_37_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_zero"
+id = 529
+tag = "yolo26n.convolution_37_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_scale"
+id = 530
+tag = "yolo26n.convolution_37_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_normalized"
+id = 531
+tag = "yolo26n.convolution_37_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_round"
+id = 532
+tag = "yolo26n.convolution_37_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_clamp"
+id = 533
+tag = "yolo26n.convolution_37_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37_activation_int8"
+id = 534
+tag = "yolo26n.convolution_37_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_37"
+id = 536
+tag = "yolo26n.convolution_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_37"
+id = 537
+tag = "yolo26n._native_batch_norm_legit_no_training_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_33"
+id = 538
+tag = "yolo26n.silu_33"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_abs"
+id = 539
+tag = "yolo26n.convolution_38_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_max"
+id = 540
+tag = "yolo26n.convolution_38_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_raw_scale"
+id = 541
+tag = "yolo26n.convolution_38_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_zero"
+id = 542
+tag = "yolo26n.convolution_38_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_scale"
+id = 543
+tag = "yolo26n.convolution_38_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_normalized"
+id = 544
+tag = "yolo26n.convolution_38_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_round"
+id = 545
+tag = "yolo26n.convolution_38_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_clamp"
+id = 546
+tag = "yolo26n.convolution_38_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38_activation_int8"
+id = 547
+tag = "yolo26n.convolution_38_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_38"
+id = 549
+tag = "yolo26n.convolution_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_38"
+id = 550
+tag = "yolo26n._native_batch_norm_legit_no_training_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_9"
+id = 551
+tag = "yolo26n.add_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_with_sizes_3"
+id = 552
+tag = "yolo26n.split_with_sizes_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_7"
+id = 553
+tag = "yolo26n.cat_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_abs"
+id = 554
+tag = "yolo26n.convolution_39_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_max"
+id = 555
+tag = "yolo26n.convolution_39_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_raw_scale"
+id = 556
+tag = "yolo26n.convolution_39_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_zero"
+id = 557
+tag = "yolo26n.convolution_39_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_scale"
+id = 558
+tag = "yolo26n.convolution_39_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_normalized"
+id = 559
+tag = "yolo26n.convolution_39_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_round"
+id = 560
+tag = "yolo26n.convolution_39_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_clamp"
+id = 561
+tag = "yolo26n.convolution_39_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39_activation_int8"
+id = 562
+tag = "yolo26n.convolution_39_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_39"
+id = 564
+tag = "yolo26n.convolution_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_39"
+id = 565
+tag = "yolo26n._native_batch_norm_legit_no_training_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_34"
+id = 566
+tag = "yolo26n.silu_34"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "arange"
+id = 567
+tag = "yolo26n.arange"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_10"
+id = 568
+tag = "yolo26n.add_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_1"
+id = 569
+tag = "yolo26n.mul_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_to_copy"
+id = 570
+tag = "yolo26n._to_copy"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "unsqueeze"
+id = 571
+tag = "yolo26n.unsqueeze"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "arange_1"
+id = 572
+tag = "yolo26n.arange_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_11"
+id = 573
+tag = "yolo26n.add_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_2"
+id = 574
+tag = "yolo26n.mul_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_to_copy_1"
+id = 575
+tag = "yolo26n._to_copy_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_unsafe_index"
+id = 576
+tag = "yolo26n._unsafe_index"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_8"
+id = 577
+tag = "yolo26n.cat_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_abs"
+id = 578
+tag = "yolo26n.convolution_40_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_max"
+id = 579
+tag = "yolo26n.convolution_40_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_raw_scale"
+id = 580
+tag = "yolo26n.convolution_40_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_zero"
+id = 581
+tag = "yolo26n.convolution_40_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_scale"
+id = 582
+tag = "yolo26n.convolution_40_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_normalized"
+id = 583
+tag = "yolo26n.convolution_40_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_round"
+id = 584
+tag = "yolo26n.convolution_40_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_clamp"
+id = 585
+tag = "yolo26n.convolution_40_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40_activation_int8"
+id = 586
+tag = "yolo26n.convolution_40_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_40"
+id = 588
+tag = "yolo26n.convolution_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_40"
+id = 589
+tag = "yolo26n._native_batch_norm_legit_no_training_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_35"
+id = 590
+tag = "yolo26n.silu_35"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_13"
+id = 591
+tag = "yolo26n.split_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_abs"
+id = 592
+tag = "yolo26n.convolution_41_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_max"
+id = 593
+tag = "yolo26n.convolution_41_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_raw_scale"
+id = 594
+tag = "yolo26n.convolution_41_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_zero"
+id = 595
+tag = "yolo26n.convolution_41_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_scale"
+id = 596
+tag = "yolo26n.convolution_41_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_normalized"
+id = 597
+tag = "yolo26n.convolution_41_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_round"
+id = 598
+tag = "yolo26n.convolution_41_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_clamp"
+id = 599
+tag = "yolo26n.convolution_41_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41_activation_int8"
+id = 600
+tag = "yolo26n.convolution_41_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_41"
+id = 602
+tag = "yolo26n.convolution_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_41"
+id = 603
+tag = "yolo26n._native_batch_norm_legit_no_training_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_36"
+id = 604
+tag = "yolo26n.silu_36"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_abs"
+id = 605
+tag = "yolo26n.convolution_42_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_max"
+id = 606
+tag = "yolo26n.convolution_42_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_raw_scale"
+id = 607
+tag = "yolo26n.convolution_42_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_zero"
+id = 608
+tag = "yolo26n.convolution_42_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_scale"
+id = 609
+tag = "yolo26n.convolution_42_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_normalized"
+id = 610
+tag = "yolo26n.convolution_42_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_round"
+id = 611
+tag = "yolo26n.convolution_42_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_clamp"
+id = 612
+tag = "yolo26n.convolution_42_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42_activation_int8"
+id = 613
+tag = "yolo26n.convolution_42_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_42"
+id = 615
+tag = "yolo26n.convolution_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_42"
+id = 616
+tag = "yolo26n._native_batch_norm_legit_no_training_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_37"
+id = 617
+tag = "yolo26n.silu_37"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_abs"
+id = 618
+tag = "yolo26n.convolution_43_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_max"
+id = 619
+tag = "yolo26n.convolution_43_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_raw_scale"
+id = 620
+tag = "yolo26n.convolution_43_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_zero"
+id = 621
+tag = "yolo26n.convolution_43_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_scale"
+id = 622
+tag = "yolo26n.convolution_43_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_normalized"
+id = 623
+tag = "yolo26n.convolution_43_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_round"
+id = 624
+tag = "yolo26n.convolution_43_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_clamp"
+id = 625
+tag = "yolo26n.convolution_43_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43_activation_int8"
+id = 626
+tag = "yolo26n.convolution_43_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_43"
+id = 628
+tag = "yolo26n.convolution_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_43"
+id = 629
+tag = "yolo26n._native_batch_norm_legit_no_training_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_38"
+id = 630
+tag = "yolo26n.silu_38"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_12"
+id = 631
+tag = "yolo26n.add_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_abs"
+id = 632
+tag = "yolo26n.convolution_44_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_max"
+id = 633
+tag = "yolo26n.convolution_44_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_raw_scale"
+id = 634
+tag = "yolo26n.convolution_44_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_zero"
+id = 635
+tag = "yolo26n.convolution_44_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_scale"
+id = 636
+tag = "yolo26n.convolution_44_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_normalized"
+id = 637
+tag = "yolo26n.convolution_44_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_round"
+id = 638
+tag = "yolo26n.convolution_44_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_clamp"
+id = 639
+tag = "yolo26n.convolution_44_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44_activation_int8"
+id = 640
+tag = "yolo26n.convolution_44_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_44"
+id = 642
+tag = "yolo26n.convolution_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_44"
+id = 643
+tag = "yolo26n._native_batch_norm_legit_no_training_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_39"
+id = 644
+tag = "yolo26n.silu_39"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_abs"
+id = 645
+tag = "yolo26n.convolution_45_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_max"
+id = 646
+tag = "yolo26n.convolution_45_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_raw_scale"
+id = 647
+tag = "yolo26n.convolution_45_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_zero"
+id = 648
+tag = "yolo26n.convolution_45_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_scale"
+id = 649
+tag = "yolo26n.convolution_45_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_normalized"
+id = 650
+tag = "yolo26n.convolution_45_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_round"
+id = 651
+tag = "yolo26n.convolution_45_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_clamp"
+id = 652
+tag = "yolo26n.convolution_45_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45_activation_int8"
+id = 653
+tag = "yolo26n.convolution_45_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_45"
+id = 655
+tag = "yolo26n.convolution_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_45"
+id = 656
+tag = "yolo26n._native_batch_norm_legit_no_training_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_40"
+id = 657
+tag = "yolo26n.silu_40"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_13"
+id = 658
+tag = "yolo26n.add_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_abs"
+id = 659
+tag = "yolo26n.convolution_46_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_max"
+id = 660
+tag = "yolo26n.convolution_46_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_raw_scale"
+id = 661
+tag = "yolo26n.convolution_46_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_zero"
+id = 662
+tag = "yolo26n.convolution_46_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_scale"
+id = 663
+tag = "yolo26n.convolution_46_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_normalized"
+id = 664
+tag = "yolo26n.convolution_46_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_round"
+id = 665
+tag = "yolo26n.convolution_46_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_clamp"
+id = 666
+tag = "yolo26n.convolution_46_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46_activation_int8"
+id = 667
+tag = "yolo26n.convolution_46_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_46"
+id = 669
+tag = "yolo26n.convolution_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_46"
+id = 670
+tag = "yolo26n._native_batch_norm_legit_no_training_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_41"
+id = 671
+tag = "yolo26n.silu_41"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_9"
+id = 672
+tag = "yolo26n.cat_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_abs"
+id = 673
+tag = "yolo26n.convolution_47_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_max"
+id = 674
+tag = "yolo26n.convolution_47_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_raw_scale"
+id = 675
+tag = "yolo26n.convolution_47_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_zero"
+id = 676
+tag = "yolo26n.convolution_47_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_scale"
+id = 677
+tag = "yolo26n.convolution_47_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_normalized"
+id = 678
+tag = "yolo26n.convolution_47_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_round"
+id = 679
+tag = "yolo26n.convolution_47_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_clamp"
+id = 680
+tag = "yolo26n.convolution_47_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47_activation_int8"
+id = 681
+tag = "yolo26n.convolution_47_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_47"
+id = 683
+tag = "yolo26n.convolution_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_47"
+id = 684
+tag = "yolo26n._native_batch_norm_legit_no_training_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_42"
+id = 685
+tag = "yolo26n.silu_42"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_14"
+id = 686
+tag = "yolo26n.split_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_10"
+id = 687
+tag = "yolo26n.cat_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_abs"
+id = 688
+tag = "yolo26n.convolution_48_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_max"
+id = 689
+tag = "yolo26n.convolution_48_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_raw_scale"
+id = 690
+tag = "yolo26n.convolution_48_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_zero"
+id = 691
+tag = "yolo26n.convolution_48_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_scale"
+id = 692
+tag = "yolo26n.convolution_48_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_normalized"
+id = 693
+tag = "yolo26n.convolution_48_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_round"
+id = 694
+tag = "yolo26n.convolution_48_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_clamp"
+id = 695
+tag = "yolo26n.convolution_48_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48_activation_int8"
+id = 696
+tag = "yolo26n.convolution_48_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_48"
+id = 698
+tag = "yolo26n.convolution_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_48"
+id = 699
+tag = "yolo26n._native_batch_norm_legit_no_training_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_43"
+id = 700
+tag = "yolo26n.silu_43"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "arange_2"
+id = 701
+tag = "yolo26n.arange_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_14"
+id = 702
+tag = "yolo26n.add_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_3"
+id = 703
+tag = "yolo26n.mul_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_to_copy_2"
+id = 704
+tag = "yolo26n._to_copy_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "unsqueeze_1"
+id = 705
+tag = "yolo26n.unsqueeze_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "arange_3"
+id = 706
+tag = "yolo26n.arange_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_15"
+id = 707
+tag = "yolo26n.add_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_4"
+id = 708
+tag = "yolo26n.mul_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_to_copy_3"
+id = 709
+tag = "yolo26n._to_copy_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_unsafe_index_1"
+id = 710
+tag = "yolo26n._unsafe_index_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_11"
+id = 711
+tag = "yolo26n.cat_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_abs"
+id = 712
+tag = "yolo26n.convolution_49_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_max"
+id = 713
+tag = "yolo26n.convolution_49_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_raw_scale"
+id = 714
+tag = "yolo26n.convolution_49_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_zero"
+id = 715
+tag = "yolo26n.convolution_49_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_scale"
+id = 716
+tag = "yolo26n.convolution_49_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_normalized"
+id = 717
+tag = "yolo26n.convolution_49_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_round"
+id = 718
+tag = "yolo26n.convolution_49_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_clamp"
+id = 719
+tag = "yolo26n.convolution_49_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49_activation_int8"
+id = 720
+tag = "yolo26n.convolution_49_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_49"
+id = 722
+tag = "yolo26n.convolution_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_49"
+id = 723
+tag = "yolo26n._native_batch_norm_legit_no_training_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_44"
+id = 724
+tag = "yolo26n.silu_44"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_16"
+id = 725
+tag = "yolo26n.split_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_abs"
+id = 726
+tag = "yolo26n.convolution_50_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_max"
+id = 727
+tag = "yolo26n.convolution_50_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_raw_scale"
+id = 728
+tag = "yolo26n.convolution_50_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_zero"
+id = 729
+tag = "yolo26n.convolution_50_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_scale"
+id = 730
+tag = "yolo26n.convolution_50_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_normalized"
+id = 731
+tag = "yolo26n.convolution_50_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_round"
+id = 732
+tag = "yolo26n.convolution_50_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_clamp"
+id = 733
+tag = "yolo26n.convolution_50_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50_activation_int8"
+id = 734
+tag = "yolo26n.convolution_50_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_50"
+id = 736
+tag = "yolo26n.convolution_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_50"
+id = 737
+tag = "yolo26n._native_batch_norm_legit_no_training_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_45"
+id = 738
+tag = "yolo26n.silu_45"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_abs"
+id = 739
+tag = "yolo26n.convolution_51_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_max"
+id = 740
+tag = "yolo26n.convolution_51_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_raw_scale"
+id = 741
+tag = "yolo26n.convolution_51_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_zero"
+id = 742
+tag = "yolo26n.convolution_51_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_scale"
+id = 743
+tag = "yolo26n.convolution_51_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_normalized"
+id = 744
+tag = "yolo26n.convolution_51_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_round"
+id = 745
+tag = "yolo26n.convolution_51_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_clamp"
+id = 746
+tag = "yolo26n.convolution_51_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51_activation_int8"
+id = 747
+tag = "yolo26n.convolution_51_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_51"
+id = 749
+tag = "yolo26n.convolution_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_51"
+id = 750
+tag = "yolo26n._native_batch_norm_legit_no_training_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_46"
+id = 751
+tag = "yolo26n.silu_46"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_abs"
+id = 752
+tag = "yolo26n.convolution_52_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_max"
+id = 753
+tag = "yolo26n.convolution_52_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_raw_scale"
+id = 754
+tag = "yolo26n.convolution_52_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_zero"
+id = 755
+tag = "yolo26n.convolution_52_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_scale"
+id = 756
+tag = "yolo26n.convolution_52_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_normalized"
+id = 757
+tag = "yolo26n.convolution_52_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_round"
+id = 758
+tag = "yolo26n.convolution_52_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_clamp"
+id = 759
+tag = "yolo26n.convolution_52_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52_activation_int8"
+id = 760
+tag = "yolo26n.convolution_52_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_52"
+id = 762
+tag = "yolo26n.convolution_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_52"
+id = 763
+tag = "yolo26n._native_batch_norm_legit_no_training_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_47"
+id = 764
+tag = "yolo26n.silu_47"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_16"
+id = 765
+tag = "yolo26n.add_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_abs"
+id = 766
+tag = "yolo26n.convolution_53_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_max"
+id = 767
+tag = "yolo26n.convolution_53_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_raw_scale"
+id = 768
+tag = "yolo26n.convolution_53_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_zero"
+id = 769
+tag = "yolo26n.convolution_53_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_scale"
+id = 770
+tag = "yolo26n.convolution_53_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_normalized"
+id = 771
+tag = "yolo26n.convolution_53_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_round"
+id = 772
+tag = "yolo26n.convolution_53_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_clamp"
+id = 773
+tag = "yolo26n.convolution_53_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53_activation_int8"
+id = 774
+tag = "yolo26n.convolution_53_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_53"
+id = 776
+tag = "yolo26n.convolution_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_53"
+id = 777
+tag = "yolo26n._native_batch_norm_legit_no_training_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_48"
+id = 778
+tag = "yolo26n.silu_48"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_abs"
+id = 779
+tag = "yolo26n.convolution_54_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_max"
+id = 780
+tag = "yolo26n.convolution_54_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_raw_scale"
+id = 781
+tag = "yolo26n.convolution_54_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_zero"
+id = 782
+tag = "yolo26n.convolution_54_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_scale"
+id = 783
+tag = "yolo26n.convolution_54_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_normalized"
+id = 784
+tag = "yolo26n.convolution_54_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_round"
+id = 785
+tag = "yolo26n.convolution_54_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_clamp"
+id = 786
+tag = "yolo26n.convolution_54_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54_activation_int8"
+id = 787
+tag = "yolo26n.convolution_54_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_54"
+id = 789
+tag = "yolo26n.convolution_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_54"
+id = 790
+tag = "yolo26n._native_batch_norm_legit_no_training_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_49"
+id = 791
+tag = "yolo26n.silu_49"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_17"
+id = 792
+tag = "yolo26n.add_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_abs"
+id = 793
+tag = "yolo26n.convolution_55_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_max"
+id = 794
+tag = "yolo26n.convolution_55_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_raw_scale"
+id = 795
+tag = "yolo26n.convolution_55_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_zero"
+id = 796
+tag = "yolo26n.convolution_55_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_scale"
+id = 797
+tag = "yolo26n.convolution_55_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_normalized"
+id = 798
+tag = "yolo26n.convolution_55_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_round"
+id = 799
+tag = "yolo26n.convolution_55_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_clamp"
+id = 800
+tag = "yolo26n.convolution_55_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55_activation_int8"
+id = 801
+tag = "yolo26n.convolution_55_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_55"
+id = 803
+tag = "yolo26n.convolution_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_55"
+id = 804
+tag = "yolo26n._native_batch_norm_legit_no_training_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_50"
+id = 805
+tag = "yolo26n.silu_50"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_12"
+id = 806
+tag = "yolo26n.cat_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_abs"
+id = 807
+tag = "yolo26n.convolution_56_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_max"
+id = 808
+tag = "yolo26n.convolution_56_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_raw_scale"
+id = 809
+tag = "yolo26n.convolution_56_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_zero"
+id = 810
+tag = "yolo26n.convolution_56_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_scale"
+id = 811
+tag = "yolo26n.convolution_56_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_normalized"
+id = 812
+tag = "yolo26n.convolution_56_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_round"
+id = 813
+tag = "yolo26n.convolution_56_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_clamp"
+id = 814
+tag = "yolo26n.convolution_56_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56_activation_int8"
+id = 815
+tag = "yolo26n.convolution_56_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_56"
+id = 817
+tag = "yolo26n.convolution_56"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_56"
+id = 818
+tag = "yolo26n._native_batch_norm_legit_no_training_56"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_51"
+id = 819
+tag = "yolo26n.silu_51"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_17"
+id = 820
+tag = "yolo26n.split_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_13"
+id = 821
+tag = "yolo26n.cat_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_abs"
+id = 822
+tag = "yolo26n.convolution_57_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_max"
+id = 823
+tag = "yolo26n.convolution_57_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_raw_scale"
+id = 824
+tag = "yolo26n.convolution_57_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_zero"
+id = 825
+tag = "yolo26n.convolution_57_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_scale"
+id = 826
+tag = "yolo26n.convolution_57_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_normalized"
+id = 827
+tag = "yolo26n.convolution_57_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_round"
+id = 828
+tag = "yolo26n.convolution_57_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_clamp"
+id = 829
+tag = "yolo26n.convolution_57_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57_activation_int8"
+id = 830
+tag = "yolo26n.convolution_57_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_57"
+id = 832
+tag = "yolo26n.convolution_57"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_57"
+id = 833
+tag = "yolo26n._native_batch_norm_legit_no_training_57"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_52"
+id = 834
+tag = "yolo26n.silu_52"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_abs"
+id = 835
+tag = "yolo26n.convolution_58_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_max"
+id = 836
+tag = "yolo26n.convolution_58_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_raw_scale"
+id = 837
+tag = "yolo26n.convolution_58_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_zero"
+id = 838
+tag = "yolo26n.convolution_58_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_scale"
+id = 839
+tag = "yolo26n.convolution_58_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_normalized"
+id = 840
+tag = "yolo26n.convolution_58_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_round"
+id = 841
+tag = "yolo26n.convolution_58_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_clamp"
+id = 842
+tag = "yolo26n.convolution_58_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58_activation_int8"
+id = 843
+tag = "yolo26n.convolution_58_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_58"
+id = 845
+tag = "yolo26n.convolution_58"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_58"
+id = 846
+tag = "yolo26n._native_batch_norm_legit_no_training_58"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_53"
+id = 847
+tag = "yolo26n.silu_53"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_14"
+id = 848
+tag = "yolo26n.cat_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_abs"
+id = 849
+tag = "yolo26n.convolution_59_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_max"
+id = 850
+tag = "yolo26n.convolution_59_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_raw_scale"
+id = 851
+tag = "yolo26n.convolution_59_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_zero"
+id = 852
+tag = "yolo26n.convolution_59_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_scale"
+id = 853
+tag = "yolo26n.convolution_59_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_normalized"
+id = 854
+tag = "yolo26n.convolution_59_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_round"
+id = 855
+tag = "yolo26n.convolution_59_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_clamp"
+id = 856
+tag = "yolo26n.convolution_59_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59_activation_int8"
+id = 857
+tag = "yolo26n.convolution_59_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_59"
+id = 859
+tag = "yolo26n.convolution_59"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_59"
+id = 860
+tag = "yolo26n._native_batch_norm_legit_no_training_59"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_54"
+id = 861
+tag = "yolo26n.silu_54"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_19"
+id = 862
+tag = "yolo26n.split_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_abs"
+id = 863
+tag = "yolo26n.convolution_60_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_max"
+id = 864
+tag = "yolo26n.convolution_60_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_raw_scale"
+id = 865
+tag = "yolo26n.convolution_60_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_zero"
+id = 866
+tag = "yolo26n.convolution_60_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_scale"
+id = 867
+tag = "yolo26n.convolution_60_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_normalized"
+id = 868
+tag = "yolo26n.convolution_60_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_round"
+id = 869
+tag = "yolo26n.convolution_60_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_clamp"
+id = 870
+tag = "yolo26n.convolution_60_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60_activation_int8"
+id = 871
+tag = "yolo26n.convolution_60_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_60"
+id = 873
+tag = "yolo26n.convolution_60"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_60"
+id = 874
+tag = "yolo26n._native_batch_norm_legit_no_training_60"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_55"
+id = 875
+tag = "yolo26n.silu_55"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_abs"
+id = 876
+tag = "yolo26n.convolution_61_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_max"
+id = 877
+tag = "yolo26n.convolution_61_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_raw_scale"
+id = 878
+tag = "yolo26n.convolution_61_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_zero"
+id = 879
+tag = "yolo26n.convolution_61_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_scale"
+id = 880
+tag = "yolo26n.convolution_61_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_normalized"
+id = 881
+tag = "yolo26n.convolution_61_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_round"
+id = 882
+tag = "yolo26n.convolution_61_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_clamp"
+id = 883
+tag = "yolo26n.convolution_61_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61_activation_int8"
+id = 884
+tag = "yolo26n.convolution_61_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_61"
+id = 886
+tag = "yolo26n.convolution_61"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_61"
+id = 887
+tag = "yolo26n._native_batch_norm_legit_no_training_61"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_56"
+id = 888
+tag = "yolo26n.silu_56"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_abs"
+id = 889
+tag = "yolo26n.convolution_62_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_max"
+id = 890
+tag = "yolo26n.convolution_62_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_raw_scale"
+id = 891
+tag = "yolo26n.convolution_62_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_zero"
+id = 892
+tag = "yolo26n.convolution_62_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_scale"
+id = 893
+tag = "yolo26n.convolution_62_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_normalized"
+id = 894
+tag = "yolo26n.convolution_62_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_round"
+id = 895
+tag = "yolo26n.convolution_62_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_clamp"
+id = 896
+tag = "yolo26n.convolution_62_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62_activation_int8"
+id = 897
+tag = "yolo26n.convolution_62_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_62"
+id = 899
+tag = "yolo26n.convolution_62"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_62"
+id = 900
+tag = "yolo26n._native_batch_norm_legit_no_training_62"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_57"
+id = 901
+tag = "yolo26n.silu_57"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_18"
+id = 902
+tag = "yolo26n.add_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_abs"
+id = 903
+tag = "yolo26n.convolution_63_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_max"
+id = 904
+tag = "yolo26n.convolution_63_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_raw_scale"
+id = 905
+tag = "yolo26n.convolution_63_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_zero"
+id = 906
+tag = "yolo26n.convolution_63_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_scale"
+id = 907
+tag = "yolo26n.convolution_63_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_normalized"
+id = 908
+tag = "yolo26n.convolution_63_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_round"
+id = 909
+tag = "yolo26n.convolution_63_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_clamp"
+id = 910
+tag = "yolo26n.convolution_63_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63_activation_int8"
+id = 911
+tag = "yolo26n.convolution_63_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_63"
+id = 913
+tag = "yolo26n.convolution_63"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_63"
+id = 914
+tag = "yolo26n._native_batch_norm_legit_no_training_63"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_58"
+id = 915
+tag = "yolo26n.silu_58"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_abs"
+id = 916
+tag = "yolo26n.convolution_64_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_max"
+id = 917
+tag = "yolo26n.convolution_64_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_raw_scale"
+id = 918
+tag = "yolo26n.convolution_64_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_zero"
+id = 919
+tag = "yolo26n.convolution_64_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_scale"
+id = 920
+tag = "yolo26n.convolution_64_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_normalized"
+id = 921
+tag = "yolo26n.convolution_64_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_round"
+id = 922
+tag = "yolo26n.convolution_64_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_clamp"
+id = 923
+tag = "yolo26n.convolution_64_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64_activation_int8"
+id = 924
+tag = "yolo26n.convolution_64_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_64"
+id = 926
+tag = "yolo26n.convolution_64"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_64"
+id = 927
+tag = "yolo26n._native_batch_norm_legit_no_training_64"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_59"
+id = 928
+tag = "yolo26n.silu_59"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_19"
+id = 929
+tag = "yolo26n.add_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_abs"
+id = 930
+tag = "yolo26n.convolution_65_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_max"
+id = 931
+tag = "yolo26n.convolution_65_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_raw_scale"
+id = 932
+tag = "yolo26n.convolution_65_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_zero"
+id = 933
+tag = "yolo26n.convolution_65_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_scale"
+id = 934
+tag = "yolo26n.convolution_65_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_normalized"
+id = 935
+tag = "yolo26n.convolution_65_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_round"
+id = 936
+tag = "yolo26n.convolution_65_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_clamp"
+id = 937
+tag = "yolo26n.convolution_65_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65_activation_int8"
+id = 938
+tag = "yolo26n.convolution_65_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_65"
+id = 940
+tag = "yolo26n.convolution_65"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_65"
+id = 941
+tag = "yolo26n._native_batch_norm_legit_no_training_65"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_60"
+id = 942
+tag = "yolo26n.silu_60"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_15"
+id = 943
+tag = "yolo26n.cat_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_abs"
+id = 944
+tag = "yolo26n.convolution_66_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_max"
+id = 945
+tag = "yolo26n.convolution_66_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_raw_scale"
+id = 946
+tag = "yolo26n.convolution_66_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_zero"
+id = 947
+tag = "yolo26n.convolution_66_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_scale"
+id = 948
+tag = "yolo26n.convolution_66_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_normalized"
+id = 949
+tag = "yolo26n.convolution_66_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_round"
+id = 950
+tag = "yolo26n.convolution_66_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_clamp"
+id = 951
+tag = "yolo26n.convolution_66_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66_activation_int8"
+id = 952
+tag = "yolo26n.convolution_66_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_66"
+id = 954
+tag = "yolo26n.convolution_66"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_66"
+id = 955
+tag = "yolo26n._native_batch_norm_legit_no_training_66"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_61"
+id = 956
+tag = "yolo26n.silu_61"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_20"
+id = 957
+tag = "yolo26n.split_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_16"
+id = 958
+tag = "yolo26n.cat_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_abs"
+id = 959
+tag = "yolo26n.convolution_67_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_max"
+id = 960
+tag = "yolo26n.convolution_67_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_raw_scale"
+id = 961
+tag = "yolo26n.convolution_67_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_zero"
+id = 962
+tag = "yolo26n.convolution_67_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_scale"
+id = 963
+tag = "yolo26n.convolution_67_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_normalized"
+id = 964
+tag = "yolo26n.convolution_67_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_round"
+id = 965
+tag = "yolo26n.convolution_67_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_clamp"
+id = 966
+tag = "yolo26n.convolution_67_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67_activation_int8"
+id = 967
+tag = "yolo26n.convolution_67_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_67"
+id = 969
+tag = "yolo26n.convolution_67"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_67"
+id = 970
+tag = "yolo26n._native_batch_norm_legit_no_training_67"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_62"
+id = 971
+tag = "yolo26n.silu_62"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_abs"
+id = 972
+tag = "yolo26n.convolution_68_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_max"
+id = 973
+tag = "yolo26n.convolution_68_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_raw_scale"
+id = 974
+tag = "yolo26n.convolution_68_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_zero"
+id = 975
+tag = "yolo26n.convolution_68_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_scale"
+id = 976
+tag = "yolo26n.convolution_68_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_normalized"
+id = 977
+tag = "yolo26n.convolution_68_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_round"
+id = 978
+tag = "yolo26n.convolution_68_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_clamp"
+id = 979
+tag = "yolo26n.convolution_68_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68_activation_int8"
+id = 980
+tag = "yolo26n.convolution_68_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_68"
+id = 982
+tag = "yolo26n.convolution_68"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_68"
+id = 983
+tag = "yolo26n._native_batch_norm_legit_no_training_68"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_63"
+id = 984
+tag = "yolo26n.silu_63"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_17"
+id = 985
+tag = "yolo26n.cat_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_abs"
+id = 986
+tag = "yolo26n.convolution_69_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_max"
+id = 987
+tag = "yolo26n.convolution_69_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_raw_scale"
+id = 988
+tag = "yolo26n.convolution_69_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_zero"
+id = 989
+tag = "yolo26n.convolution_69_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_scale"
+id = 990
+tag = "yolo26n.convolution_69_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_normalized"
+id = 991
+tag = "yolo26n.convolution_69_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_round"
+id = 992
+tag = "yolo26n.convolution_69_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_clamp"
+id = 993
+tag = "yolo26n.convolution_69_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69_activation_int8"
+id = 994
+tag = "yolo26n.convolution_69_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_69"
+id = 996
+tag = "yolo26n.convolution_69"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_69"
+id = 997
+tag = "yolo26n._native_batch_norm_legit_no_training_69"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_64"
+id = 998
+tag = "yolo26n.silu_64"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_22"
+id = 999
+tag = "yolo26n.split_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_abs"
+id = 1000
+tag = "yolo26n.convolution_70_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_max"
+id = 1001
+tag = "yolo26n.convolution_70_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_raw_scale"
+id = 1002
+tag = "yolo26n.convolution_70_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_zero"
+id = 1003
+tag = "yolo26n.convolution_70_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_scale"
+id = 1004
+tag = "yolo26n.convolution_70_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_normalized"
+id = 1005
+tag = "yolo26n.convolution_70_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_round"
+id = 1006
+tag = "yolo26n.convolution_70_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_clamp"
+id = 1007
+tag = "yolo26n.convolution_70_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70_activation_int8"
+id = 1008
+tag = "yolo26n.convolution_70_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_70"
+id = 1010
+tag = "yolo26n.convolution_70"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_70"
+id = 1011
+tag = "yolo26n._native_batch_norm_legit_no_training_70"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_65"
+id = 1012
+tag = "yolo26n.silu_65"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_abs"
+id = 1013
+tag = "yolo26n.convolution_71_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_max"
+id = 1014
+tag = "yolo26n.convolution_71_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_raw_scale"
+id = 1015
+tag = "yolo26n.convolution_71_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_zero"
+id = 1016
+tag = "yolo26n.convolution_71_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_scale"
+id = 1017
+tag = "yolo26n.convolution_71_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_normalized"
+id = 1018
+tag = "yolo26n.convolution_71_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_round"
+id = 1019
+tag = "yolo26n.convolution_71_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_clamp"
+id = 1020
+tag = "yolo26n.convolution_71_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71_activation_int8"
+id = 1021
+tag = "yolo26n.convolution_71_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_71"
+id = 1023
+tag = "yolo26n.convolution_71"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_71"
+id = 1024
+tag = "yolo26n._native_batch_norm_legit_no_training_71"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_66"
+id = 1025
+tag = "yolo26n.silu_66"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_20"
+id = 1026
+tag = "yolo26n.add_20"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_abs"
+id = 1027
+tag = "yolo26n.convolution_72_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_max"
+id = 1028
+tag = "yolo26n.convolution_72_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_raw_scale"
+id = 1029
+tag = "yolo26n.convolution_72_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_zero"
+id = 1030
+tag = "yolo26n.convolution_72_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_scale"
+id = 1031
+tag = "yolo26n.convolution_72_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_normalized"
+id = 1032
+tag = "yolo26n.convolution_72_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_round"
+id = 1033
+tag = "yolo26n.convolution_72_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_clamp"
+id = 1034
+tag = "yolo26n.convolution_72_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72_activation_int8"
+id = 1035
+tag = "yolo26n.convolution_72_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_72"
+id = 1037
+tag = "yolo26n.convolution_72"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_72"
+id = 1038
+tag = "yolo26n._native_batch_norm_legit_no_training_72"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_8"
+id = 1039
+tag = "yolo26n.view_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_with_sizes_4"
+id = 1040
+tag = "yolo26n.split_with_sizes_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_2"
+id = 1041
+tag = "yolo26n.transpose_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_4"
+id = 1042
+tag = "yolo26n.expand_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_9"
+id = 1043
+tag = "yolo26n.view_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_5"
+id = 1044
+tag = "yolo26n.expand_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_10"
+id = 1045
+tag = "yolo26n.view_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_2"
+id = 1046
+tag = "yolo26n.bmm_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_11"
+id = 1047
+tag = "yolo26n.view_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_5"
+id = 1048
+tag = "yolo26n.mul_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_softmax_1"
+id = 1049
+tag = "yolo26n._softmax_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "transpose_3"
+id = 1050
+tag = "yolo26n.transpose_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_6"
+id = 1051
+tag = "yolo26n.expand_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_12"
+id = 1052
+tag = "yolo26n.view_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "expand_7"
+id = 1053
+tag = "yolo26n.expand_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_13"
+id = 1054
+tag = "yolo26n.view_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "bmm_3"
+id = 1055
+tag = "yolo26n.bmm_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_14"
+id = 1056
+tag = "yolo26n.view_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_15"
+id = 1057
+tag = "yolo26n.view_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_1"
+id = 1058
+tag = "yolo26n.clone_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_unsafe_view_1"
+id = 1059
+tag = "yolo26n._unsafe_view_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_abs"
+id = 1060
+tag = "yolo26n.convolution_73_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_max"
+id = 1061
+tag = "yolo26n.convolution_73_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_raw_scale"
+id = 1062
+tag = "yolo26n.convolution_73_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_zero"
+id = 1063
+tag = "yolo26n.convolution_73_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_scale"
+id = 1064
+tag = "yolo26n.convolution_73_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_normalized"
+id = 1065
+tag = "yolo26n.convolution_73_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_round"
+id = 1066
+tag = "yolo26n.convolution_73_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_clamp"
+id = 1067
+tag = "yolo26n.convolution_73_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73_activation_int8"
+id = 1068
+tag = "yolo26n.convolution_73_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_73"
+id = 1070
+tag = "yolo26n.convolution_73"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_73"
+id = 1071
+tag = "yolo26n._native_batch_norm_legit_no_training_73"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_21"
+id = 1072
+tag = "yolo26n.add_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_abs"
+id = 1073
+tag = "yolo26n.convolution_74_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_max"
+id = 1074
+tag = "yolo26n.convolution_74_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_raw_scale"
+id = 1075
+tag = "yolo26n.convolution_74_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_zero"
+id = 1076
+tag = "yolo26n.convolution_74_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_scale"
+id = 1077
+tag = "yolo26n.convolution_74_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_normalized"
+id = 1078
+tag = "yolo26n.convolution_74_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_round"
+id = 1079
+tag = "yolo26n.convolution_74_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_clamp"
+id = 1080
+tag = "yolo26n.convolution_74_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74_activation_int8"
+id = 1081
+tag = "yolo26n.convolution_74_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_74"
+id = 1083
+tag = "yolo26n.convolution_74"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_74"
+id = 1084
+tag = "yolo26n._native_batch_norm_legit_no_training_74"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_22"
+id = 1085
+tag = "yolo26n.add_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_abs"
+id = 1086
+tag = "yolo26n.convolution_75_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_max"
+id = 1087
+tag = "yolo26n.convolution_75_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_raw_scale"
+id = 1088
+tag = "yolo26n.convolution_75_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_zero"
+id = 1089
+tag = "yolo26n.convolution_75_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_scale"
+id = 1090
+tag = "yolo26n.convolution_75_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_normalized"
+id = 1091
+tag = "yolo26n.convolution_75_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_round"
+id = 1092
+tag = "yolo26n.convolution_75_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_clamp"
+id = 1093
+tag = "yolo26n.convolution_75_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75_activation_int8"
+id = 1094
+tag = "yolo26n.convolution_75_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_75"
+id = 1096
+tag = "yolo26n.convolution_75"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_75"
+id = 1097
+tag = "yolo26n._native_batch_norm_legit_no_training_75"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_67"
+id = 1098
+tag = "yolo26n.silu_67"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_abs"
+id = 1099
+tag = "yolo26n.convolution_76_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_max"
+id = 1100
+tag = "yolo26n.convolution_76_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_raw_scale"
+id = 1101
+tag = "yolo26n.convolution_76_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_zero"
+id = 1102
+tag = "yolo26n.convolution_76_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_scale"
+id = 1103
+tag = "yolo26n.convolution_76_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_normalized"
+id = 1104
+tag = "yolo26n.convolution_76_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_round"
+id = 1105
+tag = "yolo26n.convolution_76_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_clamp"
+id = 1106
+tag = "yolo26n.convolution_76_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76_activation_int8"
+id = 1107
+tag = "yolo26n.convolution_76_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_76"
+id = 1109
+tag = "yolo26n.convolution_76"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_76"
+id = 1110
+tag = "yolo26n._native_batch_norm_legit_no_training_76"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_23"
+id = 1111
+tag = "yolo26n.add_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_23"
+id = 1112
+tag = "yolo26n.split_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_18"
+id = 1113
+tag = "yolo26n.cat_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_abs"
+id = 1114
+tag = "yolo26n.convolution_77_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_max"
+id = 1115
+tag = "yolo26n.convolution_77_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_raw_scale"
+id = 1116
+tag = "yolo26n.convolution_77_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_zero"
+id = 1117
+tag = "yolo26n.convolution_77_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_scale"
+id = 1118
+tag = "yolo26n.convolution_77_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_normalized"
+id = 1119
+tag = "yolo26n.convolution_77_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_round"
+id = 1120
+tag = "yolo26n.convolution_77_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_clamp"
+id = 1121
+tag = "yolo26n.convolution_77_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77_activation_int8"
+id = 1122
+tag = "yolo26n.convolution_77_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_77"
+id = 1124
+tag = "yolo26n.convolution_77"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_77"
+id = 1125
+tag = "yolo26n._native_batch_norm_legit_no_training_77"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_68"
+id = 1126
+tag = "yolo26n.silu_68"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "alias_3"
+id = 1127
+tag = "yolo26n.alias_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_abs"
+id = 1128
+tag = "yolo26n.convolution_102_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_max"
+id = 1129
+tag = "yolo26n.convolution_102_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_raw_scale"
+id = 1130
+tag = "yolo26n.convolution_102_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_zero"
+id = 1131
+tag = "yolo26n.convolution_102_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_scale"
+id = 1132
+tag = "yolo26n.convolution_102_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_normalized"
+id = 1133
+tag = "yolo26n.convolution_102_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_round"
+id = 1134
+tag = "yolo26n.convolution_102_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_clamp"
+id = 1135
+tag = "yolo26n.convolution_102_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102_activation_int8"
+id = 1136
+tag = "yolo26n.convolution_102_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_102"
+id = 1138
+tag = "yolo26n.convolution_102"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_96"
+id = 1139
+tag = "yolo26n._native_batch_norm_legit_no_training_96"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_87"
+id = 1140
+tag = "yolo26n.silu_87"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_abs"
+id = 1141
+tag = "yolo26n.convolution_103_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_max"
+id = 1142
+tag = "yolo26n.convolution_103_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_raw_scale"
+id = 1143
+tag = "yolo26n.convolution_103_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_zero"
+id = 1144
+tag = "yolo26n.convolution_103_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_scale"
+id = 1145
+tag = "yolo26n.convolution_103_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_normalized"
+id = 1146
+tag = "yolo26n.convolution_103_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_round"
+id = 1147
+tag = "yolo26n.convolution_103_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_clamp"
+id = 1148
+tag = "yolo26n.convolution_103_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103_activation_int8"
+id = 1149
+tag = "yolo26n.convolution_103_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_103"
+id = 1151
+tag = "yolo26n.convolution_103"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_97"
+id = 1152
+tag = "yolo26n._native_batch_norm_legit_no_training_97"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_88"
+id = 1153
+tag = "yolo26n.silu_88"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_abs"
+id = 1154
+tag = "yolo26n.convolution_104_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_max"
+id = 1155
+tag = "yolo26n.convolution_104_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_raw_scale"
+id = 1156
+tag = "yolo26n.convolution_104_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_zero"
+id = 1157
+tag = "yolo26n.convolution_104_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_scale"
+id = 1158
+tag = "yolo26n.convolution_104_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_normalized"
+id = 1159
+tag = "yolo26n.convolution_104_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_round"
+id = 1160
+tag = "yolo26n.convolution_104_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_clamp"
+id = 1161
+tag = "yolo26n.convolution_104_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104_activation_int8"
+id = 1162
+tag = "yolo26n.convolution_104_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_104"
+id = 1164
+tag = "yolo26n.convolution_104"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_22"
+id = 1165
+tag = "yolo26n.view_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "alias_4"
+id = 1166
+tag = "yolo26n.alias_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_abs"
+id = 1167
+tag = "yolo26n.convolution_105_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_max"
+id = 1168
+tag = "yolo26n.convolution_105_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_raw_scale"
+id = 1169
+tag = "yolo26n.convolution_105_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_zero"
+id = 1170
+tag = "yolo26n.convolution_105_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_scale"
+id = 1171
+tag = "yolo26n.convolution_105_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_normalized"
+id = 1172
+tag = "yolo26n.convolution_105_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_round"
+id = 1173
+tag = "yolo26n.convolution_105_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_clamp"
+id = 1174
+tag = "yolo26n.convolution_105_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105_activation_int8"
+id = 1175
+tag = "yolo26n.convolution_105_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_105"
+id = 1177
+tag = "yolo26n.convolution_105"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_98"
+id = 1178
+tag = "yolo26n._native_batch_norm_legit_no_training_98"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_89"
+id = 1179
+tag = "yolo26n.silu_89"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_abs"
+id = 1180
+tag = "yolo26n.convolution_106_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_max"
+id = 1181
+tag = "yolo26n.convolution_106_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_raw_scale"
+id = 1182
+tag = "yolo26n.convolution_106_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_zero"
+id = 1183
+tag = "yolo26n.convolution_106_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_scale"
+id = 1184
+tag = "yolo26n.convolution_106_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_normalized"
+id = 1185
+tag = "yolo26n.convolution_106_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_round"
+id = 1186
+tag = "yolo26n.convolution_106_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_clamp"
+id = 1187
+tag = "yolo26n.convolution_106_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106_activation_int8"
+id = 1188
+tag = "yolo26n.convolution_106_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_106"
+id = 1190
+tag = "yolo26n.convolution_106"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_99"
+id = 1191
+tag = "yolo26n._native_batch_norm_legit_no_training_99"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_90"
+id = 1192
+tag = "yolo26n.silu_90"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_abs"
+id = 1193
+tag = "yolo26n.convolution_107_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_max"
+id = 1194
+tag = "yolo26n.convolution_107_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_raw_scale"
+id = 1195
+tag = "yolo26n.convolution_107_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_zero"
+id = 1196
+tag = "yolo26n.convolution_107_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_scale"
+id = 1197
+tag = "yolo26n.convolution_107_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_normalized"
+id = 1198
+tag = "yolo26n.convolution_107_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_round"
+id = 1199
+tag = "yolo26n.convolution_107_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_clamp"
+id = 1200
+tag = "yolo26n.convolution_107_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107_activation_int8"
+id = 1201
+tag = "yolo26n.convolution_107_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_107"
+id = 1203
+tag = "yolo26n.convolution_107"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_23"
+id = 1204
+tag = "yolo26n.view_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "alias_5"
+id = 1205
+tag = "yolo26n.alias_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_abs"
+id = 1206
+tag = "yolo26n.convolution_108_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_max"
+id = 1207
+tag = "yolo26n.convolution_108_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_raw_scale"
+id = 1208
+tag = "yolo26n.convolution_108_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_zero"
+id = 1209
+tag = "yolo26n.convolution_108_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_scale"
+id = 1210
+tag = "yolo26n.convolution_108_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_normalized"
+id = 1211
+tag = "yolo26n.convolution_108_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_round"
+id = 1212
+tag = "yolo26n.convolution_108_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_clamp"
+id = 1213
+tag = "yolo26n.convolution_108_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108_activation_int8"
+id = 1214
+tag = "yolo26n.convolution_108_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_108"
+id = 1216
+tag = "yolo26n.convolution_108"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_100"
+id = 1217
+tag = "yolo26n._native_batch_norm_legit_no_training_100"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_91"
+id = 1218
+tag = "yolo26n.silu_91"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_abs"
+id = 1219
+tag = "yolo26n.convolution_109_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_max"
+id = 1220
+tag = "yolo26n.convolution_109_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_raw_scale"
+id = 1221
+tag = "yolo26n.convolution_109_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_zero"
+id = 1222
+tag = "yolo26n.convolution_109_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_scale"
+id = 1223
+tag = "yolo26n.convolution_109_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_normalized"
+id = 1224
+tag = "yolo26n.convolution_109_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_round"
+id = 1225
+tag = "yolo26n.convolution_109_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_clamp"
+id = 1226
+tag = "yolo26n.convolution_109_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109_activation_int8"
+id = 1227
+tag = "yolo26n.convolution_109_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_109"
+id = 1229
+tag = "yolo26n.convolution_109"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_101"
+id = 1230
+tag = "yolo26n._native_batch_norm_legit_no_training_101"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_92"
+id = 1231
+tag = "yolo26n.silu_92"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_abs"
+id = 1232
+tag = "yolo26n.convolution_110_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_max"
+id = 1233
+tag = "yolo26n.convolution_110_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_raw_scale"
+id = 1234
+tag = "yolo26n.convolution_110_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_zero"
+id = 1235
+tag = "yolo26n.convolution_110_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_scale"
+id = 1236
+tag = "yolo26n.convolution_110_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_normalized"
+id = 1237
+tag = "yolo26n.convolution_110_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_round"
+id = 1238
+tag = "yolo26n.convolution_110_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_clamp"
+id = 1239
+tag = "yolo26n.convolution_110_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110_activation_int8"
+id = 1240
+tag = "yolo26n.convolution_110_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_110"
+id = 1242
+tag = "yolo26n.convolution_110"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_24"
+id = 1243
+tag = "yolo26n.view_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_21"
+id = 1244
+tag = "yolo26n.cat_21"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_abs"
+id = 1245
+tag = "yolo26n.convolution_111_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_max"
+id = 1246
+tag = "yolo26n.convolution_111_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_raw_scale"
+id = 1247
+tag = "yolo26n.convolution_111_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_zero"
+id = 1248
+tag = "yolo26n.convolution_111_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_scale"
+id = 1249
+tag = "yolo26n.convolution_111_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_normalized"
+id = 1250
+tag = "yolo26n.convolution_111_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_round"
+id = 1251
+tag = "yolo26n.convolution_111_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_clamp"
+id = 1252
+tag = "yolo26n.convolution_111_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111_activation_int8"
+id = 1253
+tag = "yolo26n.convolution_111_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_111"
+id = 1255
+tag = "yolo26n.convolution_111"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_102"
+id = 1256
+tag = "yolo26n._native_batch_norm_legit_no_training_102"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_93"
+id = 1257
+tag = "yolo26n.silu_93"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_abs"
+id = 1258
+tag = "yolo26n.convolution_112_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_max"
+id = 1259
+tag = "yolo26n.convolution_112_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_raw_scale"
+id = 1260
+tag = "yolo26n.convolution_112_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_zero"
+id = 1261
+tag = "yolo26n.convolution_112_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_scale"
+id = 1262
+tag = "yolo26n.convolution_112_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_normalized"
+id = 1263
+tag = "yolo26n.convolution_112_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_round"
+id = 1264
+tag = "yolo26n.convolution_112_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_clamp"
+id = 1265
+tag = "yolo26n.convolution_112_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112_activation_int8"
+id = 1266
+tag = "yolo26n.convolution_112_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_112"
+id = 1268
+tag = "yolo26n.convolution_112"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_103"
+id = 1269
+tag = "yolo26n._native_batch_norm_legit_no_training_103"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_94"
+id = 1270
+tag = "yolo26n.silu_94"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_abs"
+id = 1271
+tag = "yolo26n.convolution_113_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_max"
+id = 1272
+tag = "yolo26n.convolution_113_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_raw_scale"
+id = 1273
+tag = "yolo26n.convolution_113_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_zero"
+id = 1274
+tag = "yolo26n.convolution_113_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_scale"
+id = 1275
+tag = "yolo26n.convolution_113_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_normalized"
+id = 1276
+tag = "yolo26n.convolution_113_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_round"
+id = 1277
+tag = "yolo26n.convolution_113_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_clamp"
+id = 1278
+tag = "yolo26n.convolution_113_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113_activation_int8"
+id = 1279
+tag = "yolo26n.convolution_113_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_113"
+id = 1281
+tag = "yolo26n.convolution_113"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_104"
+id = 1282
+tag = "yolo26n._native_batch_norm_legit_no_training_104"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_95"
+id = 1283
+tag = "yolo26n.silu_95"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_abs"
+id = 1284
+tag = "yolo26n.convolution_114_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_max"
+id = 1285
+tag = "yolo26n.convolution_114_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_raw_scale"
+id = 1286
+tag = "yolo26n.convolution_114_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_zero"
+id = 1287
+tag = "yolo26n.convolution_114_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_scale"
+id = 1288
+tag = "yolo26n.convolution_114_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_normalized"
+id = 1289
+tag = "yolo26n.convolution_114_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_round"
+id = 1290
+tag = "yolo26n.convolution_114_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_clamp"
+id = 1291
+tag = "yolo26n.convolution_114_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114_activation_int8"
+id = 1292
+tag = "yolo26n.convolution_114_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_114"
+id = 1294
+tag = "yolo26n.convolution_114"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_105"
+id = 1295
+tag = "yolo26n._native_batch_norm_legit_no_training_105"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_96"
+id = 1296
+tag = "yolo26n.silu_96"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_abs"
+id = 1297
+tag = "yolo26n.convolution_115_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_max"
+id = 1298
+tag = "yolo26n.convolution_115_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_raw_scale"
+id = 1299
+tag = "yolo26n.convolution_115_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_zero"
+id = 1300
+tag = "yolo26n.convolution_115_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_scale"
+id = 1301
+tag = "yolo26n.convolution_115_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_normalized"
+id = 1302
+tag = "yolo26n.convolution_115_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_round"
+id = 1303
+tag = "yolo26n.convolution_115_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_clamp"
+id = 1304
+tag = "yolo26n.convolution_115_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115_activation_int8"
+id = 1305
+tag = "yolo26n.convolution_115_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_115"
+id = 1307
+tag = "yolo26n.convolution_115"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_25"
+id = 1308
+tag = "yolo26n.view_25"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_abs"
+id = 1309
+tag = "yolo26n.convolution_116_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_max"
+id = 1310
+tag = "yolo26n.convolution_116_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_raw_scale"
+id = 1311
+tag = "yolo26n.convolution_116_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_zero"
+id = 1312
+tag = "yolo26n.convolution_116_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_scale"
+id = 1313
+tag = "yolo26n.convolution_116_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_normalized"
+id = 1314
+tag = "yolo26n.convolution_116_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_round"
+id = 1315
+tag = "yolo26n.convolution_116_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_clamp"
+id = 1316
+tag = "yolo26n.convolution_116_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116_activation_int8"
+id = 1317
+tag = "yolo26n.convolution_116_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_116"
+id = 1319
+tag = "yolo26n.convolution_116"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_106"
+id = 1320
+tag = "yolo26n._native_batch_norm_legit_no_training_106"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_97"
+id = 1321
+tag = "yolo26n.silu_97"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_abs"
+id = 1322
+tag = "yolo26n.convolution_117_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_max"
+id = 1323
+tag = "yolo26n.convolution_117_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_raw_scale"
+id = 1324
+tag = "yolo26n.convolution_117_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_zero"
+id = 1325
+tag = "yolo26n.convolution_117_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_scale"
+id = 1326
+tag = "yolo26n.convolution_117_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_normalized"
+id = 1327
+tag = "yolo26n.convolution_117_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_round"
+id = 1328
+tag = "yolo26n.convolution_117_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_clamp"
+id = 1329
+tag = "yolo26n.convolution_117_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117_activation_int8"
+id = 1330
+tag = "yolo26n.convolution_117_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_117"
+id = 1332
+tag = "yolo26n.convolution_117"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_107"
+id = 1333
+tag = "yolo26n._native_batch_norm_legit_no_training_107"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_98"
+id = 1334
+tag = "yolo26n.silu_98"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_abs"
+id = 1335
+tag = "yolo26n.convolution_118_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_max"
+id = 1336
+tag = "yolo26n.convolution_118_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_raw_scale"
+id = 1337
+tag = "yolo26n.convolution_118_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_zero"
+id = 1338
+tag = "yolo26n.convolution_118_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_scale"
+id = 1339
+tag = "yolo26n.convolution_118_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_normalized"
+id = 1340
+tag = "yolo26n.convolution_118_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_round"
+id = 1341
+tag = "yolo26n.convolution_118_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_clamp"
+id = 1342
+tag = "yolo26n.convolution_118_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118_activation_int8"
+id = 1343
+tag = "yolo26n.convolution_118_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_118"
+id = 1345
+tag = "yolo26n.convolution_118"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_108"
+id = 1346
+tag = "yolo26n._native_batch_norm_legit_no_training_108"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_99"
+id = 1347
+tag = "yolo26n.silu_99"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_abs"
+id = 1348
+tag = "yolo26n.convolution_119_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_max"
+id = 1349
+tag = "yolo26n.convolution_119_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_raw_scale"
+id = 1350
+tag = "yolo26n.convolution_119_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_zero"
+id = 1351
+tag = "yolo26n.convolution_119_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_scale"
+id = 1352
+tag = "yolo26n.convolution_119_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_normalized"
+id = 1353
+tag = "yolo26n.convolution_119_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_round"
+id = 1354
+tag = "yolo26n.convolution_119_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_clamp"
+id = 1355
+tag = "yolo26n.convolution_119_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119_activation_int8"
+id = 1356
+tag = "yolo26n.convolution_119_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_119"
+id = 1358
+tag = "yolo26n.convolution_119"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_109"
+id = 1359
+tag = "yolo26n._native_batch_norm_legit_no_training_109"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_100"
+id = 1360
+tag = "yolo26n.silu_100"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_abs"
+id = 1361
+tag = "yolo26n.convolution_120_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_max"
+id = 1362
+tag = "yolo26n.convolution_120_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_raw_scale"
+id = 1363
+tag = "yolo26n.convolution_120_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_zero"
+id = 1364
+tag = "yolo26n.convolution_120_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_scale"
+id = 1365
+tag = "yolo26n.convolution_120_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_normalized"
+id = 1366
+tag = "yolo26n.convolution_120_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_round"
+id = 1367
+tag = "yolo26n.convolution_120_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_clamp"
+id = 1368
+tag = "yolo26n.convolution_120_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120_activation_int8"
+id = 1369
+tag = "yolo26n.convolution_120_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_120"
+id = 1371
+tag = "yolo26n.convolution_120"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_26"
+id = 1372
+tag = "yolo26n.view_26"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_abs"
+id = 1373
+tag = "yolo26n.convolution_121_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_max"
+id = 1374
+tag = "yolo26n.convolution_121_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_raw_scale"
+id = 1375
+tag = "yolo26n.convolution_121_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_zero"
+id = 1376
+tag = "yolo26n.convolution_121_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_scale"
+id = 1377
+tag = "yolo26n.convolution_121_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_normalized"
+id = 1378
+tag = "yolo26n.convolution_121_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_round"
+id = 1379
+tag = "yolo26n.convolution_121_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_clamp"
+id = 1380
+tag = "yolo26n.convolution_121_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121_activation_int8"
+id = 1381
+tag = "yolo26n.convolution_121_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_121"
+id = 1383
+tag = "yolo26n.convolution_121"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_110"
+id = 1384
+tag = "yolo26n._native_batch_norm_legit_no_training_110"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_101"
+id = 1385
+tag = "yolo26n.silu_101"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_abs"
+id = 1386
+tag = "yolo26n.convolution_122_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_max"
+id = 1387
+tag = "yolo26n.convolution_122_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_raw_scale"
+id = 1388
+tag = "yolo26n.convolution_122_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_zero"
+id = 1389
+tag = "yolo26n.convolution_122_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_scale"
+id = 1390
+tag = "yolo26n.convolution_122_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_normalized"
+id = 1391
+tag = "yolo26n.convolution_122_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_round"
+id = 1392
+tag = "yolo26n.convolution_122_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_clamp"
+id = 1393
+tag = "yolo26n.convolution_122_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122_activation_int8"
+id = 1394
+tag = "yolo26n.convolution_122_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_122"
+id = 1396
+tag = "yolo26n.convolution_122"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_111"
+id = 1397
+tag = "yolo26n._native_batch_norm_legit_no_training_111"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_102"
+id = 1398
+tag = "yolo26n.silu_102"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_abs"
+id = 1399
+tag = "yolo26n.convolution_123_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_max"
+id = 1400
+tag = "yolo26n.convolution_123_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_raw_scale"
+id = 1401
+tag = "yolo26n.convolution_123_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_zero"
+id = 1402
+tag = "yolo26n.convolution_123_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_scale"
+id = 1403
+tag = "yolo26n.convolution_123_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_normalized"
+id = 1404
+tag = "yolo26n.convolution_123_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_round"
+id = 1405
+tag = "yolo26n.convolution_123_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_clamp"
+id = 1406
+tag = "yolo26n.convolution_123_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123_activation_int8"
+id = 1407
+tag = "yolo26n.convolution_123_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_123"
+id = 1409
+tag = "yolo26n.convolution_123"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_112"
+id = 1410
+tag = "yolo26n._native_batch_norm_legit_no_training_112"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_103"
+id = 1411
+tag = "yolo26n.silu_103"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_abs"
+id = 1412
+tag = "yolo26n.convolution_124_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_max"
+id = 1413
+tag = "yolo26n.convolution_124_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_raw_scale"
+id = 1414
+tag = "yolo26n.convolution_124_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_zero"
+id = 1415
+tag = "yolo26n.convolution_124_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_scale"
+id = 1416
+tag = "yolo26n.convolution_124_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_normalized"
+id = 1417
+tag = "yolo26n.convolution_124_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_round"
+id = 1418
+tag = "yolo26n.convolution_124_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_clamp"
+id = 1419
+tag = "yolo26n.convolution_124_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124_activation_int8"
+id = 1420
+tag = "yolo26n.convolution_124_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_124"
+id = 1422
+tag = "yolo26n.convolution_124"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_113"
+id = 1423
+tag = "yolo26n._native_batch_norm_legit_no_training_113"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "silu_104"
+id = 1424
+tag = "yolo26n.silu_104"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_abs"
+id = 1425
+tag = "yolo26n.convolution_125_activation_abs"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_max"
+id = 1426
+tag = "yolo26n.convolution_125_activation_max"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_raw_scale"
+id = 1427
+tag = "yolo26n.convolution_125_activation_raw_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_zero"
+id = 1428
+tag = "yolo26n.convolution_125_activation_zero"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_scale"
+id = 1429
+tag = "yolo26n.convolution_125_activation_scale"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_normalized"
+id = 1430
+tag = "yolo26n.convolution_125_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_round"
+id = 1431
+tag = "yolo26n.convolution_125_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_clamp"
+id = 1432
+tag = "yolo26n.convolution_125_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125_activation_int8"
+id = 1433
+tag = "yolo26n.convolution_125_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_125"
+id = 1435
+tag = "yolo26n.convolution_125"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view_27"
+id = 1436
+tag = "yolo26n.view_27"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_22"
+id = 1437
+tag = "yolo26n.cat_22"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "unsqueeze_2"
+id = 1438
+tag = "yolo26n.unsqueeze_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "split_24"
+id = 1439
+tag = "yolo26n.split_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "sub"
+id = 1440
+tag = "yolo26n.sub"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_24"
+id = 1441
+tag = "yolo26n.add_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_23"
+id = 1442
+tag = "yolo26n.cat_23"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mul_6"
+id = 1443
+tag = "yolo26n.mul_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "sigmoid"
+id = 1444
+tag = "yolo26n.sigmoid"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "cat_24"
+id = 1445
+tag = "yolo26n.cat_24"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "permute"
+id = 1446
+tag = "yolo26n.permute"
+cycle = true
+tensor = false

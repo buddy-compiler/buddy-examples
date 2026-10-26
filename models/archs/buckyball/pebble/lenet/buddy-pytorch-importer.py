@@ -1,89 +1,79 @@
-# ===- buddy-pytorch-importer.py ---------------------------------------------------
-#
-# Import the PyTorch model through the Buddy frontend.
-#
-# ===---------------------------------------------------------------------------
-
 from pathlib import Path
-import sys
+import json
+
+import numpy as np
 
 import torch
+from models.models.lenet.model import LeNet
 
-
-import argparse
-
-parser = argparse.ArgumentParser(description="Buddy PyTorch model importer")
-parser.add_argument("--repo-root", type=Path, required=True)
-parser.add_argument("--output-dir", type=Path, required=True)
-parser.add_argument("--checkpoint", type=Path, required=True)
-parser.add_argument("--compiler-build", type=Path, required=True)
-args = parser.parse_args()
-sys.path.insert(0, str(args.repo_root.resolve()))
-from stack.models.models import lenet
-from stack.models.models.lenet.model import LeNet
-
-args.compiler_build = args.compiler_build.resolve()
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
+from stack.compiler.frontend import quant
+from frontend.permute.graph import permute
+from frontend.quant.graph import quantize
 
-from quant import quantize as quant
+model_dir = Path(__file__).resolve().parent
+output = model_dir / "output"
+output.mkdir(parents=True, exist_ok=True)
+model_source = model_dir.parents[3] / "models/lenet"
 
-design_dir = Path(__file__).parent
-torch.set_num_threads(4)
-
-output_dir = args.output_dir.resolve()
-output_dir.mkdir(parents=True, exist_ok=True)
-source_dir = Path(lenet.__file__).parent
-
-model = LeNet()
-
-model.load_state_dict(torch.load(args.checkpoint, weights_only=True))
-model = model.eval()
-
-trace = TraceConfig(load_trace_config(design_dir / "trace/trace.toml"))
-verbose = False
-verbose_path = None
-
-dynamo_compiler = DynamoCompiler(
-    primary_registry=tosa.ops_registry,
-    verbose=verbose,
-    verbose_path=verbose_path,
-    trace=trace,
+# ===----------------------------------------------------------------------===
+# Step 1: Import the graph of the checkpoint.
+# ===----------------------------------------------------------------------===
+model = LeNet().eval()
+model.load_state_dict(
+    torch.load(model_source / "output/lenet/model.pth", weights_only=True)
 )
-
-data, calibration = quant.prepare(model, source_dir)
-# Import the model into MLIR module and parameters.
+# The traced nodes are named as in the imported graph.
+compiler = DynamoCompiler(
+    primary_registry={**tosa.ops_registry, **quant.ops_registry},
+    trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
+)
 with torch.no_grad():
-    graphs = dynamo_compiler.importer(model, data)
+    (graph,) = compiler.importer(model, torch.zeros(1, 1, 28, 28))
+params = compiler.imported_params[graph]
+names = {parameter.data_ptr(): name for name, parameter in model.named_parameters()}
+parameter_names = {
+    node.name: names[value.data_ptr()]
+    for node, value in zip(graph.params, params, strict=True)
+}
 
+# ===----------------------------------------------------------------------===
+# Step 2.1: Export the original graph and FP32 parameters.
+# ===----------------------------------------------------------------------===
+graph.dump(output / "01-import.txt")
+# graph.dump_parameters(output / "01-import-parameters")
 
-assert len(graphs) == 1
-graph = graphs[0]
-params = dynamo_compiler.imported_params[graph]
-pattern_list = [simply_fuse]
-graphs[0].fuse_ops(pattern_list)
-quant.quantize(
-    graph,
-    params,
-    [name for name, _ in model.named_parameters()],
-    output_dir,
-    "lenet",
-    calibration,
-    rax_pack=args.compiler_build / "bin/rax-pack",
-)
-driver = GraphDriver(graphs[0])
-driver.subgraphs[0].lower_to_top_level_ir()
-with open(output_dir / "subgraph0.mlir", "w") as module_file:
-    print(driver.subgraphs[0]._imported_module, file=module_file)
+# ===----------------------------------------------------------------------===
+# Step 2.2: Align the layouts with the pebble Balls.
+# ===----------------------------------------------------------------------===
+params = permute(graph, params)
+graph.dump(output / "02-permuted.txt")
+# graph.dump_parameters(output / "02-permuted-parameters")
 
-with open(output_dir / "forward.mlir", "w") as module_file:
-    print(driver.construct_main_graph(True), file=module_file)
+# ===----------------------------------------------------------------------===
+# Step 2.3: Quantize the convolutions and Linears to INT8.
+# ===----------------------------------------------------------------------===
+# The activation scales come from buddy-pytorch-calibrate.py.
+maxima = json.loads((output / "calibration.json").read_text())
+params = quantize(graph, params, parameter_names, maxima)
+graph.dump(output / "03-quanted.txt")
+# graph.dump_parameters(output / "03-quanted-parameters")
 
-import json
-
-metadata = {"version": 1, "chip": "pebble", "model": "lenet"}
-(output_dir / "model.json").write_text(json.dumps(metadata))
+# ===----------------------------------------------------------------------===
+# Step 3: Partition the graph: one pebble core runs all of it.
+# ===----------------------------------------------------------------------===
+graph.fuse_ops([simply_fuse])
+graph.dump(output / "04-partitioned.txt")
+driver = GraphDriver(graph)
+for index, subgraph in enumerate(driver.subgraphs):
+    subgraph.lower_to_top_level_ir(buffer_layout="contiguous", writable=False)
+    (output / f"subgraph{index}.mlir").write_text(str(subgraph._imported_module))
+(output / "forward.mlir").write_text(str(driver.construct_main_graph(True)))
+for index, dtype in enumerate((torch.float32, torch.int32, torch.int8)):
+    np.concatenate(
+        [p.detach().numpy().reshape(-1) for p in params if p.dtype == dtype]
+    ).tofile(output / f"arg{index}.data")

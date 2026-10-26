@@ -1,4 +1,2 @@
-chip = "goban"
-targets = {"encoder": "goban"}
-
-dispatch_tasks = True
+design = "goban"
+targets = {"encoder": "matmul"}

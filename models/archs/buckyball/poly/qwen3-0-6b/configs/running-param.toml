@@ -1,7 +1,0 @@
-inputs = ["Modern computer systems execute language models by dividing their work across specialized processing cores. During the first stage, the model reads the input text and computes representations for every token. During generation, it reuses stored keys and values so that each new token can attend to the previous context. Efficient scheduling must coordinate memory transfers, matrix multiplication, normalization, and communication between cores. Limited on-chip memory makes the lifetime of intermediate tensors especially important. A bank can remain occupied while its contents wait for a later operation, even when no instruction is currently reading it. Studying these allocation intervals helps explain memory pressure and opportunities for overlap. Modern computer systems execute language"]
-core_indices = [1, 2, 3, 4, 5, 6, 7, 8]
-max_tokens = 32
-temperature = 0.0
-memory_mib = 3072
-timeout = 7200
-record_io = false

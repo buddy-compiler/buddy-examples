@@ -17,11 +17,6 @@ WORKLOAD=$1
 ROOT=$(git rev-parse --show-toplevel)
 MARSHAL_DIR=$ROOT/sims/marshal
 
-source $ROOT/env.sh
-
-# Preload conda libstdc++ for MLIR Python (GLIBCXX_3.4.29).
-# export LD_PRELOAD=$(conda info --base)/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}
-
 # step 1: build workload
 if [ $WORKLOAD == "lenet-gemmini" ]; then
   cd $ROOT/models

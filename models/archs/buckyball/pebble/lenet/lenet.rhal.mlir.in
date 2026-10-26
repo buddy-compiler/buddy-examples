@@ -1,0 +1,22 @@
+rhal.module @lenet attributes {
+  version = "0.1.0",
+  model_name = "lenet_buckyball-pebble",
+  runner_library = "file:liblenet-buckyball-pebble-runner.so"
+} {
+  rhal.constant @params {
+    id = 1 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "file:arg0.data"
+  }
+  rhal.constant @quantized_bias {
+    id = 2 : i32, storage = "external",
+    type = tensor<?xi32>, uri = "file:arg1.data"
+  }
+  rhal.constant @quantized_weights {
+    id = 3 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:arg2.data"
+  }
+  rhal.codeobj @model_kernels {
+    id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:liblenet-buckyball-pebble-model.so", entry_symbol = "_mlir_ciface_forward"
+  }
+}

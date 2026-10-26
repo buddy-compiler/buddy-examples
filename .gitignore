@@ -6,4 +6,7 @@ output/
 
 build/
 
-env.sh
+result
+
+/models/datasets/
+waste/

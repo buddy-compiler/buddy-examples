@@ -1,0 +1,56 @@
+# Offline ImageNet calibration for AlexNet.
+
+[weights."features.0.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.3.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.6.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.8.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.10.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."classifier.1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."classifier.4.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."classifier.6.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[calibration]
+samples = 1024
+
+# Integer epilogues require calibrated input and output scales.
+[activations]
+scale_mode = "offline"

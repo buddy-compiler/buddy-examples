@@ -1,2 +1,1070 @@
-[trace]
-node = []
+[[trace.node]]
+node = "convolution_activation_normalized"
+id = 0
+tag = "resnet18.convolution_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_round"
+id = 1
+tag = "resnet18.convolution_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_clamp"
+id = 2
+tag = "resnet18.convolution_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_activation_int8"
+id = 3
+tag = "resnet18.convolution_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution"
+id = 5
+tag = "resnet18.convolution"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training"
+id = 6
+tag = "resnet18._native_batch_norm_legit_no_training"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu"
+id = 7
+tag = "resnet18.relu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_3"
+id = 8
+tag = "resnet18.getitem_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_normalized"
+id = 9
+tag = "resnet18.convolution_1_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_round"
+id = 10
+tag = "resnet18.convolution_1_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_clamp"
+id = 11
+tag = "resnet18.convolution_1_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1_activation_int8"
+id = 12
+tag = "resnet18.convolution_1_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_1"
+id = 14
+tag = "resnet18.convolution_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_1"
+id = 15
+tag = "resnet18._native_batch_norm_legit_no_training_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_1"
+id = 16
+tag = "resnet18.relu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_normalized"
+id = 17
+tag = "resnet18.convolution_2_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_round"
+id = 18
+tag = "resnet18.convolution_2_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_clamp"
+id = 19
+tag = "resnet18.convolution_2_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2_activation_int8"
+id = 20
+tag = "resnet18.convolution_2_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_2"
+id = 22
+tag = "resnet18.convolution_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_2"
+id = 23
+tag = "resnet18._native_batch_norm_legit_no_training_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add"
+id = 24
+tag = "resnet18.add"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_2"
+id = 25
+tag = "resnet18.relu_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_normalized"
+id = 26
+tag = "resnet18.convolution_3_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_round"
+id = 27
+tag = "resnet18.convolution_3_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_clamp"
+id = 28
+tag = "resnet18.convolution_3_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3_activation_int8"
+id = 29
+tag = "resnet18.convolution_3_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_3"
+id = 31
+tag = "resnet18.convolution_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_3"
+id = 32
+tag = "resnet18._native_batch_norm_legit_no_training_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_3"
+id = 33
+tag = "resnet18.relu_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_normalized"
+id = 34
+tag = "resnet18.convolution_4_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_round"
+id = 35
+tag = "resnet18.convolution_4_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_clamp"
+id = 36
+tag = "resnet18.convolution_4_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4_activation_int8"
+id = 37
+tag = "resnet18.convolution_4_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_4"
+id = 39
+tag = "resnet18.convolution_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_4"
+id = 40
+tag = "resnet18._native_batch_norm_legit_no_training_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_1"
+id = 41
+tag = "resnet18.add_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_4"
+id = 42
+tag = "resnet18.relu_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_normalized"
+id = 43
+tag = "resnet18.convolution_5_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_round"
+id = 44
+tag = "resnet18.convolution_5_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_clamp"
+id = 45
+tag = "resnet18.convolution_5_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5_activation_int8"
+id = 46
+tag = "resnet18.convolution_5_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_5"
+id = 48
+tag = "resnet18.convolution_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_5"
+id = 49
+tag = "resnet18._native_batch_norm_legit_no_training_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_5"
+id = 50
+tag = "resnet18.relu_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_normalized"
+id = 51
+tag = "resnet18.convolution_6_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_round"
+id = 52
+tag = "resnet18.convolution_6_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_clamp"
+id = 53
+tag = "resnet18.convolution_6_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6_activation_int8"
+id = 54
+tag = "resnet18.convolution_6_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_6"
+id = 56
+tag = "resnet18.convolution_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_6"
+id = 57
+tag = "resnet18._native_batch_norm_legit_no_training_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_normalized"
+id = 58
+tag = "resnet18.convolution_7_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_round"
+id = 59
+tag = "resnet18.convolution_7_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_clamp"
+id = 60
+tag = "resnet18.convolution_7_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7_activation_int8"
+id = 61
+tag = "resnet18.convolution_7_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_7"
+id = 63
+tag = "resnet18.convolution_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_7"
+id = 64
+tag = "resnet18._native_batch_norm_legit_no_training_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_2"
+id = 65
+tag = "resnet18.add_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_6"
+id = 66
+tag = "resnet18.relu_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_normalized"
+id = 67
+tag = "resnet18.convolution_8_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_round"
+id = 68
+tag = "resnet18.convolution_8_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_clamp"
+id = 69
+tag = "resnet18.convolution_8_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8_activation_int8"
+id = 70
+tag = "resnet18.convolution_8_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_8"
+id = 72
+tag = "resnet18.convolution_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_8"
+id = 73
+tag = "resnet18._native_batch_norm_legit_no_training_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_7"
+id = 74
+tag = "resnet18.relu_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_normalized"
+id = 75
+tag = "resnet18.convolution_9_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_round"
+id = 76
+tag = "resnet18.convolution_9_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_clamp"
+id = 77
+tag = "resnet18.convolution_9_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9_activation_int8"
+id = 78
+tag = "resnet18.convolution_9_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_9"
+id = 80
+tag = "resnet18.convolution_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_9"
+id = 81
+tag = "resnet18._native_batch_norm_legit_no_training_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_3"
+id = 82
+tag = "resnet18.add_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_8"
+id = 83
+tag = "resnet18.relu_8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_normalized"
+id = 84
+tag = "resnet18.convolution_10_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_round"
+id = 85
+tag = "resnet18.convolution_10_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_clamp"
+id = 86
+tag = "resnet18.convolution_10_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10_activation_int8"
+id = 87
+tag = "resnet18.convolution_10_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_10"
+id = 89
+tag = "resnet18.convolution_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_10"
+id = 90
+tag = "resnet18._native_batch_norm_legit_no_training_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_9"
+id = 91
+tag = "resnet18.relu_9"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_normalized"
+id = 92
+tag = "resnet18.convolution_11_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_round"
+id = 93
+tag = "resnet18.convolution_11_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_clamp"
+id = 94
+tag = "resnet18.convolution_11_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11_activation_int8"
+id = 95
+tag = "resnet18.convolution_11_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_11"
+id = 97
+tag = "resnet18.convolution_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_11"
+id = 98
+tag = "resnet18._native_batch_norm_legit_no_training_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_normalized"
+id = 99
+tag = "resnet18.convolution_12_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_round"
+id = 100
+tag = "resnet18.convolution_12_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_clamp"
+id = 101
+tag = "resnet18.convolution_12_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12_activation_int8"
+id = 102
+tag = "resnet18.convolution_12_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_12"
+id = 104
+tag = "resnet18.convolution_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_12"
+id = 105
+tag = "resnet18._native_batch_norm_legit_no_training_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_4"
+id = 106
+tag = "resnet18.add_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_10"
+id = 107
+tag = "resnet18.relu_10"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_normalized"
+id = 108
+tag = "resnet18.convolution_13_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_round"
+id = 109
+tag = "resnet18.convolution_13_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_clamp"
+id = 110
+tag = "resnet18.convolution_13_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13_activation_int8"
+id = 111
+tag = "resnet18.convolution_13_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_13"
+id = 113
+tag = "resnet18.convolution_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_13"
+id = 114
+tag = "resnet18._native_batch_norm_legit_no_training_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_11"
+id = 115
+tag = "resnet18.relu_11"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_normalized"
+id = 116
+tag = "resnet18.convolution_14_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_round"
+id = 117
+tag = "resnet18.convolution_14_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_clamp"
+id = 118
+tag = "resnet18.convolution_14_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14_activation_int8"
+id = 119
+tag = "resnet18.convolution_14_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_14"
+id = 121
+tag = "resnet18.convolution_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_14"
+id = 122
+tag = "resnet18._native_batch_norm_legit_no_training_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_5"
+id = 123
+tag = "resnet18.add_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_12"
+id = 124
+tag = "resnet18.relu_12"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_normalized"
+id = 125
+tag = "resnet18.convolution_15_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_round"
+id = 126
+tag = "resnet18.convolution_15_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_clamp"
+id = 127
+tag = "resnet18.convolution_15_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15_activation_int8"
+id = 128
+tag = "resnet18.convolution_15_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_15"
+id = 130
+tag = "resnet18.convolution_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_15"
+id = 131
+tag = "resnet18._native_batch_norm_legit_no_training_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_13"
+id = 132
+tag = "resnet18.relu_13"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_normalized"
+id = 133
+tag = "resnet18.convolution_16_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_round"
+id = 134
+tag = "resnet18.convolution_16_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_clamp"
+id = 135
+tag = "resnet18.convolution_16_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16_activation_int8"
+id = 136
+tag = "resnet18.convolution_16_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_16"
+id = 138
+tag = "resnet18.convolution_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_16"
+id = 139
+tag = "resnet18._native_batch_norm_legit_no_training_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_normalized"
+id = 140
+tag = "resnet18.convolution_17_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_round"
+id = 141
+tag = "resnet18.convolution_17_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_clamp"
+id = 142
+tag = "resnet18.convolution_17_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17_activation_int8"
+id = 143
+tag = "resnet18.convolution_17_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_17"
+id = 145
+tag = "resnet18.convolution_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_17"
+id = 146
+tag = "resnet18._native_batch_norm_legit_no_training_17"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_6"
+id = 147
+tag = "resnet18.add_6"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_14"
+id = 148
+tag = "resnet18.relu_14"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_normalized"
+id = 149
+tag = "resnet18.convolution_18_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_round"
+id = 150
+tag = "resnet18.convolution_18_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_clamp"
+id = 151
+tag = "resnet18.convolution_18_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18_activation_int8"
+id = 152
+tag = "resnet18.convolution_18_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_18"
+id = 154
+tag = "resnet18.convolution_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_18"
+id = 155
+tag = "resnet18._native_batch_norm_legit_no_training_18"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_15"
+id = 156
+tag = "resnet18.relu_15"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_normalized"
+id = 157
+tag = "resnet18.convolution_19_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_round"
+id = 158
+tag = "resnet18.convolution_19_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_clamp"
+id = 159
+tag = "resnet18.convolution_19_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19_activation_int8"
+id = 160
+tag = "resnet18.convolution_19_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "convolution_19"
+id = 162
+tag = "resnet18.convolution_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_native_batch_norm_legit_no_training_19"
+id = 163
+tag = "resnet18._native_batch_norm_legit_no_training_19"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "add_7"
+id = 164
+tag = "resnet18.add_7"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_16"
+id = 165
+tag = "resnet18.relu_16"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "mean"
+id = 166
+tag = "resnet18.mean"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 167
+tag = "resnet18.view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_normalized"
+id = 168
+tag = "resnet18.addmm_activation_normalized"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_round"
+id = 169
+tag = "resnet18.addmm_activation_round"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_clamp"
+id = 170
+tag = "resnet18.addmm_activation_clamp"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm_activation_int8"
+id = 171
+tag = "resnet18.addmm_activation_int8"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "addmm"
+id = 174
+tag = "resnet18.addmm"
+cycle = true
+tensor = false

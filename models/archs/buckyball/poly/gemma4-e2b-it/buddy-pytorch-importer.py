@@ -1,338 +1,124 @@
-import sys
 from pathlib import Path
 
-repo_root = Path(sys.argv[sys.argv.index("--repo-root") + 1]).resolve()
-compiler_build = Path(sys.argv[sys.argv.index("--compiler-build") + 1]).resolve()
-sys.path.insert(0, str(repo_root))
-sys.path.insert(0, str(compiler_build / "python_packages"))
-
-from importlib import import_module
-
-#!/usr/bin/env python3
-# ===- buddy-pytorch-importer.py ---------------------------------------------------
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# ===---------------------------------------------------------------------------
-#
-# This is the AOT importer for the Gemma4 model.
-#
-# ===---------------------------------------------------------------------------
-
-import argparse
-import sys
-from pathlib import Path
-
-import json
-import tomllib
 import torch
-import torch._dynamo as dynamo
-
-parser = argparse.ArgumentParser(description="Gemma4 Model AOT Importer")
-parser.add_argument(
-    "--output-dir",
-    type=str,
-    default="./",
-    help="Directory to save output files.",
-)
-parser.add_argument("--compiler-build", type=Path, required=True)
-parser.add_argument("--chip-pb", type=Path, required=True)
-parser.add_argument("--chip", required=True)
-parser.add_argument("--prefill-length", type=int, required=True)
-parser.add_argument("--run-config", type=Path, required=True)
-parser.add_argument("--isa-dir", type=Path, required=True)
-parser.add_argument("--kernel-passes", required=True)
-parser.add_argument("--checkpoint", required=True)
-parser.add_argument("--repo-root", type=Path, required=True)
-args = parser.parse_args()
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
+from torch._inductor.decomposition import decompositions
+from transformers import Gemma4ForCausalLM
 
 from buddy.compiler.frontend import DynamoCompiler
-from buddy.compiler.graph.operation import *  # noqa: F403
-from abi import verify_config, verify_graph
-from native import NativeGemma
-from cache import Cache
-from buddy.compiler.ops import tosa
-from buddy.compiler.trace import TraceConfig, load_trace_config
-from torch._inductor.decomposition import decompositions as inductor_decomp
+from stack.compiler.frontend.ops import tosa
+from frontend.permute.graph import permute
 
-prepare = import_module("stack.models.models.gemma4-e2b-it.prepare")
-import __init__ as design
-
-for component in ("tasks", "entry", "linear", "partition"):
-    setattr(design, component, import_module(component))
-from task_export import Exporter, Parameters
-from task_plan import export_phase
-from task_program import emit_program
-
-tiles = design.partition.participants(
-    tomllib.loads(args.run_config.read_text())["core_indices"]
-)
-registry = dict(tosa.ops_registry)
-
-output_dir = Path(args.output_dir).resolve()
-output_dir.mkdir(parents=True, exist_ok=True)
-task_exporter = Exporter(
-    args.output_dir,
-    args.chip_pb,
-    args.kernel_passes.split(),
-    design,
-    args.isa_dir,
-)
 model_dir = Path(__file__).resolve().parent
-trace = TraceConfig(load_trace_config(model_dir / "trace/trace.toml"))
-verbose = False
-verbose_path = None
+output = model_dir / "output"
+output.mkdir(parents=True, exist_ok=True)
+model_source = model_dir.parents[3] / "models/gemma4-e2b-it"
+# The KV cache holds 256 positions.
+capacity = 256
 
-model_path = args.checkpoint
 
-CacheLength = 512
-PrefillLength = args.prefill_length
-if not 1 <= PrefillLength <= CacheLength:
-    raise ValueError("Gemma prefill length must be in 1..512")
+# ===----------------------------------------------------------------------===
+# The interface of the graph: tokens written from `start`, and the KV cache.
+# ===----------------------------------------------------------------------===
+class Cache:
+    """The KV cache of the graph inputs: each layer writes its new entries
+    from `start` and returns the whole updated cache."""
 
-model, tc = prepare.load_model(model_path)
-model.config.use_cache = False
-model = NativeGemma(model)
+    def __init__(self, start, keys, values):
+        self.start = start
+        self.keys = list(keys)
+        self.values = list(values)
 
-# Initialize the quantized cache before graph capture.
-print("Pre-initializing MXFP8 cache for prefill...")
-from quant import quantize as quant
+    def update(self, key, value, layer):
+        positions = self.start + torch.arange(key.shape[2])
+        self.keys[layer] = self.keys[layer].index_copy(2, positions, key)
+        self.values[layer] = self.values[layer].index_copy(2, positions, value)
+        return self.keys[layer], self.values[layer]
 
-cache_prefill = Cache(tc, CacheLength, quant.cache)
-with torch.no_grad():
-    model(
-        input_ids=torch.zeros((1, 1), dtype=torch.int64),
-        position_ids=torch.zeros((1, 1), dtype=torch.int64),
-        past_key_values=cache_prefill,
-    )
-cache_prefill.reset()
-verify_config(tc, cache_prefill)
 
-dynamo.reset()
+class Decoder(torch.nn.Module):
+    def __init__(self, model, capacity):
+        super().__init__()
+        self.model = model
+        self.capacity = capacity
 
-dynamo_compiler_prefill = DynamoCompiler(
-    primary_registry=registry,
-    aot_autograd_decomposition=inductor_decomp,
-    func_name="forward_prefill",
-    verbose=verbose,
-    verbose_path=verbose_path,
-    trace=trace,
-)
-
-dynamo_compiler_decode = DynamoCompiler(
-    primary_registry=registry,
-    aot_autograd_decomposition=inductor_decomp,
-    func_name="forward_decode",
-    verbose=verbose,
-    verbose_path=verbose_path,
-    trace=trace,
-)
-
-quant.cache.register(dynamo_compiler_prefill)
-quant.cache.register(dynamo_compiler_decode)
-
-with torch.no_grad():
-    data_prefill = {
-        "input_ids": torch.zeros((1, PrefillLength), dtype=torch.int64),
-    }
-
-    prefill_positions = torch.arange(PrefillLength, dtype=torch.int64)[None]
-    graphs_prefill = dynamo_compiler_prefill.importer(
-        model,
-        input_ids=data_prefill["input_ids"],
-        position_ids=prefill_positions,
-        past_key_values=cache_prefill,
-    )
-
-    print("Pre-initializing MXFP8 cache for decode...")
-    cache_decode = Cache(tc, CacheLength, quant.cache)
-    model(
-        input_ids=torch.zeros((1, 1), dtype=torch.int64),
-        position_ids=torch.zeros((1, 1), dtype=torch.int64),
-        past_key_values=cache_decode,
-    )
-
-    for layer in cache_decode.layers:
-        layer.cumulative_length.fill_(200)
-
-    dynamo.reset()
-
-    decode_tokens = torch.zeros((1, 1), dtype=torch.int64)
-    position_ids = torch.tensor([[200]], dtype=torch.int64)
-
-    graphs_decode = dynamo_compiler_decode.importer(
-        model,
-        input_ids=decode_tokens,
-        position_ids=position_ids,
-        past_key_values=cache_decode,
-    )
-
-assert len(graphs_prefill) == 1, f"Expected 1 prefill graph, got {len(graphs_prefill)}"
-assert len(graphs_decode) == 1, f"Expected 1 decode graph, got {len(graphs_decode)}"
-graph_prefill = graphs_prefill[0]
-graph_decode = graphs_decode[0]
-for graph, tokens, cache, positions in (
-    (graph_prefill, data_prefill["input_ids"], cache_prefill, [prefill_positions]),
-    (graph_decode, decode_tokens, cache_decode, [position_ids]),
-):
-    expected = [tokens, *positions]
-    for layer in cache.layers:
-        expected.extend(
-            (
-                layer.cumulative_length,
-                layer.key_codes,
-                layer.key_scales,
-                layer.value_codes,
-                layer.value_scales,
-            )
+    def forward(self, tokens, start, keys, values):
+        positions = start + torch.arange(tokens.shape[1])
+        visible = torch.arange(self.capacity)[None, :] <= positions[:, None]
+        sliding = visible & (
+            torch.arange(self.capacity)[None, :]
+            > positions[:, None] - self.model.config.sliding_window
         )
-    captured = {
-        tensor.data_ptr(): index
-        for tensor, index in zip(graph._runtime_inputs_ref, graph._inputs)
-    }
-    if set(captured) != {tensor.data_ptr() for tensor in expected}:
-        raise ValueError(
-            "Gemma captured runtime tensors do not match the native cache interface"
-        )
-    graph._inputs = [captured[tensor.data_ptr()] for tensor in expected]
-    graph._runtime_inputs_ref = expected
+        mask = torch.where(visible, 0.0, torch.finfo(torch.float32).min)
+        sliding_mask = torch.where(sliding, 0.0, torch.finfo(torch.float32).min)
+        cache = Cache(start, keys, values)
+        logits = self.model(
+            input_ids=tokens,
+            position_ids=positions[None, :],
+            attention_mask={
+                "full_attention": mask[None, None, :, :],
+                "sliding_attention": sliding_mask[None, None, :, :],
+            },
+            past_key_values=cache,
+            use_cache=True,
+        ).logits
+        return logits, cache.keys, cache.values
 
-contracts = {}
-for phase, graph in (("prefill", graph_prefill), ("decode", graph_decode)):
-    result = next(node for node in graph.body if isinstance(node, OutputOp))
 
-    def describe(node):
-        return {
-            "name": node.name,
-            "shape": list(node.tensor_meta["shape"]),
-            "dtype": str(node.tensor_meta["dtype"]),
-            "parents": list(node._parents),
-            "args": [str(arg) for arg in node.args],
-        }
-
-    contracts[phase] = {
-        "nodes": {
-            node.name: {
-                "parents": list(node._parents),
-                "args": [str(arg) for arg in node.args],
-            }
-            for node in graph.body
-        },
-        "inputs": [describe(node) for node in graph.inputs],
-        "outputs": [describe(graph.node_table[name]) for name in result.args],
-    }
-(output_dir / "capture-abi.json").write_text(json.dumps(contracts, indent=2))
-verify_graph(graph_prefill, "prefill", PrefillLength)
-verify_graph(graph_decode, "decode", 1)
-
-from permute import layout
-
-window_bytes = layout.window_bytes(args.chip_pb)
-metadata = {
-    "chip": args.chip,
-    "model": model_path,
-    "precision": "mixed-mxfp8-f32",
-    "prefill_length": PrefillLength,
-    "cache_length": CacheLength,
-    "quantization": {
-        "linear_weights": "mxfp8",
-        "linear_activations": "mxfp8",
-        "embedding": "mxfp8",
-        "kv_cache": "mxfp8_e4m3",
-        "kv_cache_scale": "e8m0",
-        "kv_cache_scale_selection": "cover_maximum_f32_finite",
-        "kv_cache_block_size": 32,
-        "norm_and_attention": "f32",
-    },
-    "bank_bytes": window_bytes,
-    "parameters": {},
-}
-constants = [
-    f"inline constexpr size_t PrefillLength = {PrefillLength};",
-    f"inline constexpr size_t CacheLength = {CacheLength};",
-    f"inline constexpr size_t MaxVocabSize = {tc.vocab_size};",
+# ===----------------------------------------------------------------------===
+# Step 1: Import one graph of the checkpoint for any number of tokens.
+# ===----------------------------------------------------------------------===
+model = Gemma4ForCausalLM.from_pretrained(
+    model_source / "output/gemma4-e2b-it",
+    dtype=torch.float32,
+    attn_implementation="eager",
+).eval()
+config = model.config
+decoder = Decoder(model, capacity).eval()
+# The token count is symbolic; 8 only gives the trace an example.
+tokens = torch.zeros((1, 8), dtype=torch.int64)
+torch._dynamo.mark_dynamic(tokens, 1, min=1, max=capacity)
+start = torch.zeros((1,), dtype=torch.int64)
+# Shared-KV layers consume the states of earlier layers inside the HF model.
+# Only the layers producing KV states have persistent cache inputs.
+shapes = [
+    (
+        1,
+        layer.self_attn.k_proj.out_features // layer.self_attn.head_dim,
+        capacity,
+        layer.self_attn.head_dim,
+    )
+    for layer in model.model.layers
+    if not layer.self_attn.is_kv_shared_layer
 ]
-for phase, graph, compiler in (
-    ("prefill", graph_prefill, dynamo_compiler_prefill),
-    ("decode", graph_decode, dynamo_compiler_decode),
-):
-    params = list(compiler.imported_params[graph])
-    original_params = {node.name: value for node, value in zip(graph.params, params)}
-    if any(param.dtype != torch.float32 for param in params):
-        raise ValueError(f"{phase}: unsupported parameter dtype")
-    quant.quantize(
-        graph,
-        params,
-        output_dir / phase,
-        phase,
-        args.compiler_build / "bin/rax-pack",
-        window_bytes,
-    )
-    parameters = Parameters(phase, graph, original_params, params, output_dir / phase)
-    export_phase(
-        task_exporter,
-        phase,
-        model.model,
-        parameters,
-        tiles,
-        PrefillLength if phase == "prefill" else 1,
-        design,
-    )
-    floats = sum(param.numel() for param in params if param.dtype == torch.float32)
-    weights = sum(param.numel() for param in params if param.dtype == torch.int8)
-    metadata["parameters"][phase] = {"f32_elements": floats, "weight_bytes": weights}
-    constants.extend(
-        (
-            f"inline constexpr size_t {phase}Floats = {floats};",
-            f"inline constexpr size_t {phase}Bytes = {weights};",
-        )
-    )
-task_manifest = task_exporter.finish(tiles)
-plan_sources, workspace_bound = emit_program(
-    output_dir / "tasks", task_manifest, metadata, PrefillLength
+keys = [torch.zeros(shape) for shape in shapes]
+values = [torch.zeros(shape) for shape in shapes]
+compiler = DynamoCompiler(
+    primary_registry=tosa.ops_registry,
+    aot_autograd_decomposition=decompositions,
+    trace=None,
 )
-with (output_dir / "tasks/CMakeLists.txt").open("a") as cmake:
-    cmake.write(
-        "target_sources(gemma4_kernels PRIVATE\n"
-        + "".join(f"  {source}\n" for source in plan_sources)
-        + ")\n"
-    )
-    cmake.write(
-        'target_include_directories(gemma4_kernels PRIVATE "${DESIGN_DIR}" "${REPO_ROOT}/stack/runtime/include")\n'
-    )
-metadata["execution_tiles"] = list(tiles)
-metadata["task_manifest"] = "tasks/manifest.json"
-metadata["task_kernel_count"] = len(task_manifest["kernels"])
-metadata["task_workspace_bound_bytes"] = workspace_bound
-metadata["task_workspace_bound_kind"] = "static-liveness-first-fit"
-metadata["float_parameter_bytes"] = sum(
-    value["f32_elements"] * 4 for value in metadata["parameters"].values()
-)
-if (
-    metadata["parameters"]["prefill"]["weight_bytes"]
-    != metadata["parameters"]["decode"]["weight_bytes"]
-):
-    raise ValueError("Gemma phases must use one canonical packed weight payload")
-metadata["mxfp8_parameter_bytes"] = metadata["parameters"]["prefill"]["weight_bytes"]
-metadata["parameter_bytes"] = (
-    metadata["float_parameter_bytes"] + metadata["mxfp8_parameter_bytes"]
-)
-constants.append(f"inline constexpr size_t bankBytes = {window_bytes};")
-(output_dir / "model.json").write_text(json.dumps(metadata, indent=2))
-(output_dir / "gemma-parameters.h").write_text(
-    "#pragma once\n#include <cstddef>\n" + "\n".join(constants) + "\n"
-)
+with torch.no_grad():
+    (graph,) = compiler.importer(decoder, tokens, start, keys, values)
+params = compiler.imported_params[graph]
+# Graph parameters are the checkpoint's parameters and buffers (inv_freq).
+names = {
+    value.data_ptr(): name
+    for name, value in [*model.named_parameters(), *model.named_buffers()]
+}
+parameter_names = {
+    node.name: names[value.data_ptr()]
+    for node, value in zip(graph.params, params, strict=True)
+}
 
-prepare.export_vocabulary(model_path, output_dir / "vocab.txt")
-print("All files saved to:", output_dir)
+# ===----------------------------------------------------------------------===
+# Step 2.1: Export the original graph and FP32 parameters.
+# ===----------------------------------------------------------------------===
+graph.dump(output / "01-import.txt")
+# graph.dump_parameters(output / "01-import-parameters")
+
+# ===----------------------------------------------------------------------===
+# Step 2.2: Absorb the transposes PyTorch puts on the Linear weights.
+# ===----------------------------------------------------------------------===
+permute(graph)
+graph.dump(output / "02-permuted.txt")
+# graph.dump_parameters(output / "02-permuted-parameters")

@@ -1,0 +1,118 @@
+execution = "int8"
+
+# Offline per-output-channel weights and ImageNet-calibrated per-tensor activations.
+
+[weights."features.0.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.3.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.6.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.8.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."features.10.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."classifier.1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."classifier.4.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."classifier.6.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[activations.convolution]
+module = "features.0"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_1]
+module = "features.3"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_2]
+module = "features.6"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_3]
+module = "features.8"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_4]
+module = "features.10"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm]
+module = "classifier.1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm_1]
+module = "classifier.4"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm_2]
+module = "classifier.6"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[calibration]
+samples = 1024

@@ -1,0 +1,11 @@
+rhal.module @model attributes {
+  version = "0.1.0",
+  model_name = "mobilenet-v3-small_buckyball-pebble",
+  runner_library = "file:libmobilenet-v3-small-buckyball-pebble-runner.so",
+  vocab_uri = "file:Labels.txt"
+} {
+  rhal.constant @params {id = 1 : i32, storage = "external", type = tensor<?xf32>, uri = "file:arg0.data"}
+  rhal.constant @weights {id = 2 : i32, storage = "external", type = tensor<?xi8>, uri = "file:arg1.data"}
+  rhal.constant @vocab {id = 3 : i32, storage = "external", type = tensor<?xi8>, uri = "file:Labels.txt"}
+  rhal.codeobj @model {id = 1 : i32, kind = "host_shared_lib", backend = "cpu", uri = "file:libmobilenet-v3-small-buckyball-pebble-runner.so"}
+}

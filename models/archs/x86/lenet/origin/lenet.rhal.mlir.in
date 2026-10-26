@@ -1,0 +1,32 @@
+rhal.module @lenet attributes {
+  version = "0.1.0",
+  model_name = "lenet_x86_origin",
+  runner_library = "file:liblenet-x86-origin-runner.so"
+} {
+  // Original FP32 parameters, without weight quantization.
+  rhal.constant @params {
+    id = 1 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "file:arg0.data"
+  }
+
+  // The host library contains the compiled x86 model.
+  rhal.codeobj @model_kernels {
+    id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:liblenet-x86-origin-model.so", entry_symbol = "_mlir_ciface_forward"
+  }
+  rhal.codeobj @mlir_c_runner_utils {
+    id = 2 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:@BUDDY_SOURCE@/llvm/build/lib/libmlir_c_runner_utils.so"
+  }
+  rhal.codeobj @mlir_runner_utils {
+    id = 3 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:@BUDDY_SOURCE@/llvm/build/lib/libmlir_runner_utils.so"
+  }
+
+  rhal.buffer @image {space = "host", type = tensor<1x1x28x28xf32>}
+  rhal.buffer @logits {space = "host", type = tensor<1x10xf32>}
+  rhal.func @forward {
+    inputs = ["image"], outputs = ["logits"],
+    dispatch = "model_kernels", args = ["logits", "params", "image"]
+  }
+}

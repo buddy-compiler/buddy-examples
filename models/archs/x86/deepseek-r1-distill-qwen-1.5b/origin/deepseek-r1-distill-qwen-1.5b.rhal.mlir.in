@@ -1,0 +1,17 @@
+rhal.module @deepseek_r1_distill_qwen_1_5b attributes {
+  version = "0.1.0",
+  model_name = "deepseek_r1_distill_qwen_1_5b_x86_origin",
+  runner_library = "file:libdeepseek-r1-distill-qwen-1.5b-x86-origin-runner.so",
+  vocab_uri = "file:@MODEL_DIR@/deepseek-r1-distill-qwen-1.5b/vocab.txt"
+} {
+  rhal.constant @params {id = 1 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "file:arg0.data"}
+  rhal.constant @vocab {id = 2 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:@MODEL_DIR@/deepseek-r1-distill-qwen-1.5b/vocab.txt"}
+  rhal.codeobj @model_kernels {id = 1 : i32, kind = "host_shared_lib",
+    backend = "cpu", uri = "file:libdeepseek-r1-distill-qwen-1.5b-x86-origin-model.so"}
+  rhal.codeobj @mlir_c_runner_utils {id = 2 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:@BUDDY_SOURCE@/llvm/build/lib/libmlir_c_runner_utils.so"}
+  rhal.codeobj @mlir_runner_utils {id = 3 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:@BUDDY_SOURCE@/llvm/build/lib/libmlir_runner_utils.so"}
+}

@@ -1,3 +1,4 @@
+from stack.compiler.frontend.trace import trace
 from importlib import import_module
 
 #!/usr/bin/env python3
@@ -24,7 +25,6 @@ from importlib import import_module
 import json
 import os
 from pathlib import Path
-import sys
 
 import torch
 import torch._inductor.lowering
@@ -36,13 +36,6 @@ import argparse
 
 parser = argparse.ArgumentParser(description="yolo26n model AOT importer")
 parser.add_argument(
-    "--calibration-images",
-    type=Path,
-    nargs="+",
-    required=True,
-    help="Ordered calibration images, separate from inference test images.",
-)
-parser.add_argument(
     "--output-dir",
     type=str,
     default="./",
@@ -53,29 +46,27 @@ parser.add_argument("--compiler-build", type=Path, required=True)
 parser.add_argument("--img-size", type=int, required=True)
 parser.add_argument("--repo-root", type=Path, required=True)
 args = parser.parse_args()
-sys.path.insert(0, str(args.repo_root.resolve()))
 
 args.compiler_build = args.compiler_build.resolve()
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.ops import tosa
-from buddy.compiler.trace import TraceConfig, load_trace_config
-from buddy.compiler.graph.transform.quantization.normalize import fold_batch_norms
+from stack.compiler.frontend.ops import tosa
 
-import __init__ as design
-from quant import quantize as quant
+from stack.compiler.frontend.quant.transforms.normalize import fold_batch_norms
 
-design_dir = Path(__file__).parent
-torch.set_num_threads(4)
-calibration_images = [path.resolve(strict=True) for path in args.calibration_images]
+import __init__ as recipe
+from stack.compiler.frontend.quant.importer import quantize_model_graph
+from stack.compiler.frontend.quant.offline.activations import calibrate_layer_ranges
+import tomllib
+
+recipe_dir = Path(__file__).parent
 
 output_dir = Path(args.output_dir).resolve()
 output_dir.mkdir(parents=True, exist_ok=True)
 os.chdir(output_dir)
 model_dir = Path(__file__).resolve().parent
-trace = TraceConfig(load_trace_config(design_dir / "trace" / "trace.toml"))
+
 verbose = False
 verbose_path = None
 
@@ -87,10 +78,13 @@ detect_head.end2end = True
 detect_head.export = True
 detect_head.xyxy = True
 
-torch.set_num_threads(4)
-input_tensor, calibration = quant.prepare(
-    model, calibration_images, args.img_size, model_path, output_dir
+from quant.calibration import CocoCalibration
+
+config = tomllib.loads((model_dir / "quant/quant.toml").read_text())
+calibration = calibrate_layer_ranges(
+    model, CocoCalibration(args.img_size), **config["calibration"]
 )
+input_tensor = torch.zeros(1, 3, args.img_size, args.img_size)
 
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
@@ -98,7 +92,7 @@ dynamo_compiler = DynamoCompiler(
     func_name="forward",
     verbose=verbose,
     verbose_path=verbose_path,
-    trace=trace,
+    trace=None,
 )
 
 with torch.no_grad():
@@ -109,8 +103,6 @@ with torch.no_grad():
 assert len(graphs) == 1
 graph = graphs[0]
 params = dynamo_compiler.imported_params[graph]
-
-graph.fuse_ops([simply_fuse])
 
 
 def _param_names(mod, imported):
@@ -148,15 +140,19 @@ def _param_names(mod, imported):
     return names
 
 
-quant.quantize(
+quantize_model_graph(
     graph,
     params,
     _param_names(model, params),
     output_dir,
     "yolo26",
     calibration,
-    rax_pack=args.compiler_build / "bin/rax-pack",
 )
+graph.dump(output_dir / "03-quanted.txt")
+graph.fuse_ops([simply_fuse])
+graph.dump(output_dir / "04-fusion.txt")
+trace(graph, Path(__file__).parent / "trace/trace.toml")
+graph.dump(output_dir / "05-traced.txt")
 driver = GraphDriver(graph)
 driver.subgraphs[0].lower_to_top_level_ir()
 with open(output_dir / "subgraph0.mlir", "w") as module_file:
@@ -167,5 +163,22 @@ with open(output_dir / "forward.mlir", "w") as module_file:
 
 import json
 
-metadata = {"version": 1, "chip": design.chip, "model": "yolo26"}
+(output_dir / "activation-scales.json").write_text(
+    json.dumps(
+        {
+            name: [[value.tolist() for value in record] for record in records]
+            for name, records in calibration.items()
+        },
+        indent=2,
+    )
+    + "\n"
+)
+
+metadata = {"version": 1, "design": recipe.design, "model": "yolo26"}
 (output_dir / "model.json").write_text(json.dumps(metadata))
+
+(output_dir / "params.f32").replace(output_dir / "arg0.data")
+(output_dir / "weights.bin").replace(output_dir / "arg1.data")
+(output_dir / "labels.txt").write_text(
+    "\n".join(model.names[i] for i in range(len(model.names))) + "\n"
+)

@@ -1,69 +1,55 @@
 [[trace.node]]
-node = "mm"
-id = 0
-tag = "mm"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "mm_1"
-id = 1
-tag = "mm_1"
-cycle = true
-tensor = false
-
-[[trace.node]]
-node = "mm_2"
-id = 2
-tag = "mm_2"
-cycle = true
-tensor = false
-
-[[trace.node]]
 node = "convolution"
-id = 3
+id = 0
 tag = "convolution"
 cycle = true
 tensor = false
 
 [[trace.node]]
 node = "convolution_1"
-id = 4
+id = 1
 tag = "convolution_1"
 cycle = true
 tensor = false
 
 [[trace.node]]
 node = "convolution_2"
-id = 5
+id = 2
 tag = "convolution_2"
 cycle = true
 tensor = false
 
 [[trace.node]]
 node = "convolution_3"
-id = 6
+id = 3
 tag = "convolution_3"
 cycle = true
 tensor = false
 
 [[trace.node]]
+node = "convolution_4"
+id = 4
+tag = "convolution_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
 node = "addmm"
-id = 7
+id = 5
 tag = "addmm"
 cycle = true
 tensor = false
 
 [[trace.node]]
 node = "addmm_1"
-id = 8
+id = 6
 tag = "addmm_1"
 cycle = true
 tensor = false
 
 [[trace.node]]
 node = "addmm_2"
-id = 9
+id = 7
 tag = "addmm_2"
 cycle = true
 tensor = false

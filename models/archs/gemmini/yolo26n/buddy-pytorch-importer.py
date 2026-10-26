@@ -1,31 +1,20 @@
-import argparse
-import json
 from pathlib import Path
-import sys
 
 import numpy as np
 import torch
+from torch._decomp import get_decompositions
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--repo-root", type=Path, required=True)
-parser.add_argument("--output-dir", type=Path, required=True)
-parser.add_argument("--compiler-build", type=Path, required=True)
-parser.add_argument("--checkpoint", type=Path, required=True)
-args = parser.parse_args()
-sys.path.insert(0, str(args.repo_root.resolve()))
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.ops import tosa
-from buddy.compiler.trace import TraceConfig, load_trace_config
+from stack.compiler.frontend.ops import tosa
 
-torch.set_num_threads(4)
-output = args.output_dir.resolve()
+model_dir = Path(__file__).resolve().parent
+output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
 from ultralytics import YOLO
 
-model = YOLO(str(args.checkpoint)).model
+model = YOLO(str(model_dir / "../../../models/yolo26n/output/yolo26n/yolo26n.pt")).model
 head = model.model[-1]
 head.end2end = True
 head.export = True
@@ -34,15 +23,24 @@ data = torch.zeros((1, 3, 640, 640))
 model.eval()
 compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
-    trace=TraceConfig(load_trace_config(Path(__file__).parent / "trace/trace.toml")),
+    aot_autograd_decomposition=get_decompositions(
+        [torch.ops.aten.detach.default, torch.ops.aten.fill.Tensor]
+    ),
+    trace=None,
 )
 with torch.no_grad():
+    model(data)
     graphs = compiler.importer(model, data)
 assert len(graphs) == 1
 graph = graphs[0]
 params = compiler.imported_params[graph]
+graph.dump(output / "01-import.txt")
+# graph.dump_parameters(output / "01-import-parameters")
 graph.fuse_ops([simply_fuse])
 driver = GraphDriver(graph)
+for subgraph in driver.subgraphs:
+    subgraph.trace(model_dir / "trace/trace.toml")
+graph.dump(output / "04-traced.txt")
 for index, subgraph in enumerate(driver.subgraphs):
     subgraph.lower_to_top_level_ir()
     (output / f"subgraph{index}.mlir").write_text(str(subgraph._imported_module))
@@ -51,10 +49,6 @@ parameters = np.concatenate(
     [parameter.detach().cpu().numpy().reshape(-1) for parameter in params]
 )
 parameters.astype(np.float32).tofile(output / "arg0.data")
-payload = output / "yolo26.payload"
-payload.mkdir(exist_ok=True)
-parameters.astype(np.float32).tofile(payload / "params.f32")
-(payload / "weights.bin").write_bytes(b"")
-(output / "model.json").write_text(
-    json.dumps({"version": 1, "chip": "gemmini", "model": "yolo26"})
+(output / "labels.txt").write_text(
+    "\n".join(model.names[index] for index in range(len(model.names))) + "\n"
 )

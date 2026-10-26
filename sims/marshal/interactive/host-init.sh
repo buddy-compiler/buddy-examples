@@ -8,8 +8,6 @@
 ROOT=$(git rev-parse --show-toplevel)
 MARSHAL_DIR=$ROOT/sims/marshal
 
-cd $ROOT && source env.sh
-
 # echo "Building marshal workload"
 # cd $ROOT/models/build
 # make

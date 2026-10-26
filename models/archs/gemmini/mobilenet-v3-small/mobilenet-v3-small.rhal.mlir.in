@@ -1,0 +1,18 @@
+rhal.module @mobilenet_v3_small attributes {
+  version = "0.1.0",
+  model_name = "mobilenet-v3-small_gemmini",
+  runner_library = "file:libmobilenet-v3-small-gemmini-runner.so"
+} {
+  rhal.constant @params {
+    id = 1 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "file:arg0.data"
+  }
+  rhal.constant @quantized_weights {
+    id = 2 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:arg1.data"
+  }
+  rhal.codeobj @model_kernels {
+    id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:libmobilenet-v3-small-gemmini-model.so", entry_symbol = "_mlir_ciface_forward"
+  }
+}

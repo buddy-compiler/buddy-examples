@@ -1,0 +1,1579 @@
+execution = "int8"
+
+# Per-output-channel INT8 weights and offline per-tensor activation scales.
+
+[weights."model.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.2.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.2.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.2.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.2.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.3.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.4.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.4.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.4.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.4.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.5.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.m.1.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.m.1.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.m.0.cv3.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.6.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.7.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.m.1.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.m.1.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.m.0.cv3.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.8.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.9.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.9.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.m.0.attn.qkv.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.m.0.attn.pe.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.m.0.attn.proj.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.m.0.ffn.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.m.0.ffn.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.10.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.m.1.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.m.1.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.m.0.cv3.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.13.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.m.1.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.m.1.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.m.0.cv3.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.16.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.17.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.m.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.m.1.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.m.1.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.m.0.cv3.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.19.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.20.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.0.cv1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.0.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.1.attn.qkv.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.1.attn.pe.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.1.attn.proj.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.1.ffn.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.m.0.1.ffn.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.22.cv2.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.0.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.1.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.2.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.2.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv2.2.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.0.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.0.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.0.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.0.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.0.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.1.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.1.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.1.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.1.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.1.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.2.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.2.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.2.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.2.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.cv3.2.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.0.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.1.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.2.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.2.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv2.2.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.0.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.0.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.0.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.0.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.0.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.1.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.1.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.1.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.1.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.1.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.2.0.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.2.0.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.2.1.0.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.2.1.1.conv.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."model.23.one2one_cv3.2.2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[activations.convolution]
+module = "model.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_1]
+module = "model.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_2]
+module = "model.2.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_3]
+module = "model.2.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_4]
+module = "model.2.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_5]
+module = "model.2.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_6]
+module = "model.3.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_7]
+module = "model.4.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_8]
+module = "model.4.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_9]
+module = "model.4.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_10]
+module = "model.4.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_11]
+module = "model.5.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_12]
+module = "model.6.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_13]
+module = "model.6.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_14]
+module = "model.6.m.0.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_15]
+module = "model.6.m.0.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_16]
+module = "model.6.m.0.m.1.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_17]
+module = "model.6.m.0.m.1.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_18]
+module = "model.6.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_19]
+module = "model.6.m.0.cv3.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_20]
+module = "model.6.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_21]
+module = "model.7.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_22]
+module = "model.8.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_23]
+module = "model.8.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_24]
+module = "model.8.m.0.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_25]
+module = "model.8.m.0.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_26]
+module = "model.8.m.0.m.1.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_27]
+module = "model.8.m.0.m.1.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_28]
+module = "model.8.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_29]
+module = "model.8.m.0.cv3.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_30]
+module = "model.8.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_31]
+module = "model.9.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_32]
+module = "model.9.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_33]
+module = "model.10.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_34]
+module = "model.10.m.0.attn.qkv.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_35]
+module = "model.10.m.0.attn.pe.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_36]
+module = "model.10.m.0.attn.proj.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_37]
+module = "model.10.m.0.ffn.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_38]
+module = "model.10.m.0.ffn.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_39]
+module = "model.10.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_40]
+module = "model.13.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_41]
+module = "model.13.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_42]
+module = "model.13.m.0.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_43]
+module = "model.13.m.0.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_44]
+module = "model.13.m.0.m.1.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_45]
+module = "model.13.m.0.m.1.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_46]
+module = "model.13.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_47]
+module = "model.13.m.0.cv3.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_48]
+module = "model.13.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_49]
+module = "model.16.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_50]
+module = "model.16.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_51]
+module = "model.16.m.0.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_52]
+module = "model.16.m.0.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_53]
+module = "model.16.m.0.m.1.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_54]
+module = "model.16.m.0.m.1.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_55]
+module = "model.16.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_56]
+module = "model.16.m.0.cv3.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_57]
+module = "model.16.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_58]
+module = "model.17.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_59]
+module = "model.19.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_60]
+module = "model.19.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_61]
+module = "model.19.m.0.m.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_62]
+module = "model.19.m.0.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_63]
+module = "model.19.m.0.m.1.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_64]
+module = "model.19.m.0.m.1.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_65]
+module = "model.19.m.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_66]
+module = "model.19.m.0.cv3.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_67]
+module = "model.19.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_68]
+module = "model.20.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_69]
+module = "model.22.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_70]
+module = "model.22.m.0.0.cv1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_71]
+module = "model.22.m.0.0.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_72]
+module = "model.22.m.0.1.attn.qkv.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_73]
+module = "model.22.m.0.1.attn.pe.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_74]
+module = "model.22.m.0.1.attn.proj.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_75]
+module = "model.22.m.0.1.ffn.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_76]
+module = "model.22.m.0.1.ffn.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_77]
+module = "model.22.cv2.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_102]
+module = "model.23.one2one_cv2.0.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_103]
+module = "model.23.one2one_cv2.0.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_104]
+module = "model.23.one2one_cv2.0.2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_105]
+module = "model.23.one2one_cv2.1.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_106]
+module = "model.23.one2one_cv2.1.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_107]
+module = "model.23.one2one_cv2.1.2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_108]
+module = "model.23.one2one_cv2.2.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_109]
+module = "model.23.one2one_cv2.2.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_110]
+module = "model.23.one2one_cv2.2.2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_111]
+module = "model.23.one2one_cv3.0.0.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_112]
+module = "model.23.one2one_cv3.0.0.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_113]
+module = "model.23.one2one_cv3.0.1.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_114]
+module = "model.23.one2one_cv3.0.1.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_115]
+module = "model.23.one2one_cv3.0.2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_116]
+module = "model.23.one2one_cv3.1.0.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_117]
+module = "model.23.one2one_cv3.1.0.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_118]
+module = "model.23.one2one_cv3.1.1.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_119]
+module = "model.23.one2one_cv3.1.1.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_120]
+module = "model.23.one2one_cv3.1.2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_121]
+module = "model.23.one2one_cv3.2.0.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_122]
+module = "model.23.one2one_cv3.2.0.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_123]
+module = "model.23.one2one_cv3.2.1.0.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_124]
+module = "model.23.one2one_cv3.2.1.1.conv"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_125]
+module = "model.23.one2one_cv3.2.2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[calibration]
+samples = 128
+batch_size = 8

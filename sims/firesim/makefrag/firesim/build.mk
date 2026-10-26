@@ -13,7 +13,6 @@ $(FIRRTL_FILE) $(ANNO_FILE) &: SHELL := /usr/bin/env bash # needed for running s
 $(FIRRTL_FILE) $(ANNO_FILE) &: firesim_target_symlink_hook
 	@mkdir -p $(@D)
 	@mkdir -p $(TARGET_SBT_DIR)/target/generated-src/$(long_name)
-	source $(TARGET_SBT_DIR)/../env.sh
 	cd $(TARGET_SBT_DIR) && \
 		pwd && \
 		${SBT} ";project $(TARGET_SBT_PROJECT); runMain chipyard.Generator \

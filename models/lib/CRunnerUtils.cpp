@@ -12,12 +12,13 @@
 #include <malloc.h>
 #include <string.h>
 
-#include "trace_internal.h"
+#include "location.h"
 
+extern "C" thread_location_t thread_location();
 void native_trace_bind();
-core_location_t runtime_trace::location() {
+thread_location_t runtime_trace::location() {
   native_trace_bind();
-  return core_location();
+  return thread_location();
 }
 
 extern "C" void memrefCopy(int64_t elemSize, UnrankedMemRefType<char> *srcArg,

@@ -1,119 +1,171 @@
-import sys
 from pathlib import Path
+import json
 
-repo_root = Path(sys.argv[sys.argv.index("--repo-root") + 1]).resolve()
-compiler_build = Path(sys.argv[sys.argv.index("--compiler-build") + 1]).resolve()
-sys.path.insert(0, str(repo_root))
-sys.path.insert(0, str(compiler_build / "python_packages"))
-
-from importlib import import_module
-
-# ===- buddy-pytorch-importer.py ---------------------------------------------------
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# ===---------------------------------------------------------------------------
-#
-# This is the test of DeepSeekR1 model.
-#
-# ===---------------------------------------------------------------------------
-
-import os
-import argparse
-import time
-from pathlib import Path
 import torch
-import torch._dynamo as dynamo
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from torch._inductor.decomposition import decompositions as inductor_decomp
-import numpy
+import tomllib
+from quant.calibration import WikiTextCalibration
+from torch._inductor.decomposition import decompositions
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from buddy.compiler.frontend import DynamoCompiler
-from buddy.compiler.ops import tosa
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.trace import TraceConfig, load_trace_config
-
-# Add argument parser to allow custom output directory.
-parser = argparse.ArgumentParser(description="DeepSeekR1 Model AOT Importer")
-parser.add_argument(
-    "--output-dir",
-    type=str,
-    default="./",
-    help="Directory to save output files.",
+from stack.compiler.frontend.ops import tosa
+from stack.compiler.frontend.quant.native_mxfp8 import (
+    Cache,
+    calibrate,
+    prepare,
+    register,
+    scale_for,
 )
-import_module("configs.importer-param").add_arguments(parser)
-parser.add_argument("--repo-root", type=Path, required=True)
-parser.add_argument("--compiler-build", type=Path, required=True)
-args = parser.parse_args()
 
-# Ensure the output directory exists.
-output_dir = Path(args.output_dir).resolve()
-output_dir.mkdir(parents=True, exist_ok=True)
 model_dir = Path(__file__).resolve().parent
-trace = TraceConfig(load_trace_config(model_dir / "trace" / "trace.toml"))
-verbose = False
-verbose_path = None
-
-model_path = args.checkpoint
-
-# Initialize the model from the specified model path.
-model = AutoModelForCausalLM.from_pretrained(model_path, dtype=torch.float32).eval()
-model.config.use_cache = False
-
-# Initialize Dynamo Compiler with specific configurations as an importer.
-dynamo_compiler = DynamoCompiler(
-    primary_registry=tosa.ops_registry,
-    aot_autograd_decomposition=inductor_decomp,
-    verbose=verbose,
-    verbose_path=verbose_path,
-    trace=trace,
+output = model_dir / "output"
+output.mkdir(exist_ok=True)
+checkpoint = (
+    model_dir
+    / "../../../models/deepseek-r1-distill-qwen-1.5b/output/deepseek-r1-distill-qwen-1.5b"
 )
 
-# Import the model into MLIR module and parameters.
-with torch.no_grad():
-    data = {
-        "input_ids": torch.zeros((1, 40), dtype=torch.int64),
-        "attention_mask": torch.zeros((1, 40), dtype=torch.int64),
-    }
-    graphs = dynamo_compiler.importer(
-        model,
-        input_ids=data["input_ids"],
-        attention_mask=data["attention_mask"],
+# ===----------------------------------------------------------------------===
+# Pack weights and calibrate fixed activation and KV scales on training text.
+# ===----------------------------------------------------------------------===
+model = AutoModelForCausalLM.from_pretrained(
+    checkpoint, dtype=torch.float32, attn_implementation="eager"
+).eval()
+tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+embedding_scales = {}
+prepare(model, embedding_scales=embedding_scales)
+config = tomllib.loads((model_dir / "quant/quant.toml").read_text())
+capacity = config["cache"]["capacity"]
+activation_scales, calibration_cache = calibrate(
+    model, WikiTextCalibration(tokenizer, capacity), **config["calibration"]
+)
+(output / "calibration.json").write_text(
+    json.dumps(
+        {
+            "dataset": "Salesforce/wikitext",
+            "configuration": "wikitext-2-raw-v1",
+            "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+            "split": "train",
+            "sequence_length": capacity,
+            "seed": 0,
+            **config["calibration"],
+        },
+        indent=2,
     )
-
-assert len(graphs) == 1
-graph = graphs[0]
-params = dynamo_compiler.imported_params[graph]
-pattern_list = [simply_fuse]
-graphs[0].fuse_ops(pattern_list)
-driver = GraphDriver(graphs[0])
-driver.subgraphs[0].lower_to_top_level_ir()
+    + "\n"
+)
+(output / "activation-scales.json").write_text(
+    json.dumps(activation_scales, indent=2) + "\n"
+)
 
 
-def tensor_to_numpy(param):
-    param = param.detach().cpu().contiguous()
-    if param.dtype == torch.bfloat16:
-        return param.view(torch.uint16).numpy().reshape([-1])
-    if param.dtype == torch.float32:
-        return param.numpy().reshape([-1])
-    raise TypeError(f"Unsupported DeepSeekR1 parameter dtype: {param.dtype}")
+# ===----------------------------------------------------------------------===
+# Persist only MXFP8 KV bytes between token steps; scales are packed parameters.
+# ===----------------------------------------------------------------------===
+class Decoder(torch.nn.Module):
+    def __init__(self, model, maxima, centers):
+        super().__init__()
+        self.model = model
+        self.capacity = capacity
+        self.layouts = {}
+        self.cache_size = 0
+        for layer, maximum in sorted(maxima.items()):
+            _, heads, blocks = maximum.shape
+            width = blocks * 32
+            self.layouts[layer] = (self.cache_size, heads, width)
+            self.cache_size += 2 * heads * self.capacity * width
+            self.register_buffer(f"kv_scale_{layer}", scale_for(maximum))
+            self.register_buffer(f"key_center_{layer}", centers[layer].flatten())
+
+    def forward(self, tokens, positions, packed_cache):
+        scales = {layer: getattr(self, f"kv_scale_{layer}") for layer in self.layouts}
+        centers = {
+            layer: getattr(self, f"key_center_{layer}") for layer in self.layouts
+        }
+        cache = Cache(
+            packed_cache, positions, self.layouts, scales, centers, self.capacity
+        )
+        visible = (
+            torch.arange(self.capacity)[None, None, None, :]
+            <= positions[:, None, :, None]
+        )
+        mask = torch.where(visible, 0.0, torch.finfo(torch.float32).min)
+        logits = self.model(
+            input_ids=tokens,
+            position_ids=positions,
+            attention_mask={"full_attention": mask, "sliding_attention": mask},
+            past_key_values=cache,
+            use_cache=True,
+        ).logits
+        return logits, torch.cat(cache.updated)
 
 
-# Save the generated files to the specified output directory.
-with open(output_dir / "subgraph0.mlir", "w") as module_file:
-    print(driver.subgraphs[0]._imported_module, file=module_file)
-with open(output_dir / "forward.mlir", "w") as module_file:
-    print(driver.construct_main_graph(True), file=module_file)
-all_param = numpy.concatenate([tensor_to_numpy(param) for param in params])
-all_param.tofile(output_dir / "arg0.data")
+maxima, centers = calibration_cache.parameters()
+decoder = Decoder(model, maxima, centers).eval()
+(output / "cache.json").write_text(
+    json.dumps(
+        {
+            "capacity": capacity,
+            "code_bytes": decoder.cache_size,
+            "layouts": decoder.layouts,
+            "centers": {
+                str(layer): center.tolist() for layer, center in centers.items()
+            },
+            "scales": {
+                str(layer): (
+                    getattr(decoder, f"kv_scale_{layer}").to(torch.int16) & 255
+                ).tolist()
+                for layer in decoder.layouts
+            },
+        },
+        indent=2,
+    )
+    + "\n"
+)
+(output / "cache.h").write_text(
+    f"#pragma once\nconstexpr size_t CacheBytes = {decoder.cache_size};\nconstexpr size_t CacheCapacity = {capacity};\n"
+)
+
+# ===----------------------------------------------------------------------===
+# Capture the quantized graph and preserve its packed parameter ABI.
+# ===----------------------------------------------------------------------===
+compiler = DynamoCompiler(
+    primary_registry=tosa.ops_registry, aot_autograd_decomposition=decompositions
+)
+register(compiler)
+inputs = (
+    torch.zeros((1, 1), dtype=torch.int64),
+    torch.zeros((1, 1), dtype=torch.int64),
+    torch.zeros(decoder.cache_size, dtype=torch.int8),
+)
+with torch.no_grad():
+    (graph,) = compiler.importer(decoder, *inputs)
+graph.order_inputs(inputs)
+params = compiler.imported_params[graph]
+graph.dump(output / "02-quanted.txt")
+# graph.dump_parameters(output / "02-quanted-parameters")
+graph.fuse_ops([simply_fuse])
+driver = GraphDriver(graph)
+for subgraph in driver.subgraphs:
+    subgraph.trace(model_dir / "trace/trace.toml")
+graph.dump(output / "04-traced.txt")
+for index, subgraph in enumerate(driver.subgraphs):
+    subgraph.lower_to_top_level_ir()
+    (output / f"subgraph{index}.mlir").write_text(str(subgraph._imported_module))
+(output / "forward.mlir").write_text(str(driver.construct_main_graph(True)))
+
+for index, dtype in enumerate((torch.float32, torch.int8)):
+    with (output / f"arg{index}.data").open("wb") as stream:
+        for param in params:
+            if param.dtype == dtype:
+                stream.write(param.detach().cpu().contiguous().numpy().tobytes())
+assert {param.dtype for param in params} == {torch.float32, torch.int8}
+with (output / "vocab.txt").open("w") as stream:
+    for token, index in sorted(tokenizer.get_vocab().items(), key=lambda item: item[1]):
+        stream.write(token.replace("\n", "\\n") + "\n")
+print(
+    "Exported MXFP8 weights, fixed activation/KV scales and persistent INT8 KV cache",
+    flush=True,
+)

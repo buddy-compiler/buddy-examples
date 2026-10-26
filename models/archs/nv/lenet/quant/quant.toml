@@ -1,0 +1,80 @@
+execution = "int8"
+
+# Unlisted parameters, including biases, retain their original values and dtype.
+# Axis 0 selects independent scales for each output channel.
+
+[weights."conv1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."conv2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."fc1.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."fc2.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+[weights."fc3.weight"]
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+axis = 0
+
+# Quantize selected activations with offline calibrated scales.
+
+[activations.convolution]
+module = "conv1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.convolution_1]
+module = "conv2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm]
+module = "fc1"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm_1]
+module = "fc2"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[activations.addmm_2]
+module = "fc3"
+source_dtype = "float32"
+target_dtype = "int8"
+method = "symmetric"
+granularity = "tensor"
+scale_mode = "offline"
+
+[calibration]
+samples = 1024
+batch_size = 64

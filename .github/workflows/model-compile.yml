@@ -1,0 +1,364 @@
+name: model-compile
+
+on:
+  push:
+    branches: [main, buckyball]
+  pull_request:
+    branches: [main, buckyball]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ALL_PROXY: http://127.0.0.1:7890
+
+concurrency:
+  group: stack-model-compile
+  cancel-in-progress: false
+
+jobs:
+  compile:
+    name: ${{ matrix.chip || matrix.arch }} / ${{ matrix.target }}
+    runs-on: check
+    timeout-minutes: 360
+    defaults:
+      run:
+        shell: bash
+        working-directory: buckyball/stack
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        # Register supported model/backend combinations explicitly.
+        include:
+          - arch: nv
+            model: alexnet
+            target: buddy-nv-alexnet-rax-origin-build
+          - arch: nv
+            model: bert-base-uncased-emotion
+            target: buddy-nv-bert-base-uncased-emotion-rax-origin-build
+          - arch: nv
+            model: deepseek-r1-distill-qwen-1.5b
+            target: buddy-nv-deepseek-r1-distill-qwen-1.5b-rax-origin-build
+          - arch: nv
+            model: gemma4-e2b-it
+            target: buddy-nv-gemma4-e2b-it-rax-origin-build
+          - arch: nv
+            model: lenet
+            target: buddy-nv-lenet-rax-origin-build
+          - arch: nv
+            model: minimax-h3-fl2va
+            target: buddy-nv-minimax-h3-fl2va-rax-origin-build
+          - arch: nv
+            model: minimax-h3-ref2va
+            target: buddy-nv-minimax-h3-ref2va-rax-origin-build
+          - arch: nv
+            model: mobilenet-v3-small
+            target: buddy-nv-mobilenet-v3-small-rax-origin-build
+          - arch: nv
+            model: qwen3-8b
+            target: buddy-nv-qwen3-8b-rax-origin-build
+          - arch: nv
+            model: resnet18
+            target: buddy-nv-resnet18-rax-origin-build
+          - arch: nv
+            model: stable-diffusion
+            target: buddy-nv-stable-diffusion-rax-origin-build
+          - arch: nv
+            model: whisper
+            target: buddy-nv-whisper-rax-origin-build
+          - arch: nv
+            model: yolo26n
+            target: buddy-nv-yolo26n-rax-origin-build
+          - arch: nv
+            model: alexnet
+            target: buddy-nv-alexnet-rax-build
+          - arch: nv
+            model: lenet
+            target: buddy-nv-lenet-rax-build
+          - arch: nv
+            model: mobilenet-v3-small
+            target: buddy-nv-mobilenet-v3-small-rax-build
+          - arch: nv
+            model: yolo26n
+            target: buddy-nv-yolo26n-rax-build
+          - arch: nv
+            model: resnet18
+            target: buddy-nv-resnet18-rax-build
+          - arch: nv
+            model: bert-base-uncased-emotion
+            target: buddy-nv-bert-base-uncased-emotion-rax-build
+          - arch: x86
+            model: alexnet
+            target: buddy-x86-alexnet-rax-origin-build
+          - arch: x86
+            model: bert-base-uncased-emotion
+            target: buddy-x86-bert-base-uncased-emotion-rax-origin-build
+          - arch: x86
+            model: deepseek-r1-distill-qwen-1.5b
+            target: buddy-x86-deepseek-r1-distill-qwen-1.5b-rax-origin-build
+          - arch: x86
+            model: gemma4-e2b-it
+            target: buddy-x86-gemma4-e2b-it-rax-origin-build
+          - arch: x86
+            model: lenet
+            target: buddy-x86-lenet-rax-origin-build
+          - arch: x86
+            model: minimax-h3-fl2va
+            target: buddy-x86-minimax-h3-fl2va-rax-origin-build
+          - arch: x86
+            model: minimax-h3-ref2va
+            target: buddy-x86-minimax-h3-ref2va-rax-origin-build
+          - arch: x86
+            model: mobilenet-v3-small
+            target: buddy-x86-mobilenet-v3-small-rax-origin-build
+          - arch: x86
+            model: qwen3-8b
+            target: buddy-x86-qwen3-8b-rax-origin-build
+          - arch: x86
+            model: resnet18
+            target: buddy-x86-resnet18-rax-origin-build
+          - arch: x86
+            model: stable-diffusion
+            target: buddy-x86-stable-diffusion-rax-origin-build
+          - arch: x86
+            model: whisper
+            target: buddy-x86-whisper-rax-origin-build
+          - arch: x86
+            model: yolo26n
+            target: buddy-x86-yolo26n-rax-origin-build
+          - arch: x86
+            model: alexnet
+            target: buddy-x86-alexnet-rax-build
+          - arch: x86
+            model: lenet
+            target: buddy-x86-lenet-rax-build
+          - arch: x86
+            model: mobilenet-v3-small
+            target: buddy-x86-mobilenet-v3-small-rax-build
+          - arch: x86
+            model: yolo26n
+            target: buddy-x86-yolo26n-rax-build
+          - arch: x86
+            model: resnet18
+            target: buddy-x86-resnet18-rax-build
+          - arch: x86
+            model: bert-base-uncased-emotion
+            target: buddy-x86-bert-base-uncased-emotion-rax-build
+          - arch: gemmini
+            model: alexnet
+            target: alexnet-model-build
+          - arch: gemmini
+            model: bert-base-uncased-emotion
+            target: bert-base-uncased-emotion-model-build
+          - arch: gemmini
+            model: lenet
+            target: lenet-model-build
+          - arch: gemmini
+            model: mobilenet-v3-small
+            target: mobilenet-v3-small-model-build
+          - arch: gemmini
+            model: resnet18
+            target: resnet18-model-build
+          - arch: gemmini
+            model: yolo26n
+            target: yolo26n-model-build
+          - arch: buckyball
+            chip: toy
+            model: alexnet
+            target: alexnet-model-build
+          - arch: buckyball
+            chip: toy
+            model: lenet
+            target: lenet-model-build
+          - arch: buckyball
+            chip: pebble
+            model: alexnet
+            target: alexnet-model-build
+          - arch: buckyball
+            chip: pebble
+            model: lenet
+            target: lenet-model-build
+          - arch: buckyball
+            chip: pebble
+            model: mobilenet-v3-small
+            target: mobilenet-v3-small-model-build
+          - arch: buckyball
+            chip: pebble
+            model: resnet18
+            target: resnet18-model-build
+          - arch: buckyball
+            chip: pebble
+            model: yolo26n
+            target: yolo26n-model-build
+          - arch: buckyball
+            chip: goban
+            model: bert-base-uncased-emotion
+            target: bert-base-uncased-emotion-model-build
+          - arch: buckyball
+            chip: goban
+            model: laya
+            target: laya-model-build
+          - arch: buckyball
+            chip: goban
+            model: mlp-mixer
+            target: mlp-mixer-model-build
+          - arch: buckyball
+            chip: poly
+            model: deepseek-r1-0528-qwen3-8b
+            target: deepseek-r1-0528-qwen3-8b-model-build
+          - arch: buckyball
+            chip: poly
+            model: gemma4-e2b-it
+            target: gemma4-e2b-it-model-build
+          - arch: buckyball
+            chip: poly
+            model: laya
+            target: laya-model-build
+          - arch: buckyball
+            chip: poly
+            model: llama3-2-3b-instruct
+            target: llama3-2-3b-instruct-model-build
+          - arch: buckyball
+            chip: poly
+            model: qwen3-0-6b
+            target: qwen3-0-6b-model-build
+          - arch: buckyball
+            chip: poly
+            model: qwen3-8b
+            target: qwen3-8b-model-build
+    steps:
+      - name: Checkout Buckyball hardware definitions
+        if: matrix.arch == 'buckyball'
+        uses: actions/checkout@v4
+        with:
+          repository: DangoSys/buckyball
+          ref: main
+          path: buckyball
+          clean: false
+          persist-credentials: false
+
+      - name: Checkout stack revision under test
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: buckyball/stack
+          clean: false
+          persist-credentials: false
+
+      - name: Prepare compiler sources
+        run: |
+          set -euo pipefail
+          # Preserve ignored build/data caches, remove stale untracked source files.
+          git clean -ffd
+          git submodule sync -- thirdparty/buddy-mlir
+          git submodule update --init --force -- thirdparty/buddy-mlir
+          git -C thirdparty/buddy-mlir clean -ffd
+          git -C thirdparty/buddy-mlir submodule sync -- llvm
+          git -C thirdparty/buddy-mlir submodule update --init --force -- llvm
+          git -C thirdparty/buddy-mlir/llvm clean -ffd
+
+      - name: Build Nix environment and compiler
+        run: bash scripts/nix/build-all.sh -o 0 -o 2 -o 3
+
+      - name: Prepare DSA compiler
+        if: matrix.arch == 'buckyball'
+        working-directory: buckyball
+        run: |
+          set -euo pipefail
+          git clean -ffd -e stack/
+          git submodule sync -- bbdev stack/os/linux
+          git submodule update --init --force -- bbdev stack/os/linux
+          git -C bbdev clean -ffd
+          git -C stack/os/linux clean -ffd
+          nix build
+          nix develop -c python - '${{ matrix.chip }}' <<'PYTHON'
+          from pathlib import Path
+          import runpy
+          import subprocess
+          import sys
+
+          repo = Path.cwd()
+          chip = sys.argv[1]
+          scripts = repo / "bbdev/api/steps/config/scripts"
+          generated = repo / "examples/designs" / chip / "configs/generated"
+          schemas = [
+              scripts / "proto/chip.proto",
+              scripts / "proto/hardware.proto",
+              *sorted(repo.glob("examples/components/balls/*/configs/*_params.proto")),
+              *sorted(repo.glob("examples/components/cores/*/configs/*_params.proto")),
+          ]
+          subprocess.run(
+              [
+                  "protoc",
+                  *(f"-I{directory}" for directory in sorted({p.parent for p in schemas})),
+                  f"--python_out={scripts}",
+                  *(str(p) for p in schemas),
+              ],
+              check=True,
+          )
+          subprocess.run(
+              [
+                  sys.executable,
+                  str(scripts / "3_json2proto.py"),
+                  "--design",
+                  str(generated.parent / "design.toml"),
+                  "--output",
+                  str(generated / "chip.pb"),
+                  "--repo",
+                  str(repo),
+              ],
+              check=True,
+          )
+          sys.path.insert(0, str(scripts))
+          install = runpy.run_path(str(scripts / "4_install.py"))
+          install["install_compilers"](install["load_chip"](generated / "chip.pb"), generated)
+          PYTHON
+          nix develop -c bash -euo pipefail -c '
+            cd stack/thirdparty/buddy-mlir/llvm/build
+            cmake . -DLLVM_ENABLE_RUNTIMES=openmp \
+              -DOPENMP_ENABLE_LIBOMPTARGET=OFF -DLIBOMP_LIBFLAGS=-lrt
+          '
+          nix develop -c python bbdev/api/steps/compiler/scripts/build.py \
+            --repo . --chip '${{ matrix.chip }}'
+
+      - name: Prepare model weights and data
+        run: |
+          nix develop -c bash -euo pipefail -c '
+            mkdir -p models/build/ci-prepare
+            cd models/build/ci-prepare
+            cmake ../.. -G Ninja -DARCH=x86
+            ninja ${{ matrix.model }}-prepare
+          '
+
+      - name: Compile model
+        id: compile
+        run: |
+          set -euo pipefail
+          nix develop -c bash -euo pipefail -c '
+            source="models/archs/${{ matrix.arch }}/${{ matrix.model }}"
+            options=(-DARCH=${{ matrix.arch }})
+            if [[ "${{ matrix.arch }}" == buckyball ]]; then
+              source="models/archs/buckyball/${{ matrix.chip }}/${{ matrix.model }}"
+              options+=(-DCHIP=${{ matrix.chip }})
+            fi
+            if [[ "${{ matrix.target }}" == *-rax-origin-build ]]; then
+              source="$source/origin"
+            fi
+            # Reimport each case so compiler changes cannot reuse stale model IR.
+            rm -rf -- "$source/output"
+            mkdir -p models/build/ci-${{ matrix.chip || matrix.arch }}-${{ matrix.model }}
+            cd models/build/ci-${{ matrix.chip || matrix.arch }}-${{ matrix.model }}
+            cmake ../.. -G Ninja "${options[@]}"
+            ninja -j2 ${{ matrix.target }}
+          ' 2>&1 | tee ci-model-build.log
+
+      - name: Upload compilation log
+        if: always() && steps.compile.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: compile-${{ matrix.chip || matrix.arch }}-${{ matrix.target }}
+          path: buckyball/stack/ci-model-build.log
+          if-no-files-found: error
+          retention-days: 7

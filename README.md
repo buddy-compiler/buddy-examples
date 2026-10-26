@@ -1,447 +1,95 @@
-# buddy-examples
+# buddy-codesign
 
-This repository demonstrates buddy-mlir capabilities through selected representative workloads running on the Chipyard 1.14.0 platform. These example models are lowered to Gemmini Dialect by buddy-mlir, where Gemmini is a DNN accelerator integrated in Chipyard. The workloads are simulated using tools provided by Chipyard: the FireSim FPGA-accelerated simulation.
+Buddy Codesign is a hardware–software co-design platform for AI workloads, built around the Buddy compiler ecosystem. It brings together model preparation, compiler transformations, runtime execution, and hardware evaluation to explore how AI models map onto different computing architectures. The goal is to connect model requirements with hardware capabilities throughout the development process. Quantization, data layout, computation partitioning, memory management, and execution scheduling are developed together with the target hardware, using execution results and traces to guide further refinement.
 
 ## Quick Start
 
-1. Environment Dependencies
+**1. Environment Dependencies**
 
-Before getting started, please ensure your system meets the following dependency requirements:
+We use Nix Flake as our main build system. If you have not installed nix, install it following the [guide](https://nix.dev/manual/nix/2.28/installation/installing-binary.html), and enable flake following the [wiki](https://nixos.wiki/wiki/Flakes#Enable_flakes). Or you can try the [installer](https://github.com/DeterminateSystems/nix-installer) provided by Determinate Systems, which enables flake by default.
 
-- Anaconda/Miniconda (environment management)
-- Ninja Build System
-
-2. Initialize repository in one step:
-
+**2. Initialize Environment**
 ```bash
-git clone https://github.com/buddy-compiler/buddy-examples.git
-cd buddy-examples
-./scripts/init.sh
+cd buckyball
+./scripts/nix/build-all.sh
 ```
 
-3. Activate environment
+After the first time installation, you can enter the environment anytime by running:
 
 ```bash
-# buddy environment
-cd buddy-examples
-source ./env.sh
-
-# firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
+nix develop
 ```
-
-4. Build hardware in FireSim
-
-We have tested these examples on VCU118 and Alveo U280 platforms.
-
-- Configuration setup
-    - replace [`default_build_dir`](sims/firesim/yaml/config_build.yaml) with your desired directory path for storing generated bitstream files.
-    - replace [`default_simulation_dir`](sims/firesim/yaml/config_runtime.yaml) with your desired directory path for storing simulation-related files.
-
-- Generate bitstream and run simulation
-
-```bash
-./sims/firesim/build-firesim.sh
-```
-
-Build the FPGA bitstream and launch FireSim simulations. The bitstream generation process may take several hours depending on your hardware configuration.
-
-```bash
-cd buddy-examples
-source ./env.sh
-```
-
-> **Note:** This guide assumes you have basic knowledge of FireSim. For detailed FireSim configuration instructions, please refer to the [official FireSim documentation](https://docs.fires.im).
-
 
 Then, you can start running the examples below.
 
-## Examples
+## 如何适配一个新模型？
 
-### Example 1: LeNet-Gemmini
-This example uses the LeNet model with the MNIST dataset. Note that the build process will automatically download the dataset and train the model locally before building workloads, which may take some time.
+下面是我们认为一个适合新手入门的路线，里面很多步骤并不是必须执行
 
-1. Build Workloads
+### step 1. 导入模型并查看原始计算图
 
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh lenet-gemmini
+模型定义、权重准备和原始计算图导出统一放在 `models/models` 下。以 `mobilenet-v3-small` 为例，先运行 `buddy-pytorch-mobilenet-v3-small-prepare.py` 下载并保存预训练权重，再运行 `buddy-pytorch-mobilenet-v3-small-graph.py`，通过 Buddy 前端导入模型并导出未插桩的原始计算图（Buddy Graph）。
+
+```
+cd buddy-codesign
+nix develop
+
+cd models/models/mobilenet-v3-small
+cmake ../../ -G Ninja \
+    -DARCH=nv
+
+ninja mobilenet-v3-small-prepare
+ninja buddy-mobilenet-v3-small-graph
 ```
 
-2. Simulation in firesim
+执行成功后，模型权重保存在当前目录的 `output/mobilenet-v3-small/model.pth`，计算图输出到 `output/buddy-graph.txt`。可以打开该文件，查看模型的算子及其连接关系。
 
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
+### step 2. 使用通用设备进行验证（CPU/GPU）
 
-cd buddy-examples
-./sims/firesim/run-firesim.sh
+完成模型权重准备后，可以使用 NVIDIA GPU 或 x86 CPU 等通用通路验证模型编译。我们需要将模型编译并打包为 .rax，通过 buddy-cli 加载和执行。
+
+以下命令分别从仓库根目录开始，在 Nix 开发环境中执行。
+
+使用 NVIDIA GPU 时，先配置并构建 NV 后端：
+
+```
+cd models/archs/nv/mobilenet-v3-small
+
 ```
 
-3. Monitor simulation process in a new terminal
+如果没有gpu，x86通路同理
 
-```bash
-ssh localhost
-screen -r fsim0
+执行该命令xxxxx,顺利的话会看到输出如下
+
+```
+cd models/archs/x86/mobilenet-v3-small
+
 ```
 
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
+### step 3. 使用buddy-mlir lower到特定的DSA后端（buckyball/Gemmini）
 
-```bash
-$ ./buddy-gemmini-lenet-run
-```
+目前平台支持的DSA：
+（表格）
 
-If all steps go well, you will see the output below. Good luck.
+我们先使用buckyball在bemu模拟器上演示pebble设计的
 
-![demo](docs/example1-lenet-gemmini/demo.png)
 
-### Example 2: ResNet18-Gemmini
 
-1. Build Workloads
+然后我们使用firesim在FPGA上演示buckyball与gemmini
 
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh resnet-gemmini
-```
 
-2. Simulation in firesim
+## 如何软硬件协同优化一个模型？
 
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
+### Lesson 1: Layout 优化
 
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
 
-3. Monitor simulation process in a new terminal
+### Lesson 2：量化框架与精度评估
 
-```bash
-ssh localhost
-screen -r fsim0
-```
 
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
+### Lesson 3：子图分割（分配到每个核心）
 
-```bash
-$ ./buddy-gemmini-resnet-run
-```
 
-If all steps go well, you will see the output below. Good luck.
+### Lesson 4：Trace框架
 
-![demo](docs/example2-resnet-gemmini/demo.png)
 
-### Example 3: MobileNetv3-Gemmini
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh mobilenetv3-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-mobilenetv3-run
-```
-
-If all steps go well, you will see the output below. Good luck.
-
-![demo](docs/example3-mobilenetv3-gemmini/demo.png)
-
-
-### Example 4: BERT-Gemmini
-
-**Notes** The current sequence length limit is set to 5 tokens for test, which can be increased appropriately (the model's maximum limit is 512).
-
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh bert-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-bert-run
-```
-
-### Example 5: StableDiffusion-Gemmini
-
-**Notes** This model needs to download weights from Hugging Face. Please make sure your environment variables are configured correctly so that Hugging Face can be accessed normally.
-
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh stable-diffusion-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-stable-diffusion-run
-```
-
-### Example 6: Llama2-Gemmini
-
-**Notes** This model needs to download weights from Hugging Face. Please make sure your environment variables are configured correctly so that Hugging Face can be accessed normally. In addition, please configure your API in this [file](models/models/llama2/CMakeLists.txt).
-
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh llama2-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-llama2-run
-```
-
-### Example 7: DeepSeekr1-Gemmini
-
-**Notes** This model needs to download weights from Hugging Face. Please make sure your environment variables are configured correctly so that Hugging Face can be accessed normally.
-
-
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh deepseekr1-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-deepseekr1-run
-```
-
-### Example 8: Qwen3-Gemmini
-
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh qwen3-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-qwen3-run
-```
-
-### Example 9: YOLO26-Gemmini
-
-1. Build Workloads
-
-```bash
-cd buddy-examples
-source ./env.sh
-./sims/marshal/build-image.sh yolo26-gemmini
-```
-
-2. Simulation in firesim
-
-```bash
-# activate firesim environment
-cd buddy-examples/platforms/thirdparty/chipyard/sims/firesim
-source ./env.sh
-source ./sourceme-manager.sh --skip-ssh-setup
-cd ~/.ssh
-ssh-agent -s > AGENT_VARS
-source AGENT_VARS
-ssh-add firesim.pem
-
-cd buddy-examples
-./sims/firesim/run-firesim.sh
-```
-
-3. Monitor simulation process in a new terminal
-
-```bash
-ssh localhost
-screen -r fsim0
-```
-
-4. Final step!
-Now, you can login to the system! The username is root and there is no password. The steps described here are for manual execution. The corresponding log files will be recorded in the `/firesim/deploy/results-workload` folder.
-
-```bash
-$ ./buddy-gemmini-yolo26-run /path/to/input.bmp
-```
+### Lesson 5：子图优化（每个核心内部分割与优化）

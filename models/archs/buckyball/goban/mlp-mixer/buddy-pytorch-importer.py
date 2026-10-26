@@ -1,9 +1,13 @@
+from stack.compiler.frontend.trace import trace
+import numpy as np
+from PIL import Image
+from safetensors.torch import load_file
+from huggingface_hub import hf_hub_download
 import argparse
 from importlib import import_module
 import json
 import hashlib
 from pathlib import Path
-import sys
 
 import torch
 from torch._inductor.decomposition import decompositions as inductor_decomp
@@ -13,40 +17,64 @@ def main():
     parser = argparse.ArgumentParser(description="MLP-Mixer AOT importer")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--compiler-build", type=Path, required=True)
-    parser.add_argument("--chip-pb", type=Path, required=True)
-    parser.add_argument("--chip", required=True)
+    parser.add_argument("--design-pb", type=Path, required=True)
+    parser.add_argument("--design", required=True)
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--revision", type=str, required=True)
     parser.add_argument("--repo-root", type=Path, required=True)
     args = parser.parse_args()
-    sys.path.insert(0, str(args.repo_root.resolve()))
-    prepare = import_module("stack.models.models.mlp-mixer.prepare")
-    load_input = prepare.load_input
-    load_model = prepare.load_model
+    Mixer = import_module("stack.models.models.mlp-mixer.model").Mixer
     compiler = args.compiler_build.resolve()
-    sys.path.insert(0, str(compiler / "python_packages"))
     from buddy.compiler.frontend import DynamoCompiler
     from buddy.compiler.graph.transform import simply_fuse
-    from buddy.compiler.ops import tosa
-    from buddy.compiler.trace import TraceConfig, load_trace_config
+    from stack.compiler.frontend.ops import tosa
 
-    torch.set_num_threads(4)
-    model = load_model(args.checkpoint, args.revision)
-    data = load_input(args.repo_root / "stack/models/models/alexnet/images/dog.bmp")
-    with torch.no_grad():
-        reference = model(data).numpy()
-    import __init__ as design
-    from quant import quantize as quant
+    path = hf_hub_download(args.checkpoint, "model.safetensors", revision=args.revision)
+    state = load_file(path)
+    # The non-overlapping 16x16 patch projection is a linear map. Flatten
+    # its C,H,W weight dimensions to match the prepared patch input layout.
+    state["stem.proj.weight"] = state["stem.proj.weight"].flatten(1)
+    model = Mixer().eval()
+    model.load_state_dict(state, strict=True)
+    image = Image.open(
+        args.repo_root / "stack/models/models/alexnet/images/dog.bmp"
+    ).convert("RGB")
+    width, height = image.size
+    size = 256
+    target = (
+        (size, int(size * height / width))
+        if width <= height
+        else (int(size * width / height), size)
+    )
+    image = image.resize(target, Image.Resampling.BICUBIC)
+    left, top = round((image.width - 224) / 2), round((image.height - 224) / 2)
+    image = image.crop((left, top, left + 224, top + 224))
+    pixels = np.asarray(image, dtype=np.float32) / np.float32(127.5) - np.float32(1.0)
+    pixels = torch.from_numpy(pixels.transpose(2, 0, 1).copy())[None]
+    data = (
+        pixels.reshape(1, 3, 14, 16, 14, 16)
+        .permute(0, 2, 4, 1, 3, 5)
+        .reshape(196, 768)
+        .contiguous()
+    )
+    import __init__ as recipe
+    from stack.compiler.frontend.quant.importer import quantize_model_graph
+    from stack.compiler.frontend.quant.offline.activations import calibrate_layer_ranges
+    from quant.calibration import ImageNetCalibration
+    import tomllib
 
-    calibration = quant.prepare(model, data)
+    config = tomllib.loads((Path(__file__).parent / "quant/quant.toml").read_text())
+    calibration = calibrate_layer_ranges(
+        model, ImageNetCalibration(), batch_size=None, **config["calibration"]
+    )
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    trace = TraceConfig(load_trace_config(Path(__file__).parent / "trace/trace.toml"))
+
     decompositions = dict(inductor_decomp)
     importer = DynamoCompiler(
         primary_registry=tosa.ops_registry,
         aot_autograd_decomposition=decompositions,
-        trace=trace,
+        trace=None,
     )
     with torch.no_grad():
         graphs = importer.importer(model, data)
@@ -56,7 +84,6 @@ def main():
     params = importer.imported_params[graph]
     parameter_names = {id(value): name for name, value in model.named_parameters()}
     names = [parameter_names[id(value)] for value in params]
-    graph.fuse_ops([simply_fuse])
     (output / "graph.json").write_text(
         json.dumps(
             [
@@ -72,15 +99,19 @@ def main():
             indent=2,
         )
     )
-    quant.quantize(
+    quantize_model_graph(
         graph,
         params,
         names,
         output,
         "mixer",
         calibration,
-        rax_pack=compiler / "bin/rax-pack",
     )
+    graph.dump(output / "03-quanted.txt")
+    graph.fuse_ops([simply_fuse])
+    graph.dump(output / "04-fusion.txt")
+    trace(graph, Path(__file__).parent / "trace/trace.toml")
+    graph.dump(output / "05-traced.txt")
     (output / "quant-graph.json").write_text(
         json.dumps(
             [
@@ -97,51 +128,17 @@ def main():
             indent=2,
         )
     )
-    shapes = import_module("lowering").emit(graph, output, args.chip_pb)
-    offsets, offset = {}, 0
-    for name, parameter in zip(names, params):
-        if parameter.dtype == torch.float32:
-            offsets[name] = offset
-            offset += parameter.numel()
-    norm_names = [
-        f"blocks.{block}.norm{norm}" for block in range(12) for norm in (1, 2)
-    ] + ["norm"]
-    header = [
-        "#pragma once",
-        "using Linear = void (*)(StridedMemRefType<float, 2> *, MemRef<float, 1> *, MemRef<int8_t, 1> *, StridedMemRefType<float, 2> *);",
-    ]
-    header += [
-        f'extern "C" void _mlir_ciface_linear{i}(StridedMemRefType<float, 2> *, MemRef<float, 1> *, MemRef<int8_t, 1> *, StridedMemRefType<float, 2> *);'
-        for i in range(50)
-    ]
-    header += [
-        "static Linear linears[] = {"
-        + ",".join(f"_mlir_ciface_linear{i}" for i in range(50))
-        + "};"
-    ]
-    header += [
-        "static const size_t shapes[50][4] = {"
-        + ",".join("{" + ",".join(map(str, shape)) + "}" for shape in shapes)
-        + "};"
-    ]
-    header += [
-        "static const size_t norms[25][2] = {"
-        + ",".join(
-            "{"
-            + str(offsets[name + ".weight"])
-            + ","
-            + str(offsets[name + ".bias"])
-            + "}"
-            for name in norm_names
-        )
-        + "};"
-    ]
-    (output / "mixer-parameters.h").write_text("\n".join(header))
+    from buddy.compiler.graph import GraphDriver
+
+    driver = GraphDriver(graph)
+    (subgraph,) = driver.subgraphs
+    subgraph.lower_to_top_level_ir(buffer_layout="contiguous")
+    (output / "subgraph0.mlir").write_text(str(subgraph._imported_module))
+    (output / "forward.mlir").write_text(str(driver.construct_main_graph(True)))
     data.numpy().tofile(output / "input.f32")
-    reference.tofile(output / "reference.f32")
     metadata = {
         "version": 1,
-        "chip": args.chip,
+        "design": args.design,
         "model": "mlp-mixer",
         "checkpoint": args.checkpoint,
         "revision": args.revision,
@@ -152,6 +149,9 @@ def main():
         "accumulator_dtype": "int32",
     }
     (output / "model.json").write_text(json.dumps(metadata))
+
+    (output / "params.f32").replace(output / "arg0.data")
+    (output / "weights.bin").replace(output / "arg1.data")
 
 
 if __name__ == "__main__":

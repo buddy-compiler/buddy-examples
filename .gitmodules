@@ -2,9 +2,28 @@
 	path = platforms/thirdparty/chipyard
 	url = https://github.com/ucb-bar/chipyard.git
 [submodule "buddy-mlir"]
-	path = compiler/thirdparty/buddy-mlir
+	path = thirdparty/buddy-mlir
 	url = https://github.com/buddy-compiler/buddy-mlir.git
 	branch = examples
 [submodule "thirdparty/bebop"]
 	path = thirdparty/bebop
 	url = https://github.com/DangoSys/bebop.git
+[submodule "os/thirdparty/linux"]
+	path = os/thirdparty/linux
+	url = https://github.com/firesim/linux.git
+[submodule "os/thirdparty/busybox"]
+	path = os/thirdparty/busybox
+	url = https://github.com/mirror/busybox.git
+[submodule "os/thirdparty/opensbi"]
+	path = os/thirdparty/opensbi
+	url = https://github.com/riscv-software-src/opensbi.git
+	branch = master
+[submodule "engine"]
+	path = engine
+	url = https://github.com/DangoSys/loom.git
+[submodule "os/linux"]
+	path = os/linux
+	url = https://github.com/DangoSys/bbkernel.git
+[submodule "os/thirdparty/zephyr"]
+	path = os/thirdparty/zephyr
+	url = https://github.com/zephyrproject-rtos/zephyr

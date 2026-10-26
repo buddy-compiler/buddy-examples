@@ -1,30 +1,25 @@
-import argparse
-import json
 from pathlib import Path
-import sys
 
 import numpy as np
 import torch
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--repo-root", type=Path, required=True)
-parser.add_argument("--output-dir", type=Path, required=True)
-parser.add_argument("--compiler-build", type=Path, required=True)
-args = parser.parse_args()
-sys.path.insert(0, str(args.repo_root.resolve()))
-sys.path.insert(0, str(args.compiler_build.resolve() / "python_packages"))
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from buddy.compiler.ops import tosa
-from buddy.compiler.trace import TraceConfig, load_trace_config
+from stack.compiler.frontend.ops import tosa
 
-torch.set_num_threads(4)
-output = args.output_dir.resolve()
+model_dir = Path(__file__).resolve().parent
+output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
 from torchvision.models import resnet18, ResNet18_Weights
 
-model = resnet18(weights=ResNet18_Weights.DEFAULT)
+model = resnet18(weights=None)
+model.load_state_dict(
+    torch.load(
+        model_dir / "../../../models/resnet18/output/resnet18/model.pth",
+        weights_only=True,
+    )
+)
 for layer in model.modules():
     if isinstance(layer, torch.nn.ReLU):
         layer.inplace = False
@@ -32,15 +27,20 @@ data = torch.zeros((1, 3, 224, 224))
 model.eval()
 compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
-    trace=TraceConfig(load_trace_config(Path(__file__).parent / "trace/trace.toml")),
+    trace=None,
 )
 with torch.no_grad():
     graphs = compiler.importer(model, data)
 assert len(graphs) == 1
 graph = graphs[0]
 params = compiler.imported_params[graph]
+graph.dump(output / "01-import.txt")
+# graph.dump_parameters(output / "01-import-parameters")
 graph.fuse_ops([simply_fuse])
 driver = GraphDriver(graph)
+for subgraph in driver.subgraphs:
+    subgraph.trace(model_dir / "trace/trace.toml")
+graph.dump(output / "04-traced.txt")
 for index, subgraph in enumerate(driver.subgraphs):
     subgraph.lower_to_top_level_ir()
     (output / f"subgraph{index}.mlir").write_text(str(subgraph._imported_module))
@@ -49,10 +49,6 @@ parameters = np.concatenate(
     [parameter.detach().cpu().numpy().reshape(-1) for parameter in params]
 )
 parameters.astype(np.float32).tofile(output / "arg0.data")
-payload = output / "resnet18.payload"
-payload.mkdir(exist_ok=True)
-parameters.astype(np.float32).tofile(payload / "params.f32")
-(payload / "weights.bin").write_bytes(b"")
-(output / "model.json").write_text(
-    json.dumps({"version": 1, "chip": "gemmini", "model": "resnet18"})
+(output / "Labels.txt").write_text(
+    "\n".join(ResNet18_Weights.DEFAULT.meta["categories"]) + "\n"
 )
