@@ -26,6 +26,8 @@ class Buckyball_Op<string mnemonic, list<Trait> traits = []>
 
 //===----------------------------------------------------------------------===//
 // Virtual banks: i64 SSA handles until assign-physical-banks.
+// Bank 0 is the zero bank, like x0: it is never allocated, and an operation
+// without a destination bank names bank 0.
 //===----------------------------------------------------------------------===//
 
 def BankAllocOp : Buckyball_Op<"bank_alloc"> {
@@ -60,13 +62,25 @@ def BankMvoutOp : Buckyball_Op<"bank_mvout"> {
   let assemblyFormat = "$output `,` $bank prop-dict attr-dict `:` type($output)";
 }
 
+def BankTransferOp : Buckyball_Op<"bank_transfer"> {
+  let summary = "Append the groups of a bank to another bank";
+  let description = [{
+    `source` is released; `target` holds its own groups followed by those of
+    `source`. Gathers the operands of a computation into the banks it reads.
+  }];
+  let arguments = (ins I64:$source, I64:$target);
+  let results = (outs I64:$targetOut);
+  let assemblyFormat = "$source `,` $target attr-dict";
+}
+
 def BankCustomOp : Buckyball_Op<"bank_custom", [AttrSizedOperandSegments]> {
   let summary = "A computation of up to two source banks into one bank";
   let description = [{
     `kind` names the computation; the Ball implementing it lowers it. The
     other attributes and the scalar `arguments` belong to that computation.
     With `read_destination` the computation also reads the old destination,
-    for instance to accumulate.
+    for instance to accumulate. A source is a virtual bank whose groups the
+    Ball lays out; more operands are gathered with bank_transfer.
   }];
   let arguments = (ins Variadic<I64>:$sources, I64:$destination,
                        Variadic<AnyType>:$arguments, StrAttr:$kind,
@@ -101,6 +115,12 @@ def MvoutOp : Buckyball_Op<"mvout"> {
   let arguments = (ins AnyMemRef:$output, I64Attr:$bank, I64Attr:$depth,
                        I64Attr:$stride);
   let assemblyFormat = "$output prop-dict attr-dict `:` type($output)";
+}
+
+def MsetTransferOp : Buckyball_Op<"mset_transfer"> {
+  let summary = "Append the groups of bank `source` to bank `target`";
+  let arguments = (ins I64Attr:$source, I64Attr:$target);
+  let assemblyFormat = "prop-dict attr-dict";
 }
 
 def CustomOp : Buckyball_Op<"custom"> {

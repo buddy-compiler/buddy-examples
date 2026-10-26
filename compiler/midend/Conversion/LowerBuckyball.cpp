@@ -1,7 +1,7 @@
 //===- LowerBuckyball.cpp - Physical operations to Buckyball instructions -===//
 //
-// mset, mvin and mvout become the instructions of bbhw/isa; each custom
-// operation becomes the instructions the Ball of its kind emits. An
+// mset, mset_transfer, mvin and mvout become the instructions of bbhw/isa; each
+// custom operation becomes the instructions the Ball of its kind emits. An
 // instruction is a call of llvm.riscv.buckyball.custom with rs1, rs2 and the
 // immediate funct7.
 //
@@ -102,6 +102,27 @@ public:
   }
 };
 
+class MsetTransferLowering : public OpRewritePattern<MsetTransferOp> {
+public:
+  using OpRewritePattern::OpRewritePattern;
+  LogicalResult matchAndRewrite(MsetTransferOp op,
+                                PatternRewriter &rewriter) const override {
+    Location loc = op.getLoc();
+    // The Linux DMA service moves the columns it tracks for the banks.
+    callRuntime(rewriter, loc, "dma_bank_transfer",
+                {mlir::buddy::constantI64(rewriter, loc, op.getSource()),
+                 mlir::buddy::constantI64(rewriter, loc, op.getTarget())});
+    uint64_t rs1 = mlir::buddy::field(op.getSource(), 0, 9) |
+                   mlir::buddy::field(op.getTarget(), 20, 28);
+    mlir::buddy::emitInstruction(
+        rewriter, loc, kMsetFunct7,
+        mlir::buddy::constantI64(rewriter, loc, rs1),
+        mlir::buddy::constantI64(rewriter, loc, mlir::buddy::field(1, 12, 12)));
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
 class MvinLowering : public OpRewritePattern<MvinOp> {
 public:
   using OpRewritePattern::OpRewritePattern;
@@ -161,7 +182,9 @@ public:
 
   void runOnOperation() override {
     RewritePatternSet patterns(&getContext());
-    patterns.add<MsetLowering, MvinLowering, MvoutLowering>(&getContext());
+    patterns
+        .add<MsetLowering, MsetTransferLowering, MvinLowering, MvoutLowering>(
+            &getContext());
     for (auto populate : ballLowerings())
       populate(patterns);
     // A Ball that rejects an operation reports why; it is not reported again

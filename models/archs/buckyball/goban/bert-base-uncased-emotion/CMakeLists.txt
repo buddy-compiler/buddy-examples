@@ -29,7 +29,24 @@ add_custom_command(
   OUTPUT forward.o
   BYPRODUCTS ${OUTPUT_DIR}/forward.ll
              ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/forward.mlir -buffer-deallocation-simplification -convert-linalg-to-loops -eliminate-empty-tensors -llvm-request-c-wrappers -convert-math-to-llvm -convert-math-to-libm -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -expand-strided-metadata -finalize-memref-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/forward.mlir
+            -buffer-deallocation-simplification
+            -convert-linalg-to-loops
+            -eliminate-empty-tensors
+            -llvm-request-c-wrappers
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-arith-to-llvm
+            -expand-strided-metadata
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
   COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
@@ -52,10 +69,42 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_buckyball.mlir
              ${OUTPUT_DIR}/subgraph0_physical.mlir
              ${OUTPUT_DIR}/subgraph0_llvm.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0.mlir -allow-unregistered-dialect -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_linalg.mlir -allow-unregistered-dialect -lower-frontend -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -o ${OUTPUT_DIR}/subgraph0_buckyball.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_buckyball.mlir -convert-trace-to-llvm -assign-physical-banks -llvm-request-c-wrappers -o ${OUTPUT_DIR}/subgraph0_physical.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_physical.mlir -lower-buckyball -expand-strided-metadata -convert-linalg-to-loops -canonicalize -cse -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -convert-func-to-llvm -finalize-memref-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0.mlir
+            -allow-unregistered-dialect
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_linalg.mlir
+            -allow-unregistered-dialect
+            -lower-frontend
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize=bufferize-function-boundaries
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -o ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+            -convert-trace-to-llvm
+            -assign-physical-banks
+            -llvm-request-c-wrappers
+            -o ${OUTPUT_DIR}/subgraph0_physical.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_physical.mlir
+            -lower-buckyball
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -canonicalize
+            -cse
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-arith-to-llvm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
   COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o

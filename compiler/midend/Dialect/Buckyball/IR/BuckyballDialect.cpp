@@ -21,7 +21,7 @@ void BuckyballDialect::initialize() {
       >();
 }
 
-// A Ball reads at most two banks.
+// A Ball reads at most two virtual banks.
 LogicalResult BankCustomOp::verify() {
   if (getSources().size() > 2)
     return emitOpError("reads at most two source banks");

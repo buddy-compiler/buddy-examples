@@ -1,9 +1,10 @@
 //===- AssignPhysicalBanks.cpp - Map virtual banks to the target banks ----===//
 //
 // Walks each function in program order. A bank_alloc takes the lowest free
-// bank and row x col of the physical banks of the target; bank_release frees
-// them. The virtual operations become their physical operations on that bank.
-// A bank carried through an scf.for is the same bank in every iteration.
+// bank but bank 0, the zero bank, and row x col of the physical banks of the
+// target; bank_release frees them; bank_transfer moves the groups of a bank to
+// another. The virtual operations become their physical operations on that
+// bank. A bank carried through an scf.for is the same bank in every iteration.
 //
 //===----------------------------------------------------------------------===//
 
@@ -91,7 +92,7 @@ public:
           }
           if (auto alloc = dyn_cast<BankAllocOp>(op)) {
             int64_t size = alloc.getRow() * alloc.getCol();
-            int64_t *free = llvm::find(held, 0);
+            int64_t *free = std::find(held.begin() + 1, held.end(), 0);
             if (free == held.end() || physical + size > target.bankNum) {
               alloc.emitOpError("finds no free bank of ")
                   << alloc.getRow() << "x" << alloc.getCol();
@@ -110,6 +111,15 @@ public:
             physical -= held[*bank];
             held[*bank] = 0;
             MsetOp::create(builder, loc, *bank, false, 0, 0);
+          } else if (auto transfer = dyn_cast<BankTransferOp>(op)) {
+            FailureOr<int64_t> source = bankOf(op, transfer.getSource());
+            FailureOr<int64_t> target = bankOf(op, transfer.getTarget());
+            if (failed(source) || failed(target))
+              return WalkResult::interrupt();
+            held[*target] += held[*source];
+            held[*source] = 0;
+            banks[transfer.getTargetOut()] = *target;
+            MsetTransferOp::create(builder, loc, *source, *target);
           } else if (auto mvin = dyn_cast<BankMvinOp>(op)) {
             FailureOr<int64_t> bank = bankOf(op, mvin.getBank());
             if (failed(bank))
