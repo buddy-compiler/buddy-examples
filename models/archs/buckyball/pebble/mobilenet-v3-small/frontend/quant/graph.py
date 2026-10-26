@@ -3,7 +3,6 @@ import torch
 from buddy.compiler.graph.graph import NodeType
 from buddy.compiler.graph.operation import (
     Conv2dOp,
-    MatmulOp,
     MulOp,
     PlaceholderOp,
     ViewOp,
@@ -18,23 +17,16 @@ from stack.compiler.frontend.quant import (
     quantize_bias,
 )
 
-# The convolutions that stay in FP32:
-# - the depthwise convolutions of the first two blocks read inputs whose
-#   channels span very different ranges: one INT8 scale for the tensor loses
-#   most of the accuracy;
-# - the expansion of block 2 and the depthwise convolution of block 3 would
-#   make the pebble core chain a 56x56 or 28x28 image from the convolution
-#   before into them, which does not fit its banks;
-# - the Linears of the classifier reduce 576 and 1024 inputs, more than one
-#   bank holds.
-FP32 = [
-    "features.1.block.0.0",
-    "features.2.block.1.0",
-    "features.2.block.0.0",
-    "features.3.block.1.0",
-    "classifier.0",
-    "classifier.3",
-]
+
+def int8(module):
+    """The squeeze and excitation convolutions of the SE blocks run on the
+    pebble Balls. The other convolutions stay in FP32: pebble lowers a
+    convolution into a fully unrolled bank program per output tile, which for
+    all of them grows the model past 2.5 GB of MLIR; the depthwise ones of the
+    first blocks also lose most of the accuracy with one INT8 scale for their
+    input. The Linears of the classifier reduce 576 and 1024 inputs, more
+    than one bank holds."""
+    return module.endswith((".fc1", ".fc2"))
 
 
 def parameter(graph, values, name, value):
@@ -67,22 +59,17 @@ def replace_argument(graph, user, index, node):
 
 
 def quantize(graph, params, parameter_names, maxima):
-    """Every convolution and Linear but those of FP32 reads INT8 values: its
-    weight with one scale per output channel, its input with one calibrated
-    scale."""
+    """Every convolution of int8 reads INT8 values: its weight with one scale
+    per output channel, its input with one calibrated scale."""
     values = dict(zip((node.name for node in graph.params), params, strict=True))
     for op in list(graph.body):
-        if not isinstance(op, (Conv2dOp, MatmulOp)):
+        if not isinstance(op, Conv2dOp):
             continue
         weight = graph.node_table[op.args[1]]
         module = parameter_names[weight.name].rsplit(".", 1)[0]
-        if module in FP32:
+        if not int8(module):
             continue
-        if isinstance(op, Conv2dOp):
-            bias_user, bias_index = op, 2
-        else:
-            bias_user, bias_index = graph.node_table[op.children[0]], 0
-        bias = graph.node_table[bias_user.args[bias_index]]
+        bias = graph.node_table[op.args[2]]
 
         # Input: one scale for the tensor, from the calibrated clipping
         # magnitude. All-zero inputs: any positive step encodes them.
@@ -92,14 +79,10 @@ def quantize(graph, params, parameter_names, maxima):
         scale = torch.full([1] * len(shape), clip / 127 if clip else 1.0)
 
         # Weights: symmetric in [-127, 127] per output channel, axis 0 of the
-        # [F, C, H, W] convolution weights and axis 1 of the [K, N] Linear
-        # ones. A channel whose folded weights almost vanish takes a coarser
-        # step, so that its bias code stays within 2^30. A padding channel is
-        # zero; any positive step encodes it.
+        # [F, C, H, W] weights. A channel whose folded weights almost vanish
+        # takes a coarser step, so that its bias code stays within 2^30.
         value = values[weight.name]
-        channel = 0 if isinstance(op, Conv2dOp) else 1
-        axes = [axis for axis in range(value.ndim) if axis != channel]
-        maximum = value.abs().amax(axes, keepdim=True)
+        maximum = value.abs().amax([1, 2, 3], keepdim=True)
         floor = values[bias.name].abs().reshape(maximum.shape) / (
             scale.reshape(-1) * 2**30
         )
@@ -140,9 +123,7 @@ def quantize(graph, params, parameter_names, maxima):
         replace_argument(graph, op, 0, input_values)
 
         # Bias shares the INT32 accumulator's per-output-channel scale.
-        bias_shape = (
-            [value.shape[0]] if isinstance(op, Conv2dOp) else [1, value.shape[1]]
-        )
+        bias_shape = [value.shape[0]]
         values[bias.name] = quantize_bias(
             values[bias.name].reshape(-1), (step * scale).reshape(-1)
         ).reshape(bias_shape)
@@ -155,16 +136,15 @@ def quantize(graph, params, parameter_names, maxima):
             step.shape,
             TensorDType.Float32,
         )
-        if isinstance(op, Conv2dOp):
-            accumulator_step = operation(
-                graph,
-                ViewOp,
-                op.name + "_bias_step",
-                [accumulator_step],
-                bias_shape,
-                TensorDType.Float32,
-            )
-            accumulator_step.add_argument(bias_shape)
+        accumulator_step = operation(
+            graph,
+            ViewOp,
+            op.name + "_bias_step",
+            [accumulator_step],
+            bias_shape,
+            TensorDType.Float32,
+        )
+        accumulator_step.add_argument(bias_shape)
         bias_values = operation(
             graph,
             Int32ToFP32DequantOp,
@@ -173,6 +153,6 @@ def quantize(graph, params, parameter_names, maxima):
             bias_shape,
             TensorDType.Float32,
         )
-        replace_argument(graph, bias_user, bias_index, bias_values)
+        replace_argument(graph, op, 2, bias_values)
     sort_graph(graph)
     return [values[node.name] for node in graph.params]

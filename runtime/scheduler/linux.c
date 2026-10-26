@@ -46,17 +46,8 @@ void runtime_linux_run(struct runtime *runtime,
   pthread_mutex_t mutex;
   pthread_cond_t changed;
   pthread_attr_t attributes;
-  cpu_set_t allowed;
-  if (sched_getaffinity(0, sizeof(allowed), &allowed)) {
-    perror("sched_getaffinity");
-    abort();
-  }
   for (size_t core = 0; core < runtime->core_count; ++core) {
     const unsigned cpu = cpus[core];
-    if (cpu >= CPU_SETSIZE || !CPU_ISSET(cpu, &allowed)) {
-      fprintf(stderr, "Runtime CPU %u is outside the caller affinity\n", cpu);
-      abort();
-    }
     for (size_t other = 0; other < core; ++other)
       if (cpu == cpus[other]) {
         fputs("Runtime cores must use distinct Linux CPUs\n", stderr);

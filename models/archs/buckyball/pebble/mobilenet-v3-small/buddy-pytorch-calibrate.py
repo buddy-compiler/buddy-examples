@@ -8,7 +8,7 @@ from torchvision.models import mobilenet_v3_small
 from torch.nn.utils.fusion import fuse_conv_bn_eval
 
 from stack.compiler.frontend.quant import quantize, quantize_bias
-from frontend.quant.graph import FP32
+from frontend.quant.graph import int8
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
@@ -56,7 +56,7 @@ def images(split, count):
 
 
 # ===----------------------------------------------------------------------===
-# Sample the inputs of every convolution and Linear over 1024 training images
+# Sample the inputs of every convolution of int8 over 1024 training images
 # and clip each at the magnitude whose INT8 encoding has the least squared
 # error: a few outliers would otherwise take most of the 256 codes.
 # ===----------------------------------------------------------------------===
@@ -69,7 +69,7 @@ hooks = [
         )
     )
     for name, module in model.named_modules()
-    if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear))
+    if int8(name)
 ]
 with torch.no_grad():
     for batch, _ in images("train", 1024):
@@ -98,9 +98,9 @@ for name, values in samples.items():
     )
 
 # ===----------------------------------------------------------------------===
-# Evaluate the quantization in software on 1024 validation images, the
-# convolutions of FP32 left in FP32: the scales are rejected when the top-1
-# accuracy drops more than 3 points below FP32.
+# Evaluate the quantization of the convolutions of int8 in software on 1024
+# validation images: the scales are rejected when the top-1 accuracy drops
+# more than 1 point below FP32.
 # ===----------------------------------------------------------------------===
 tests = list(images("val", 1024))
 
@@ -115,14 +115,13 @@ def accuracy(model):
 
 fp32 = accuracy(model)
 for name, module in model.named_modules():
-    if not isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)) or name in FP32:
+    if not int8(name):
         continue
     # All-zero inputs: any positive step encodes them.
     scale = torch.tensor(maxima[name] / 127 if maxima[name] else 1.0)
     # A channel whose folded weights almost vanish takes a coarser step, so
     # that its bias code stays within 2^30.
-    axes = list(range(1, module.weight.ndim))
-    maximum = module.weight.detach().abs().amax(axes, keepdim=True)
+    maximum = module.weight.detach().abs().amax([1, 2, 3], keepdim=True)
     floor = module.bias.detach().abs().reshape(maximum.shape) / (scale * 2**30)
     step = torch.maximum(maximum / 127, floor)
     step = torch.where(step == 0, 1.0, step)
@@ -132,8 +131,10 @@ for name, module in model.named_modules():
     module.register_forward_pre_hook(
         lambda module, inputs, scale=scale: quantize(inputs[0], 1 / scale) * scale
     )
-int8 = accuracy(model)
-print(f"FP32 top-1 {fp32:.2f}%, INT8 top-1 {int8:.2f}%")
-if fp32 - int8 > 3:
-    raise RuntimeError(f"INT8 top-1 {int8:.2f}% is more than 3 below FP32 {fp32:.2f}%")
+quantized = accuracy(model)
+print(f"FP32 top-1 {fp32:.2f}%, INT8 top-1 {quantized:.2f}%")
+if fp32 - quantized > 1:
+    raise RuntimeError(
+        f"INT8 top-1 {quantized:.2f}% is more than 1 below FP32 {fp32:.2f}%"
+    )
 (output / "calibration.json").write_text(json.dumps(maxima, indent=2) + "\n")

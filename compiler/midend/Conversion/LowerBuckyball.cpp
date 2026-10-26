@@ -164,7 +164,15 @@ public:
     patterns.add<MsetLowering, MvinLowering, MvoutLowering>(&getContext());
     for (auto populate : ballLowerings())
       populate(patterns);
-    if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))))
+    // A Ball that rejects an operation reports why; it is not reported again
+    // as an operation without a lowering.
+    bool rejected = false;
+    ScopedDiagnosticHandler handler(&getContext(), [&](Diagnostic &diagnostic) {
+      rejected |= diagnostic.getSeverity() == DiagnosticSeverity::Error;
+      return failure();
+    });
+    if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))) ||
+        rejected)
       return signalPassFailure();
     WalkResult left = getOperation().walk([](Operation *op) {
       if (isa<BuckyballDialect>(op->getDialect())) {
