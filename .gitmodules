@@ -18,9 +18,6 @@
 	path = os/thirdparty/opensbi
 	url = https://github.com/riscv-software-src/opensbi.git
 	branch = master
-[submodule "engine"]
-	path = engine
-	url = https://github.com/DangoSys/loom.git
 [submodule "os/linux"]
 	path = os/linux
 	url = https://github.com/DangoSys/bbkernel.git

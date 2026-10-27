@@ -3,12 +3,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <params.h>
 
 extern "C" void mxfp8_quant(const uint32_t *input, uint8_t *output,
                             uint32_t count) {
   constexpr unsigned readBank = 4, writeBank = 5;
-  constexpr unsigned programBank = VIRTUAL_BANK_NUM;
+  constexpr unsigned programBank = CORE_VIRTUAL_BANK_COUNT;
   for (unsigned bank = 0; bank < 3; ++bank)
     bb_mem_alloc(bank, 1, 1);
   bb_mem_transfer(2, readBank);

@@ -1,7 +1,6 @@
 .section .text.init
 .global _start
 
-#include <instances.h>
 
 _start:
     # Get hart ID
@@ -10,6 +9,11 @@ _start:
     # Enable FPU and accelerator state on each hart
     li t1, 0xa000
     csrs mstatus, t1
+
+    # A trap on any hart is a failure the run reports at once: the reporting
+    # hart cannot see that another hart stopped.
+    la t1, .Ltrap
+    csrw mtvec, t1
 
     # Set up stack pointer for each hart
     # Each hart gets 4KB stack space (0x1000 bytes)
@@ -45,7 +49,7 @@ _start:
     # The reporting hart clears it, then releases the others through the last flag write.
     csrr t0, mhartid
     la t1, .Lbss_ready
-    li t2, BB_REPORT_HART
+    li t2, WORKLOAD_REPORT_HART
     bne t0, t2, .Lwait_bss
     la t2, __bss_start
     la t3, __bss_end
@@ -84,7 +88,7 @@ _start:
 
     # The explicitly selected reporting hart publishes the result.
     csrr t0, mhartid
-    li t1, BB_REPORT_HART
+    li t1, WORKLOAD_REPORT_HART
     bne t0, t1, 1f
     li t1, 0x60000000
     slli t0, t0, 18
@@ -93,6 +97,19 @@ _start:
 1:
     wfi
     j 1b
+
+# Reports 1 through the trapping hart's exit slot and parks the hart.
+.balign 4
+.Ltrap:
+    csrr t0, mhartid
+    li t1, 0x60000000
+    slli t0, t0, 18
+    add t1, t1, t0
+    li t0, 1
+    sw t0, 0(t1)
+2:
+    wfi
+    j 2b
 
 # Outside .bss so the clear cannot reset it; a stale 1 from a previous run is
 # overwritten by the image load because .data is part of the file image.

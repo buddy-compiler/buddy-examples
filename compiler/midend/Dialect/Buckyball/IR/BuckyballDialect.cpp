@@ -20,10 +20,3 @@ void BuckyballDialect::initialize() {
 #include "Buckyball.cpp.inc"
       >();
 }
-
-// A Ball reads at most two banks.
-LogicalResult BankCustomOp::verify() {
-  if (getSources().size() > 2)
-    return emitOpError("reads at most two source banks");
-  return success();
-}

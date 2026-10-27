@@ -1,8 +1,6 @@
 #ifndef _MEM_H_
 #define _MEM_H_
 
-#include <params.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -13,7 +11,7 @@ extern "C" {
 /* Bytes covered by mvin/mvout for the allocated bank groups. */
 static inline size_t dma_span_bytes(uint64_t depth, uint64_t stride,
                                     uint32_t groups) {
-  size_t row_bytes = (size_t)BANK_WIDTH / 8;
+  size_t row_bytes = (size_t)THREAD_MEM_BANK_WIDTH / 8;
 
   if (depth == 0)
     return 0;

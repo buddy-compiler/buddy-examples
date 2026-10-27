@@ -4,12 +4,12 @@
 #include <bbhw/isa/isa.h>
 #include <cstdlib>
 #include <cstring>
-#include <params.h>
 
 namespace {
 constexpr unsigned readBank = 4, writeBank = 5;
-constexpr unsigned programBank = VIRTUAL_BANK_NUM;
-constexpr size_t bankBytes = BANK_LINES * (BANK_WIDTH / 8);
+constexpr unsigned programBank = CORE_VIRTUAL_BANK_COUNT;
+constexpr size_t bankBytes =
+    THREAD_MEM_BANK_ENTRIES * (THREAD_MEM_BANK_WIDTH / 8);
 constexpr size_t chunk = bankBytes / sizeof(float);
 
 bool linear(const DynamicMemRefType<float> &value,

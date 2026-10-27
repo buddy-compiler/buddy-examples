@@ -27,12 +27,12 @@ endif()
 # taken from an archive; as link options they come before the libraries they call.
 add_library(bindings INTERFACE)
 target_link_options(bindings INTERFACE "${DESIGN_CORE_BUILD_${DESIGN_CORES}}/execute.o")
-foreach(THREAD IN LISTS DESIGN_CORE_THREADS_${DESIGN_CORES})
+foreach(THREAD IN LISTS DESIGN_THREAD_STACKS)
   target_link_options(bindings INTERFACE "${DESIGN_THREAD_BUILD_${THREAD}}/loader.o")
 endforeach()
 # DMA helpers are sized by the target with the fewest bank lines.
 list(GET DESIGN_RUNTIME_TARGETS 0 PARAMS_TARGET)
-set(RUNTIME_PARAMS "${DESIGN_ISA_DIR}/${PARAMS_TARGET}")
+set(RUNTIME_DEFS ${DESIGN_TARGET_DEFS_${PARAMS_TARGET}})
 
 add_subdirectory("${DESIGN_REPO}/stack/engine" engine)
 add_subdirectory("${DESIGN_REPO}/stack/runtime" runtime)

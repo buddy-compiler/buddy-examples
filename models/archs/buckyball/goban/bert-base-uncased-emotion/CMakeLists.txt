@@ -1,154 +1,179 @@
-file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
-
 set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
-if(NOT "matmul" IN_LIST DESIGN_TARGETS)
-  message(FATAL_ERROR "Unknown BERT compiler target: matmul")
-endif()
-math(EXPR LAST_PARTITION "4 - 1")
-set(BERT_SUBGRAPH_MLIR)
-foreach(BERT_PARTITION RANGE 0 ${LAST_PARTITION})
-  list(APPEND BERT_SUBGRAPH_MLIR ${OUTPUT_DIR}/subgraph${BERT_PARTITION}.mlir)
-endforeach()
-
-set(DESIGN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/trace/trace.toml")
+# ===----------------------------------------------------------------------===
+# Import the BERT graph and partition it. No goban Ball is recognized yet, so
+# the graph stays FP32: no layout alignment and no quantization.
+# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/forward.mlir
-         ${BERT_SUBGRAPH_MLIR}
+  OUTPUT ${OUTPUT_DIR}/01-import.txt
+         ${OUTPUT_DIR}/04-partitioned.txt
+         ${OUTPUT_DIR}/subgraph0.mlir
+         ${OUTPUT_DIR}/forward.mlir
          ${OUTPUT_DIR}/arg0.data
-         ${OUTPUT_DIR}/arg1.data
          ${OUTPUT_DIR}/vocab.txt
   COMMAND ${PYTHON} buddy-pytorch-importer.py
-            --repo-root ${REPO_ROOT}
-            --output-dir ${OUTPUT_DIR}
-            --compiler-build ${COMPILER_BUILD}
-            --design-pb ${DESIGN_PB}
-            --partition-count 4
-            --sequence-length 32
-  DEPENDS ${COMPILER_FRONTEND_SOURCES}
-          ${RECIPE_FRONTEND_SOURCES}
-          ${DESIGN_FILES}
-          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
-          quant/calibration.py
-          quant/quant.toml
+  DEPENDS buddy-pytorch-importer.py
+          trace/trace.toml
+          ${MODEL_DIR}/bert-base-uncased-emotion/model.py
+          ${MODEL_DIR}/bert-base-uncased-emotion/output/bert-base-uncased-emotion/config.json
+          ${MODEL_DIR}/bert-base-uncased-emotion/output/bert-base-uncased-emotion/model.safetensors
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "Generating BERT subgraphs and parameter files"
+  COMMENT "Importing BERT"
+  VERBATIM
 )
 
+# ===----------------------------------------------------------------------===
+# Lower the model entry function to a RISC-V object.
+# ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/forward.mlir -buffer-deallocation-simplification -convert-linalg-to-loops -eliminate-empty-tensors -llvm-request-c-wrappers -convert-math-to-llvm -convert-math-to-libm -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-arith-to-llvm -expand-strided-metadata -finalize-memref-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -canonicalize -cse -o ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/forward.mlir -buffer-deallocation-simplification -convert-linalg-to-loops -eliminate-empty-tensors -llvm-request-c-wrappers -convert-math-to-llvm -convert-math-to-libm -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-arith-to-llvm -expand-strided-metadata -finalize-memref-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -canonicalize -cse |
-          ${DESIGN_COMPILER}/bin/buddy-translate
-            --buddy-to-llvmir |
-          ${BUDDY_SOURCE}/llvm/build/bin/opt "-passes=function(sroa,early-cse,instcombine,simplifycfg,adce)" |
-          ${DESIGN_COMPILER}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
-  COMMAND ${CMAKE_OBJCOPY}
-            --redefine-syms=${DESIGN_THREAD_BUILD_matmul}/kernels.rename
-            --redefine-sym malloc=workspace_alloc
-            --redefine-sym free=workspace_free forward.o
-  DEPENDS "${OUTPUT_DIR}/forward.mlir"
+  BYPRODUCTS ${OUTPUT_DIR}/forward.ll
+             ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/forward.mlir
+            -buffer-deallocation-simplification
+            -convert-linalg-to-loops
+            -eliminate-empty-tensors
+            -llvm-request-c-wrappers
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-arith-to-llvm
+            -expand-strided-metadata
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
+  DEPENDS ${OUTPUT_DIR}/forward.mlir
           ${DESIGN_TARGET_PLUGIN_matmul}
           ${DESIGN_COMPILER}/bin/buddy-translate
-          "${BUDDY_SOURCE}/llvm/build/bin/opt"
           ${DESIGN_COMPILER}/bin/buddy-llc
-          ${DESIGN_THREAD_BUILD_matmul}/kernels.rename
   COMMENT "Building forward.o"
   VERBATIM
 )
-set(OBJECTS forward.o)
-foreach(PARTITION RANGE 0 ${LAST_PARTITION})
-  add_custom_command(
-    OUTPUT subgraph${PARTITION}.o
-    BYPRODUCTS ${OUTPUT_DIR}/subgraph${PARTITION}_linalg.mlir
-               ${OUTPUT_DIR}/subgraph${PARTITION}_buckyball.mlir
-               ${OUTPUT_DIR}/subgraph${PARTITION}_bank_ssa.mlir
-               ${OUTPUT_DIR}/subgraph${PARTITION}_llvm.mlir
-    COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph${PARTITION}.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph${PARTITION}_linalg.mlir
-    COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph${PARTITION}.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
-            ${DESIGN_TARGET_OPT_matmul} -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries -form-goban-mega-kernels -convert-linalg-to-buckyball -convert-linalg-to-toint8-ball -o ${OUTPUT_DIR}/subgraph${PARTITION}_buckyball.mlir
-    COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph${PARTITION}.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
-            ${DESIGN_TARGET_OPT_matmul} -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries -form-goban-mega-kernels -convert-linalg-to-buckyball -convert-linalg-to-toint8-ball -lower-matmul-region-to-bank-ssa -lower-buckyball-to-bank-ssa -assign-physical-banks -o ${OUTPUT_DIR}/subgraph${PARTITION}_bank_ssa.mlir
-    COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph${PARTITION}.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
-            ${DESIGN_TARGET_OPT_matmul} -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries -form-goban-mega-kernels -convert-linalg-to-buckyball -convert-linalg-to-toint8-ball -lower-matmul-region-to-bank-ssa -lower-buckyball-to-bank-ssa -assign-physical-banks -llvm-request-c-wrappers -lower-buckyball -convert-trace-to-llvm -expand-strided-metadata -convert-linalg-to-loops -lower-buckyball -lower-affine -canonicalize -cse -convert-scf-to-cf -convert-cf-to-llvm -buffer-deallocation-simplification -bufferization-lower-deallocations -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -convert-func-to-llvm -finalize-memref-to-llvm -reconcile-unrealized-casts -lower-to-stream -canonicalize -cse -o ${OUTPUT_DIR}/subgraph${PARTITION}_llvm.mlir
-    COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph${PARTITION}.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" |
-            ${DESIGN_TARGET_OPT_matmul} -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg -one-shot-bufferize=bufferize-function-boundaries -form-goban-mega-kernels -convert-linalg-to-buckyball -convert-linalg-to-toint8-ball -lower-matmul-region-to-bank-ssa -lower-buckyball-to-bank-ssa -assign-physical-banks -llvm-request-c-wrappers -lower-buckyball -convert-trace-to-llvm -expand-strided-metadata -convert-linalg-to-loops -lower-buckyball -lower-affine -canonicalize -cse -convert-scf-to-cf -convert-cf-to-llvm -buffer-deallocation-simplification -bufferization-lower-deallocations -convert-math-to-llvm -convert-math-to-libm -convert-arith-to-llvm -convert-func-to-llvm -finalize-memref-to-llvm -reconcile-unrealized-casts -lower-to-stream -canonicalize -cse |
-            ${DESIGN_COMPILER}/bin/buddy-translate
-              --buddy-to-llvmir |
-            ${BUDDY_SOURCE}/llvm/build/bin/opt "-passes=function(sroa,early-cse,instcombine,simplifycfg,adce)" |
-            ${DESIGN_COMPILER}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph${PARTITION}.o
-    COMMAND ${CMAKE_OBJCOPY}
-              --redefine-syms=${DESIGN_THREAD_BUILD_matmul}/kernels.rename
-              --redefine-sym malloc=workspace_alloc
-              --redefine-sym free=workspace_free subgraph${PARTITION}.o
-    DEPENDS "${OUTPUT_DIR}/subgraph${PARTITION}.mlir"
-            ${DESIGN_TARGET_PLUGIN_matmul}
-            ${DESIGN_COMPILER}/bin/buddy-translate
-            "${BUDDY_SOURCE}/llvm/build/bin/opt"
-            ${DESIGN_COMPILER}/bin/buddy-llc
-            ${DESIGN_THREAD_BUILD_matmul}/kernels.rename
-    COMMENT "Building subgraph${PARTITION}.o"
-    VERBATIM
-  )
-  list(APPEND OBJECTS subgraph${PARTITION}.o)
-endforeach()
-add_library(bert-base-uncased-emotion-buckyball-goban-model STATIC EXCLUDE_FROM_ALL ${OBJECTS})
+
+# ===----------------------------------------------------------------------===
+# Lower the compute graph and export intermediate MLIR. The matmul thread has
+# no recognition pass yet: everything runs in software on the goban core.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT subgraph0.o
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0.ll
+             ${OUTPUT_DIR}/subgraph0_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+             ${OUTPUT_DIR}/subgraph0_physical.mlir
+             ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0.mlir
+            -allow-unregistered-dialect
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_linalg.mlir
+            -allow-unregistered-dialect
+            -lower-frontend
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize=bufferize-function-boundaries
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -o ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+            -convert-trace-to-llvm
+            -assign-physical-banks
+            -llvm-request-c-wrappers
+            -o ${OUTPUT_DIR}/subgraph0_physical.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_physical.mlir
+            -lower-buckyball
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -canonicalize
+            -cse
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-arith-to-llvm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
+          ${DESIGN_TARGET_PLUGIN_matmul}
+          ${DESIGN_COMPILER}/bin/buddy-translate
+          ${DESIGN_COMPILER}/bin/buddy-llc
+  COMMENT "Building subgraph0.o"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# Link the model and runtime into a RISC-V shared library.
+# ===----------------------------------------------------------------------===
+add_library(bert-base-uncased-emotion-buckyball-goban-model SHARED EXCLUDE_FROM_ALL forward.o subgraph0.o)
 set_target_properties(bert-base-uncased-emotion-buckyball-goban-model
-  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
-             LINKER_LANGUAGE CXX
-)
-
-add_library(bert-base-uncased-emotion-buckyball-goban-runner SHARED EXCLUDE_FROM_ALL
-  ${CMAKE_CURRENT_SOURCE_DIR}/runner.cpp
-)
-set_target_properties(bert-base-uncased-emotion-buckyball-goban-runner
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
-)
-target_include_directories(bert-base-uncased-emotion-buckyball-goban-runner
-  PRIVATE ${OUTPUT_DIR}
-          ${BUDDY_SOURCE}/frontend/Interfaces
-)
-target_link_libraries(bert-base-uncased-emotion-buckyball-goban-runner
-  PRIVATE bert-base-uncased-emotion-buckyball-goban-model
-          runtime-linux
-          ${DESIGN_THREAD_BUILD_matmul}/libkernels.a
-)
-
-# The runner owns inference and the backend's native scheduling lifecycle.
-get_filename_component(FLATBUFFERS_HEADER "${TOOLCHAIN}/include/flatbuffers/flatbuffers.h" REALPATH)
-get_filename_component(FLATBUFFERS_INCLUDE "${FLATBUFFERS_HEADER}/../.." ABSOLUTE)
-target_include_directories(bert-base-uncased-emotion-buckyball-goban-runner
-  PRIVATE ${LIB_DIR}
-          ${FLATBUFFERS_INCLUDE}
-          ${BUDDY_SOURCE}/runtime/include
-          ${BUDDY_SOURCE}/frontend/Interfaces
-          ${BUDDY_SOURCE}/llvm/mlir/include
-          ${OUTPUT_DIR}
-          ${ISA_DIR}/design
-          ${ISA_DIR}/matmul
-          ${RUNTIME_DIR}/scheduler
-          ${RUNTIME_DIR}/services
-          ${RUNTIME_DIR}/../engine/include
-)
-set_target_properties(bert-base-uncased-emotion-buckyball-goban-runner
-  PROPERTIES POSITION_INDEPENDENT_CODE ON
+             LINKER_LANGUAGE CXX
              BUILD_WITH_INSTALL_RPATH TRUE
              INSTALL_RPATH "$ORIGIN"
 )
-configure_file(bert-base-uncased-emotion.rhal.mlir.in ${OUTPUT_DIR}/bert-base-uncased-emotion.rhal.mlir @ONLY)
+target_link_libraries(bert-base-uncased-emotion-buckyball-goban-model
+  PRIVATE runtime-linux-shared
+)
 
-# Package the runner, model parameters and input metadata in one RAX.
+# ===----------------------------------------------------------------------===
+# Build the Buddy InferenceRunner plugin for RISC-V Linux.
+# ===----------------------------------------------------------------------===
+get_filename_component(FLATBUFFERS_HEADER "${TOOLCHAIN}/include/flatbuffers/flatbuffers.h" REALPATH)
+get_filename_component(FLATBUFFERS_INCLUDE "${FLATBUFFERS_HEADER}/../.." ABSOLUTE)
+add_library(bert-base-uncased-emotion-buckyball-goban-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
+set_target_properties(bert-base-uncased-emotion-buckyball-goban-runner
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+             BUILD_WITH_INSTALL_RPATH TRUE
+             INSTALL_RPATH "$ORIGIN"
+)
+target_include_directories(bert-base-uncased-emotion-buckyball-goban-runner
+  PRIVATE ${LIB_DIR}
+          ${FLATBUFFERS_INCLUDE}
+          ${BUDDY_SOURCE}/frontend/Interfaces
+          ${BUDDY_SOURCE}/runtime/include
+          ${DESIGN_COMPILER}/runtime/include
+)
+target_link_libraries(bert-base-uncased-emotion-buckyball-goban-runner
+  PRIVATE dl
+)
+
+# ===----------------------------------------------------------------------===
+# Package the RAX
+#
+# Contents:
+# RISC-V model library (libbert-base-uncased-emotion-buckyball-goban-model.so),
+# RISC-V runner library (libbert-base-uncased-emotion-buckyball-goban-runner.so),
+# FP32 parameters (arg0.data) and the tokenizer vocabulary (vocab.txt).
+#
+# Output: output/bert-base-uncased-emotion.rax embeds these files alongside
+# RHAL metadata identifying the runner, model entry and parameter buffers.
+# ===----------------------------------------------------------------------===
+configure_file(bert-base-uncased-emotion.rhal.mlir.in ${OUTPUT_DIR}/bert-base-uncased-emotion.rhal.mlir @ONLY)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
-  COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/bert-base-uncased-emotion.rhal.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/rax-pack ${OUTPUT_DIR}/bert-base-uncased-emotion.rhal.mlir
           --embed-payload
           -o ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
   DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rhal.mlir
-          ${COMPILER_BUILD}/bin/rax-pack
+          ${DESIGN_COMPILER}/bin/rax-pack
+          bert-base-uncased-emotion-buckyball-goban-model
           bert-base-uncased-emotion-buckyball-goban-runner
           ${OUTPUT_DIR}/arg0.data
-          ${OUTPUT_DIR}/arg1.data
           ${OUTPUT_DIR}/vocab.txt
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Packaging bert-base-uncased-emotion for buckyball-goban"

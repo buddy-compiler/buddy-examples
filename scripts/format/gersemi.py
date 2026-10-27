@@ -26,7 +26,10 @@ class BuddyCustomCommand(
         lines = [prefix + " " + values[0]]
         tool_indent = " " * (len(prefix) + 1)
         pass_indent = tool_indent + "  "
-        lowering = values[0].strip('"').rsplit("/", 1)[-1] in {"buddy-opt", "mlir-opt"}
+        tool = values[0].strip('"')
+        lowering = tool.rsplit("/", 1)[-1] in {"buddy-opt", "mlir-opt"} or (
+            tool.startswith("${DESIGN_TARGET_OPT_") and tool.endswith("}")
+        )
         packing = values[0].strip('"').rsplit("/", 1)[-1] == "rax-pack"
         next_tool = False
         for value in values[1:]:
@@ -35,10 +38,11 @@ class BuddyCustomCommand(
                 next_tool = True
             elif next_tool:
                 lines.append(tool_indent + value)
-                lowering = value.strip('"').rsplit("/", 1)[-1] in {
+                tool = value.strip('"')
+                lowering = tool.rsplit("/", 1)[-1] in {
                     "buddy-opt",
                     "mlir-opt",
-                }
+                } or (tool.startswith("${DESIGN_TARGET_OPT_") and tool.endswith("}"))
                 next_tool = False
             elif (lowering or packing) and value.startswith("-"):
                 lines.append((tool_indent if packing else pass_indent) + value)

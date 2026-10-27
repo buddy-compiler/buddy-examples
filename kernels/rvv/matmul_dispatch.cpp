@@ -5,12 +5,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <params.h>
 
 namespace {
 constexpr unsigned readBank = 4, writeBank = 5;
-constexpr unsigned programBank = VIRTUAL_BANK_NUM;
-constexpr uint32_t bankBytes = BANK_LINES * (BANK_WIDTH / 8);
+constexpr unsigned programBank = CORE_VIRTUAL_BANK_COUNT;
+constexpr uint32_t bankBytes =
+    THREAD_MEM_BANK_ENTRIES * (THREAD_MEM_BANK_WIDTH / 8);
 static_assert(bankBytes >= 4096 && bankBytes <= 65536 && bankBytes % 16 == 0);
 } // namespace
 

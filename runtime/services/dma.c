@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static _Thread_local uint32_t bank_cols[VIRTUAL_BANK_NUM];
+static _Thread_local uint32_t bank_cols[CORE_VIRTUAL_BANK_COUNT];
 
 void dma_bank_set_cols(uint32_t bank_id, uint32_t cols) {
-  if (bank_id >= VIRTUAL_BANK_NUM) {
+  if (bank_id >= CORE_VIRTUAL_BANK_COUNT) {
     fprintf(stderr, "dma_bank_set_cols: bank_id %u out of range\n", bank_id);
     exit(1);
   }
@@ -14,13 +14,18 @@ void dma_bank_set_cols(uint32_t bank_id, uint32_t cols) {
 }
 
 void dma_bank_allocate(uint32_t bank_id, uint32_t cols) {
+  // A private bank spans the physical banks; a shared one the banks of the
+  // shared memory of the core.
   uint32_t capacity =
-      bank_id <= BB_PRIVATE_VBANK_MAX ? BANK_NUM : SHARED_BANK_NUM;
+      bank_id <= THREAD_FRONTEND_MAX_PRIVATE_VBANK ? THREAD_MEM_BANK_NUM
+      : CORE_SHARED_MEM_ENABLE
+          ? CORE_SHARED_MEM_ENTRIES / CORE_SHARED_MEM_BANK_ENTRIES
+          : 0;
   dma_bank_set_cols(bank_id, cols ? cols : capacity);
 }
 
 uint32_t dma_bank_cols(uint32_t bank_id) {
-  if (bank_id >= VIRTUAL_BANK_NUM) {
+  if (bank_id >= CORE_VIRTUAL_BANK_COUNT) {
     fprintf(stderr, "dma_bank_cols: bank_id %u out of range\n", bank_id);
     exit(1);
   }
@@ -28,7 +33,7 @@ uint32_t dma_bank_cols(uint32_t bank_id) {
 }
 
 void dma_bank_transfer(uint64_t source, uint64_t target) {
-  if (source >= VIRTUAL_BANK_NUM || target >= VIRTUAL_BANK_NUM) {
+  if (source >= CORE_VIRTUAL_BANK_COUNT || target >= CORE_VIRTUAL_BANK_COUNT) {
     fputs("dma_bank_transfer: bank id out of range\n", stderr);
     exit(1);
   }

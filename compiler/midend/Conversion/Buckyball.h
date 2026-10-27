@@ -2,7 +2,7 @@
 //
 // assign-physical-banks maps the virtual banks to the banks of the target;
 // lower-buckyball lowers the physical operations to Buckyball instructions,
-// the custom operations through the Ball of their kind.
+// the operations of the Balls through PhysicalBankAssignment.
 //
 //===----------------------------------------------------------------------===//
 
@@ -10,6 +10,7 @@
 #define BUCKYBALL_CONVERSION_BUCKYBALL_H
 
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/PatternMatch.h"
 #include "llvm/ADT/ArrayRef.h"
 
@@ -17,9 +18,9 @@ namespace mlir::buddy {
 
 void registerBuckyballPasses();
 
-// A Ball adds the patterns lowering the custom operations of its kinds; it
-// registers them when the compiler plugin is loaded.
-void addBallLowering(void (*populate)(RewritePatternSet &patterns));
+// A Ball adds its dialect to the dialects the compiler plugin registers; it
+// does so when the plugin library is loaded.
+void addBallDialect(void (*insert)(DialectRegistry &registry));
 
 // Emits one Buckyball instruction, rs1 and rs2 with the immediate funct7.
 void emitInstruction(OpBuilder &builder, Location loc, int32_t funct7,

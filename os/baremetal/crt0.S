@@ -1,7 +1,6 @@
 /* crt0.S — minimal startup for BBSimHarness baremetal
  * Bootrom jumps to 0x80000000 (this code).
  * Sets up stack and TLS, clears BSS, then calls main. */
-#include <params.h>
 .section .text.init,"ax",@progbits
 .global _start
 _start:
@@ -14,7 +13,7 @@ _start:
 
     /* The generated target profile selects its test hart before boot. */
     csrr t0, mhartid
-    li t1, BB_TEST_HART
+    li t1, CORE_HART_ID
     bne t0, t1, park_hart
 
     /* Enable FPU: set mstatus.FS and XS = 01 (Initial) */

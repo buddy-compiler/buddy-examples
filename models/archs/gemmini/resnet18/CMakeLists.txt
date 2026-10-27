@@ -203,8 +203,6 @@ target_include_directories(resnet18-gemmini-runner
           ${BUDDY_SOURCE}/frontend/Interfaces
           ${BUDDY_SOURCE}/llvm/mlir/include
           ${OUTPUT_DIR}
-          ${ISA_DIR}/design
-          ${ISA_DIR}/matmul
           ${RUNTIME_DIR}/scheduler
           ${RUNTIME_DIR}/services
           ${RUNTIME_DIR}/../engine/include

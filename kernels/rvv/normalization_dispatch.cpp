@@ -5,15 +5,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <params.h>
 
 namespace {
 constexpr unsigned readBank = 5, writeBank = 6;
 constexpr unsigned inputBank = 0, weightBank = 1, biasBank = 2;
 constexpr unsigned descriptorBank = 3, outputBank = 4;
 constexpr uint64_t descriptorAddress = uint64_t(descriptorBank) << 32;
-constexpr unsigned programBank = VIRTUAL_BANK_NUM;
-constexpr uint32_t bankBytes = BANK_LINES * (BANK_WIDTH / 8);
+constexpr unsigned programBank = CORE_VIRTUAL_BANK_COUNT;
+constexpr uint32_t bankBytes =
+    THREAD_MEM_BANK_ENTRIES * (THREAD_MEM_BANK_WIDTH / 8);
 
 int64_t elements(const DynamicMemRefType<float> &value) {
   int64_t count = 1;

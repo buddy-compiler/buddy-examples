@@ -286,8 +286,8 @@ jobs:
           schemas = [
               scripts / "proto/chip.proto",
               scripts / "proto/hardware.proto",
-              *sorted(repo.glob("examples/components/balls/*/configs/*_params.proto")),
-              *sorted(repo.glob("examples/components/cores/*/configs/*_params.proto")),
+              *sorted(repo.glob("examples/prefab/balls/*/configs/*_params.proto")),
+              *sorted(repo.glob("examples/prefab/cores/*/configs/*_params.proto")),
           ]
           subprocess.run(
               [

@@ -47,6 +47,11 @@ inline void configure(uint64_t base) {
     }
     header.append(static_cast<const char *>(address), page);
     munmap(address, page);
+    // An empty region never has the blank line: stop at the first page.
+    if (header.compare(0, 9, "BBMODEL1 ") != 0) {
+      close(fd);
+      throw NoImage();
+    }
     if (header.find("\n\n") != std::string::npos)
       break;
   }

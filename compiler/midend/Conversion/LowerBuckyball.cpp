@@ -1,15 +1,18 @@
 //===- LowerBuckyball.cpp - Physical operations to Buckyball instructions -===//
 //
-// mset, mvin and mvout become the instructions of bbhw/isa; each custom
-// operation becomes the instructions the Ball of its kind emits. An
+// mset, mset_transfer, mvin and mvout become the instructions of bbhw/isa; each
+// Ball operation emits its own instructions through PhysicalBankAssignment. An
 // instruction is a call of llvm.riscv.buckyball.custom with rs1, rs2 and the
-// immediate funct7.
+// immediate funct7. On a target a CPU core runs, mset, mset_transfer and mvout
+// also inform the DMA service of its OS; hardware threads run without an OS.
 //
 //===----------------------------------------------------------------------===//
 
 #include "Buckyball/BuckyballDialect.h"
 #include "Buckyball/BuckyballOps.h"
 #include "Conversion/Buckyball.h"
+#include "Interfaces/BankInterfaces.h"
+#include "Target/BuckyballTargetRegistry.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -25,11 +28,6 @@ namespace {
 constexpr int32_t kMvoutFunct7 = 16;
 constexpr int32_t kMsetFunct7 = 32;
 constexpr int32_t kMvinFunct7 = 33;
-
-SmallVector<void (*)(RewritePatternSet &)> &ballLowerings() {
-  static SmallVector<void (*)(RewritePatternSet &)> lowerings;
-  return lowerings;
-}
 
 // Calls the runtime function `name` (i64 or i32 arguments, no result).
 void callRuntime(OpBuilder &builder, Location loc, StringRef name,
@@ -85,11 +83,12 @@ public:
                                 PatternRewriter &rewriter) const override {
     Location loc = op.getLoc();
     int64_t bank = op.getBank();
-    // The Linux DMA service tracks the columns of every bank.
-    callRuntime(rewriter, loc,
-                op.getAlloc() ? "dma_bank_allocate" : "dma_bank_set_cols",
-                {constantI32(rewriter, loc, bank),
-                 constantI32(rewriter, loc, op.getCol())});
+    // The Linux DMA service of a CPU core tracks the columns of every bank.
+    if (buckyball_target::getBuckyballTarget().cpuCore)
+      callRuntime(rewriter, loc,
+                  op.getAlloc() ? "dma_bank_allocate" : "dma_bank_set_cols",
+                  {constantI32(rewriter, loc, bank),
+                   constantI32(rewriter, loc, op.getCol())});
     uint64_t rs2 = mlir::buddy::field(op.getRow(), 0, 4) |
                    mlir::buddy::field(op.getCol(), 5, 9) |
                    mlir::buddy::field(op.getAlloc(), 10, 10);
@@ -97,6 +96,28 @@ public:
         rewriter, loc, kMsetFunct7,
         mlir::buddy::constantI64(rewriter, loc, mlir::buddy::field(bank, 0, 9)),
         mlir::buddy::constantI64(rewriter, loc, rs2));
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+class MsetTransferLowering : public OpRewritePattern<MsetTransferOp> {
+public:
+  using OpRewritePattern::OpRewritePattern;
+  LogicalResult matchAndRewrite(MsetTransferOp op,
+                                PatternRewriter &rewriter) const override {
+    Location loc = op.getLoc();
+    // The Linux DMA service of a CPU core moves the columns it tracks.
+    if (buckyball_target::getBuckyballTarget().cpuCore)
+      callRuntime(rewriter, loc, "dma_bank_transfer",
+                  {mlir::buddy::constantI64(rewriter, loc, op.getSource()),
+                   mlir::buddy::constantI64(rewriter, loc, op.getTarget())});
+    uint64_t rs1 = mlir::buddy::field(op.getSource(), 0, 9) |
+                   mlir::buddy::field(op.getTarget(), 20, 28);
+    mlir::buddy::emitInstruction(
+        rewriter, loc, kMsetFunct7,
+        mlir::buddy::constantI64(rewriter, loc, rs1),
+        mlir::buddy::constantI64(rewriter, loc, mlir::buddy::field(1, 12, 12)));
     rewriter.eraseOp(op);
     return success();
   }
@@ -127,12 +148,14 @@ public:
                                 PatternRewriter &rewriter) const override {
     Location loc = op.getLoc();
     Value memoryAddress = address(rewriter, loc, op.getOutput());
-    // Linux needs private destination pages before a DMA store.
-    callRuntime(rewriter, loc, "dma_touch_mvout",
-                {memoryAddress,
-                 mlir::buddy::constantI64(rewriter, loc, op.getDepth()),
-                 mlir::buddy::constantI64(rewriter, loc, op.getStride()),
-                 constantI32(rewriter, loc, op.getBank())});
+    // Linux on a CPU core needs private destination pages before a DMA
+    // store.
+    if (buckyball_target::getBuckyballTarget().cpuCore)
+      callRuntime(rewriter, loc, "dma_touch_mvout",
+                  {memoryAddress,
+                   mlir::buddy::constantI64(rewriter, loc, op.getDepth()),
+                   mlir::buddy::constantI64(rewriter, loc, op.getStride()),
+                   constantI32(rewriter, loc, op.getBank())});
     uint64_t rs1 = mlir::buddy::bankFields({static_cast<int64_t>(op.getBank())},
                                            0, false, op.getDepth());
     mlir::buddy::emitInstruction(
@@ -160,14 +183,23 @@ public:
   }
 
   void runOnOperation() override {
+    SmallVector<PhysicalBankAssignment> balls;
+    getOperation().walk(
+        [&](PhysicalBankAssignment op) { balls.push_back(op); });
+    for (PhysicalBankAssignment op : balls) {
+      OpBuilder builder(op);
+      if (failed(op.lowerToInstructions(builder)))
+        return signalPassFailure();
+      op->erase();
+    }
     RewritePatternSet patterns(&getContext());
-    patterns.add<MsetLowering, MvinLowering, MvoutLowering>(&getContext());
-    for (auto populate : ballLowerings())
-      populate(patterns);
+    patterns
+        .add<MsetLowering, MsetTransferLowering, MvinLowering, MvoutLowering>(
+            &getContext());
     if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))))
       return signalPassFailure();
     WalkResult left = getOperation().walk([](Operation *op) {
-      if (isa<BuckyballDialect>(op->getDialect())) {
+      if (isa<BuckyballDialect>(op->getDialect()) || isa<BankSSALowering>(op)) {
         op->emitOpError("has no lowering on this core");
         return WalkResult::interrupt();
       }
@@ -187,10 +219,6 @@ void registerBuckyballPasses() {
   registerAssignPhysicalBanksPass();
   registerLowerFrontendPass();
   PassRegistration<LowerBuckyballPass>();
-}
-
-void addBallLowering(void (*populate)(RewritePatternSet &patterns)) {
-  ballLowerings().push_back(populate);
 }
 
 void emitInstruction(OpBuilder &builder, Location loc, int32_t funct7,

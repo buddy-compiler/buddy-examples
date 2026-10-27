@@ -11,7 +11,7 @@
 #include <vector>
 namespace {
 using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
-                         MemRef<int8_t, 1> *, MemRef<float, 4> *);
+                         MemRef<float, 4> *);
 class AlexNetRunner final : public buddy::runtime::InferenceRunner {
 public:
   void run(const buddy::runtime::RunConfig &config) override {
@@ -35,13 +35,6 @@ public:
     MemRef<float, 1> parameters(std::vector<size_t>{bytes / sizeof(float)});
     weights.seekg(0);
     weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
-    weights.close();
-    weights.open(manifest.weightPaths.at(1), std::ios::binary | std::ios::ate);
-    const size_t quantizedBytes = weights.tellg();
-    MemRef<int8_t, 1> quantizedWeights(std::vector<size_t>{quantizedBytes});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(quantizedWeights.getData()),
-                 quantizedBytes);
     dip::Image<float, 4> image(config.imagePath, dip::DIP_RGB, true);
     if (image.getWidth() != 224 || image.getHeight() != 224)
       throw std::runtime_error("AlexNet requires a 224x224 image");
@@ -57,7 +50,7 @@ public:
       }
     MemRef<float, 2> output(std::vector<size_t>{1, 1000}, false, 0);
     const auto start = std::chrono::steady_clock::now();
-    forward(&output, &parameters, &quantizedWeights, &input);
+    forward(&output, &parameters, &input);
     const std::chrono::duration<double> elapsed =
         std::chrono::steady_clock::now() - start;
     const float *logits = output.getData();

@@ -1,47 +1,31 @@
 //===- BuckyballTargetRegistry.h - The compiled Buckyball target ----------===//
 //
-// The banks and ISA of the target a compiler plugin is built for, from the
-// target.inc design.pb generates.
+// The banks and ISA of the compiler target the plugin compiles for. The plugin
+// reads them from design.pb, named on the buddy-opt command line:
+//   --buckyball-design-pb=<design.pb> --buckyball-target=<target>
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef BUCKYBALL_TARGET_REGISTRY_H
 #define BUCKYBALL_TARGET_REGISTRY_H
 
-#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <cstdint>
+#include <string>
 
 namespace buckyball_target {
 
-struct BuckyballIsaEntry {
-  llvm::StringRef mnemonic;
-  int32_t funct7;
-  unsigned ballIndex;
-};
-
-struct BuckyballBallParam {
-  llvm::StringRef name;
-  int64_t value;
-};
-
-struct BuckyballBallMapping {
-  llvm::StringRef name;
-  int64_t inBW;
-  int64_t outBW;
-  llvm::ArrayRef<BuckyballBallParam> params;
-};
-
 struct BuckyballTargetConfig {
-  llvm::StringRef core;
+  std::string core;
   int64_t bankNum;
   int64_t bankWidthBits;
   int64_t bankDepth;
   int64_t privateBankMax;
   bool rvvEnabled;
-  llvm::ArrayRef<BuckyballBallMapping> ballMappings;
-  llvm::ArrayRef<BuckyballIsaEntry> isa;
+  // Whether a CPU core of the device runs the target's programs, under the OS
+  // whose DMA service tracks the banks; otherwise only hardware threads do.
+  bool cpuCore;
 };
 
 const BuckyballTargetConfig &getBuckyballTarget();

@@ -9,8 +9,8 @@
 #   bindings          target the device defines: how each of its cores runs jobs
 #                     (`runtime_bindings`) and each hardware thread is loaded
 #                     (`engine_bindings`)
-#   RUNTIME_PARAMS    ISA directory whose params.h sizes the DMA helpers; a
-#                     device without banks has none and no DMA helpers
+#   RUNTIME_DEFS      compile definitions of the target that sizes the DMA
+#                     helpers; a device without banks has none and no DMA helpers
 # ===----------------------------------------------------------------------===
 set(RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MLIR_EXECUTION_ENGINE "${RUNTIME_DIR}/../thirdparty/buddy-mlir/llvm/mlir/include/mlir/ExecutionEngine")
@@ -64,7 +64,7 @@ set(
   trace/trace.cpp
   trace/location.cpp
 )
-if(RUNTIME_PARAMS)
+if(RUNTIME_DEFS)
   list(APPEND RUNTIME_LINUX_SOURCES services/dma.c)
 endif()
 
@@ -72,9 +72,11 @@ add_library(runtime-linux STATIC ${RUNTIME_LINUX_SOURCES})
 target_include_directories(runtime-linux
   PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/services>"
          PRIVATE
-         "${RUNTIME_PARAMS}"
          "${RUNTIME_DIR}/trace"
          "${MLIR_EXECUTION_ENGINE}"
+)
+target_compile_definitions(runtime-linux
+  PRIVATE ${RUNTIME_DEFS}
 )
 target_compile_options(runtime-linux PRIVATE -O2 -ftls-model=local-exec)
 target_compile_features(runtime-linux PRIVATE c_std_11 cxx_std_17)
@@ -89,9 +91,11 @@ add_library(runtime-linux-shared STATIC ${RUNTIME_LINUX_SOURCES})
 target_include_directories(runtime-linux-shared
   PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/services>"
          PRIVATE
-         "${RUNTIME_PARAMS}"
          "${RUNTIME_DIR}/trace"
          "${MLIR_EXECUTION_ENGINE}"
+)
+target_compile_definitions(runtime-linux-shared
+  PRIVATE ${RUNTIME_DEFS}
 )
 target_compile_options(runtime-linux-shared PRIVATE -O2)
 target_compile_features(runtime-linux-shared PRIVATE c_std_11 cxx_std_17)
