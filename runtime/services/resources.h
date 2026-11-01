@@ -1,4 +1,4 @@
-// Files of the model image in the DDR (see models/tools/model-pack.cpp),
+// Files of the model image in the DDR (see stack/tools/model-pack.cpp),
 // mapped through /dev/mem. The image sits at the model region at the top of
 // the DDR; its header indexes the files.
 #pragma once

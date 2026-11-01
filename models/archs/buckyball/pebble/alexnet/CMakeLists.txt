@@ -9,8 +9,10 @@ add_custom_command(
   OUTPUT ${OUTPUT_DIR}/calibration.json
   COMMAND ${PYTHON} buddy-pytorch-calibrate.py
   DEPENDS buddy-pytorch-calibrate.py
-          ${COMPILER_FRONTEND_SOURCES}
+          ${STACK_ROOT}/compiler/frontend/quant.py
           ${MODEL_DIR}/alexnet/output/alexnet/model.pth
+          ${MODEL_DIR}/alexnet/model.py
+          ${MODEL_DIR}/alexnet/data.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Calibrating AlexNet activations"
   VERBATIM
@@ -29,13 +31,16 @@ add_custom_command(
          ${OUTPUT_DIR}/arg0.data
          ${OUTPUT_DIR}/arg1.data
          ${OUTPUT_DIR}/arg2.data
+         ${OUTPUT_DIR}/inputs.data
   COMMAND ${PYTHON} buddy-pytorch-importer.py
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
           buddy-pytorch-importer.py
+          ${MODEL_DIR}/alexnet/images/dog.bmp
           trace/trace.toml
           ${OUTPUT_DIR}/calibration.json
           ${MODEL_DIR}/alexnet/output/alexnet/model.pth
+          ${MODEL_DIR}/alexnet/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Importing AlexNet"
   VERBATIM
@@ -84,36 +89,40 @@ add_custom_command(
   OUTPUT subgraph0.o
   BYPRODUCTS ${OUTPUT_DIR}/subgraph0.ll
              ${OUTPUT_DIR}/subgraph0_linalg.mlir
-             ${OUTPUT_DIR}/subgraph0_custom.mlir
-             ${OUTPUT_DIR}/subgraph0_buckyball.mlir
+             ${OUTPUT_DIR}/subgraph0_acc.mlir
+             ${OUTPUT_DIR}/subgraph0_frontend.mlir
+             ${OUTPUT_DIR}/subgraph0_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_physical.mlir
+             ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+             ${OUTPUT_DIR}/subgraph0_lowered.mlir
              ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0.mlir
-            -allow-unregistered-dialect
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_linalg.mlir
-            -allow-unregistered-dialect
-            -form-custom-ops
-            -o ${OUTPUT_DIR}/subgraph0_custom.mlir
-  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_custom.mlir
-            -allow-unregistered-dialect
-            -convert-linalg-to-buckyball
-            -lower-frontend
+            -convert-linalg-to-acc
+            -o ${OUTPUT_DIR}/subgraph0_acc.mlir
+  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_acc.mlir
+            -lower-frontend-fake-op
+            -o ${OUTPUT_DIR}/subgraph0_frontend.mlir
+  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_frontend.mlir
             -eliminate-empty-tensors
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
-            -o ${OUTPUT_DIR}/subgraph0_buckyball.mlir
-  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_buckyball.mlir
-            -convert-trace-to-llvm
+            -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_bufferized.mlir
             -assign-physical-banks
-            -llvm-request-c-wrappers
             -o ${OUTPUT_DIR}/subgraph0_physical.mlir
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_physical.mlir
-            -lower-buckyball
+            -llvm-request-c-wrappers
+            -o ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+            -lower-acc
+            -o ${OUTPUT_DIR}/subgraph0_lowered.mlir
+  COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_lowered.mlir
             -expand-strided-metadata
             -convert-linalg-to-loops
             -canonicalize
@@ -147,7 +156,7 @@ set_target_properties(alexnet-buckyball-pebble-model
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
              LINKER_LANGUAGE CXX
              BUILD_WITH_INSTALL_RPATH TRUE
-             INSTALL_RPATH "$ORIGIN"
+             INSTALL_RPATH "$ORIGIN;/lib"
 )
 target_link_libraries(alexnet-buckyball-pebble-model
   PRIVATE runtime-linux-shared
@@ -162,7 +171,7 @@ add_library(alexnet-buckyball-pebble-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
 set_target_properties(alexnet-buckyball-pebble-runner
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
              BUILD_WITH_INSTALL_RPATH TRUE
-             INSTALL_RPATH "$ORIGIN"
+             INSTALL_RPATH "$ORIGIN;/lib"
 )
 target_include_directories(alexnet-buckyball-pebble-runner
   PRIVATE ${LIB_DIR}
@@ -204,4 +213,61 @@ add_custom_command(
   COMMENT "Packaging alexnet for buckyball-pebble"
   VERBATIM
 )
-add_custom_target(alexnet-model-build DEPENDS ${OUTPUT_DIR}/alexnet.rax)
+set(BOOT_DIR "${STACK_ROOT}/runtime/boot")
+list(TRANSFORM DESIGN_DEFS PREPEND "-D" OUTPUT_VARIABLE DESIGN_DEFINES)
+list(
+  APPEND DESIGN_DEFINES
+  "-DDEVICE_TRACE_BASE=${DESIGN_DEVICE_TRACE_BASE}ULL"
+  "-DDEVICE_TRACE_STRIDE=${DESIGN_DEVICE_TRACE_STRIDE}ULL"
+)
+list(TRANSFORM DESIGN_TARGET_DEFS_pebble PREPEND "-D" OUTPUT_VARIABLE TARGET_DEFINES)
+set(BAREMETAL_ELF "${DESIGN_OUTPUT}/workloads/models/pebble-alexnet-baremetal")
+add_custom_command(
+  OUTPUT ${BAREMETAL_ELF}
+  BYPRODUCTS baremetal.o
+             mlir-baremetal.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${LIB_DIR}
+            --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
+  DEPENDS baremetal.cpp
+          ${STACK_ROOT}/engine/src/location.c
+          ${STACK_ROOT}/engine/include/stream.h
+          ${STACK_ROOT}/engine/include/engine.h
+          ${RUNTIME_DIR}/trace/event.h
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/Msan.h
+          ${LIB_DIR}/ImageClassifier.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${RUNTIME_DIR}/services/dma.c
+          ${RUNTIME_DIR}/services/dma.h
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${OUTPUT_DIR}/inputs.data
+          ${DESIGN_PB}
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+
+file(WRITE ${OUTPUT_DIR}/run.args "--model\nalexnet.rax\n--image\ninput.bmp\n--output\nlogits.f32\n")
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/model.img
+  COMMAND ${CMAKE_COMMAND} -E copy ${MODEL_DIR}/alexnet/images/dog.bmp ${OUTPUT_DIR}/input.bmp
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} alexnet.rax input.bmp run.args
+  DEPENDS model-pack-tool
+          ${OUTPUT_DIR}/alexnet.rax
+          ${OUTPUT_DIR}/run.args
+          ${MODEL_DIR}/alexnet/images/dog.bmp
+  VERBATIM
+)
+add_custom_target(alexnet-model-build DEPENDS ${OUTPUT_DIR}/alexnet.rax ${BAREMETAL_ELF} ${OUTPUT_DIR}/model.img)

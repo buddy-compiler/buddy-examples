@@ -9,24 +9,13 @@ from buddy.compiler.graph.operation import (
 )
 from buddy.compiler.graph.transform.quantization.quantize import sort_graph
 from buddy.compiler.graph.type import TensorDType
-from stack.compiler.frontend.quant import (
+from compiler.frontend.quant import (
     FP32ToInt8QuantOp,
     Int8ToFP32DequantOp,
     Int32ToFP32DequantOp,
     quantize as quantize_values,
     quantize_bias,
 )
-
-
-def int8(module):
-    """The squeeze and excitation convolutions of the SE blocks run on the
-    pebble Balls. The other convolutions stay in FP32: pebble lowers a
-    convolution into a fully unrolled bank program per output tile, which for
-    all of them grows the model past 2.5 GB of MLIR; the depthwise ones of the
-    first blocks also lose most of the accuracy with one INT8 scale for their
-    input. The Linears of the classifier reduce 576 and 1024 inputs, more
-    than one bank holds."""
-    return module.endswith((".fc1", ".fc2"))
 
 
 def parameter(graph, values, name, value):
@@ -58,30 +47,38 @@ def replace_argument(graph, user, index, node):
     node.add_children(user.name)
 
 
-def quantize(graph, params, parameter_names, maxima):
-    """Every convolution of int8 reads INT8 values: its weight with one scale
-    per output channel, its input with one calibrated scale."""
+def quantize(graph, params, parameter_names, calibration):
+    """Every convolution reads INT8 values: its weight with one scale per
+    output channel, its input with one calibrated scale. The input converts
+    to INT8 online, divided by the smoothing factor of its channel on the way;
+    the weight takes the factor."""
     values = dict(zip((node.name for node in graph.params), params, strict=True))
     for op in list(graph.body):
         if not isinstance(op, Conv2dOp):
             continue
         weight = graph.node_table[op.args[1]]
         module = parameter_names[weight.name].rsplit(".", 1)[0]
-        if not int8(module):
-            continue
+        smooth = torch.tensor(calibration[module]["smooth"])
         bias = graph.node_table[op.args[2]]
 
-        # Input: one scale for the tensor, from the calibrated clipping
-        # magnitude. All-zero inputs: any positive step encodes them.
+        # Input: one scale for the smoothed tensor, from the calibrated
+        # clipping magnitude. All-zero inputs (an SE excitation): any positive
+        # step encodes them.
         source = graph.node_table[op.args[0]]
         shape = source.tensor_meta["shape"]
-        clip = maxima[module]
+        clip = calibration[module]["clip"]
         scale = torch.full([1] * len(shape), clip / 127 if clip else 1.0)
 
-        # Weights: symmetric in [-127, 127] per output channel, axis 0 of the
-        # [F, C, H, W] weights. A channel whose folded weights almost vanish
-        # takes a coarser step, so that its bias code stays within 2^30.
+        # Weights: the smoothing factor along the input channels, axis 1 of
+        # the [F, C, H, W] weights or axis 0 of the [C, 1, H, W] depthwise
+        # ones. Then symmetric in [-127, 127] per output channel, axis 0. A
+        # channel whose folded weights almost vanish takes a coarser step, so
+        # that its bias code stays within 2^30.
         value = values[weight.name]
+        if op.args[-1] > 1:
+            value = value * smooth.reshape(-1, 1, 1, 1)
+        else:
+            value = value * smooth.reshape(1, -1, 1, 1)
         maximum = value.abs().amax([1, 2, 3], keepdim=True)
         floor = values[bias.name].abs().reshape(maximum.shape) / (
             scale.reshape(-1) * 2**30
@@ -101,8 +98,13 @@ def quantize(graph, params, parameter_names, maxima):
         )
         replace_argument(graph, op, 1, weight_values)
 
-        # Input codes.
-        multiplier = parameter(graph, values, op.name + "_multiplier", 1 / scale)
+        # Input codes: the channels are the last axis of the NHWC input.
+        multiplier = parameter(
+            graph,
+            values,
+            op.name + "_multiplier",
+            1 / (scale * smooth.reshape([1] * (len(shape) - 1) + [-1])),
+        )
         input_step = parameter(graph, values, op.name + "_step", scale)
         codes = operation(
             graph,

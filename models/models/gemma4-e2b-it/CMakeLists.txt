@@ -22,6 +22,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
   COMMAND ${PYTHON} buddy-pytorch-gemma4-e2b-it-graph.py
   DEPENDS buddy-pytorch-gemma4-e2b-it-graph.py
+          model.py
           ${MODEL_WEIGHTS}
           output/gemma4-e2b-it/config.json
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

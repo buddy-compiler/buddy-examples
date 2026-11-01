@@ -1,38 +1,47 @@
+from importlib import import_module
 from pathlib import Path
 import json
 
 import numpy as np
+from PIL import Image
 
 import torch
 from torch.nn.utils.fusion import fuse_conv_bn_eval
-from torchvision.models import resnet18
 
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
-from stack.compiler.frontend import quant
+from compiler.frontend import quant
 from frontend.permute.graph import permute
 from frontend.quant.graph import quantize
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-model_source = model_dir.parents[3] / "models/resnet18"
+
+# Use the same single image and FP32 NHWC normalization as the Linux runner.
+pixels = np.asarray(
+    Image.open(
+        model_dir.parents[3] / "models" / "resnet18/images/dog-32bit_224x224.bmp"
+    ).convert("RGB"),
+    dtype=np.float32,
+)
+assert pixels.shape == (224, 224, 3)
+pixels /= np.float32(255.0)
+pixels -= np.array([0.485, 0.456, 0.406], dtype=np.float32)
+pixels /= np.array([0.229, 0.224, 0.225], dtype=np.float32)
+pixels.tofile(output / "inputs.data")
 
 # ===----------------------------------------------------------------------===
 # Step 1: Import the graph of the checkpoint.
 # ===----------------------------------------------------------------------===
-model = resnet18(weights=None).eval()
-model.load_state_dict(
-    torch.load(model_source / "output/resnet18/model.pth", weights_only=True)
-)
-
-
+resnet18 = import_module("models.models.resnet18.model")
+model = resnet18.load()
 # Every BatchNorm follows a convolution in its module: fold it into the
 # convolution weights and bias.
-def fold_batch_norms(module):
+for module in model.modules():
     names = list(module._modules)
     for conv, norm in zip(names, names[1:]):
         if isinstance(module._modules[conv], torch.nn.Conv2d) and isinstance(
@@ -42,18 +51,13 @@ def fold_batch_norms(module):
                 module._modules[conv], module._modules[norm]
             )
             module._modules[norm] = torch.nn.Identity()
-    for child in module.children():
-        fold_batch_norms(child)
-
-
-fold_batch_norms(model)
 # The traced nodes are named as in the imported graph.
 compiler = DynamoCompiler(
     primary_registry={**tosa.ops_registry, **quant.ops_registry},
     trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
 )
 with torch.no_grad():
-    (graph,) = compiler.importer(model, torch.zeros(1, 3, 224, 224))
+    (graph,) = compiler.importer(model, *resnet18.inputs())
 params = compiler.imported_params[graph]
 names = {parameter.data_ptr(): name for name, parameter in model.named_parameters()}
 parameter_names = {
@@ -78,8 +82,8 @@ graph.dump(output / "02-permuted.txt")
 # Step 2.3: Quantize the fc Linear to INT8.
 # ===----------------------------------------------------------------------===
 # The activation scales come from buddy-pytorch-calibrate.py.
-maxima = json.loads((output / "calibration.json").read_text())
-params = quantize(graph, params, parameter_names, maxima)
+calibration = json.loads((output / "calibration.json").read_text())
+params = quantize(graph, params, parameter_names, calibration)
 graph.dump(output / "03-quanted.txt")
 # graph.dump_parameters(output / "03-quanted-parameters")
 

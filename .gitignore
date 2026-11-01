@@ -11,3 +11,6 @@ result
 /models/datasets/
 waste/
 vdbg.*
+
+# Iteration logs
+*ITERATIONS.md

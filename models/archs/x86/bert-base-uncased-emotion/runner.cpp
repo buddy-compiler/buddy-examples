@@ -1,10 +1,10 @@
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <algorithm>
 #include <buddy/Core/Container.h>
 #include <buddy/LLM/TextContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -14,6 +14,20 @@ using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
                          MemRef<int8_t, 1> *, MemRef<long long, 2> *,
                          MemRef<long long, 2> *, MemRef<long long, 2> *,
                          MemRef<long long, 2> *);
+
+template <typename T> MemRef<T, 1> load(const std::string &path) {
+  std::ifstream file;
+  file.exceptions(std::ios::failbit | std::ios::badbit);
+  file.open(path, std::ios::binary | std::ios::ate);
+  const size_t bytes = file.tellg();
+  if (bytes % sizeof(T))
+    throw std::runtime_error("Invalid parameter size: " + path);
+  MemRef<T, 1> values(std::vector<size_t>{bytes / sizeof(T)});
+  file.seekg(0);
+  file.read(reinterpret_cast<char *>(values.getData()), bytes);
+  return values;
+}
+
 class BertRunner final : public buddy::runtime::InferenceRunner {
 public:
   void run(const buddy::runtime::RunConfig &config) override {
@@ -28,22 +42,9 @@ public:
     if (!forward)
       throw std::runtime_error("Missing _mlir_ciface_forward: " +
                                std::string(dlerror()));
-    std::ifstream weights;
-    weights.exceptions(std::ios::failbit | std::ios::badbit);
-    weights.open(manifest.weightPaths.at(0), std::ios::binary | std::ios::ate);
-    const size_t bytes = weights.tellg();
-    if (bytes % sizeof(float))
-      throw std::runtime_error("Invalid FP32 parameter size");
-    MemRef<float, 1> parameters(std::vector<size_t>{bytes / sizeof(float)});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
-    weights.close();
-    weights.open(manifest.weightPaths.at(1), std::ios::binary | std::ios::ate);
-    const size_t quantizedBytes = weights.tellg();
-    MemRef<int8_t, 1> quantizedWeights(std::vector<size_t>{quantizedBytes});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(quantizedWeights.getData()),
-                 quantizedBytes);
+    // The parameters grouped by type: FP32, then the INT8 MXINT8 weights.
+    auto parameters = load<float>(manifest.weightPaths.at(0));
+    auto weights = load<int8_t>(manifest.weightPaths.at(1));
     buddy::Text<long long, 2> input(config.prompt);
     input.tokenizeBert(manifest.vocabPath, 32, true, true);
     MemRef<long long, 2> types({1, 32}, 0), mask({1, 32}, 0),
@@ -53,12 +54,10 @@ public:
       mask.getData()[i] = i < input.getTokenCnt();
     }
     MemRef<float, 2> output(std::vector<size_t>{1, 6}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
+    const auto start = read_time_ns();
     // The imported ABI orders inputs as IDs, positions, types, then mask.
-    forward(&output, &parameters, &quantizedWeights, &input, &positions, &types,
-            &mask);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
+    forward(&output, &parameters, &weights, &input, &positions, &types, &mask);
+    const double elapsed = (read_time_ns() - start) * 1e-9;
     const float *logits = output.getData();
     const size_t prediction = std::max_element(logits, logits + 6) - logits;
     constexpr const char *labels[] = {"sadness", "joy",  "love",
@@ -69,7 +68,7 @@ public:
     std::cout << "Classification: " << labels[prediction] << '\n'
               << "Probability: " << 1.0 / sum << '\n';
     if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+      std::cout << "Inference time: " << elapsed << "s\n";
   }
 };
 

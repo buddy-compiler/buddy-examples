@@ -1,11 +1,11 @@
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/LLM/TextContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <dlfcn.h>
@@ -24,8 +24,22 @@ constexpr size_t sequenceLength = 32;
 constexpr size_t classes = 6;
 
 using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
+                         MemRef<int32_t, 1> *, MemRef<int8_t, 1> *,
                          MemRef<int64_t, 2> *, MemRef<int64_t, 2> *,
                          MemRef<int64_t, 2> *, MemRef<int64_t, 2> *);
+
+template <typename T> MemRef<T, 1> load(const std::string &path) {
+  std::ifstream file;
+  file.exceptions(std::ios::failbit | std::ios::badbit);
+  file.open(path, std::ios::binary | std::ios::ate);
+  const size_t bytes = file.tellg();
+  if (bytes % sizeof(T))
+    throw std::runtime_error("Invalid parameter byte count: " + path);
+  MemRef<T, 1> values(std::vector<size_t>{bytes / sizeof(T)});
+  file.seekg(0);
+  file.read(reinterpret_cast<char *>(values.getData()), bytes);
+  return values;
+}
 
 class BertRunner final : public buddy::runtime::InferenceRunner {
 public:
@@ -43,15 +57,9 @@ public:
       throw std::runtime_error("Missing " + entry + ": " +
                                std::string(dlerror()));
 
-    std::ifstream weights;
-    weights.exceptions(std::ios::failbit | std::ios::badbit);
-    weights.open(manifest.weightPaths.at(0), std::ios::binary | std::ios::ate);
-    const size_t bytes = weights.tellg();
-    if (bytes % sizeof(float))
-      throw std::runtime_error("Invalid FP32 parameter byte count");
-    MemRef<float, 1> parameters(std::vector<size_t>{bytes / sizeof(float)});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
+    auto parameters = load<float>(manifest.weightPaths.at(0));
+    auto bias = load<int32_t>(manifest.weightPaths.at(1));
+    auto weights = load<int8_t>(manifest.weightPaths.at(2));
 
     // The prompt padded to the sequence length; the mask hides the padding.
     buddy::Text<int64_t, 2> ids(config.prompt);
@@ -65,10 +73,10 @@ public:
 
     // The compiled function returns an owned memref descriptor.
     MemRef<float, 2> output(std::vector<size_t>{1, classes}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
-    forward(&output, &parameters, &ids, &types, &mask, &positions);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
+    const auto start = read_time_ns();
+    forward(&output, &parameters, &bias, &weights, &ids, &types, &mask,
+            &positions);
+    const double elapsed = (read_time_ns() - start) * 1e-9;
     const float *logits = output.getData();
     const auto prediction = std::max_element(logits, logits + classes) - logits;
     double sum = 0.0;
@@ -79,7 +87,7 @@ public:
     std::cout << "Classification: " << labels[prediction] << '\n'
               << "Probability: " << 1.0 / sum << '\n';
     if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+      std::cout << "Inference time: " << elapsed << "s\n";
   }
 };
 

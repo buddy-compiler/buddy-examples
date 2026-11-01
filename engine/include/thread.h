@@ -6,7 +6,9 @@
 extern "C" {
 #endif
 
-/* OS-invisible hardware threads of the current core. */
+/* OS-invisible hardware threads of the current core, through the core's
+ * management instructions: issued directly on baremetal (src/thread.c), by
+ * the engine driver of the OS under Linux (src/thread_linux.c). */
 
 enum thread_space { THREAD_CODE, THREAD_TLS };
 enum thread_field {
@@ -55,6 +57,13 @@ void thread_cancel(uint32_t thread);
 // Returns zero while running; a completed result is acknowledged before return.
 int thread_poll(uint32_t thread, uint64_t task, struct thread_result *result);
 uint64_t thread_wait(uint32_t thread, uint64_t task, int *cancelled);
+// A compiled edge between two tasks: {source thread, source task, source
+// address, target thread, target task, target address, bytes}. Returns its
+// token; the source's completion makes it ready, and it is released after
+// both tasks.
+uint64_t thread_transfer(const uint64_t descriptor[7]);
+void thread_transfer_ready(uint64_t token);
+void thread_transfer_release(uint64_t token);
 
 #ifdef __cplusplus
 }

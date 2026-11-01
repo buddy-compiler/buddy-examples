@@ -3,7 +3,6 @@
 #include <buddy/Core/Container.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -28,7 +27,6 @@
 #include <algorithm>
 #include <buddy/Core/Container.h>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <fcntl.h>
@@ -69,11 +67,12 @@ struct Detection {
 };
 
 using Forward = void (*)(MemRef<float, 3> *, MemRef<float, 1> *,
-                         MemRef<int8_t, 1> *, MemRef<float, 4> *);
+                         MemRef<int32_t, 1> *, MemRef<int8_t, 1> *,
+                         MemRef<float, 4> *);
 
 template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   std::cout << "\033[34;1m[Log] \033[0mLoading " << path << std::endl;
-  const auto loadStart = std::chrono::steady_clock::now();
+  const auto loadStart = read_time_ns();
   std::ifstream input(path, std::ios::binary | std::ios::ate);
   input.exceptions(std::ios::failbit | std::ios::badbit);
   const size_t bytes = input.tellg();
@@ -82,9 +81,8 @@ template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   MemRef<T, 1> tensor(std::vector<size_t>{bytes / sizeof(T)});
   input.seekg(0);
   input.read(reinterpret_cast<char *>(tensor.getData()), bytes);
-  const std::chrono::duration<double> loadTime =
-      std::chrono::steady_clock::now() - loadStart;
-  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count() << "s"
+  const double loadTime = (read_time_ns() - loadStart) * 1e-9;
+  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime << "s"
             << std::endl;
   return tensor;
 }
@@ -198,19 +196,21 @@ public:
       throw std::runtime_error("Missing _mlir_ciface_forward: " +
                                std::string(dlerror()));
     const std::string imagePath = config.imagePath;
-    const auto labels = loadLabels(manifest.weightPaths.at(2));
+    const auto labels = loadLabels(manifest.weightPaths.at(3));
     const auto image = cv::imread(imagePath, cv::IMREAD_COLOR);
     if (image.empty())
       throw std::runtime_error("Cannot load image: " + imagePath);
     LetterboxResult letterbox = letterboxImage(image);
 
+    // The parameters grouped by type: FP32, INT32 biases, INT8 weights.
     auto paramsContainer = loadBinary<float>(manifest.weightPaths.at(0));
-    auto quantizedWeights = loadBinary<int8_t>(manifest.weightPaths.at(1));
+    auto biases = loadBinary<int32_t>(manifest.weightPaths.at(1));
+    auto weights = loadBinary<int8_t>(manifest.weightPaths.at(2));
 
     MemRef<float, 3> output(std::vector<size_t>{1, 8400, 84}, false, 0);
     std::cout << "\033[34;1m[Log] \033[0mStarting inference..." << std::endl;
     unsigned long start = read_counter();
-    forward(&output, &paramsContainer, &quantizedWeights, &letterbox.input);
+    forward(&output, &paramsContainer, &biases, &weights, &letterbox.input);
     unsigned long end = read_counter();
     std::cout << "Counter: " << end - start << std::endl;
 

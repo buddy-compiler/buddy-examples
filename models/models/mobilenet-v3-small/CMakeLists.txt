@@ -19,6 +19,7 @@ add_custom_command(
   COMMAND ${PYTHON} buddy-pytorch-mobilenet-v3-small-graph.py
   DEPENDS buddy-pytorch-mobilenet-v3-small-graph.py
           output/mobilenet-v3-small/model.pth
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Exporting mobilenet-v3-small graph"
   VERBATIM

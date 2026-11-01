@@ -1,5 +1,4 @@
-# Custom configuration for Buckyball FireSim builds
-# This file overrides the default TARGET_CONFIG_PACKAGE to use our custom configs
+# Thin stack platform configuration for the upstream FireSim build
 
 # Only used in this projects makefrags
 makefile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -12,19 +11,17 @@ DESIGN ?= FireSim
 
 # Override to use our custom config package
 TARGET_CONFIG_PACKAGE ?= platform
-TARGET_CONFIG ?= FireSimGemminiU280Config
 
 # These guide chisel elaboration of simulation components by MIDAS,
 # including models and widgets.
-PLATFORM_CONFIG_PACKAGE ?= firesim.firesim
-PLATFORM_CONFIG ?= BaseF1Config
+PLATFORM_CONFIG_PACKAGE ?= firesim.configs
 
 # Override project for the target.
 TARGET_SBT_PROJECT := platform
 
-# Point to our project directory
+# The stack platform build, which references Chipyard
 TARGET_SBT_DIR := $(abspath $(makefile_dir)/../../../../platforms)
 TARGET_SOURCE_DIRS := $(abspath $(makefile_dir)/../../../../platforms/src/main/scala)
 
 # SBT launcher
-SBT ?= java -jar $(chipyard_dir)/scripts/sbt-launch.jar $(SBT_OPTS)
+SBT ?= $(JAVA_HOME)/bin/java -Xmx8G -jar $(chipyard_dir)/scripts/sbt-launch.jar $(SBT_OPTS)

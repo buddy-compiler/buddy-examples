@@ -1,10 +1,10 @@
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <algorithm>
 #include <buddy/Core/Container.h>
 #include <buddy/LLM/TextContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -45,11 +45,10 @@ public:
       mask.getData()[i] = i < input.getTokenCnt();
     }
     MemRef<float, 2> output(std::vector<size_t>{1, 6}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
+    const auto start = read_time_ns();
     // The imported ABI orders inputs as IDs, positions, types, then mask.
     forward(&output, &parameters, &input, &positions, &types, &mask);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
+    const double elapsed = (read_time_ns() - start) * 1e-9;
     const float *logits = output.getData();
     const size_t prediction = std::max_element(logits, logits + 6) - logits;
     constexpr const char *labels[] = {"sadness", "joy",  "love",
@@ -60,7 +59,7 @@ public:
     std::cout << "Classification: " << labels[prediction] << '\n'
               << "Probability: " << 1.0 / sum << '\n';
     if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+      std::cout << "Inference time: " << elapsed << "s\n";
   }
 };
 

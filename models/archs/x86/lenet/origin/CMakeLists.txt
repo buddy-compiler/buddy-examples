@@ -33,7 +33,6 @@ add_custom_command(
             -o ${OUTPUT_DIR}/forward_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
             -convert-elementwise-to-linalg
-            -convert-trace-to-llvm
             -convert-linalg-to-loops
             -expand-strided-metadata
             -lower-affine
@@ -74,7 +73,6 @@ add_custom_command(
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
-            -convert-trace-to-llvm
             -convert-linalg-to-loops
             -expand-strided-metadata
             -lower-affine

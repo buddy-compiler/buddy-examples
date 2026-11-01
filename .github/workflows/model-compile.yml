@@ -39,20 +39,14 @@ jobs:
             model: bert-base-uncased-emotion
             target: buddy-nv-bert-base-uncased-emotion-rax-origin-build
           - arch: nv
-            model: deepseek-r1-distill-qwen-1.5b
-            target: buddy-nv-deepseek-r1-distill-qwen-1.5b-rax-origin-build
+            model: deepseek-r1-distill-qwen-1-5b
+            target: buddy-nv-deepseek-r1-distill-qwen-1-5b-rax-origin-build
           - arch: nv
             model: gemma4-e2b-it
             target: buddy-nv-gemma4-e2b-it-rax-origin-build
           - arch: nv
             model: lenet
             target: buddy-nv-lenet-rax-origin-build
-          - arch: nv
-            model: minimax-h3-fl2va
-            target: buddy-nv-minimax-h3-fl2va-rax-origin-build
-          - arch: nv
-            model: minimax-h3-ref2va
-            target: buddy-nv-minimax-h3-ref2va-rax-origin-build
           - arch: nv
             model: mobilenet-v3-small
             target: buddy-nv-mobilenet-v3-small-rax-origin-build
@@ -96,20 +90,14 @@ jobs:
             model: bert-base-uncased-emotion
             target: buddy-x86-bert-base-uncased-emotion-rax-origin-build
           - arch: x86
-            model: deepseek-r1-distill-qwen-1.5b
-            target: buddy-x86-deepseek-r1-distill-qwen-1.5b-rax-origin-build
+            model: deepseek-r1-distill-qwen-1-5b
+            target: buddy-x86-deepseek-r1-distill-qwen-1-5b-rax-origin-build
           - arch: x86
             model: gemma4-e2b-it
             target: buddy-x86-gemma4-e2b-it-rax-origin-build
           - arch: x86
             model: lenet
             target: buddy-x86-lenet-rax-origin-build
-          - arch: x86
-            model: minimax-h3-fl2va
-            target: buddy-x86-minimax-h3-fl2va-rax-origin-build
-          - arch: x86
-            model: minimax-h3-ref2va
-            target: buddy-x86-minimax-h3-ref2va-rax-origin-build
           - arch: x86
             model: mobilenet-v3-small
             target: buddy-x86-mobilenet-v3-small-rax-origin-build

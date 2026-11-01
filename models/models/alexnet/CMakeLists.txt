@@ -22,6 +22,7 @@ add_custom_command(
   COMMAND ${PYTHON} buddy-pytorch-alexnet-graph.py
   DEPENDS buddy-pytorch-alexnet-graph.py
           output/alexnet/model.pth
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Exporting alexnet graph"
   VERBATIM

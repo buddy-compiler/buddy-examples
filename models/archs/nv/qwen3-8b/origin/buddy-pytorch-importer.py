@@ -1,58 +1,30 @@
+from importlib import import_module
 from pathlib import Path
+
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoTokenizer
 from torch._inductor.decomposition import decompositions
 
-root = Path(__file__).resolve().parents[5]
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 
-output = Path(__file__).resolve().parent / "output"
+model_dir = Path(__file__).resolve().parent
+output = model_dir / "output"
 output.mkdir(exist_ok=True)
-
-checkpoint = (
-    Path(__file__).resolve().parent / "../../../../models/qwen3-8b/output/qwen3-8b"
-).resolve()
-model = AutoModelForCausalLM.from_pretrained(
-    checkpoint, dtype=torch.float32, attn_implementation="eager"
-)
-model.config.use_cache = False
-model.eval()
-
-
-# Recompute the visible context on each token; no hidden KV-cache state is assumed.
-class Logits(torch.nn.Module):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-
-    def forward(self, tokens, mask):
-        positions = torch.arange(tokens.shape[1], device=tokens.device)
-        visible = (positions[:, None] >= positions[None, :])[None, None, :, :]
-        visible = visible & mask[:, None, None, :].bool()
-        attention = torch.where(visible, 0.0, torch.finfo(torch.float32).min)
-        return self.model(
-            input_ids=tokens, attention_mask=attention, use_cache=False
-        ).logits
-
+qwen3 = import_module("models.models.qwen3-8b.model")
 
 compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=decompositions,
-    trace=TraceConfig(load_trace_config(Path(__file__).parent / "trace/trace.toml")),
+    trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
 )
+# One token per step: the origin lowering takes static shapes only.
 with torch.no_grad():
-    graphs = compiler.importer(
-        Logits(model),
-        torch.zeros((1, 32), dtype=torch.int64),
-        torch.ones((1, 32), dtype=torch.int64),
-    )
-assert len(graphs) == 1
-graph = graphs[0]
+    (graph,) = compiler.importer(qwen3.load(), *qwen3.inputs(1))
 params = compiler.imported_params[graph]
 graph.fuse_ops([simply_fuse])
 driver = GraphDriver(graph)
@@ -62,7 +34,7 @@ driver.subgraphs[0].lower_to_top_level_ir()
 np.concatenate([p.detach().cpu().float().numpy().reshape(-1) for p in params]).tofile(
     output / "arg0.data"
 )
-tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+tokenizer = AutoTokenizer.from_pretrained(qwen3.checkpoint)
 with (output / "vocab.txt").open("w") as stream:
     for token, index in sorted(tokenizer.get_vocab().items(), key=lambda item: item[1]):
         stream.write(token.replace("\n", "\\n") + "\n")

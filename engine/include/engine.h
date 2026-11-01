@@ -18,10 +18,12 @@ enum engine_state {
 /* Each thread program registers one binding in the `engine_bindings` section:
  *   static const struct engine_binding binding
  *       __attribute__((section("engine_bindings"), used)) = {THREAD_SIGNATURE,
- * prepare};
- */
+ * load, prepare};
+ * engine_init calls `load` once per thread of the signature, to load the
+ * program; `prepare` hands a job its arguments and fills its task. */
 struct engine_binding {
   uint64_t signature;
+  void (*load)(uint32_t thread);
   void (*prepare)(uint32_t thread, void *opaque, struct thread_task *task);
 };
 
@@ -46,6 +48,14 @@ struct engine_result {
   uint64_t value;
 };
 
+/* A compiled edge between two jobs. The token belongs to the engine. */
+struct engine_transfer {
+  size_t source, target;
+  uintptr_t source_address, target_address;
+  size_t bytes;
+  uint64_t token;
+};
+
 /* One software owner on one OS hart. All arrays remain live until engine_end.
  */
 struct engine {
@@ -54,17 +64,21 @@ struct engine {
   const struct engine_job *jobs;
   struct engine_result *results;
   size_t job_count, completed;
+  struct engine_transfer *transfers;
+  size_t transfer_count;
   int active;
 };
 
-/* Also makes `engine` the calling host thread's engine_current(). */
+/* Also makes `engine` the calling host thread's engine_current(), and loads
+ * the program of every online thread. */
 void engine_init(struct engine *engine, struct engine_slot *slots,
                  size_t capacity);
 struct engine *engine_current(void);
 /* Dependencies name earlier jobs: every dependency index must be less than its
  * job. */
 void engine_begin(struct engine *engine, const struct engine_job *jobs,
-                  size_t count, struct engine_result *results);
+                  size_t count, struct engine_transfer *transfers,
+                  size_t transfer_count, struct engine_result *results);
 /* Poll every running thread, acknowledge completions, then launch ready jobs.
  */
 size_t engine_poll(struct engine *engine);
@@ -74,7 +88,8 @@ void engine_cancel_all(struct engine *engine);
 /* Release only after all tasks, including cancelled work, have completed. */
 void engine_end(struct engine *engine);
 size_t engine_run(struct engine *engine, const struct engine_job *jobs,
-                  size_t count, struct engine_result *results);
+                  size_t count, struct engine_transfer *transfers,
+                  size_t transfer_count, struct engine_result *results);
 
 #ifdef __cplusplus
 }

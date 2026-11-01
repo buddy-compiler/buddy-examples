@@ -1,4 +1,5 @@
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
 #include <vector>
@@ -22,7 +23,6 @@
 #include <buddy/DIP/ImageContainer.h>
 #include <buddy/DIP/ImgContainer.h>
 #include <buddy/LLM/TextContainer.h>
-#include <chrono>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -354,35 +354,31 @@ public:
     // Loading model parameters
     printLogLabel();
     std::cout << "Loading params..." << std::endl;
-    const auto loadStart = std::chrono::high_resolution_clock::now();
+    const auto loadStart = read_time_ns();
     loadParametersFloat(TextEncoderParamsDir1, arg0_text_encoder);
     loadParametersInt64(TextEncoderParamsDir2, arg1_text_encoder);
     loadParametersFloat(UnetParamsDir, arg0_unet);
     loadParametersFloat(VaeParamsDir, arg0_vae);
-    const auto loadEnd = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> loadTime =
-        loadEnd - loadStart;
+    const auto loadEnd = read_time_ns();
+    const double loadTime = (loadEnd - loadStart) * 1e-6;
     printLogLabel();
-    std::cout << "Params load time: " << (double)(loadTime.count()) / 1000
-              << "s\n"
+    std::cout << "Params load time: " << (double)(loadTime) / 1000 << "s\n"
               << std::endl;
 
     // Encode prompt
     printLogLabel();
     std::cout << "Encoding prompt..." << std::endl;
-    const auto encodeStart = std::chrono::high_resolution_clock::now();
+    const auto encodeStart = read_time_ns();
     _mlir_ciface_forward_text_encoder(ptrPos, &arg0_text_encoder,
                                       &arg1_text_encoder,
                                       &TextEncoderInputIDsPos);
     _mlir_ciface_forward_text_encoder(ptrNeg, &arg0_text_encoder,
                                       &arg1_text_encoder,
                                       &TextEncoderInputIDsNeg);
-    const auto encodeEnd = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> encodeTime =
-        encodeEnd - encodeStart;
+    const auto encodeEnd = read_time_ns();
+    const double encodeTime = (encodeEnd - encodeStart) * 1e-6;
     printLogLabel();
-    std::cout << "Prompt encode time: " << (double)(encodeTime.count()) / 1000
-              << "s\n"
+    std::cout << "Prompt encode time: " << (double)(encodeTime) / 1000 << "s\n"
               << std::endl;
     // Concatenation of Positive and Negative embeddings
     auto TextEncoderOutPos = ptrPos->memRef3D;
@@ -417,20 +413,19 @@ public:
     auto timesteps = set_timesteps(InferenceSteps);
 
     // Denoising loop
-    const auto inferenceTotalStart = std::chrono::high_resolution_clock::now();
+    const auto inferenceTotalStart = read_time_ns();
     for (int i = 0; i < (int)timesteps.size(); i++) {
       MemRef<float, 4> noise({2, 4, 64, 64});
       for (int j = 0; j < 2 * 4 * 64 * 64; j++)
         noise.getData()[j] = latents.getData()[j % (1 * 4 * 64 * 64)];
 
       timestep.getData()[0] = timesteps[i];
-      const auto inferenceStart = std::chrono::high_resolution_clock::now();
+      const auto inferenceStart = read_time_ns();
       _mlir_ciface_forward_unet(&resultUnet, &arg0_unet, &noise, &timestep,
                                 &TextEncoderOut);
-      const auto inferenceEnd = std::chrono::high_resolution_clock::now();
-      const std::chrono::duration<double, std::milli> inferenceTime =
-          inferenceEnd - inferenceStart;
-      printIterInfo(i, inferenceTime.count() / 1000);
+      const auto inferenceEnd = read_time_ns();
+      const double inferenceTime = (inferenceEnd - inferenceStart) * 1e-6;
+      printIterInfo(i, inferenceTime / 1000);
       MemRef<float, 4> pred_noise({2, 4, 64, 64});
       for (int j = 0; j < 1 * 4 * 64 * 64; j++) {
         pred_noise.getData()[j] =
@@ -441,15 +436,14 @@ public:
       latents = step_plms(pred_noise, timesteps[i], latents, InferenceSteps,
                           config, i, ets);
     }
-    const auto inferenceTotalEnd = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> inferenceTotalTime =
-        inferenceTotalEnd - inferenceTotalStart;
+    const auto inferenceTotalEnd = read_time_ns();
+    const double inferenceTotalTime =
+        (inferenceTotalEnd - inferenceTotalStart) * 1e-6;
     printLogLabel();
     std::cout << "Denoising complete." << std::endl;
     printLogLabel();
     std::cout << "Total time spent on denoising: "
-              << (double)(inferenceTotalTime.count()) / 1000 << "s"
-              << std::endl;
+              << (double)(inferenceTotalTime) / 1000 << "s" << std::endl;
 
     for (int i = 0; i < 1 * 4 * 64 * 64; i++) {
       latents.getData()[i] = latents.getData()[i] / 0.18215;
@@ -459,13 +453,12 @@ public:
     std::cout << std::endl;
     printLogLabel();
     std::cout << "Start decoding..." << std::endl;
-    const auto decodeStart = std::chrono::high_resolution_clock::now();
+    const auto decodeStart = read_time_ns();
     _mlir_ciface_forward_vae(&resultVae, &arg0_vae, &latents);
-    const auto decodeEnd = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> decodeTime =
-        decodeEnd - decodeStart;
+    const auto decodeEnd = read_time_ns();
+    const double decodeTime = (decodeEnd - decodeStart) * 1e-6;
     printLogLabel();
-    std::cout << "Decode time: " << (double)(decodeTime.count()) / 1000 << "s\n"
+    std::cout << "Decode time: " << (double)(decodeTime) / 1000 << "s\n"
               << std::endl;
 
     for (int i = 0; i < 1 * 3 * 512 * 512; i++) {

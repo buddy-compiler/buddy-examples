@@ -1,35 +1,48 @@
+from importlib import import_module
 from pathlib import Path
 import json
 
 import numpy as np
+from PIL import Image
 
 import torch
 from torch._decomp import get_decompositions
 from torch.nn.utils.fusion import fuse_conv_bn_eval
-from torchvision.models import mobilenet_v3_small
 
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
-from stack.compiler.frontend import quant
+from compiler.frontend import quant
 from frontend.permute.graph import permute
 from frontend.quant.graph import quantize
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-model_source = model_dir.parents[3] / "models/mobilenet-v3-small"
+
+# Use the same single image and FP32 NHWC normalization as the Linux runner.
+pixels = np.asarray(
+    Image.open(
+        model_dir.parents[3]
+        / "models"
+        / "mobilenet-v3-small/images/dog-32bit_224x224.bmp"
+    ).convert("RGB"),
+    dtype=np.float32,
+)
+assert pixels.shape == (224, 224, 3)
+pixels /= np.float32(255.0)
+pixels -= np.array([0.485, 0.456, 0.406], dtype=np.float32)
+pixels /= np.array([0.229, 0.224, 0.225], dtype=np.float32)
+pixels.tofile(output / "inputs.data")
 
 # ===----------------------------------------------------------------------===
 # Step 1: Import the graph of the checkpoint, every batch normalization
 # folded into the convolution before it.
 # ===----------------------------------------------------------------------===
-model = mobilenet_v3_small(weights=None).eval()
-model.load_state_dict(
-    torch.load(model_source / "output/mobilenet-v3-small/model.pth", weights_only=True)
-)
+mobilenet = import_module("models.models.mobilenet-v3-small.model")
+model = mobilenet.load()
 for block in model.modules():
     if (
         isinstance(block, torch.nn.Sequential)
@@ -47,7 +60,7 @@ compiler = DynamoCompiler(
     trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
 )
 with torch.no_grad():
-    (graph,) = compiler.importer(model, torch.zeros(1, 3, 224, 224))
+    (graph,) = compiler.importer(model, *mobilenet.inputs())
 params = compiler.imported_params[graph]
 names = {parameter.data_ptr(): name for name, parameter in model.named_parameters()}
 parameter_names = {
@@ -72,8 +85,8 @@ graph.dump(output / "02-permuted.txt")
 # Step 2.3: Quantize the convolutions and Linears to INT8.
 # ===----------------------------------------------------------------------===
 # The activation scales come from buddy-pytorch-calibrate.py.
-maxima = json.loads((output / "calibration.json").read_text())
-params = quantize(graph, params, parameter_names, maxima)
+calibration = json.loads((output / "calibration.json").read_text())
+params = quantize(graph, params, parameter_names, calibration)
 graph.dump(output / "03-quanted.txt")
 # graph.dump_parameters(output / "03-quanted-parameters")
 

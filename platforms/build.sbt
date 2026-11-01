@@ -1,63 +1,16 @@
-// See README.md for license details.
-
-val chisel6Version = "6.5.0"
-val chiselTestVersion = "6.0.0"
-val scalaVersionFromChisel = "2.13.12"
-
-// Fix for scalafix undefined setting
+// The stack platform: its configs on top of Chipyard and FireChip, which the
+// build references in the Chipyard submodule without changing it.
+// Chipyard's build uses scalafix, whose settings read this from the root build.
 ThisBuild / scalafixScalaBinaryVersion := scalaBinaryVersion.value
 
-// ------------------------------------------------------------------------------
-// Chisel Version Config
-// ------------------------------------------------------------------------------
-
-lazy val chisel6Settings = Seq(
-  libraryDependencies ++= Seq("org.chipsalliance" %% "chisel" % chisel6Version),
-  addCompilerPlugin("org.chipsalliance" % "chisel-plugin" % chisel6Version cross CrossVersion.full)
-)
-
-lazy val chiselSettings = chisel6Settings ++ Seq(
-  libraryDependencies ++= Seq(
-    "org.apache.commons" % "commons-lang3" % "3.12.0",
-    "org.apache.commons" % "commons-text" % "1.9"
-  )
-)
-
-lazy val scalaTestSettings =  Seq(
-  libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.2.+" % "test"
-  )
-)
-
-// ------------------------------------------------------------------------------
-// Dependencies
-// ------------------------------------------------------------------------------
 lazy val chipyard = ProjectRef(file("thirdparty/chipyard"), "chipyard")
 lazy val firechip = ProjectRef(file("thirdparty/chipyard"), "firechip")
 
-// ------------------------------------------------------------------------------
-// Project Settings
-// ------------------------------------------------------------------------------
 lazy val platform = (project in file("."))
   .dependsOn(chipyard, firechip)
   .settings(
     name := "platform",
-    version := "1.0.0",
-    scalaVersion := scalaVersionFromChisel,
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-unchecked",
-      "-Ymacro-annotations"
-    ),
-    resolvers ++= Seq(
-      Resolver.sonatypeRepo("snapshots"),
-      Resolver.sonatypeRepo("releases")
-    ),
-    chisel6Settings ++
-    scalaTestSettings ++
-    Seq(
-      libraryDependencies ++= Seq(
-        "edu.berkeley.cs" %% "rocketchip" % "1.6"
-      )
-    )
+    scalaVersion := "2.13.16",
+    libraryDependencies += "org.chipsalliance" %% "chisel" % "6.7.0",
+    addCompilerPlugin("org.chipsalliance" % "chisel-plugin" % "6.7.0" cross CrossVersion.full)
   )

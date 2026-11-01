@@ -13,9 +13,11 @@ add_custom_command(
          ${OUTPUT_DIR}/subgraph0_vae.mlir
   COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
   COMMAND ${PYTHON} buddy-pytorch-importer.py
-            --checkpoint "${MODEL_DIR}/stable-diffusion/output/stable-diffusion"
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+          ${MODEL_DIR}/stable-diffusion/model-text_encoder.py
+          ${MODEL_DIR}/stable-diffusion/model-unet.py
+          ${MODEL_DIR}/stable-diffusion/model-vae.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Importing stable-diffusion for nv"
   VERBATIM
@@ -26,15 +28,11 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward_text_encoder_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_text_encoder_trace.mlir
-             ${OUTPUT_DIR}/forward_text_encoder_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_text_encoder_linalg.mlir
              ${OUTPUT_DIR}/forward_text_encoder_gpu.mlir
              ${OUTPUT_DIR}/forward_text_encoder_gpu_llvm.mlir
              ${OUTPUT_DIR}/forward_text_encoder_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_text_encoder.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_text_encoder_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_text_encoder_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_text_encoder_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_text_encoder_linalg.mlir
@@ -59,8 +57,8 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0_text_encoder_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_text_encoder_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_text_encoder_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_text_encoder_copies.mlir
              ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_gpu.mlir
@@ -68,12 +66,15 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_llvm.mlir
              ${OUTPUT_DIR}/subgraph0_text_encoder_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_text_encoder_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder_trace.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_linalg.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op=gpu=true
+            -o ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_text_encoder_gpu_frontend.mlir
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
@@ -102,6 +103,7 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_text_encoder_gpu.ll -filetype=obj -relocation-model=pic -O2 -o subgraph0_text_encoder_gpu.o
   DEPENDS ${OUTPUT_DIR}/subgraph0_text_encoder.mlir
           ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
           ${COMPILER_BUILD}/bin/buddy-translate
           ${COMPILER_BUILD}/bin/buddy-llc
   COMMENT "Compiling stable-diffusion NVIDIA kernels"
@@ -113,15 +115,11 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward_unet_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_unet_trace.mlir
-             ${OUTPUT_DIR}/forward_unet_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_unet_linalg.mlir
              ${OUTPUT_DIR}/forward_unet_gpu.mlir
              ${OUTPUT_DIR}/forward_unet_gpu_llvm.mlir
              ${OUTPUT_DIR}/forward_unet_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_unet.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_unet_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_unet_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_unet_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_unet_linalg.mlir
@@ -146,8 +144,8 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0_unet_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_unet_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_unet_gpu_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_unet_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_unet_gpu_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_unet_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_unet_copies.mlir
              ${OUTPUT_DIR}/subgraph0_unet_gpu_gpu.mlir
@@ -155,12 +153,15 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_unet_gpu_llvm.mlir
              ${OUTPUT_DIR}/subgraph0_unet_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_unet_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet_trace.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_unet_gpu_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet_gpu_linalg.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op=gpu=true
+            -o ${OUTPUT_DIR}/subgraph0_unet_gpu_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_unet_gpu_frontend.mlir
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
@@ -189,6 +190,7 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_unet_gpu.ll -filetype=obj -relocation-model=pic -O2 -o subgraph0_unet_gpu.o
   DEPENDS ${OUTPUT_DIR}/subgraph0_unet.mlir
           ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
           ${COMPILER_BUILD}/bin/buddy-translate
           ${COMPILER_BUILD}/bin/buddy-llc
   COMMENT "Compiling stable-diffusion NVIDIA kernels"
@@ -200,15 +202,11 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward_vae_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_vae_trace.mlir
-             ${OUTPUT_DIR}/forward_vae_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_vae_linalg.mlir
              ${OUTPUT_DIR}/forward_vae_gpu.mlir
              ${OUTPUT_DIR}/forward_vae_gpu_llvm.mlir
              ${OUTPUT_DIR}/forward_vae_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_vae.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_vae_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_vae_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_vae_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_vae_linalg.mlir
@@ -233,8 +231,8 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0_vae_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_vae_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_vae_gpu_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_vae_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_vae_gpu_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_vae_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_vae_copies.mlir
              ${OUTPUT_DIR}/subgraph0_vae_gpu_gpu.mlir
@@ -242,12 +240,15 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_vae_gpu_llvm.mlir
              ${OUTPUT_DIR}/subgraph0_vae_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_vae_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae_trace.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_vae_gpu_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae_gpu_linalg.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op=gpu=true
+            -o ${OUTPUT_DIR}/subgraph0_vae_gpu_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_vae_gpu_frontend.mlir
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
@@ -276,6 +277,7 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_vae_gpu.ll -filetype=obj -relocation-model=pic -O2 -o subgraph0_vae_gpu.o
   DEPENDS ${OUTPUT_DIR}/subgraph0_vae.mlir
           ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
           ${COMPILER_BUILD}/bin/buddy-translate
           ${COMPILER_BUILD}/bin/buddy-llc
   COMMENT "Compiling stable-diffusion NVIDIA kernels"

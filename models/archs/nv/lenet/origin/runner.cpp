@@ -1,4 +1,5 @@
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/ImgContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
@@ -6,7 +7,6 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <dlfcn.h>
@@ -54,7 +54,7 @@ void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
 
   MemRef<float, 4> input(std::vector<size_t>{1, 1, 28, 28});
   size_t correct = 0;
-  const auto start = std::chrono::steady_clock::now();
+  const auto start = read_time_ns();
   for (size_t sample = 0; sample < count; ++sample) {
     for (size_t i = 0; i < 28 * 28; ++i)
       input.getData()[i] =
@@ -66,9 +66,7 @@ void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
     correct +=
         std::max_element(logits, logits + 10) - logits == expected[sample];
   }
-  const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                           std::chrono::steady_clock::now() - start)
-                           .count();
+  const auto elapsed = (read_time_ns() - start);
   std::cout << "top1=" << correct << '/' << count << '\n';
   if (!config.suppressStats)
     std::cout << "@BBPERF {\"model\":\"lenet\",\"scope\":\"model_execution\","
@@ -96,10 +94,9 @@ void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
 
   // The compiled function returns an owned memref descriptor.
   MemRef<float, 2> output(std::vector<size_t>{1, 10}, false, 0);
-  const auto start = std::chrono::steady_clock::now();
+  const auto start = read_time_ns();
   forward(&output, &parameters, &input);
-  const std::chrono::duration<double> elapsed =
-      std::chrono::steady_clock::now() - start;
+  const double elapsed = (read_time_ns() - start) * 1e-9;
   const float *logits = output.getData();
   const auto prediction = std::max_element(logits, logits + 10) - logits;
   double sum = 0.0;
@@ -108,7 +105,7 @@ void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
   std::cout << "Classification: " << prediction << '\n'
             << "Probability: " << 1.0 / sum << '\n';
   if (!config.suppressStats)
-    std::cout << "Inference time: " << elapsed.count() << "s\n";
+    std::cout << "Inference time: " << elapsed << "s\n";
 }
 
 class LeNetOriginRunner final : public buddy::runtime::InferenceRunner {

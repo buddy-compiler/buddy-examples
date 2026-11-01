@@ -25,6 +25,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
   COMMAND ${PYTHON} buddy-pytorch-llama3-2-3b-instruct-graph.py
   DEPENDS buddy-pytorch-llama3-2-3b-instruct-graph.py
+          model.py
           ${MODEL_WEIGHTS}
           output/llama3-2-3b-instruct/config.json
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

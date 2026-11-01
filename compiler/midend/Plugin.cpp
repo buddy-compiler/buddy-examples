@@ -1,15 +1,17 @@
 //===- Plugin.cpp - The Buckyball compiler as a buddy-opt plugin ----------===//
 //
 // buddy-opt --load-dialect-plugin=<so> --load-pass-plugin=<so> loads the
-// Buckyball dialect, the dialects of the Balls and the framework passes. The
-// Balls and the passes of the core register themselves when the library is
-// loaded.
+// acc, device, core and frontend dialects, the dialects of the Balls and
+// the framework passes. The Balls and the passes of the design register
+// themselves when the library is loaded.
 //
 //===----------------------------------------------------------------------===//
 
-#include "Buckyball/BuckyballDialect.h"
+#include "Acc/AccDialect.h"
 #include "Conversion/Buckyball.h"
-#include "Custom/CustomDialect.h"
+#include "Core/CoreDialect.h"
+#include "Device/DeviceDialect.h"
+#include "Frontend/FrontendDialect.h"
 
 #include "mlir/Tools/Plugins/DialectPlugin.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
@@ -28,13 +30,15 @@ void mlir::buddy::addBallDialect(void (*insert)(DialectRegistry &registry)) {
 
 extern "C" LLVM_ATTRIBUTE_WEAK DialectPluginLibraryInfo
 mlirGetDialectPluginInfo() {
-  return {MLIR_PLUGIN_API_VERSION, "Buckyball", LLVM_VERSION_STRING,
-          [](DialectRegistry *registry) {
-            registry->insert<::buddy::buckyball::BuckyballDialect,
-                             ::buddy::custom::CustomDialect>();
-            for (auto insert : ballDialects())
-              insert(*registry);
-          }};
+  return {
+      MLIR_PLUGIN_API_VERSION, "Buckyball", LLVM_VERSION_STRING,
+      [](DialectRegistry *registry) {
+        registry->insert<
+            ::buddy::acc::AccDialect, ::buddy::device::DeviceDialect,
+            ::buddy::core::CoreDialect, ::buddy::frontend::FrontendDialect>();
+        for (auto insert : ballDialects())
+          insert(*registry);
+      }};
 }
 
 extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo mlirGetPassPluginInfo() {

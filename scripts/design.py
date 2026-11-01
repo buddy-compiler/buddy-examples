@@ -54,48 +54,23 @@ def core_component(design, core) -> str:
 
 
 def opt(design, design_pb: Path, name: str) -> list:
-    """buddy-opt with the plugin of compiler target `name`, and the engine of the
-    cores that run it on hardware threads. The plugin reads its target from design.pb.
-    """
-    engines = sorted(
-        {
-            core_component(design, core)
-            for core in design.device.cores
-            for index in core.thread_indices
-            if design.threads[index].profile == name
-        }
-    )
+    """buddy-opt with the plugin of compiler target `name`, which reads its
+    target from design.pb."""
     return [
         str(REPO / "stack/thirdparty/buddy-mlir/build/bin/buddy-opt"),
         f"--load-dialect-plugin={plugin(design, name)}",
         f"--load-pass-plugin={plugin(design, name)}",
-        *(
-            f"--load-pass-plugin={stack_build(design) / 'core' / engine / 'libengine-compiler.so'}"
-            for engine in engines
-        ),
         f"--buckyball-design-pb={design_pb}",
         f"--buckyball-target={name}",
     ]
 
 
-def design_stack(design) -> Path:
-    """The design's own software stack, laid out like its arch: stack/device,
-    with the design's own core in stack/device/core."""
-    return REPO / Path(design.path).parent.parent / "stack"
-
-
-def core_stack(design, core) -> Path:
-    if core.component == design.name:
-        return design_stack(design) / "device/core"
-    return REPO / "examples/prefab/cores" / core.component / "stack"
-
-
 def device_stack(design) -> Path:
-    """The device level: the design's SoC, or for a core entry the single-core
-    system of the framework, which sees no SoC."""
+    """The device level: the design's SoC in its stack/device, or for a core
+    entry the single-core system of the framework, which sees no SoC."""
     if design.simulation.selection.startswith("core/"):
         return REPO / "stack/sims/core"
-    return design_stack(design) / "device"
+    return REPO / Path(design.path).parent.parent / "stack/device"
 
 
 def stacks(design) -> list:
@@ -120,7 +95,7 @@ def stacks(design) -> list:
             (
                 "core",
                 name,
-                core_stack(design, core),
+                REPO / core.stack_path,
                 stack_build(design) / "core" / name,
             )
         )
@@ -276,17 +251,17 @@ def cmake(design, design_pb: Path) -> str:
             if p.thread.balldomain.balls
         ),
     )
+    # The workloads (ISA headers, references) of every Ball of the design.
+    put(
+        "DESIGN_BALL_WORKLOADS",
+        *dict.fromkeys(
+            REPO / ball.source_path / "workloads"
+            for profile in design.profiles
+            for ball in profile.thread.balldomain.balls
+        ),
+    )
     for profile in design.profiles:
         thread = profile.thread
-        balls = [ball.component for ball in thread.balldomain.balls]
-        kernels = [REPO / thread.source_path / "stack/kernels"]
-        kernels += [
-            REPO / "examples/prefab/balls" / ball / "stack/kernels" for ball in balls
-        ]
-        put(
-            f"DESIGN_TARGET_KERNELS_{profile.name}",
-            *(k for k in kernels if (k / "CMakeLists.txt").is_file()),
-        )
         put(
             f"DESIGN_TARGET_WORKLOADS_{profile.name}",
             REPO / thread.source_path / "workloads",
@@ -295,8 +270,8 @@ def cmake(design, design_pb: Path) -> str:
             f"DESIGN_TARGET_BALL_STACKS_{profile.name}",
             *dict.fromkeys(
                 src
-                for ball in balls
-                if (src := REPO / "examples/prefab/balls" / ball / "stack/src").is_dir()
+                for ball in thread.balldomain.balls
+                if (src := REPO / ball.source_path / "stack/src").is_dir()
             ),
         )
         put(f"DESIGN_TARGET_PLUGIN_{profile.name}", plugin(design, profile.name))
@@ -318,7 +293,7 @@ def cmake(design, design_pb: Path) -> str:
         put(
             f"DESIGN_THREAD_BALLS_{name}",
             *(
-                REPO / "examples/prefab/balls" / ball.component / "workloads"
+                REPO / ball.source_path / "workloads"
                 for ball in thread.balldomain.balls
             ),
         )

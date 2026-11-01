@@ -25,6 +25,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
   COMMAND ${PYTHON} buddy-pytorch-deepseek-r1-0528-qwen3-8b-graph.py
   DEPENDS buddy-pytorch-deepseek-r1-0528-qwen3-8b-graph.py
+          model.py
           ${MODEL_WEIGHTS}
           output/deepseek-r1-0528-qwen3-8b/config.json
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

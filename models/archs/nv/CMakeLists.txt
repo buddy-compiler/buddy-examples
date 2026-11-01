@@ -33,19 +33,51 @@ set_target_properties(nv-runtime
   PROPERTIES POSITION_INDEPENDENT_CODE ON
 )
 
+# ===----------------------------------------------------------------------===
+# The generic midend: buddy-opt loads libgeneric-compiler.so for the frontend
+# dialect and lower-frontend-fake-op, which computes the frontend operations
+# in software.
+# ===----------------------------------------------------------------------===
+include(ExternalProject)
+set(GENERIC_COMPILER "${CMAKE_BINARY_DIR}/generic-compiler/libgeneric-compiler.so")
+ExternalProject_Add(
+  generic-compiler
+  SOURCE_DIR "${STACK_ROOT}/compiler/generic"
+  BINARY_DIR "${CMAKE_BINARY_DIR}/generic-compiler"
+  CMAKE_ARGS "-DMLIR_DIR=${BUDDY_SOURCE}/llvm/build/lib/cmake/mlir"
+  INSTALL_COMMAND ""
+  BUILD_ALWAYS ON
+  BUILD_BYPRODUCTS "${GENERIC_COMPILER}"
+)
+
+# ===----------------------------------------------------------------------===
+# The nv backend's own passes: buddy-opt loads libnv-compiler.so (the
+# framework's frontend dialect, fuse-mxint8-weights and linalg-to-gpu-kernels).
+# ===----------------------------------------------------------------------===
+set(NV_COMPILER "${CMAKE_BINARY_DIR}/nv-compiler/libnv-compiler.so")
+ExternalProject_Add(
+  nv-compiler
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/compiler"
+  BINARY_DIR "${CMAKE_BINARY_DIR}/nv-compiler"
+  CMAKE_ARGS "-DMLIR_DIR=${BUDDY_SOURCE}/llvm/build/lib/cmake/mlir" "-DFRAMEWORK_MIDEND=${STACK_ROOT}/compiler/midend"
+  INSTALL_COMMAND ""
+  BUILD_ALWAYS ON
+  BUILD_BYPRODUCTS "${NV_COMPILER}"
+)
+
 if(MODEL)
   add_subdirectory("${MODEL}")
 else()
   add_subdirectory(alexnet)
   add_subdirectory(bert-base-uncased-emotion)
-  add_subdirectory(deepseek-r1-distill-qwen-1.5b)
+  add_subdirectory(deepseek-r1-distill-qwen-1-5b)
   add_subdirectory(gemma4-e2b-it)
   add_subdirectory(lenet)
-  add_subdirectory(minimax-h3-fl2va)
-  add_subdirectory(minimax-h3-ref2va)
   add_subdirectory(mobilenet-v3-small)
+  add_subdirectory(pi05-base)
   add_subdirectory(qwen3-8b)
   add_subdirectory(resnet18)
+  add_subdirectory(smolvla-base)
   add_subdirectory(stable-diffusion)
   add_subdirectory(whisper)
   add_subdirectory(yolo26n)

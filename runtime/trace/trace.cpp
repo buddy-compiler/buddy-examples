@@ -1,7 +1,7 @@
+#include "event.h"
 #include "location.h"
 #include <CRunnerUtils.h>
 #include <array>
-#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #if defined(__linux__)
+#include <fcntl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #endif
@@ -87,17 +88,17 @@ static std::pair<uint64_t, uint64_t> processThread() {
 #error "Trace process/thread identity is unsupported"
 #endif
 }
+// Traces go next to the program that writes them, wherever it is started
+// from.
 static std::filesystem::path traceRoot(thread_location_t location) {
-  return std::filesystem::path("trace") /
+#if defined(__linux__)
+  auto base = std::filesystem::read_symlink("/proc/self/exe").parent_path();
+#else
+  std::filesystem::path base;
+#endif
+  return base / "trace" /
          ("controller-" + std::to_string(location.controller)) /
          ("thread-" + std::to_string(location.thread));
-}
-static uint64_t fnv1a64(const int8_t *data, size_t size, uint64_t hash) {
-  for (size_t i = 0; i < size; ++i) {
-    hash ^= static_cast<uint8_t>(data[i]);
-    hash *= 1099511628211ULL;
-  }
-  return hash;
 }
 static void writeTracePath(char *buffer, size_t size, int64_t depth,
                            int64_t path0, int64_t path1, int64_t path2,
@@ -221,63 +222,6 @@ _mlir_ciface_buddyTraceTensorI8Path(int64_t id, int64_t depth, int64_t path0,
   fclose(file);
 }
 
-extern "C" void _mlir_ciface_buckyballTraceStageI8Path(
-    int64_t id, int64_t depth, int64_t path0, int64_t path1, int64_t path2,
-    int64_t path3, StridedMemRefType<int8_t, 1> *tensor) {
-  std::lock_guard<std::mutex> guard(traceMutex);
-  (void)id;
-  checkTraceTensor(tensor);
-
-  DynamicMemRefType<int8_t> ref(*tensor);
-  if (ref.strides[0] != 1) {
-    fprintf(stderr, "Buckyball stage trace requires a contiguous tensor\n");
-    abort();
-  }
-
-  char key[64];
-  writeTracePath(key, sizeof(key), depth, path0, path1, path2, path3);
-  size_t size = static_cast<size_t>(ref.sizes[0]);
-  constexpr size_t chunkSize = 8192;
-  int8_t buffer[chunkSize];
-  uint64_t hash = 1469598103934665603ULL;
-  for (size_t offset = 0, part = 0; offset < size; ++part) {
-    size_t chunk = std::min(chunkSize, size - offset);
-    memcpy(buffer, ref.data + ref.offset + offset, chunk);
-    hash = fnv1a64(buffer, chunk, hash);
-    auto directory = traceRoot(runtime_trace::location()) / "tensor";
-    std::filesystem::create_directories(directory);
-    auto path = directory / ("trace-" + std::string(key) + "-part-" +
-                             std::to_string(part) + ".i8");
-    FILE *file = fopen(path.c_str(), "wb");
-    if (!file) {
-      fprintf(stderr, "failed to open stage trace file: %s: %s\n", path.c_str(),
-              strerror(errno));
-      abort();
-    }
-    if (fwrite(buffer, 1, chunk, file) != chunk) {
-      fprintf(stderr, "failed to write complete stage trace: %s: %s\n",
-              path.c_str(), strerror(errno));
-      abort();
-    }
-    if (fclose(file) != 0) {
-      fprintf(stderr, "failed to close stage trace file: %s: %s\n",
-              path.c_str(), strerror(errno));
-      abort();
-    }
-    offset += chunk;
-  }
-  auto location = runtime_trace::location();
-  auto identity = processThread();
-  fprintf(stdout,
-          "STAGE_TRACE controller=%u thread=%zu platform=%s pid=%llu tid=%llu "
-          "path=%s size=%zu hash=%016llx\n",
-          location.controller, location.thread, platformName(),
-          (unsigned long long)identity.first,
-          (unsigned long long)identity.second, key, size,
-          (unsigned long long)hash);
-  fflush(stdout);
-}
-
 extern "C" void _mlir_ciface_buddyTraceTensorI32Path(
     int64_t id, int64_t depth, int64_t path0, int64_t path1, int64_t path2,
     int64_t path3, StridedMemRefType<int32_t, 1> *tensor) {
@@ -293,8 +237,32 @@ extern "C" void _mlir_ciface_buddyTraceTensorI32Path(
   fclose(file);
 }
 
+#ifdef BUCKYBALL_DEVICE_TRACE
+static void emitCycle(uint64_t event, int64_t id, int64_t depth, int64_t p0,
+                      int64_t p1, int64_t p2, int64_t p3) {
+  auto location = runtime_trace::location();
+  auto identity = processThread();
+  trace_event record{event,
+                     static_cast<uint64_t>(id),
+                     location.controller,
+                     location.thread,
+                     identity.first,
+                     identity.second,
+                     static_cast<uint64_t>(depth),
+                     {static_cast<uint64_t>(p0), static_cast<uint64_t>(p1),
+                      static_cast<uint64_t>(p2), static_cast<uint64_t>(p3)},
+                     readCycle()};
+  static const int device = open("/dev/trace", O_WRONLY | O_CLOEXEC);
+  if (device < 0 || write(device, &record, sizeof(record)) != sizeof(record))
+    traceError("cannot submit cycle event to /dev/trace");
+}
+#endif
+
 static void beginCycle(int64_t id, int64_t depth, int64_t p0, int64_t p1,
                        int64_t p2, int64_t p3) {
+#ifdef BUCKYBALL_DEVICE_TRACE
+  emitCycle(TRACE_BEGIN, id, depth, p0, p1, p2, p3);
+#else
   if (id < 0 || id >= kTraceMaxId)
     traceError("ID out of range");
   auto location = runtime_trace::location();
@@ -312,9 +280,13 @@ static void beginCycle(int64_t id, int64_t depth, int64_t p0, int64_t p1,
     state.first = cycle;
     state.began = true;
   }
+#endif
 }
 static void endCycle(int64_t id, int64_t depth, int64_t p0, int64_t p1,
                      int64_t p2, int64_t p3) {
+#ifdef BUCKYBALL_DEVICE_TRACE
+  emitCycle(TRACE_END, id, depth, p0, p1, p2, p3);
+#else
   if (id < 0 || id >= kTraceMaxId)
     traceError("ID out of range");
   auto location = runtime_trace::location();
@@ -362,6 +334,7 @@ static void endCycle(int64_t id, int64_t depth, int64_t p0, int64_t p1,
       (unsigned long long)state.sum, (unsigned long long)state.count);
   if (std::fclose(file))
     traceError("cannot close cycle summary");
+#endif
 }
 extern "C" void _mlir_ciface_buddyTraceCycleStart(int64_t id) {
   beginCycle(id, 1, id, -1, -1, -1);

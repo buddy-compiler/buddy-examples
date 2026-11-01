@@ -1,10 +1,10 @@
 #include "ImageInput.h"
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <algorithm>
 #include <buddy/Core/Container.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -37,10 +37,9 @@ public:
     weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
     auto input = model::loadImageNetImage(config.imagePath);
     MemRef<float, 2> output(std::vector<size_t>{1, 1000}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
+    const auto start = read_time_ns();
     forward(&output, &parameters, &input);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
+    const double elapsed = (read_time_ns() - start) * 1e-9;
     const float *logits = output.getData();
     const size_t prediction = std::max_element(logits, logits + 1000) - logits;
     double sum = 0;
@@ -56,7 +55,7 @@ public:
               << "Classification: " << label << '\n'
               << "Probability: " << 1.0 / sum << '\n';
     if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+      std::cout << "Inference time: " << elapsed << "s\n";
   }
 };
 

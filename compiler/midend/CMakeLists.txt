@@ -1,8 +1,10 @@
 # ===----------------------------------------------------------------------===
 # The Buckyball compiler of one compiler target, as the object library
-# `buckyball-compiler`: the custom and bank dialects, the bank interfaces, the
-# framework passes and the dialect of every Ball. The thread or core stack that owns the
-# target adds form-custom-ops and convert-linalg-to-buckyball to its plugin.
+# `buckyball-compiler`: the device, core, acc and frontend dialects, the bank
+# interfaces of the acc dialect, the framework passes (lower-device,
+# lower-core, the bank optimizations, lower-acc, lower-frontend-fake-op) and
+# the dialect of every Ball. The stack that owns the target adds the design's
+# passes, convert-linalg-to-device, -core or -acc, to its plugin.
 #
 # Inputs, set by the including stack from its generated design.cmake:
 #   DESIGN_MLIR             MLIR CMake package of the LLVM that buddy-mlir uses
@@ -25,23 +27,37 @@ include_directories(${LLVM_INCLUDE_DIRS} ${MLIR_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 set(SOURCE "${CMAKE_CURRENT_SOURCE_DIR}")
-include_directories("${SOURCE}" "${SOURCE}/Dialect" "${SOURCE}/Dialect/Buckyball" "${CMAKE_CURRENT_BINARY_DIR}")
+include_directories("${SOURCE}" "${SOURCE}/Dialect" "${SOURCE}/Dialect/Acc" "${CMAKE_CURRENT_BINARY_DIR}")
 
-set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Buckyball/Buckyball.td")
-mlir_tablegen(Buckyball.h.inc -gen-op-decls)
-mlir_tablegen(Buckyball.cpp.inc -gen-op-defs)
-mlir_tablegen(BuckyballDialect.h.inc -gen-dialect-decls -dialect=buckyball)
-mlir_tablegen(BuckyballDialect.cpp.inc -gen-dialect-defs -dialect=buckyball)
-add_public_tablegen_target(BuckyballIncGen)
+set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Acc/Acc.td")
+mlir_tablegen(Acc.h.inc -gen-op-decls)
+mlir_tablegen(Acc.cpp.inc -gen-op-defs)
+mlir_tablegen(AccDialect.h.inc -gen-dialect-decls -dialect=bbacc)
+mlir_tablegen(AccDialect.cpp.inc -gen-dialect-defs -dialect=bbacc)
+add_public_tablegen_target(AccIncGen)
 
-set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Custom/Custom.td")
-mlir_tablegen(Custom.h.inc -gen-op-decls)
-mlir_tablegen(Custom.cpp.inc -gen-op-defs)
-mlir_tablegen(CustomDialect.h.inc -gen-dialect-decls -dialect=custom)
-mlir_tablegen(CustomDialect.cpp.inc -gen-dialect-defs -dialect=custom)
-add_public_tablegen_target(CustomIncGen)
+set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Device/Device.td")
+mlir_tablegen(Device.h.inc -gen-op-decls)
+mlir_tablegen(Device.cpp.inc -gen-op-defs)
+mlir_tablegen(DeviceDialect.h.inc -gen-dialect-decls -dialect=device)
+mlir_tablegen(DeviceDialect.cpp.inc -gen-dialect-defs -dialect=device)
+add_public_tablegen_target(DeviceIncGen)
 
-set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Interfaces/BankInterfaces.td")
+set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Core/Core.td")
+mlir_tablegen(Core.h.inc -gen-op-decls)
+mlir_tablegen(Core.cpp.inc -gen-op-defs)
+mlir_tablegen(CoreDialect.h.inc -gen-dialect-decls -dialect=core)
+mlir_tablegen(CoreDialect.cpp.inc -gen-dialect-defs -dialect=core)
+add_public_tablegen_target(CoreIncGen)
+
+set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Frontend/Frontend.td")
+mlir_tablegen(Frontend.h.inc -gen-op-decls)
+mlir_tablegen(Frontend.cpp.inc -gen-op-defs)
+mlir_tablegen(FrontendDialect.h.inc -gen-dialect-decls -dialect=frontend)
+mlir_tablegen(FrontendDialect.cpp.inc -gen-dialect-defs -dialect=frontend)
+add_public_tablegen_target(FrontendIncGen)
+
+set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Acc/BankInterfaces.td")
 mlir_tablegen(BankInterfaces.h.inc -gen-op-interface-decls)
 mlir_tablegen(BankInterfaces.cpp.inc -gen-op-interface-defs)
 add_public_tablegen_target(BankInterfacesIncGen)
@@ -96,7 +112,15 @@ foreach(BALL IN LISTS BUCKYBALL_BALLS)
 endforeach()
 
 add_library(buckyball-compiler OBJECT ${FRAMEWORK_SOURCES} ${BALL_SOURCES} ${BUCKYBALL_SOURCES} ${PROTO_SOURCES})
-add_dependencies(buckyball-compiler BuckyballIncGen CustomIncGen BankInterfacesIncGen ${BALL_INC_GENS})
+add_dependencies(
+  buckyball-compiler
+  AccIncGen
+  DeviceIncGen
+  CoreIncGen
+  FrontendIncGen
+  BankInterfacesIncGen
+  ${BALL_INC_GENS}
+)
 set_target_properties(buckyball-compiler
   PROPERTIES POSITION_INDEPENDENT_CODE ON
 )

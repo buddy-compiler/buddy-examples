@@ -1,17 +1,11 @@
+from importlib import import_module
 from pathlib import Path
 
 import torch
 from buddy.compiler.frontend import DynamoCompiler
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
 
-from model import LeNet
-
-model = LeNet().eval()
-model.load_state_dict(
-    torch.load(
-        Path(__file__).resolve().parent / "output/lenet/model.pth", weights_only=True
-    )
-)
+lenet = import_module("models.models.lenet.model")
 
 compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
@@ -20,7 +14,7 @@ compiler = DynamoCompiler(
     trace=None,
 )
 with torch.no_grad():
-    graphs = compiler.importer(model, torch.zeros((1, 1, 28, 28)))
+    graphs = compiler.importer(lenet.load(), *lenet.inputs())
 
 # Include Buddy node names and frontend IR in the graph inspection output.
 for graph in graphs:

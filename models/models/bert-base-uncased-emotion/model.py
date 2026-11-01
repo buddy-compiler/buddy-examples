@@ -1,4 +1,9 @@
+from pathlib import Path
+
 import torch
+from transformers import BertForSequenceClassification
+
+checkpoint = Path(__file__).resolve().parent / "output/bert-base-uncased-emotion"
 
 
 class BertLogits(torch.nn.Module):
@@ -19,3 +24,22 @@ class BertLogits(torch.nn.Module):
             hidden = layer(hidden, attention_mask=mask)
         pooled = self.model.bert.pooler(hidden)
         return self.model.classifier(self.model.dropout(pooled))
+
+
+def load():
+    """The emotion classifier with eager attention, ready to import."""
+    return BertLogits(
+        BertForSequenceClassification.from_pretrained(
+            checkpoint, attn_implementation="eager"
+        )
+    ).eval()
+
+
+def inputs():
+    """Example inputs of the graph: one sequence of 32 tokens."""
+    return (
+        torch.zeros((1, 32), dtype=torch.int64),
+        torch.zeros((1, 32), dtype=torch.int64),
+        torch.ones((1, 32), dtype=torch.int64),
+        torch.arange(32, dtype=torch.int64)[None, :],
+    )

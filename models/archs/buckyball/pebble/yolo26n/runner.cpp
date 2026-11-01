@@ -1,4 +1,6 @@
 #include "SharedLibrary.h"
+#include "model.h"
+#include "testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
@@ -6,8 +8,8 @@
 #include <buddy/runtime/core/ModelManifest.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
 #include <fstream>
@@ -21,21 +23,20 @@ namespace {
 using model::openLibrary;
 using model::SharedLibrary;
 
-using Forward = void (*)(MemRef<float, 3> *, MemRef<float, 1> *,
-                         MemRef<float, 4> *);
+using yolo::Forward;
 
 constexpr size_t InputSize = 640;
 constexpr size_t Detections = 300;
 constexpr float ScoreThreshold = 0.25f;
 
-MemRef<float, 1> loadParameters(const std::string &path) {
+template <typename T> MemRef<T, 1> loadParameters(const std::string &path) {
   std::ifstream file;
   file.exceptions(std::ios::failbit | std::ios::badbit);
   file.open(path, std::ios::binary | std::ios::ate);
   const size_t bytes = file.tellg();
-  if (bytes % sizeof(float))
+  if (bytes % sizeof(T))
     throw std::runtime_error("Invalid parameter byte count: " + path);
-  MemRef<float, 1> parameters(std::vector<size_t>{bytes / sizeof(float)});
+  MemRef<T, 1> parameters(std::vector<size_t>{bytes / sizeof(T)});
   file.seekg(0);
   file.read(reinterpret_cast<char *>(parameters.getData()), bytes);
   return parameters;
@@ -66,7 +67,9 @@ public:
     if (!forward)
       throw std::runtime_error("Missing " + entry + ": " +
                                std::string(dlerror()));
-    auto parameters = loadParameters(manifest.weightPaths.at(0));
+    auto parameters = loadParameters<float>(manifest.weightPaths.at(0));
+    auto quantizedBias = loadParameters<int32_t>(manifest.weightPaths.at(1));
+    auto quantizedWeights = loadParameters<int8_t>(manifest.weightPaths.at(2));
     const auto labels = loadLabels(manifest.vocabPath);
 
     // Letterbox: scale the image into 640x640 and pad it with gray.
@@ -90,12 +93,31 @@ public:
 
     // The compiled function returns an owned memref descriptor of the 300
     // best boxes, [x1, y1, x2, y2, score, class] in input pixels.
-    MemRef<float, 3> output(std::vector<size_t>{1, Detections, 6}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
-    forward(&output, &parameters, &input);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
-    const float *boxes = output.getData();
+    yolo::Parameters f32{parameters.getData(),
+                         parameters.getData(),
+                         0,
+                         {int64_t(parameters.getSize())},
+                         {1}};
+    yolo::Bias i32{quantizedBias.getData(),
+                   quantizedBias.getData(),
+                   0,
+                   {int64_t(quantizedBias.getSize())},
+                   {1}};
+    yolo::Weights i8{quantizedWeights.getData(),
+                     quantizedWeights.getData(),
+                     0,
+                     {int64_t(quantizedWeights.getSize())},
+                     {1}};
+    yolo::Input imageInput{input.getData(),
+                           input.getData(),
+                           0,
+                           {1, 3, 640, 640},
+                           {1228800, 409600, 640, 1}};
+    yolo::Output output{};
+    const auto start = read_time_ns();
+    forward(&output, &f32, &i32, &i8, &imageInput);
+    const double elapsed = (read_time_ns() - start) * 1e-9;
+    const float *boxes = output.data();
     size_t count = 0;
     for (size_t i = 0; i < Detections; ++i) {
       const float *box = boxes + i * 6;
@@ -112,8 +134,17 @@ public:
                 << y(box[1]) << ", " << x(box[2]) << ", " << y(box[3]) << ")\n";
     }
     std::cout << "Detections: " << count << '\n';
+    if (!config.outputPath.empty()) {
+      std::ofstream dump;
+      dump.exceptions(std::ios::failbit | std::ios::badbit);
+      dump.open(config.outputPath, std::ios::binary);
+      dump.write(reinterpret_cast<const char *>(boxes),
+                 Detections * 6 * sizeof(float));
+      dump.close();
+    }
+    std::free(output.allocated);
     if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+      std::cout << "Inference time: " << elapsed << "s\n";
   }
 };
 

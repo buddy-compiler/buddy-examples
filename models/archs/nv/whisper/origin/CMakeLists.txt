@@ -9,6 +9,7 @@ add_custom_command(
   COMMAND ${PYTHON} buddy-pytorch-importer.py
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+          ${MODEL_DIR}/whisper/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Importing whisper for nv"
   VERBATIM
@@ -19,15 +20,11 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_trace.mlir
-             ${OUTPUT_DIR}/forward_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_linalg.mlir
              ${OUTPUT_DIR}/forward_gpu.mlir
              ${OUTPUT_DIR}/forward_gpu_llvm.mlir
              ${OUTPUT_DIR}/forward_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
@@ -52,8 +49,7 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
              ${OUTPUT_DIR}/subgraph0_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_copies.mlir
              ${OUTPUT_DIR}/subgraph0_gpu_gpu.mlir
@@ -61,9 +57,6 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
              ${OUTPUT_DIR}/subgraph0_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir

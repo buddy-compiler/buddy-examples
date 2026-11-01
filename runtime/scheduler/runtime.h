@@ -58,7 +58,7 @@ struct runtime_result {
 struct runtime {
   const struct runtime_core *cores;
   size_t core_count;
-  const struct runtime_job *jobs;
+  struct runtime_job *jobs;
   size_t job_count;
   struct runtime_result *results;
   size_t remaining;
@@ -75,8 +75,13 @@ struct runtime_core runtime_core(uint32_t id, uint64_t signature,
                                  void *context);
 
 void runtime_init(struct runtime *runtime, const struct runtime_core *cores,
-                  size_t core_count, const struct runtime_job *jobs,
-                  size_t job_count, struct runtime_result *results);
+                  size_t core_count, struct runtime_job *jobs, size_t job_count,
+                  struct runtime_result *results);
+
+/* Appends a job to the batch while the workers run it; returns its index.
+ * The caller's arrays hold it. A batch stays open while one of its jobs runs:
+ * a job may submit the jobs that follow it. */
+size_t runtime_submit(struct runtime *runtime, const struct runtime_job *job);
 
 /* Each core has exactly one worker. A claim must be completed by that worker.
  */

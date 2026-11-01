@@ -22,6 +22,7 @@ add_custom_command(
   COMMAND ${PYTHON} buddy-pytorch-yolo26n-graph.py
   DEPENDS buddy-pytorch-yolo26n-graph.py
           output/yolo26n/yolo26n.pt
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Exporting yolo26n graph"
   VERBATIM

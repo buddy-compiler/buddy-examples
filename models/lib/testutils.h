@@ -2,6 +2,10 @@
 #define TESTUTILS_H
 
 #include <stdint.h>
+#if defined(__linux__)
+#include <stdlib.h>
+#include <time.h>
+#endif
 
 static inline uint64_t read_counter() {
 #if defined(__riscv)
@@ -16,5 +20,15 @@ static inline uint64_t read_counter() {
 #error "Benchmark counter source is unsupported"
 #endif
 }
+
+#if defined(__linux__)
+// Wall-clock measurements retain time units; cycle counters are not seconds.
+static inline uint64_t read_time_ns() {
+  struct timespec value;
+  if (clock_gettime(CLOCK_MONOTONIC, &value))
+    abort();
+  return (uint64_t)value.tv_sec * 1000000000ULL + (uint64_t)value.tv_nsec;
+}
+#endif
 
 #endif // TESTUTILS_H

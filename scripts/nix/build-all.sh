@@ -93,12 +93,15 @@ if run_step 2; then
   echo "[2] Building LLVM/MLIR"
   NVCC=$(command -v nvcc)
   CUDA_ROOT=$(dirname "$(dirname "$NVCC")")
+  # The MLIR CUDA runtime links the driver package itself, not the toolkit stub
+  # or an environment that a rebuild replaces.
   cmake -G Ninja -S "$BUDDY/llvm/llvm" -B "$BUDDY/llvm/build" \
     -DLLVM_ENABLE_PROJECTS="mlir;clang" \
     -DLLVM_TARGETS_TO_BUILD="host;RISCV;NVPTX" \
     -DMLIR_ENABLE_CUDA_RUNNER=ON \
     -DCMAKE_CUDA_COMPILER="$NVCC" \
     -DCUDAToolkit_ROOT="$CUDA_ROOT" \
+    -DCUDA_RUNTIME_LIBRARY="$(readlink -f "$CUDA_ROOT/lib/libcuda.so")" \
     -DCMAKE_CUDA_HOST_COMPILER="$(command -v g++-13)" \
     -DLLVM_ENABLE_ASSERTIONS=ON \
     -DCMAKE_BUILD_TYPE=Release \

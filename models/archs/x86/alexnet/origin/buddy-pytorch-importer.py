@@ -1,28 +1,21 @@
+from importlib import import_module
 from pathlib import Path
 import numpy as np
 import torch
-from torchvision.models import alexnet, AlexNet_Weights
+from torchvision.models import AlexNet_Weights
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-model = alexnet(weights=None).eval()
-model.load_state_dict(
-    torch.load(
-        model_dir / "../../../../models/alexnet/output/alexnet/model.pth",
-        weights_only=True,
-    )
-)
-for layer in model.modules():
-    if isinstance(layer, torch.nn.ReLU):
-        layer.inplace = False
+alexnet = import_module("models.models.alexnet.model")
+model = alexnet.load()
 compiler = DynamoCompiler(primary_registry=tosa.ops_registry, trace=None)
 with torch.no_grad():
-    (graph,) = compiler.importer(model, torch.zeros((1, 3, 224, 224)))
+    (graph,) = compiler.importer(model, *alexnet.inputs())
 params = compiler.imported_params[graph]
 graph.dump(output / "01-import.txt")
 graph.fuse_ops([simply_fuse])

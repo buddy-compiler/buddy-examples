@@ -6,11 +6,11 @@ add_custom_command(
          ${OUTPUT_DIR}/arg0.data
   COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
   COMMAND ${PYTHON} buddy-pytorch-importer.py
-            --checkpoint ${MODEL_DIR}/yolo26n/output/yolo26n/yolo26n.pt
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
           ${MODEL_DIR}/yolo26n/output/yolo26n/yolo26n.pt
           ${CMAKE_CURRENT_SOURCE_DIR}/trace/trace.toml
+          ${MODEL_DIR}/yolo26n/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Importing yolo26n for x86"
   VERBATIM
@@ -21,14 +21,10 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_trace.mlir
-             ${OUTPUT_DIR}/forward_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_linalg.mlir
              ${OUTPUT_DIR}/forward_llvm.mlir
              ${OUTPUT_DIR}/forward.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
@@ -61,17 +57,20 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_llvm.mlir
              ${OUTPUT_DIR}/subgraph0.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_trace.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_linalg.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op
+            -o ${OUTPUT_DIR}/subgraph0_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_frontend.mlir
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
@@ -94,6 +93,7 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -O3 -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
           ${COMPILER_BUILD}/bin/buddy-translate
           ${COMPILER_BUILD}/bin/buddy-llc
   COMMENT "Compiling yolo26n subgraph0 for x86"

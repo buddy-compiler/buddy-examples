@@ -1,4 +1,4 @@
-#include "SharedLibrary.h"
+#include "testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/ImgContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
@@ -6,10 +6,8 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <dlfcn.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -20,9 +18,6 @@
 
 namespace {
 
-using model::openLibrary;
-using model::SharedLibrary;
-
 uint32_t readBE32(std::ifstream &stream) {
   std::array<uint8_t, 4> data;
   stream.read(reinterpret_cast<char *>(data.data()), data.size());
@@ -30,12 +25,44 @@ uint32_t readBE32(std::ifstream &stream) {
          (uint32_t(data[2]) << 8) | uint32_t(data[3]);
 }
 
-using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
-                         MemRef<int8_t, 1> *, MemRef<float, 4> *);
+} // namespace
 
-void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
-                   MemRef<float, 1> &parameters,
-                   MemRef<int8_t, 1> &quantizedWeights) {
+// The parameters are grouped by type: FP32, INT32 biases, INT8 weights.
+extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
+                                     MemRef<float, 1> *parameters,
+                                     MemRef<int32_t, 1> *quantizedBias,
+                                     MemRef<int8_t, 1> *quantizedWeights,
+                                     MemRef<float, 4> *input);
+
+namespace {
+
+struct Parameters {
+  MemRef<float, 1> &values;
+  MemRef<int32_t, 1> &bias;
+  MemRef<int8_t, 1> &weights;
+};
+
+void forward(MemRef<float, 2> *output, Parameters &parameters,
+             MemRef<float, 4> *input) {
+  _mlir_ciface_forward(output, &parameters.values, &parameters.bias,
+                       &parameters.weights, input);
+}
+
+template <typename T> MemRef<T, 1> load(const std::string &path) {
+  std::ifstream file;
+  file.exceptions(std::ios::failbit | std::ios::badbit);
+  file.open(path, std::ios::binary | std::ios::ate);
+  const size_t bytes = file.tellg();
+  if (bytes % sizeof(T))
+    throw std::runtime_error("Invalid parameter byte count: " + path);
+  MemRef<T, 1> tensor(std::vector<size_t>{bytes / sizeof(T)});
+  file.seekg(0);
+  file.read(reinterpret_cast<char *>(tensor.getData()), bytes);
+  return tensor;
+}
+
+void evaluateMnist(const buddy::runtime::RunConfig &config,
+                   Parameters &parameters) {
   const auto directory =
       std::filesystem::path(config.datasetPath) / "MNIST/raw";
   std::ifstream images, labels;
@@ -55,21 +82,19 @@ void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
 
   MemRef<float, 4> input(std::vector<size_t>{1, 1, 28, 28});
   size_t correct = 0;
-  const auto start = std::chrono::steady_clock::now();
+  const auto start = read_time_ns();
   for (size_t sample = 0; sample < count; ++sample) {
     for (size_t i = 0; i < 28 * 28; ++i)
       input.getData()[i] =
           (pixels[sample * 28 * 28 + i] / 255.0f) * 2.0f - 1.0f;
     // Each invocation returns an owned output descriptor, released here.
     MemRef<float, 2> output(std::vector<size_t>{1, 10}, false, 0);
-    forward(&output, &parameters, &quantizedWeights, &input);
+    forward(&output, parameters, &input);
     const float *logits = output.getData();
     correct +=
         std::max_element(logits, logits + 10) - logits == expected[sample];
   }
-  const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                           std::chrono::steady_clock::now() - start)
-                           .count();
+  const auto elapsed = (read_time_ns() - start);
   std::cout << "top1=" << correct << '/' << count << '\n';
   if (!config.suppressStats)
     std::cout << "@BBPERF {\"model\":\"lenet\",\"scope\":\"model_execution\","
@@ -80,9 +105,8 @@ void evaluateMnist(const buddy::runtime::RunConfig &config, Forward forward,
               << elapsed << "}\n";
 }
 
-void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
-                   MemRef<float, 1> &parameters,
-                   MemRef<int8_t, 1> &quantizedWeights) {
+void classifyImage(const buddy::runtime::RunConfig &config,
+                   Parameters &parameters) {
   // Preserve floating-point grayscale conversion; DIP_GRAYSCALE truncates it.
   dip::Image<float, 4> rgb(config.imagePath, dip::DIP_RGB);
   if (rgb.getWidth() != 28 || rgb.getHeight() != 28)
@@ -98,10 +122,9 @@ void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
 
   // The compiled function returns an owned memref descriptor.
   MemRef<float, 2> output(std::vector<size_t>{1, 10}, false, 0);
-  const auto start = std::chrono::steady_clock::now();
-  forward(&output, &parameters, &quantizedWeights, &input);
-  const std::chrono::duration<double> elapsed =
-      std::chrono::steady_clock::now() - start;
+  const auto start = read_time_ns();
+  forward(&output, parameters, &input);
+  const double elapsed = (read_time_ns() - start) * 1e-9;
   const float *logits = output.getData();
   const auto prediction = std::max_element(logits, logits + 10) - logits;
   double sum = 0.0;
@@ -110,7 +133,7 @@ void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
   std::cout << "Classification: " << prediction << '\n'
             << "Probability: " << 1.0 / sum << '\n';
   if (!config.suppressStats)
-    std::cout << "Inference time: " << elapsed.count() << "s\n";
+    std::cout << "Inference time: " << elapsed << "s\n";
 }
 
 class LeNetRunner final : public buddy::runtime::InferenceRunner {
@@ -118,39 +141,15 @@ public:
   void run(const buddy::runtime::RunConfig &config) override {
     const auto manifest =
         buddy::runtime::ModelManifest::loadFromRax(config.raxPath);
-    std::vector<SharedLibrary> runtimes;
-    for (const auto &path : manifest.dependentSoPaths)
-      runtimes.push_back(openLibrary(path));
-    auto library = openLibrary(manifest.soPath);
-    const auto &entry = manifest.codeObjects.at(0).entrySymbol;
-    auto forward =
-        reinterpret_cast<Forward>(dlsym(library.get(), entry.c_str()));
-    if (!forward)
-      throw std::runtime_error("Missing " + entry + ": " +
-                               std::string(dlerror()));
-
-    std::ifstream weights;
-    weights.exceptions(std::ios::failbit | std::ios::badbit);
-    weights.open(manifest.weightPaths.at(0), std::ios::binary | std::ios::ate);
-    const size_t bytes = weights.tellg();
-    if (bytes % sizeof(float))
-      throw std::runtime_error("Invalid FP32 parameter byte count");
-    MemRef<float, 1> parameters(std::vector<size_t>{bytes / sizeof(float)});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
-
-    weights.close();
-    weights.open(manifest.weightPaths.at(1), std::ios::binary | std::ios::ate);
-    const size_t weightBytes = weights.tellg();
-    MemRef<int8_t, 1> quantizedWeights(std::vector<size_t>{weightBytes});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(quantizedWeights.getData()),
-                 weightBytes);
+    auto values = load<float>(manifest.weightPaths.at(0));
+    auto bias = load<int32_t>(manifest.weightPaths.at(1));
+    auto weights = load<int8_t>(manifest.weightPaths.at(2));
+    Parameters parameters{values, bias, weights};
 
     if (!config.datasetPath.empty())
-      evaluateMnist(config, forward, parameters, quantizedWeights);
+      evaluateMnist(config, parameters);
     else
-      classifyImage(config, forward, parameters, quantizedWeights);
+      classifyImage(config, parameters);
   }
 };
 

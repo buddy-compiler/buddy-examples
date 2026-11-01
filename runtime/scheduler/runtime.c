@@ -16,8 +16,8 @@ struct runtime_core runtime_core(uint32_t id, uint64_t signature,
 }
 
 void runtime_init(struct runtime *runtime, const struct runtime_core *cores,
-                  size_t core_count, const struct runtime_job *jobs,
-                  size_t job_count, struct runtime_result *results) {
+                  size_t core_count, struct runtime_job *jobs, size_t job_count,
+                  struct runtime_result *results) {
   if (!core_count)
     __builtin_trap();
   for (size_t core = 0; core < core_count; ++core)
@@ -44,6 +44,19 @@ void runtime_init(struct runtime *runtime, const struct runtime_core *cores,
                               .results = results,
                               .remaining = job_count,
                               .lock = 0};
+}
+
+size_t runtime_submit(struct runtime *runtime, const struct runtime_job *job) {
+  while (__atomic_exchange_n(&runtime->lock, 1, __ATOMIC_ACQUIRE)) {
+  }
+  const size_t index = runtime->job_count;
+  runtime->jobs[index] = *job;
+  runtime->results[index] =
+      (struct runtime_result){RUNTIME_WAITING, 0, RUNTIME_ANY};
+  ++runtime->job_count;
+  ++runtime->remaining;
+  __atomic_store_n(&runtime->lock, 0, __ATOMIC_RELEASE);
+  return index;
 }
 
 enum runtime_progress runtime_claim(struct runtime *runtime, size_t core,

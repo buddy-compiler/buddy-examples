@@ -15,6 +15,7 @@ add_custom_command(
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           buddy-pytorch-importer.py
           ${MODEL_DIR}/alexnet/output/alexnet/model.pth
+          ${MODEL_DIR}/alexnet/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Importing original FP32 AlexNet for x86"
   VERBATIM
@@ -33,7 +34,6 @@ add_custom_command(
             -o ${OUTPUT_DIR}/forward_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
             -convert-elementwise-to-linalg
-            -convert-trace-to-llvm
             -convert-linalg-to-loops
             -expand-strided-metadata
             -lower-affine
@@ -74,7 +74,6 @@ add_custom_command(
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
-            -convert-trace-to-llvm
             -convert-linalg-to-loops
             -expand-strided-metadata
             -lower-affine

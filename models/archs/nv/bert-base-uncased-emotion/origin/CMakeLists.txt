@@ -20,15 +20,11 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_trace.mlir
-             ${OUTPUT_DIR}/forward_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_linalg.mlir
              ${OUTPUT_DIR}/forward_gpu.mlir
              ${OUTPUT_DIR}/forward_gpu_llvm.mlir
              ${OUTPUT_DIR}/forward_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
@@ -53,8 +49,8 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_copies.mlir
              ${OUTPUT_DIR}/subgraph0_gpu_gpu.mlir
@@ -62,12 +58,15 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
              ${OUTPUT_DIR}/subgraph0_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_trace.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op=gpu=true
+            -o ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
@@ -96,6 +95,7 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_gpu.ll -filetype=obj -relocation-model=pic -O2 -o subgraph0_gpu.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
           ${COMPILER_BUILD}/bin/buddy-translate
           ${COMPILER_BUILD}/bin/buddy-llc
   COMMENT "Compiling bert-base-uncased-emotion NVIDIA kernels"

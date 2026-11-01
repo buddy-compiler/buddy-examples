@@ -26,7 +26,11 @@ def insert_after(graph, node, new):
     node.add_children(new.name)
     graph.add_node(new)
     graph.body.remove(new)
-    graph.body.insert(graph.body.index(node) + 1, new)
+    index = graph.body.index(node) + 1
+    graph.body.insert(index, new)
+    # The inputs and parameters at or after `index` move one place down.
+    graph._inputs = [i + (i >= index) for i in graph._inputs]
+    graph._fake_params = [i + (i >= index) for i in graph._fake_params]
 
 
 def permute(graph, params):

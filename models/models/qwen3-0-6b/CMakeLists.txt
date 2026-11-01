@@ -22,6 +22,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
   COMMAND ${PYTHON} buddy-pytorch-qwen3-0-6b-graph.py
   DEPENDS buddy-pytorch-qwen3-0-6b-graph.py
+          model.py
           ${MODEL_WEIGHTS}
           output/qwen3-0-6b/config.json
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

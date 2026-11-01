@@ -1,11 +1,11 @@
+from importlib import import_module
 from pathlib import Path
 import json
 
 import torch
 from torchvision import datasets, transforms
-from models.models.lenet.model import LeNet
 
-from stack.compiler.frontend.quant import quantize, quantize_bias
+from compiler.frontend.quant import quantize, quantize_bias
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
@@ -16,10 +16,8 @@ model_source = model_dir.parents[3] / "models/lenet"
 # Record the largest input magnitude of every convolution and Linear of the
 # checkpoint over 1024 training images.
 # ===----------------------------------------------------------------------===
-model = LeNet().eval()
-model.load_state_dict(
-    torch.load(model_source / "output/lenet/model.pth", weights_only=True)
-)
+lenet = import_module("models.models.lenet.model")
+model = lenet.load()
 mnist = datasets.MNIST(
     model_source / "output/datasets",
     train=True,
@@ -71,8 +69,7 @@ def accuracy(model):
 
 
 fp32 = accuracy(model)
-quantized = LeNet().eval()
-quantized.load_state_dict(model.state_dict())
+quantized = lenet.load()
 for name, module in quantized.named_modules():
     if not isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
         continue

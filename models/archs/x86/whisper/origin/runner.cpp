@@ -1,4 +1,5 @@
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <algorithm>
 #include <buddy/Core/Container.h>
 #include <buddy/DAP/AudioContainer.h>
@@ -6,7 +7,6 @@
 #include <buddy/LLM/TextContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -43,7 +43,7 @@ public:
     MemRef<size_t, 2> tokens({1, 448}, 50258);
     buddy::Text<size_t, 2> generated;
     generated.loadVocab(manifest.vocabPath);
-    const auto start = std::chrono::steady_clock::now();
+    const auto start = read_time_ns();
     size_t count = 0;
     while (count < 447 && (config.maxNewTokens == 0 ||
                            count < static_cast<size_t>(config.maxNewTokens))) {
@@ -58,10 +58,9 @@ public:
     }
     std::cout << generated.revertWhisper() << '\n';
     if (!config.suppressStats) {
-      const std::chrono::duration<double> elapsed =
-          std::chrono::steady_clock::now() - start;
+      const double elapsed = (read_time_ns() - start) * 1e-9;
       std::cout << "Generated tokens: " << count
-                << ", inference time: " << elapsed.count() << "s\n";
+                << ", inference time: " << elapsed << "s\n";
     }
   }
 };

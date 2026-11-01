@@ -3,7 +3,6 @@
 #include <buddy/Core/Container.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -28,7 +27,6 @@
 #include <algorithm>
 #include <buddy/Core/Container.h>
 #include <cctype>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <fcntl.h>
@@ -73,7 +71,7 @@ using Forward = void (*)(MemRef<float, 3> *, MemRef<float, 1> *,
 
 template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   std::cout << "\033[34;1m[Log] \033[0mLoading " << path << std::endl;
-  const auto loadStart = std::chrono::steady_clock::now();
+  const auto loadStart = read_time_ns();
   std::ifstream input(path, std::ios::binary | std::ios::ate);
   input.exceptions(std::ios::failbit | std::ios::badbit);
   const size_t bytes = input.tellg();
@@ -82,9 +80,8 @@ template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   MemRef<T, 1> tensor(std::vector<size_t>{bytes / sizeof(T)});
   input.seekg(0);
   input.read(reinterpret_cast<char *>(tensor.getData()), bytes);
-  const std::chrono::duration<double> loadTime =
-      std::chrono::steady_clock::now() - loadStart;
-  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count() << "s"
+  const double loadTime = (read_time_ns() - loadStart) * 1e-9;
+  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime << "s"
             << std::endl;
   return tensor;
 }

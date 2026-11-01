@@ -20,7 +20,6 @@
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
-#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <fcntl.h>
@@ -34,13 +33,16 @@
 #include <vector>
 
 // Declare the resnet C interface.
+// The parameters are grouped by type: FP32, INT32 biases, INT8 weights.
 extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
-                                     MemRef<float, 1> *arg0,
+                                     MemRef<float, 1> *parameters,
+                                     MemRef<int32_t, 1> *quantizedBias,
+                                     MemRef<int8_t, 1> *quantizedWeights,
                                      MemRef<float, 4> *input);
 
 template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   std::cout << "\033[34;1m[Log] \033[0mLoading " << path << std::endl;
-  const auto loadStart = std::chrono::steady_clock::now();
+  const auto loadStart = read_time_ns();
   std::ifstream input(path, std::ios::binary | std::ios::ate);
   input.exceptions(std::ios::failbit | std::ios::badbit);
   const size_t bytes = input.tellg();
@@ -49,9 +51,8 @@ template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
   MemRef<T, 1> tensor(std::vector<size_t>{bytes / sizeof(T)});
   input.seekg(0);
   input.read(reinterpret_cast<char *>(tensor.getData()), bytes);
-  const std::chrono::duration<double> loadTime =
-      std::chrono::steady_clock::now() - loadStart;
-  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime.count() << "s"
+  const double loadTime = (read_time_ns() - loadStart) * 1e-9;
+  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime << "s"
             << std::endl;
   return tensor;
 }
@@ -117,11 +118,14 @@ public:
 
     MemRef<float, 2> output(std::vector<size_t>{1, 1000}, false, 0);
 
-    auto paramsContainer = loadBinary<float>(manifest.weightPaths.at(0));
+    auto parameters = loadBinary<float>(manifest.weightPaths.at(0));
+    auto quantizedBias = loadBinary<int32_t>(manifest.weightPaths.at(1));
+    auto quantizedWeights = loadBinary<int8_t>(manifest.weightPaths.at(2));
 
     std::cout << "\033[34;1m[Log] \033[0mStarting inference..." << std::endl;
     unsigned long start = read_counter();
-    _mlir_ciface_forward(&output, &paramsContainer, &inputResize);
+    _mlir_ciface_forward(&output, &parameters, &quantizedBias,
+                         &quantizedWeights, &inputResize);
     unsigned long end = read_counter();
     std::cout << "Counter: " << end - start << std::endl;
 

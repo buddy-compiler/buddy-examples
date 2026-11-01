@@ -38,13 +38,22 @@ void engine_init(struct engine *engine, struct engine_slot *slots,
         slot->binding = binding;
     if (!slot->binding)
       __builtin_trap();
+    if (slot->online)
+      slot->binding->load(thread);
   }
 }
 
 void engine_begin(struct engine *engine, const struct engine_job *jobs,
-                  size_t count, struct engine_result *results) {
+                  size_t count, struct engine_transfer *transfers,
+                  size_t transfer_count, struct engine_result *results) {
   if (engine->active)
     __builtin_trap();
+  if (transfer_count)
+    for (size_t job = 0; job < count; ++job)
+      for (size_t previous = 0; previous < job; ++previous)
+        if (jobs[job].thread == jobs[previous].thread &&
+            jobs[job].task.id == jobs[previous].task.id)
+          __builtin_trap();
   for (size_t job = 0; job < count; ++job) {
     const struct engine_job *request = &jobs[job];
     for (size_t i = 0; i < request->dependency_count; ++i)
@@ -64,10 +73,27 @@ void engine_begin(struct engine *engine, const struct engine_job *jobs,
   engine->results = results;
   engine->job_count = count;
   engine->completed = 0;
+  engine->transfers = transfers;
+  engine->transfer_count = transfer_count;
   for (size_t job = 0; job < count; ++job)
     results[job] = (struct engine_result){.state = ENGINE_QUEUED,
                                           .thread = ENGINE_ANY_THREAD};
   thread_acquire();
+  for (size_t i = 0; i < transfer_count; ++i) {
+    struct engine_transfer *edge = &transfers[i];
+    if (edge->source >= edge->target || edge->target >= count ||
+        jobs[edge->source].thread == ENGINE_ANY_THREAD ||
+        jobs[edge->target].thread == ENGINE_ANY_THREAD)
+      __builtin_trap();
+    const uint64_t descriptor[] = {jobs[edge->source].thread,
+                                   jobs[edge->source].task.id,
+                                   edge->source_address,
+                                   jobs[edge->target].thread,
+                                   jobs[edge->target].task.id,
+                                   edge->target_address,
+                                   edge->bytes};
+    edge->token = thread_transfer(descriptor);
+  }
   engine->active = 1;
   engine_poll(engine);
 }
@@ -85,6 +111,10 @@ size_t engine_poll(struct engine *engine) {
     struct engine_result *result = &engine->results[slot->job];
     result->state = completion.cancelled ? ENGINE_CANCELLED : ENGINE_SUCCEEDED;
     result->value = completion.value;
+    if (!completion.cancelled)
+      for (size_t i = 0; i < engine->transfer_count; ++i)
+        if (engine->transfers[i].source == slot->job)
+          thread_transfer_ready(engine->transfers[i].token);
     slot->job = SIZE_MAX;
     ++engine->completed;
   }
@@ -96,6 +126,14 @@ size_t engine_poll(struct engine *engine) {
     int ready = 1, cancelled = 0;
     for (size_t i = 0; i < request->dependency_count; ++i) {
       enum engine_state state = engine->results[request->dependencies[i]].state;
+      ready &= state == ENGINE_SUCCEEDED;
+      cancelled |= state == ENGINE_CANCELLED;
+    }
+    for (size_t i = 0; i < engine->transfer_count; ++i) {
+      if (engine->transfers[i].target != job)
+        continue;
+      enum engine_state state =
+          engine->results[engine->transfers[i].source].state;
       ready &= state == ENGINE_SUCCEEDED;
       cancelled |= state == ENGINE_CANCELLED;
     }
@@ -152,13 +190,16 @@ void engine_cancel_all(struct engine *engine) {
 void engine_end(struct engine *engine) {
   if (!engine->active || engine->completed != engine->job_count)
     __builtin_trap();
+  for (size_t i = 0; i < engine->transfer_count; ++i)
+    thread_transfer_release(engine->transfers[i].token);
   thread_release();
   engine->active = 0;
 }
 
 size_t engine_run(struct engine *engine, const struct engine_job *jobs,
-                  size_t count, struct engine_result *results) {
-  engine_begin(engine, jobs, count, results);
+                  size_t count, struct engine_transfer *transfers,
+                  size_t transfer_count, struct engine_result *results) {
+  engine_begin(engine, jobs, count, transfers, transfer_count, results);
   engine_wait(engine);
   size_t cancelled = 0;
   for (size_t job = 0; job < count; ++job)

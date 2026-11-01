@@ -1,121 +1,181 @@
 file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
-
 set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
-# ===----------------------------------------------------------------------===
-# Import the model with offline INT8 weights and online CPU activation quantization.
-# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/forward.mlir
+  OUTPUT ${OUTPUT_DIR}/calibration.json
+  COMMAND ${PYTHON} buddy-pytorch-calibrate.py
+  DEPENDS ${STACK_ROOT}/compiler/frontend/quant.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-calibrate.py
+          ${MODEL_DIR}/alexnet/output/alexnet/model.pth
+          ${MODEL_DIR}/alexnet/model.py
+          ${MODEL_DIR}/alexnet/data.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Calibrating the alexnet activations for gemmini"
+  VERBATIM
+)
+
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/01-import.txt
+         ${OUTPUT_DIR}/02-permuted.txt
+         ${OUTPUT_DIR}/03-quanted.txt
+         ${OUTPUT_DIR}/forward.mlir
          ${OUTPUT_DIR}/subgraph0.mlir
          ${OUTPUT_DIR}/arg0.data
          ${OUTPUT_DIR}/arg1.data
-         ${OUTPUT_DIR}/labels.txt
+         ${OUTPUT_DIR}/arg2.data
+         ${OUTPUT_DIR}/Labels.txt
   COMMAND ${PYTHON} buddy-pytorch-importer.py
-  DEPENDS ${COMPILER_FRONTEND_SOURCES}
-          ${RECIPE_FRONTEND_SOURCES}
-          buddy-pytorch-importer.py
-          quant/quant.toml
-          trace/trace.toml
+  DEPENDS ${RECIPE_FRONTEND_SOURCES}
+          ${COMPILER_FRONTEND_SOURCES}
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+          ${OUTPUT_DIR}/calibration.json
           ${MODEL_DIR}/alexnet/output/alexnet/model.pth
+          ${MODEL_DIR}/alexnet/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing alexnet for gemmini"
   VERBATIM
 )
 
-# ===----------------------------------------------------------------------===
-# Lower forward for the standalone Gemmini target.
-# ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_linalg.mlir
-             ${OUTPUT_DIR}/forward_llvm.mlir
-             ${OUTPUT_DIR}/forward.ll
-  COMMAND ${GEMMINI_OPT} ${OUTPUT_DIR}/forward.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/forward_linalg.mlir
-  COMMAND ${GEMMINI_OPT} ${OUTPUT_DIR}/forward_linalg.mlir -llvm-request-c-wrappers -convert-elementwise-to-linalg -convert-trace-to-llvm -expand-strided-metadata -convert-linalg-to-loops -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -finalize-memref-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
-            --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
-  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
-  DEPENDS ${OUTPUT_DIR}/forward.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
           ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-deallocation-simplification
+            -convert-linalg-to-loops
+            -eliminate-empty-tensors
+            -llvm-request-c-wrappers
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-scf-to-cf
+            -convert-arith-to-llvm
+            -expand-strided-metadata
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
+          ${COMPILER_BUILD}/bin/buddy-opt
+            -buffer-deallocation-simplification
+            -convert-linalg-to-loops
+            -eliminate-empty-tensors
+            -llvm-request-c-wrappers
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-scf-to-cf
+            -convert-arith-to-llvm
+            -expand-strided-metadata
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts |
           ${COMPILER_BUILD}/bin/buddy-translate
-          ${COMPILER_BUILD}/bin/buddy-llc
+            --buddy-to-llvmir |
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
+  DEPENDS ${OUTPUT_DIR}/forward.mlir
+  COMMENT "Building forward.o"
   VERBATIM
-  DEPENDS ${GEMMINI_PLUGIN}
 )
 
-# ===----------------------------------------------------------------------===
-# Lower subgraph0 for the standalone Gemmini target.
-# ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0.o
   BYPRODUCTS ${OUTPUT_DIR}/subgraph0_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+             ${OUTPUT_DIR}/subgraph0_gemmini.mlir
+             ${OUTPUT_DIR}/subgraph0_loops.mlir
+             ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+             ${OUTPUT_DIR}/subgraph0_lowered.mlir
              ${OUTPUT_DIR}/subgraph0_llvm.mlir
              ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${GEMMINI_OPT} ${OUTPUT_DIR}/subgraph0.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
-  COMMAND ${GEMMINI_OPT} ${OUTPUT_DIR}/subgraph0_linalg.mlir -llvm-request-c-wrappers -convert-elementwise-to-linalg -one-shot-bufferize=bufferize-function-boundaries -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -prepare-gemmini-int8 -convert-linalg-to-gemmini -convert-trace-to-llvm -expand-strided-metadata -convert-linalg-to-loops -lower-gemmini -lower-affine -convert-scf-to-cf -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -finalize-memref-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_linalg.mlir
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg
+            -convert-tensor-to-linalg
+            -one-shot-bufferize="bufferize-function-boundaries"
+            -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+            -convert-linalg-to-gemmini
+            -o ${OUTPUT_DIR}/subgraph0_gemmini.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gemmini.mlir
+            -batchmatmul-optimize
+            -o ${OUTPUT_DIR}/subgraph0_loops.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gemmini.mlir
+            -expand-strided-metadata
+            -convert-linalg-to-loops
+            -convert-scf-to-cf
+            -llvm-request-c-wrappers
+            -o ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+            -lower-gemmini
+            -o ${OUTPUT_DIR}/subgraph0_lowered.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_lowered.mlir
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-arith-to-llvm
+            -convert-func-to-llvm
+            -finalize-memref-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
-          ${COMPILER_BUILD}/bin/buddy-opt
-          ${COMPILER_BUILD}/bin/buddy-translate
-          ${COMPILER_BUILD}/bin/buddy-llc
+  COMMENT "Building subgraph0.o"
   VERBATIM
-  DEPENDS ${GEMMINI_PLUGIN}
 )
 
-# ===----------------------------------------------------------------------===
-# Link the model and runtime into a RISC-V shared library.
-# ===----------------------------------------------------------------------===
-add_library(alexnet-gemmini-model SHARED EXCLUDE_FROM_ALL forward.o subgraph0.o)
+add_library(alexnet-gemmini-model STATIC EXCLUDE_FROM_ALL subgraph0.o forward.o)
 set_target_properties(alexnet-gemmini-model
-  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
              LINKER_LANGUAGE CXX
-             BUILD_WITH_INSTALL_RPATH TRUE
-             INSTALL_RPATH "$ORIGIN"
-)
-set_target_properties(gemmini-runtime
-  PROPERTIES POSITION_INDEPENDENT_CODE ON
-)
-target_link_libraries(alexnet-gemmini-model
-  PRIVATE gemmini-runtime
 )
 
-# ===----------------------------------------------------------------------===
-# Build the Buddy InferenceRunner plugin for RISC-V Linux.
-# ===----------------------------------------------------------------------===
-get_filename_component(FLATBUFFERS_HEADER "${TOOLCHAIN}/include/flatbuffers/flatbuffers.h" REALPATH)
-get_filename_component(FLATBUFFERS_INCLUDE "${FLATBUFFERS_HEADER}/../.." ABSOLUTE)
-add_library(alexnet-gemmini-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
+add_library(alexnet-gemmini-runner SHARED EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/runner.cpp)
 set_target_properties(alexnet-gemmini-runner
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
-             BUILD_WITH_INSTALL_RPATH TRUE
-             INSTALL_RPATH "$ORIGIN"
 )
+add_dependencies(alexnet-gemmini-runner alexnet-gemmini-model)
+
+target_include_directories(alexnet-gemmini-runner
+  PRIVATE ${BUDDY_SOURCE}/frontend/Interfaces
+          ${LIB_DIR}
+)
+target_link_libraries(alexnet-gemmini-runner
+  PRIVATE alexnet-gemmini-model
+          gemmini-runtime
+          model_image
+)
+
+# The runner owns inference and the backend's native scheduling lifecycle.
+get_filename_component(FLATBUFFERS_HEADER "${TOOLCHAIN}/include/flatbuffers/flatbuffers.h" REALPATH)
+get_filename_component(FLATBUFFERS_INCLUDE "${FLATBUFFERS_HEADER}/../.." ABSOLUTE)
 target_include_directories(alexnet-gemmini-runner
   PRIVATE ${LIB_DIR}
           ${FLATBUFFERS_INCLUDE}
-          ${BUDDY_SOURCE}/frontend/Interfaces
           ${BUDDY_SOURCE}/runtime/include
           ${COMPILER_BUILD}/runtime/include
+          ${BUDDY_SOURCE}/frontend/Interfaces
+          ${BUDDY_SOURCE}/llvm/mlir/include
+          ${OUTPUT_DIR}
+          ${RUNTIME_DIR}/scheduler
+          ${RUNTIME_DIR}/services
+          ${RUNTIME_DIR}/../engine/include
 )
-target_link_libraries(alexnet-gemmini-runner
-  PRIVATE dl
+set_target_properties(alexnet-gemmini-runner
+  PROPERTIES POSITION_INDEPENDENT_CODE ON
+             BUILD_WITH_INSTALL_RPATH TRUE
+             INSTALL_RPATH "$ORIGIN;/lib"
 )
-
-# ===----------------------------------------------------------------------===
-# Package the RAX
-#
-# Contents:
-# RISC-V model library (libalexnet-gemmini-model.so),
-# RISC-V runner library (libalexnet-gemmini-runner.so),
-# FP32 parameters (arg0.data), and
-# INT8 weights (arg1.data).
-#
-# Output: output/alexnet.rax embeds these files alongside RHAL metadata
-# identifying the runner, model entry and parameter buffers.
-# ===----------------------------------------------------------------------===
 configure_file(alexnet.rhal.mlir.in ${OUTPUT_DIR}/alexnet.rhal.mlir @ONLY)
+
+# Package the runner, model parameters and input metadata in one RAX.
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/alexnet.rax
   COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/alexnet.rhal.mlir
@@ -123,10 +183,11 @@ add_custom_command(
           -o ${OUTPUT_DIR}/alexnet.rax
   DEPENDS ${OUTPUT_DIR}/alexnet.rhal.mlir
           ${COMPILER_BUILD}/bin/rax-pack
-          alexnet-gemmini-model
           alexnet-gemmini-runner
           ${OUTPUT_DIR}/arg0.data
           ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${OUTPUT_DIR}/Labels.txt
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Packaging alexnet for gemmini"
   VERBATIM

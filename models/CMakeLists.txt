@@ -1,23 +1,23 @@
 cmake_minimum_required(VERSION 3.22)
-get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+get_filename_component(STACK_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 
 set(MODEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/models")
 set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 
-set(RUNTIME_DIR "${REPO_ROOT}/stack/runtime")
-set(BUDDY_SOURCE "${REPO_ROOT}/stack/thirdparty/buddy-mlir")
+set(RUNTIME_DIR "${STACK_ROOT}/runtime")
+set(BUDDY_SOURCE "${STACK_ROOT}/thirdparty/buddy-mlir")
 set(COMPILER_BUILD "${BUDDY_SOURCE}/build")
 
 # ===----------------------------------------------------------------------===
 # Toolchain
 # ===----------------------------------------------------------------------===
-set(TOOLCHAIN "${REPO_ROOT}/result")
+set(TOOLCHAIN "${STACK_ROOT}/result" CACHE PATH "Nix toolchain prefix")
 set(
   PYTHON
   ${CMAKE_COMMAND}
   -E
   env
-  "PYTHONPATH=${REPO_ROOT}:${REPO_ROOT}/stack:${BUDDY_SOURCE}/llvm/build/tools/mlir/python_packages/mlir_core:${COMPILER_BUILD}/python_packages"
+  "PYTHONPATH=${STACK_ROOT}:${BUDDY_SOURCE}/llvm/build/tools/mlir/python_packages/mlir_core:${COMPILER_BUILD}/python_packages"
   "${TOOLCHAIN}/bin/python3"
 )
 # Programs of OS-invisible hardware threads are freestanding RISC-V images.
@@ -37,14 +37,14 @@ project(ModelBuild C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-file(GLOB_RECURSE COMPILER_FRONTEND_SOURCES CONFIGURE_DEPENDS "${REPO_ROOT}/stack/compiler/frontend/*.py")
+file(GLOB_RECURSE COMPILER_FRONTEND_SOURCES CONFIGURE_DEPENDS "${STACK_ROOT}/compiler/frontend/*.py")
 
 # Packs the files of a model into the image loaded to the model region of the
 # DDR. A host tool: it runs while building, whatever the target.
 add_custom_command(
   OUTPUT ${CMAKE_BINARY_DIR}/model-pack
-  COMMAND g++ -std=c++20 -O2 -o ${CMAKE_BINARY_DIR}/model-pack ${CMAKE_CURRENT_SOURCE_DIR}/tools/model-pack.cpp
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/model-pack.cpp
+  COMMAND g++ -std=c++20 -O2 -o ${CMAKE_BINARY_DIR}/model-pack ${STACK_ROOT}/tools/model-pack.cpp
+  DEPENDS ${STACK_ROOT}/tools/model-pack.cpp
   VERBATIM
 )
 add_custom_target(model-pack-tool DEPENDS ${CMAKE_BINARY_DIR}/model-pack)

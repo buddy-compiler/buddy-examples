@@ -1,21 +1,19 @@
 file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
-
 set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/forward.mlir
+  OUTPUT ${OUTPUT_DIR}/01-import.txt
+         ${OUTPUT_DIR}/02-permuted.txt
+         ${OUTPUT_DIR}/03-quanted.txt
+         ${OUTPUT_DIR}/forward.mlir
          ${OUTPUT_DIR}/subgraph0.mlir
          ${OUTPUT_DIR}/arg0.data
          ${OUTPUT_DIR}/arg1.data
   COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
   COMMAND ${PYTHON} buddy-pytorch-importer.py
-  DEPENDS ${COMPILER_FRONTEND_SOURCES}
-          ${RECIPE_FRONTEND_SOURCES}
-          buddy-pytorch-importer.py
-          quant/calibration.py
-          quant/quant.toml
-          trace/trace.toml
-          ${MODEL_DIR}/bert-base-uncased-emotion/output/bert-base-uncased-emotion/model.safetensors
+  DEPENDS ${RECIPE_FRONTEND_SOURCES}
+          ${COMPILER_FRONTEND_SOURCES}
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
           ${MODEL_DIR}/bert-base-uncased-emotion/model.py
           ${MODEL_DIR}/bert-base-uncased-emotion/output/bert-base-uncased-emotion/config.json
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28,15 +26,11 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT forward_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/forward_trace.mlir
-             ${OUTPUT_DIR}/forward_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/forward_linalg.mlir
              ${OUTPUT_DIR}/forward_gpu.mlir
              ${OUTPUT_DIR}/forward_gpu_llvm.mlir
              ${OUTPUT_DIR}/forward_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/forward_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_trace.mlir
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/forward_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
@@ -61,21 +55,31 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0_gpu.o
-  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_trace.mlir
-             ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_weights.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_copies.mlir
+             ${OUTPUT_DIR}/subgraph0_kernels.mlir
              ${OUTPUT_DIR}/subgraph0_gpu_gpu.mlir
              ${OUTPUT_DIR}/subgraph0_gpu_async.mlir
              ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
              ${OUTPUT_DIR}/subgraph0_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
-            -convert-trace-to-llvm
-            -o ${OUTPUT_DIR}/subgraph0_trace.mlir
-  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_trace.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+            --load-dialect-plugin=${NV_COMPILER}
+            --load-pass-plugin=${NV_COMPILER}
+            -fuse-mxint8-weights
+            -o ${OUTPUT_DIR}/subgraph0_gpu_weights.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_weights.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op=gpu=true
+            -o ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
             -convert-elementwise-to-linalg
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
@@ -86,9 +90,15 @@ add_custom_command(
             -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))"
             -o ${OUTPUT_DIR}/subgraph0_copies.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_copies.mlir
-            -convert-linalg-to-parallel-loops
+            --load-dialect-plugin=${NV_COMPILER}
+            --load-pass-plugin=${NV_COMPILER}
+            -linalg-generalize-named-ops
+            -linalg-to-gpu-kernels
+            -o ${OUTPUT_DIR}/subgraph0_kernels.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_kernels.mlir
             -gpu-map-parallel-loops
             -convert-parallel-loops-to-gpu
+            -gpu-launch-sink-index-computations
             -gpu-kernel-outlining
             -buffer-hoisting
             -canonicalize
@@ -98,30 +108,31 @@ add_custom_command(
             -pass-pipeline "builtin.module(func.func(convert-memcpy-to-gpu{process-args=0},gpu-async-region),canonicalize)"
             -o ${OUTPUT_DIR}/subgraph0_gpu_async.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_async.mlir
-            --nvvm-reflect-add=__CUDA_PREC_SQRT=1
-            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=${NV_CUBIN_VERSION} cubin-features=+ptx71 cubin-format=fatbin ptxas-cmd-options=--fmad=false"
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=${NV_CUBIN_VERSION} cubin-features=+ptx71 cubin-format=fatbin"
             -o ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/subgraph0_gpu.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_gpu.ll -filetype=obj -relocation-model=pic -O2 -o subgraph0_gpu.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
+          ${NV_COMPILER}
           ${COMPILER_BUILD}/bin/buddy-translate
           ${COMPILER_BUILD}/bin/buddy-llc
   COMMENT "Compiling bert-base-uncased-emotion NVIDIA kernels"
   VERBATIM
 )
 
-add_library(bert-base-uncased-emotion-nv-model SHARED EXCLUDE_FROM_ALL forward_gpu.o subgraph0_gpu.o)
-set_target_properties(bert-base-uncased-emotion-nv-model
+add_library(bert-base-uncased-emotion-nv-custom-model SHARED EXCLUDE_FROM_ALL forward_gpu.o subgraph0_gpu.o)
+set_target_properties(bert-base-uncased-emotion-nv-custom-model
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
              LINKER_LANGUAGE CXX
              BUILD_WITH_INSTALL_RPATH TRUE
              INSTALL_RPATH "$ORIGIN"
 )
-target_link_directories(bert-base-uncased-emotion-nv-model
+target_link_directories(bert-base-uncased-emotion-nv-custom-model
   PRIVATE ${BUDDY_SOURCE}/llvm/build/lib
 )
-target_link_libraries(bert-base-uncased-emotion-nv-model
+target_link_libraries(bert-base-uncased-emotion-nv-custom-model
   PRIVATE nv-runtime
           mlir_c_runner_utils
           mlir_runner_utils
@@ -134,23 +145,23 @@ target_link_libraries(bert-base-uncased-emotion-nv-model
 # ===----------------------------------------------------------------------===
 # Build the Buddy InferenceRunner plugin.
 # ===----------------------------------------------------------------------===
-add_library(bert-base-uncased-emotion-nv-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
-set_target_properties(bert-base-uncased-emotion-nv-runner
+add_library(bert-base-uncased-emotion-nv-custom-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
+set_target_properties(bert-base-uncased-emotion-nv-custom-runner
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
              BUILD_WITH_INSTALL_RPATH TRUE
              INSTALL_RPATH "$ORIGIN"
 )
-target_include_directories(bert-base-uncased-emotion-nv-runner
+target_include_directories(bert-base-uncased-emotion-nv-custom-runner
   PRIVATE ${LIB_DIR}
           ${OUTPUT_DIR}
           ${BUDDY_SOURCE}/frontend/Interfaces
           ${BUDDY_SOURCE}/runtime/include
           ${COMPILER_BUILD}/runtime/include
 )
-target_link_directories(bert-base-uncased-emotion-nv-runner
+target_link_directories(bert-base-uncased-emotion-nv-custom-runner
   PRIVATE ${BUDDY_SOURCE}/llvm/build/lib
 )
-target_link_libraries(bert-base-uncased-emotion-nv-runner
+target_link_libraries(bert-base-uncased-emotion-nv-custom-runner
   PRIVATE dl
 )
 
@@ -158,10 +169,9 @@ target_link_libraries(bert-base-uncased-emotion-nv-runner
 # Package the RAX
 #
 # Contents:
-# model library (libbert-base-uncased-emotion-nv-model.so),
-# runner library (libbert-base-uncased-emotion-nv-runner.so),
-# FP32 parameters (arg0.data),
-# INT8 weights (arg1.data),
+# model library (libbert-base-uncased-emotion-nv-custom-model.so),
+# runner library (libbert-base-uncased-emotion-nv-custom-runner.so),
+# FP32 parameters (arg0.data), INT8 MXINT8 weights (arg1.data),
 # token vocabulary (vocab.txt),
 # MLIR runtime libraries (libmlir_c_runner_utils.so, libmlir_runner_utils.so,
 # libmlir_async_runtime.so, libmlir_cuda_runtime.so).
@@ -177,8 +187,8 @@ add_custom_command(
           -o ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
           --embed-payload
   DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rhal.mlir
-          bert-base-uncased-emotion-nv-model
-          bert-base-uncased-emotion-nv-runner
+          bert-base-uncased-emotion-nv-custom-model
+          bert-base-uncased-emotion-nv-custom-runner
           ${COMPILER_BUILD}/bin/rax-pack
           ${OUTPUT_DIR}/arg0.data
           ${OUTPUT_DIR}/arg1.data
@@ -190,6 +200,9 @@ add_custom_command(
   COMMENT "Packaging NVIDIA bert-base-uncased-emotion as RAX"
   VERBATIM
 )
-add_custom_target(buddy-nv-bert-base-uncased-emotion-rax-build DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rax)
+add_custom_target(
+  buddy-nv-bert-base-uncased-emotion-rax-custom-build
+  DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
+)
 
 add_subdirectory(origin)

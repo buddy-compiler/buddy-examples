@@ -9,10 +9,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Buckyball/BuckyballDialect.h"
-#include "Buckyball/BuckyballOps.h"
+#include "Acc/AccDialect.h"
+#include "Acc/AccOps.h"
+#include "Acc/BankInterfaces.h"
 #include "Conversion/Buckyball.h"
-#include "Interfaces/BankInterfaces.h"
 #include "Target/BuckyballTargetRegistry.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -22,7 +22,7 @@
 #include "llvm/ADT/DenseMap.h"
 
 using namespace mlir;
-using namespace ::buddy::buckyball;
+using namespace ::buddy::acc;
 
 namespace {
 class AssignPhysicalBanksPass
@@ -42,6 +42,10 @@ public:
   void runOnOperation() override {
     const buckyball_target::BuckyballTargetConfig &target =
         buckyball_target::getBuckyballTarget();
+    if (auto profile =
+            getOperation()->getAttrOfType<StringAttr>("bbacc.target");
+        profile && profile.getValue() != target.core)
+      return;
     // The physical banks each bank holds; 0 when the bank is free.
     SmallVector<int64_t> held(target.privateBankMax + 1, 0);
     int64_t physical = 0;

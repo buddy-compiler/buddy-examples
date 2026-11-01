@@ -1,45 +1,31 @@
-import json
+from importlib import import_module
 from pathlib import Path
 
 import numpy as np
 import torch
 from torch._decomp import get_decompositions
 
-
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
 
-output = Path("output").resolve()
+model_dir = Path(__file__).resolve().parent
+output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
 
-model = mobilenet_v3_small(weights=None)
-model.load_state_dict(
-    torch.load(
-        (
-            Path(__file__).resolve().parent
-            / "../../../../models/mobilenet-v3-small/output/mobilenet-v3-small/model.pth"
-        ).resolve(),
-        weights_only=True,
-    )
-)
-for layer in model.modules():
-    if isinstance(layer, (torch.nn.ReLU, torch.nn.Hardswish)):
-        layer.inplace = False
-data = torch.zeros((1, 3, 224, 224))
-model.eval()
+mobilenet = import_module("models.models.mobilenet-v3-small.model")
+model = mobilenet.load()
 compiler = DynamoCompiler(
     aot_autograd_decomposition=get_decompositions(
         [torch.ops.aten.hardsigmoid.default, torch.ops.aten.hardswish.default]
     ),
     primary_registry=tosa.ops_registry,
-    trace=TraceConfig(load_trace_config(Path(__file__).parent / "trace/trace.toml")),
+    trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
 )
 with torch.no_grad():
-    graphs = compiler.importer(model, data)
+    graphs = compiler.importer(model, *mobilenet.inputs())
 assert len(graphs) == 1
 graph = graphs[0]
 params = compiler.imported_params[graph]

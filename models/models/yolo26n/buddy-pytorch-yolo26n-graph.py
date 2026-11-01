@@ -1,18 +1,14 @@
+from importlib import import_module
 from pathlib import Path
 import torch
 from buddy.compiler.frontend import DynamoCompiler
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
 from torch._inductor.decomposition import decompositions
 
 output = Path(__file__).resolve().parent / "output"
 output.mkdir(exist_ok=True)
-from ultralytics import YOLO
-
-model = YOLO(output / "yolo26n/yolo26n.pt").model.eval()
-model.model[-1].end2end = True
-model.model[-1].export = True
-model.model[-1].xyxy = True
-inputs = (torch.zeros((1, 3, 640, 640)),)
+yolo = import_module("models.models.yolo26n.model")
+model = yolo.load()
 
 compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
@@ -22,6 +18,6 @@ compiler = DynamoCompiler(
     trace=None,
 )
 with torch.no_grad():
-    graphs = compiler.importer(model, *inputs)
+    graphs = compiler.importer(model, *yolo.inputs())
 for graph in graphs:
     graph.lower_to_top_level_ir()

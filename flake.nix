@@ -12,6 +12,7 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          config.nvidia.acceptLicense = true;
         };
         python = import ./scripts/nix/python.nix { inherit pkgs; };
         riscv = import ./scripts/nix/riscv.nix { inherit pkgs; };
@@ -35,6 +36,8 @@
           clibs.libdwarf
           flatbuffers
           numactl
+          # The OpenMP runtime of the parallel loops the models lower to.
+          llvmPackages.openmp
         ];
         environment = pkgs.buildEnv {
           name = "buddy-codesign-environment";
@@ -66,10 +69,9 @@
             flex
             texinfo
             dtc
+            jq
             cpio
             bc
-            verilator
-            spike
             ccache
             sbt
             jdk17
@@ -77,6 +79,7 @@
             pre-commit
             gersemi
             cuda.cudatoolkit
+            cuda.driver
             cuda.gcc13
           ] ++ libraries;
         };
@@ -96,14 +99,6 @@
             export JAVA_HOME="${pkgs.jdk17}"
             export CUDA_HOME="${cuda.cudatoolkit}"
             export CPATH="''${CUDA_HOME}/include''${CPATH:+:$CPATH}"
-            # Use the host driver at runtime, not the CUDA Toolkit's link stubs.
-            cuda_driver=$(${pkgs.glibc.bin}/bin/ldconfig -p -C /etc/ld.so.cache | ${pkgs.gawk}/bin/awk '$1 == "libcuda.so.1" && /libc6,x86-64/ { print $NF; exit }')
-            if [ ! -r "$cuda_driver" ]; then
-              echo "ERROR: NVIDIA libcuda.so.1 is missing from the host library cache." >&2
-              exit 1
-            fi
-            export LD_PRELOAD="$cuda_driver''${LD_PRELOAD:+:$LD_PRELOAD}"
-            unset cuda_driver
             export OBJCACHE=ccache
             unset codesign_root
           '';

@@ -1,80 +1,154 @@
-#include "SharedLibrary.h"
-#include <algorithm>
-#include <buddy/Core/Container.h>
-#include <buddy/DIP/ImgContainer.h>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
-#include <chrono>
+//===- buddy-resnet-main.cpp ----------------------------------------------===//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//===----------------------------------------------------------------------===//
+
+#include "testutils.h"
+#include <buddy/Core/Container.h>
+#include <buddy/DIP/DIP.h>
+#include <buddy/DIP/ImgContainer.h>
 #include <cmath>
+#include <cstdlib>
+#include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <string>
+#include <unistd.h>
+#include <utility>
 #include <vector>
-namespace {
-using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
-                         MemRef<int8_t, 1> *, MemRef<float, 4> *);
-class AlexNetRunner final : public buddy::runtime::InferenceRunner {
+
+// Declare the resnet C interface.
+// The parameters are grouped by type: FP32, INT32 biases, INT8 weights.
+extern "C" void _mlir_ciface_forward(MemRef<float, 2> *output,
+                                     MemRef<float, 1> *parameters,
+                                     MemRef<int32_t, 1> *quantizedBias,
+                                     MemRef<int8_t, 1> *quantizedWeights,
+                                     MemRef<float, 4> *input);
+
+template <typename T> MemRef<T, 1> loadBinary(const std::string &path) {
+  std::cout << "\033[34;1m[Log] \033[0mLoading " << path << std::endl;
+  const auto loadStart = read_time_ns();
+  std::ifstream input(path, std::ios::binary | std::ios::ate);
+  input.exceptions(std::ios::failbit | std::ios::badbit);
+  const size_t bytes = input.tellg();
+  if (bytes % sizeof(T))
+    throw std::runtime_error("invalid tensor byte count: " + path);
+  MemRef<T, 1> tensor(std::vector<size_t>{bytes / sizeof(T)});
+  input.seekg(0);
+  input.read(reinterpret_cast<char *>(tensor.getData()), bytes);
+  const double loadTime = (read_time_ns() - loadStart) * 1e-9;
+  std::cout << "\033[34;1m[Log] \033[0mLoad time: " << loadTime << "s"
+            << std::endl;
+  return tensor;
+}
+
+// Softmax function.
+void softmax(float *input, size_t size) {
+  size_t i;
+  float max_value = -INFINITY;
+  double sum = 0.0;
+  // Find the maximum value in the input array for numerical stability.
+  for (i = 0; i < size; ++i) {
+    if (max_value < input[i]) {
+      max_value = input[i];
+    }
+  }
+  // Calculate the sum of the exponentials of the input elements, normalized by
+  // the max value.
+  for (i = 0; i < size; ++i) {
+    sum += exp(input[i] - max_value);
+  }
+  // Normalize the input array with the softmax calculation.
+  for (i = 0; i < size; ++i) {
+    input[i] = exp(input[i] - max_value) / sum;
+  }
+}
+
+std::string getLabel(const std::string &path, int idx) {
+  std::ifstream in;
+  in.exceptions(std::ios::failbit | std::ios::badbit);
+  in.open(path);
+  std::string label;
+  for (int i = 0; i < idx; ++i)
+    std::getline(in, label);
+  std::getline(in, label);
+  in.close();
+  return label;
+}
+
+class Runner final : public buddy::runtime::InferenceRunner {
 public:
   void run(const buddy::runtime::RunConfig &config) override {
     const auto manifest =
         buddy::runtime::ModelManifest::loadFromRax(config.raxPath);
-    std::vector<model::SharedLibrary> runtimes;
-    for (const auto &path : manifest.dependentSoPaths)
-      runtimes.push_back(model::openLibrary(path));
-    auto library = model::openLibrary(manifest.soPath);
-    auto forward =
-        reinterpret_cast<Forward>(dlsym(library.get(), "_mlir_ciface_forward"));
-    if (!forward)
-      throw std::runtime_error("Missing _mlir_ciface_forward: " +
-                               std::string(dlerror()));
-    std::ifstream weights;
-    weights.exceptions(std::ios::failbit | std::ios::badbit);
-    weights.open(manifest.weightPaths.at(0), std::ios::binary | std::ios::ate);
-    const size_t bytes = weights.tellg();
-    if (bytes % sizeof(float))
-      throw std::runtime_error("Invalid FP32 parameter size");
-    MemRef<float, 1> parameters(std::vector<size_t>{bytes / sizeof(float)});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(parameters.getData()), bytes);
-    weights.close();
-    weights.open(manifest.weightPaths.at(1), std::ios::binary | std::ios::ate);
-    const size_t quantizedBytes = weights.tellg();
-    MemRef<int8_t, 1> quantizedWeights(std::vector<size_t>{quantizedBytes});
-    weights.seekg(0);
-    weights.read(reinterpret_cast<char *>(quantizedWeights.getData()),
-                 quantizedBytes);
-    dip::Image<float, 4> image(config.imagePath, dip::DIP_RGB, true);
-    if (image.getWidth() != 224 || image.getHeight() != 224)
-      throw std::runtime_error("AlexNet requires a 224x224 image");
-    MemRef<float, 4> input(std::vector<size_t>{1, 3, 224, 224});
-    std::copy_n(image.getData(), 3 * 224 * 224, input.getData());
-    constexpr float mean[] = {0.485f, 0.456f, 0.406f};
-    constexpr float deviation[] = {0.229f, 0.224f, 0.225f};
-    for (size_t channel = 0; channel < 3; ++channel)
+    // Print the title of this example.
+
+    // Define the sizes of the input and output tensors.
+
+    // Create input and output containers for the image and model output.
+    std::string imgPath = config.imagePath;
+    dip::Image<float, 4> input(imgPath, dip::DIP_RGB, true /* norm */);
+    MemRef<float, 4> inputResize = dip::Resize4D_NCHW(
+        &input, dip::INTERPOLATION_TYPE::BILINEAR_INTERPOLATION,
+        {1, 3, 224, 224} /*{image_cols, image_rows}*/);
+    constexpr float Mean[] = {0.485f, 0.456f, 0.406f};
+    constexpr float Std[] = {0.229f, 0.224f, 0.225f};
+    float *inputData = inputResize.getData();
+    for (size_t channel = 0; channel < 3; ++channel) {
       for (size_t pixel = 0; pixel < 224 * 224; ++pixel) {
-        const size_t i = channel * 224 * 224 + pixel;
-        input.getData()[i] =
-            (input.getData()[i] - mean[channel]) / deviation[channel];
+        size_t index = channel * 224 * 224 + pixel;
+        inputData[index] = (inputData[index] - Mean[channel]) / Std[channel];
       }
+    }
+
     MemRef<float, 2> output(std::vector<size_t>{1, 1000}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
-    forward(&output, &parameters, &quantizedWeights, &input);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
-    const float *logits = output.getData();
-    const size_t prediction = std::max_element(logits, logits + 1000) - logits;
-    double sum = 0;
-    for (size_t i = 0; i < 1000; ++i)
-      sum += std::exp(logits[i] - logits[prediction]);
-    std::cout << "Classification Index: " << prediction << '\n'
-              << "Probability: " << 1.0 / sum << '\n';
-    if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+
+    auto parameters = loadBinary<float>(manifest.weightPaths.at(0));
+    auto quantizedBias = loadBinary<int32_t>(manifest.weightPaths.at(1));
+    auto quantizedWeights = loadBinary<int8_t>(manifest.weightPaths.at(2));
+
+    std::cout << "\033[34;1m[Log] \033[0mStarting inference..." << std::endl;
+    unsigned long start = read_counter();
+    _mlir_ciface_forward(&output, &parameters, &quantizedBias,
+                         &quantizedWeights, &inputResize);
+    unsigned long end = read_counter();
+    std::cout << "Counter: " << end - start << std::endl;
+
+    auto out = output.getData();
+    softmax(out, 1000);
+    // Find the classification and print the result.
+    float maxVal = out[0];
+    int maxIdx = 0;
+    for (int i = 1; i < 1000; ++i) {
+      if (out[i] > maxVal) {
+        maxVal = out[i];
+        maxIdx = i;
+      }
+    }
+    std::cout << "Classification Index: " << maxIdx << std::endl;
+    std::cout << "Classification: " << getLabel(manifest.vocabPath, maxIdx)
+              << std::endl;
+    std::cout << "Probability: " << maxVal << std::endl;
   }
 };
 
-} // namespace
 extern "C" buddy::runtime::InferenceRunner *buddy_create_inference_runner_v1() {
-  return new AlexNetRunner();
+  return new Runner();
 }
 extern "C" void
 buddy_destroy_inference_runner_v1(buddy::runtime::InferenceRunner *runner) {

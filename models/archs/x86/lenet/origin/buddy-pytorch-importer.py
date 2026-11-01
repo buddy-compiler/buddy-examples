@@ -1,3 +1,4 @@
+from importlib import import_module
 from pathlib import Path
 
 import numpy as np
@@ -6,29 +7,21 @@ import torch
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from stack.compiler.frontend.ops import tosa
-from models.models.lenet.model import LeNet
+from buddy.compiler.ops import tosa
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
 
-model = LeNet()
-model.load_state_dict(
-    torch.load(
-        (model_dir / "../../../../models/lenet/output/lenet/model.pth").resolve(),
-        weights_only=True,
-    )
-)
-data = torch.zeros((1, 1, 28, 28))
-model.eval()
+lenet = import_module("models.models.lenet.model")
+model = lenet.load()
 compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     trace=None,
 )
 
 with torch.no_grad():
-    graphs = compiler.importer(model, data)
+    graphs = compiler.importer(model, *lenet.inputs())
 assert len(graphs) == 1
 graph = graphs[0]
 

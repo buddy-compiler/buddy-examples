@@ -1,11 +1,21 @@
 { pkgs }:
 
 let
-  # Host driver reports CUDA 12.8 (570.x); do not use default 12.9+.
   cudaPkgs = pkgs.cudaPackages_12_8;
 in
 {
   cudatoolkit = cudaPkgs.cudatoolkit;
+
+  # User-space driver (libcuda and the PTX JIT) for the host's kernel module,
+  # whose version it must equal (/proc/driver/nvidia/version).
+  driver =
+    (pkgs.linuxPackages.nvidiaPackages.mkDriver {
+      version = "550.54.14";
+      sha256_64bit = "sha256-jEl/8c/HwxD7h1FJvDD6pP0m0iN7LLps0uiweAFXz+M=";
+      useSettings = false;
+      usePersistenced = false;
+      useFabricmanager = false;
+    }).override { libsOnly = true; };
   nvcc = cudaPkgs.cuda_nvcc;
   cudart = cudaPkgs.cuda_cudart;
 

@@ -1,8 +1,12 @@
 //===- Buckyball.h - Buckyball framework passes ---------------------------===//
 //
-// assign-physical-banks maps the virtual banks to the banks of the target;
-// lower-buckyball lowers the physical operations to Buckyball instructions,
-// the operations of the Balls through PhysicalBankAssignment.
+// lower-device lowers a placed device program to the job runtime and the
+// device runtime of the design; lower-core lowers a placed graph to the core
+// CPU and the engine jobs of its hardware threads; assign-physical-banks maps
+// the virtual banks to the banks of the target; lower-acc lowers the physical
+// operations to Buckyball instructions, the operations of the Balls through
+// PhysicalBankAssignment; lower-frontend-fake-op computes the frontend
+// operations the design left in software.
 //
 //===----------------------------------------------------------------------===//
 

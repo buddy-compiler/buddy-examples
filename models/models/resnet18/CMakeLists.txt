@@ -19,6 +19,7 @@ add_custom_command(
   COMMAND ${PYTHON} buddy-pytorch-resnet18-graph.py
   DEPENDS buddy-pytorch-resnet18-graph.py
           output/resnet18/model.pth
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Exporting resnet18 graph"
   VERBATIM

@@ -16,8 +16,8 @@ set(RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MLIR_EXECUTION_ENGINE "${RUNTIME_DIR}/../thirdparty/buddy-mlir/llvm/mlir/include/mlir/ExecutionEngine")
 
 # ===----------------------------------------------------------------------===
-# Job scheduling over cores. Freestanding, so baremetal and Linux programs
-# both link it.
+# Job scheduling over cores on baremetal harts, with the baremetal engine. The
+# Linux runtimes below compile the same scheduler with the Linux engine.
 # ===----------------------------------------------------------------------===
 add_library(runtime STATIC scheduler/runtime.c)
 target_include_directories(runtime
@@ -31,17 +31,6 @@ target_link_libraries(runtime
             engine
 )
 
-add_library(runtime-shared STATIC scheduler/runtime.c)
-target_include_directories(runtime-shared
-  PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/scheduler>"
-)
-target_compile_features(runtime-shared PUBLIC c_std_11)
-target_compile_options(runtime-shared PRIVATE -O2 -ffreestanding -fno-builtin -msmall-data-limit=0)
-target_link_libraries(runtime-shared
-  INTERFACE bindings
-            engine-shared
-)
-
 # ===----------------------------------------------------------------------===
 # One worker per core on baremetal harts.
 # ===----------------------------------------------------------------------===
@@ -52,14 +41,38 @@ target_link_libraries(runtime-baremetal
 target_compile_options(runtime-baremetal PRIVATE -O2 -ffreestanding -fno-builtin -msmall-data-limit=0)
 
 # ===----------------------------------------------------------------------===
+# The device program runtime on baremetal harts: the program on the control
+# hart submits the jobs of every core of design.pb. Built for a device that
+# links it.
+# ===----------------------------------------------------------------------===
+list(TRANSFORM DESIGN_DEFS PREPEND "-D" OUTPUT_VARIABLE PROGRAM_DEFINES)
+add_library(runtime-program STATIC EXCLUDE_FROM_ALL program/program.c)
+target_include_directories(runtime-program
+  PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/program>"
+)
+target_compile_options(
+  runtime-program
+  PRIVATE
+    -O2
+    -ffreestanding
+    -msmall-data-limit=0
+    ${PROGRAM_DEFINES}
+    "-DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART}"
+)
+target_link_libraries(runtime-program
+  PUBLIC runtime-baremetal
+)
+
+# ===----------------------------------------------------------------------===
 # One pinned pthread worker per core on Linux, plus the services compiled
-# programs call: workspace, DMA, core links, MLIR runner utilities and traces.
+# programs call: DMA, MLIR runner utilities and traces. A core with threads
+# reaches them through the OS: its jobs link the Linux engine, whose
+# management instructions the engine driver issues.
 # ===----------------------------------------------------------------------===
 set(
   RUNTIME_LINUX_SOURCES
+  scheduler/runtime.c
   scheduler/linux.c
-  services/workspace.c
-  services/corelink.c
   services/mlir.cpp
   trace/trace.cpp
   trace/location.cpp
@@ -71,36 +84,40 @@ endif()
 add_library(runtime-linux STATIC ${RUNTIME_LINUX_SOURCES})
 target_include_directories(runtime-linux
   PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/services>"
+         "$<BUILD_INTERFACE:${RUNTIME_DIR}/scheduler>"
          PRIVATE
          "${RUNTIME_DIR}/trace"
          "${MLIR_EXECUTION_ENGINE}"
 )
 target_compile_definitions(runtime-linux
   PRIVATE ${RUNTIME_DEFS}
+          BUCKYBALL_DEVICE_TRACE
 )
 target_compile_options(runtime-linux PRIVATE -O2 -ftls-model=local-exec)
 target_compile_features(runtime-linux PRIVATE c_std_11 cxx_std_17)
 # Traces name the hardware thread of the current instruction stream.
 target_link_libraries(runtime-linux
-  PUBLIC runtime
-         engine
+  PUBLIC bindings
+         engine-linux
          pthread
 )
 
 add_library(runtime-linux-shared STATIC ${RUNTIME_LINUX_SOURCES})
 target_include_directories(runtime-linux-shared
   PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/services>"
+         "$<BUILD_INTERFACE:${RUNTIME_DIR}/scheduler>"
          PRIVATE
          "${RUNTIME_DIR}/trace"
          "${MLIR_EXECUTION_ENGINE}"
 )
 target_compile_definitions(runtime-linux-shared
   PRIVATE ${RUNTIME_DEFS}
+          BUCKYBALL_DEVICE_TRACE
 )
 target_compile_options(runtime-linux-shared PRIVATE -O2)
 target_compile_features(runtime-linux-shared PRIVATE c_std_11 cxx_std_17)
 target_link_libraries(runtime-linux-shared
-  PUBLIC runtime-shared
+  PUBLIC bindings
          engine-shared
          pthread
 )

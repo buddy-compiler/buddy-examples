@@ -18,6 +18,9 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
   COMMAND ${PYTHON} buddy-pytorch-stable-diffusion-graph.py
   DEPENDS buddy-pytorch-stable-diffusion-graph.py
+          model-text_encoder.py
+          model-unet.py
+          model-vae.py
           output/stable-diffusion/model_index.json
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Exporting stable-diffusion graph"

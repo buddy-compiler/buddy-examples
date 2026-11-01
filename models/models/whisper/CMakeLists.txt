@@ -27,6 +27,7 @@ add_custom_command(
   DEPENDS buddy-pytorch-whisper-graph.py
           ${MODEL_WEIGHTS}
           output/whisper/config.json
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Exporting whisper graph"
   VERBATIM

@@ -1,4 +1,6 @@
+#include "ImageClassifier.h"
 #include "SharedLibrary.h"
+#include "testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/DIP/DIP.h>
 #include <buddy/DIP/ImgContainer.h>
@@ -6,9 +8,9 @@
 #include <buddy/runtime/core/ModelManifest.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <dlfcn.h>
 #include <fstream>
 #include <iostream>
@@ -21,9 +23,7 @@ namespace {
 using model::openLibrary;
 using model::SharedLibrary;
 
-using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
-                         MemRef<int32_t, 1> *, MemRef<int8_t, 1> *,
-                         MemRef<float, 4> *);
+using model::Forward;
 
 template <typename T> MemRef<T, 1> loadParameters(const std::string &path) {
   std::ifstream file;
@@ -84,12 +84,31 @@ public:
             Std[channel];
 
     // The compiled function returns an owned memref descriptor.
-    MemRef<float, 2> output(std::vector<size_t>{1, 1000}, false, 0);
-    const auto start = std::chrono::steady_clock::now();
-    forward(&output, &parameters, &quantizedBias, &quantizedWeights, &input);
-    const std::chrono::duration<double> elapsed =
-        std::chrono::steady_clock::now() - start;
-    const float *logits = output.getData();
+    model::Parameters f32{parameters.getData(),
+                          parameters.getData(),
+                          0,
+                          {int64_t(parameters.getSize())},
+                          {1}};
+    model::Bias i32{quantizedBias.getData(),
+                    quantizedBias.getData(),
+                    0,
+                    {int64_t(quantizedBias.getSize())},
+                    {1}};
+    model::Weights i8{quantizedWeights.getData(),
+                      quantizedWeights.getData(),
+                      0,
+                      {int64_t(quantizedWeights.getSize())},
+                      {1}};
+    model::Image imageInput{input.getData(),
+                            input.getData(),
+                            0,
+                            {1, 224, 224, 3},
+                            {150528, 672, 3, 1}};
+    model::Scores output{};
+    const auto start = read_time_ns();
+    forward(&output, &f32, &i32, &i8, &imageInput);
+    const double elapsed = (read_time_ns() - start) * 1e-9;
+    const float *logits = output.data();
     const auto prediction = std::max_element(logits, logits + 1000) - logits;
     double sum = 0.0;
     for (size_t i = 0; i < 1000; ++i)
@@ -98,8 +117,16 @@ public:
               << "Classification: " << label(manifest.vocabPath, prediction)
               << '\n'
               << "Probability: " << 1.0 / sum << '\n';
+    if (!config.outputPath.empty()) {
+      std::ofstream dump;
+      dump.exceptions(std::ios::failbit | std::ios::badbit);
+      dump.open(config.outputPath, std::ios::binary);
+      dump.write(reinterpret_cast<const char *>(logits), 1000 * sizeof(float));
+      dump.close();
+    }
+    std::free(output.allocated);
     if (!config.suppressStats)
-      std::cout << "Inference time: " << elapsed.count() << "s\n";
+      std::cout << "Inference time: " << elapsed << "s\n";
   }
 };
 

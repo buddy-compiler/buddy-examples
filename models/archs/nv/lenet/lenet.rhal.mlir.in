@@ -1,23 +1,26 @@
 rhal.module @lenet attributes {
   version = "0.1.0",
-  model_name = "lenet_nv",
-  runner_library = "file:liblenet-nv-runner.so"
+  model_name = "lenet_nv_custom",
+  runner_library = "file:liblenet-nv-custom-runner.so"
 } {
-  // FP32 biases and scales, followed by offline INT8 weights.
+  // The parameters grouped by type: FP32, INT32 biases, INT8 weights.
   rhal.constant @params {
     id = 1 : i32, storage = "external",
     type = tensor<?xf32>, uri = "file:arg0.data"
   }
-
-  rhal.constant @quantized_weights {
+  rhal.constant @biases {
     id = 2 : i32, storage = "external",
-    type = tensor<?xi8>, uri = "file:arg1.data"
+    type = tensor<?xi32>, uri = "file:arg1.data"
+  }
+  rhal.constant @weights {
+    id = 3 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:arg2.data"
   }
 
   // The host entry point contains the embedded NVIDIA kernels.
   rhal.codeobj @model_kernels {
     id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
-    uri = "file:liblenet-nv-model.so", entry_symbol = "_mlir_ciface_forward"
+    uri = "file:liblenet-nv-custom-model.so", entry_symbol = "_mlir_ciface_forward"
   }
   rhal.codeobj @mlir_c_runner_utils {
     id = 2 : i32, kind = "host_shared_lib", backend = "cpu",
@@ -40,6 +43,6 @@ rhal.module @lenet attributes {
   rhal.buffer @logits {space = "host", type = tensor<1x10xf32>}
   rhal.func @forward {
     inputs = ["image"], outputs = ["logits"],
-    dispatch = "model_kernels", args = ["logits", "params", "quantized_weights", "image"]
+    dispatch = "model_kernels", args = ["logits", "params", "image"]
   }
 }

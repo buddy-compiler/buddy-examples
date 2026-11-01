@@ -10,7 +10,7 @@ from buddy.compiler.graph.operation import (
 )
 from buddy.compiler.graph.transform.quantization.quantize import sort_graph
 from buddy.compiler.graph.type import TensorDType
-from stack.compiler.frontend.quant import (
+from compiler.frontend.quant import (
     FP32ToInt8QuantOp,
     Int8ToFP32DequantOp,
     Int32ToFP32DequantOp,

@@ -1,31 +1,7 @@
 package platform
 
-import chisel3._
-import java.io.File
-
-import org.chipsalliance.cde.config.{Config, Parameters, Field}
-import freechips.rocketchip.tile._
-import freechips.rocketchip.tilelink._
-import freechips.rocketchip.subsystem._
-import freechips.rocketchip.devices.tilelink.{BootROMParams, BootROMLocated}
-import freechips.rocketchip.diplomacy.LazyModule
-import freechips.rocketchip.subsystem.SystemBusKey
+import org.chipsalliance.cde.config.Config
 import gemmini.CapacityInKilobytes
-
-class WithBootROM extends Config((site, here, up) => {
-  case BootROMLocated(x) => {
-    val chipyardBootROM = new File(s"thirdparty/chipyard/generators/testchipip/bootrom/bootrom.rv${site(MaxXLen)}.img")
-    val firesimBootROM = new File(s"thirdparty/chipyard/target-rtl/chipyard/generators/testchipip/bootrom/bootrom.rv${site(MaxXLen)}.img")
-
-    val bootROMPath = if (chipyardBootROM.exists()) {
-      chipyardBootROM.getAbsolutePath()
-    } else {
-      firesimBootROM.getAbsolutePath()
-    }
-    up(BootROMLocated(x)).map(_.copy(contentFileName = bootROMPath))
-  }
-})
-
 
 class GemminiConfig extends Config(
   new gemmini.DefaultGemminiConfig ++
@@ -35,19 +11,19 @@ class GemminiConfig extends Config(
 
 class FireSimGemminiVCU118Config extends Config(
   new freechips.rocketchip.subsystem.WithExtMemSize((1 << 30) * 4L) ++
-  new WithBootROM ++
+  new chipyard.config.WithBootROM ++
   new firechip.chip.WithDefaultFireSimBridges ++
   new firechip.chip.WithFireSimConfigTweaks ++
   new GemminiConfig)
 
 class FireSimGemminiU280Config extends Config(
-  new WithBootROM ++
+  new chipyard.config.WithBootROM ++
   new firechip.chip.WithDefaultFireSimBridges ++
   new firechip.chip.WithFireSimConfigTweaks ++
   new GemminiConfig)
 
 //===----------------------------------------------------------===//
-// Gemmini Dim 128 Config
+// Gemmini Dim 32 Config
 //===----------------------------------------------------------===//
 class GemminiDim32Config extends Config(
   new gemmini.DefaultGemminiConfig(gemminiConfig = gemmini.GemminiConfigs.defaultConfig.copy(
@@ -63,7 +39,7 @@ class GemminiDim32Config extends Config(
   new chipyard.config.AbstractConfig)
 
 class FireSimGemminiU280LargeDimConfig extends Config(
-  new WithBootROM ++
+  new chipyard.config.WithBootROM ++
   new firechip.chip.WithDefaultFireSimBridges ++
   new firechip.chip.WithFireSimConfigTweaks ++
   new GemminiDim32Config)

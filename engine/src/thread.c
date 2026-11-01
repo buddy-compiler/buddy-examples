@@ -28,16 +28,27 @@ uint32_t thread_find(uint64_t signature, uint32_t instance) {
   __builtin_trap();
 }
 
+typedef uint64_t __attribute__((may_alias)) tss_word;
+
 void thread_tss_write(uint32_t offset, const void *data, size_t bytes) {
-  if (offset % 8 || bytes > UINT32_MAX - offset)
+  if (offset % 8 || (uintptr_t)data % 8 || bytes > UINT32_MAX - offset)
     __builtin_trap();
-  const unsigned char *source = data;
-  for (size_t i = 0; i < bytes; i += 8) {
-    uint64_t word = 0;
-    for (size_t byte = 0; byte < 8 && i + byte < bytes; ++byte)
-      word |= (uint64_t)source[i + byte] << (8 * byte);
+  // Whole words go out directly; only the last partial word is assembled.
+  const tss_word *words = data;
+  size_t whole = bytes / 8;
+  for (size_t i = 0; i < whole; ++i)
     __asm__ volatile(
-        ".insn r 0x2b, 7, 12, x0, %0, %1" ::"r"((uint64_t)offset + i), "r"(word)
+        ".insn r 0x2b, 7, 12, x0, %0, %1" ::"r"((uint64_t)offset + 8 * i),
+        "r"(words[i])
+        : "memory");
+  if (bytes % 8) {
+    const unsigned char *tail = (const unsigned char *)(words + whole);
+    uint64_t word = 0;
+    for (size_t byte = 0; byte < bytes % 8; ++byte)
+      word |= (uint64_t)tail[byte] << (8 * byte);
+    __asm__ volatile(
+        ".insn r 0x2b, 7, 12, x0, %0, %1" ::"r"((uint64_t)offset + 8 * whole),
+        "r"(word)
         : "memory");
   }
 }
@@ -126,4 +137,22 @@ uint64_t thread_wait(uint32_t thread, uint64_t task, int *cancelled) {
   }
   *cancelled = result.cancelled;
   return result.value;
+}
+
+uint64_t thread_transfer(const uint64_t descriptor[7]) {
+  for (uint64_t field = 0; field < 7; ++field)
+    __asm__ volatile(".insn r 0x2b, 7, 20, x0, %0, %1" ::"r"(field),
+                     "r"(descriptor[field])
+                     : "memory");
+  uint64_t token;
+  __asm__ volatile(".insn r 0x2b, 7, 21, %0, x0, x0" : "=r"(token)::"memory");
+  return token;
+}
+
+void thread_transfer_ready(uint64_t token) {
+  __asm__ volatile(".insn r 0x2b, 7, 23, x0, %0, x0" ::"r"(token) : "memory");
+}
+
+void thread_transfer_release(uint64_t token) {
+  __asm__ volatile(".insn r 0x2b, 7, 22, x0, %0, x0" ::"r"(token) : "memory");
 }

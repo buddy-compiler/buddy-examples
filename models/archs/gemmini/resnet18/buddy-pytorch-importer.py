@@ -1,4 +1,6 @@
+from importlib import import_module
 from pathlib import Path
+import json
 
 import numpy as np
 import torch
@@ -6,49 +8,57 @@ import torch
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
+from buddy.compiler.trace import TraceConfig, load_trace_config
+from compiler.frontend import quant
+from frontend.permute.graph import permute
+from frontend.quant.graph import quantize
+from torchvision.models import ResNet18_Weights
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-from torchvision.models import resnet18, ResNet18_Weights
 
-model = resnet18(weights=None)
-model.load_state_dict(
-    torch.load(
-        model_dir / "../../../models/resnet18/output/resnet18/model.pth",
-        weights_only=True,
-    )
-)
-for layer in model.modules():
-    if isinstance(layer, torch.nn.ReLU):
-        layer.inplace = False
-data = torch.zeros((1, 3, 224, 224))
-model.eval()
+resnet18 = import_module("models.models.resnet18.model")
+model = resnet18.load()
 compiler = DynamoCompiler(
-    primary_registry=tosa.ops_registry,
-    trace=None,
+    # Gemmini has no conversion hardware: the CPU converts between FP32 and
+    # the INT8 codes.
+    primary_registry={**tosa.ops_registry, **quant.ref_registry},
+    trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
 )
 with torch.no_grad():
-    graphs = compiler.importer(model, data)
-assert len(graphs) == 1
-graph = graphs[0]
+    (graph,) = compiler.importer(model, *resnet18.inputs())
 params = compiler.imported_params[graph]
+names = {
+    value.data_ptr(): name
+    for name, value in [*model.named_parameters(), *model.named_buffers()]
+}
+parameter_names = {
+    node.name: names[value.data_ptr()]
+    for node, value in zip(graph.params, params, strict=True)
+}
 graph.dump(output / "01-import.txt")
-# graph.dump_parameters(output / "01-import-parameters")
+# The convolutions run in NHWC; the transposes around the Linears are absorbed.
+permute(graph)
+graph.dump(output / "02-permuted.txt")
+# Gemmini computes in INT8 only: the convolutions and the Linear read INT8
+# codes; the scales come from buddy-pytorch-calibrate.py.
+calibration = json.loads((output / "calibration.json").read_text())
+params = quantize(graph, params, parameter_names, calibration)
+graph.dump(output / "03-quanted.txt")
 graph.fuse_ops([simply_fuse])
 driver = GraphDriver(graph)
-for subgraph in driver.subgraphs:
-    subgraph.trace(model_dir / "trace/trace.toml")
-graph.dump(output / "04-traced.txt")
 for index, subgraph in enumerate(driver.subgraphs):
     subgraph.lower_to_top_level_ir()
     (output / f"subgraph{index}.mlir").write_text(str(subgraph._imported_module))
 (output / "forward.mlir").write_text(str(driver.construct_main_graph(True)))
-parameters = np.concatenate(
-    [parameter.detach().cpu().numpy().reshape(-1) for parameter in params]
-)
-parameters.astype(np.float32).tofile(output / "arg0.data")
+# forward takes the parameters grouped by type: FP32, INT32 biases, INT8
+# weights.
+for index, dtype in enumerate((torch.float32, torch.int32, torch.int8)):
+    np.concatenate(
+        [p.detach().numpy().reshape(-1) for p in params if p.dtype == dtype]
+    ).tofile(output / f"arg{index}.data")
 (output / "Labels.txt").write_text(
     "\n".join(ResNet18_Weights.DEFAULT.meta["categories"]) + "\n"
 )

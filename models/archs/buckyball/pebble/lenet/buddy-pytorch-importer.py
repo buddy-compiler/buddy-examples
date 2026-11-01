@@ -1,39 +1,36 @@
+from importlib import import_module
 from pathlib import Path
 import json
 
 import numpy as np
 
 import torch
-from models.models.lenet.model import LeNet
 
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
 from buddy.compiler.ops import tosa
 from buddy.compiler.trace import TraceConfig, load_trace_config
-from stack.compiler.frontend import quant
+from compiler.frontend import quant
 from frontend.permute.graph import permute
 from frontend.quant.graph import quantize
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-model_source = model_dir.parents[3] / "models/lenet"
 
 # ===----------------------------------------------------------------------===
 # Step 1: Import the graph of the checkpoint.
 # ===----------------------------------------------------------------------===
-model = LeNet().eval()
-model.load_state_dict(
-    torch.load(model_source / "output/lenet/model.pth", weights_only=True)
-)
+lenet = import_module("models.models.lenet.model")
+model = lenet.load()
 # The traced nodes are named as in the imported graph.
 compiler = DynamoCompiler(
     primary_registry={**tosa.ops_registry, **quant.ops_registry},
     trace=TraceConfig(load_trace_config(model_dir / "trace/trace.toml")),
 )
 with torch.no_grad():
-    (graph,) = compiler.importer(model, torch.zeros(1, 1, 28, 28))
+    (graph,) = compiler.importer(model, *lenet.inputs())
 params = compiler.imported_params[graph]
 names = {parameter.data_ptr(): name for name, parameter in model.named_parameters()}
 parameter_names = {
@@ -77,3 +74,15 @@ for index, dtype in enumerate((torch.float32, torch.int32, torch.int8)):
     np.concatenate(
         [p.detach().numpy().reshape(-1) for p in params if p.dtype == dtype]
     ).tofile(output / f"arg{index}.data")
+
+# The baremetal payload contains one example image, normalized like runner.cpp.
+from PIL import Image
+
+image_path = Path(lenet.__file__).parent / "images/8.bmp"
+pixels = np.asarray(Image.open(image_path).convert("RGB"), dtype=np.float32)
+gray = (
+    np.float32(0.114) * pixels[:, :, 2]
+    + np.float32(0.587) * pixels[:, :, 1]
+    + np.float32(0.299) * pixels[:, :, 0]
+) / np.float32(255)
+(gray * np.float32(2) - np.float32(1)).tofile(output / "inputs.data")

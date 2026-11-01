@@ -15,6 +15,7 @@ add_custom_command(
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           buddy-pytorch-importer.py
           ${MODEL_DIR}/alexnet/output/alexnet/model.pth
+          ${MODEL_DIR}/alexnet/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Importing original FP32 AlexNet for NVIDIA"
   VERBATIM

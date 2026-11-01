@@ -15,54 +15,28 @@
 # ===---------------------------------------------------------------------------
 #
 
+from importlib import import_module
 from pathlib import Path
 
 import numpy
 import torch
-import torch.nn as nn
-import transformers.masking_utils as masking_utils
 from buddy.compiler.frontend import DynamoCompiler
 from buddy.compiler.graph import GraphDriver
 from buddy.compiler.graph.transform import simply_fuse
-from stack.compiler.frontend.ops import tosa
+from buddy.compiler.ops import tosa
 from torch._inductor.decomposition import decompositions as inductor_decomp
-from transformers import WhisperForConditionalGeneration, AutoTokenizer
+from transformers import AutoTokenizer
 
 output_dir = Path(__file__).resolve().parent / "output"
 output_dir.mkdir(parents=True, exist_ok=True)
-masking_utils.find_packed_sequence_indices = lambda *args, **kwargs: None
-model = WhisperForConditionalGeneration.from_pretrained(
-    Path(__file__).resolve().parents[4] / "models/whisper/output/whisper"
-)
-model.config.use_cache = False
-model.eval()
-
-
-class Logits(nn.Module):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-
-    def forward(self, input_features, decoder_input_ids):
-        return self.model(
-            input_features=input_features,
-            decoder_input_ids=decoder_input_ids,
-            use_cache=False,
-        ).logits
-
-
-input_features = torch.zeros((1, 80, 3000), dtype=torch.float32)
-decoder_input_ids = torch.zeros((1, 448), dtype=torch.long)
+whisper = import_module("models.models.whisper.model")
+model = whisper.load()
 dynamo_compiler = DynamoCompiler(
     primary_registry=tosa.ops_registry,
     aot_autograd_decomposition=inductor_decomp,
 )
 with torch.no_grad():
-    graphs = dynamo_compiler.importer(
-        Logits(model),
-        input_features=input_features,
-        decoder_input_ids=decoder_input_ids,
-    )
+    graphs = dynamo_compiler.importer(model, *whisper.inputs())
 if len(graphs) != 1:
     raise RuntimeError(f"Expected one graph, got {len(graphs)}")
 graph = graphs[0]
@@ -79,9 +53,7 @@ numpy.concatenate([p.detach().numpy().reshape([-1]) for p in params]).tofile(
 )
 print(f"[import-whisper] Wrote forward.mlir, subgraph0.mlir, arg0.data → {output_dir}")
 
-tokenizer = AutoTokenizer.from_pretrained(
-    Path(__file__).resolve().parents[4] / "models/whisper/output/whisper"
-)
+tokenizer = AutoTokenizer.from_pretrained(whisper.checkpoint)
 with (output_dir / "vocab.txt").open("w") as stream:
     for token, index in sorted(tokenizer.get_vocab().items(), key=lambda item: item[1]):
         stream.write(token.replace("\n", "\\n") + "\n")

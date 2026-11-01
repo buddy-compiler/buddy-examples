@@ -4,8 +4,7 @@ include("${DESIGN_CMAKE}")
 set(COMPILER_BUILD "${DESIGN_COMPILER}")
 include_directories("${RUNTIME_DIR}/scheduler" "${RUNTIME_DIR}/services")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# runtime, runtime-linux and engine: built by the device stack. Kernels and
-# their kernels.rename: built by the thread stacks, in DESIGN_THREAD_BUILD_<thread>.
+# runtime, runtime-linux and engine: built by the device stack.
 include("${DESIGN_DEVICE_BUILD}/device.cmake")
 
 add_subdirectory("${LIB_DIR}" image-runtime EXCLUDE_FROM_ALL)

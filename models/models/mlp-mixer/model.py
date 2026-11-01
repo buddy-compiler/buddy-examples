@@ -1,5 +1,10 @@
+from pathlib import Path
+
 import torch
+from safetensors.torch import load_file
 from torch import nn
+
+checkpoint = Path(__file__).resolve().parent / "output/mlp-mixer"
 
 
 class Mlp(nn.Module):
@@ -22,8 +27,8 @@ class MixerBlock(nn.Module):
         self.mlp_channels = Mlp(768, 3072)
 
     def forward(self, value):
-        mixed = self.mlp_tokens(self.norm1(value).transpose(0, 1))
-        value = value + mixed.transpose(0, 1)
+        mixed = self.mlp_tokens(self.norm1(value).transpose(-2, -1))
+        value = value + mixed.transpose(-2, -1)
         return value + self.mlp_channels(self.norm2(value))
 
 
@@ -37,5 +42,25 @@ class Mixer(nn.Module):
         self.head = nn.Linear(768, 1000)
 
     def forward(self, patches):
+        """[196, 768] patches to [1, 1000] logits; a leading batch axis, if
+        any, carries through."""
         value = self.blocks(self.stem.proj(patches))
-        return self.head(self.norm(value).mean(dim=0, keepdim=True))
+        # The patch axis as a non-negative dim: the traced graph stays as for
+        # [196, 768].
+        return self.head(self.norm(value).mean(dim=value.ndim - 2, keepdim=True))
+
+
+def load():
+    """Mixer-B/16 with the checkpoint weights, ready to import."""
+    state = load_file(checkpoint / "model.safetensors")
+    # The non-overlapping 16x16 patch projection is a linear map: its [C, H, W]
+    # weight dimensions flatten to the [196, 768] patch input.
+    state["stem.proj.weight"] = state["stem.proj.weight"].flatten(1)
+    model = Mixer().eval()
+    model.load_state_dict(state, strict=True)
+    return model
+
+
+def inputs():
+    """Example inputs of the graph: 196 patches of [C, 16, 16]."""
+    return (torch.zeros((196, 768)),)
