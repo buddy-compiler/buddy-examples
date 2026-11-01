@@ -22,6 +22,6 @@ rhal.module @bert attributes {
   }
   rhal.codeobj @model_kernels {
     id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
-    uri = "file:libbert-base-uncased-emotion-buckyball-goban-model.so", entry_symbol = "_mlir_ciface_forward"
+    uri = "file:libbert-base-uncased-emotion-buckyball-goban-model.so", entry_symbol = "bert_run"
   }
 }

@@ -83,7 +83,18 @@ for index, dtype in enumerate((torch.float32, torch.int32, torch.int8)):
     ).tofile(output / f"arg{index}.data")
 
 # The runner tokenizes the prompt with the vocabulary of the checkpoint.
-vocabulary = BertTokenizer.from_pretrained(bert.checkpoint).get_vocab()
+tokenizer = BertTokenizer.from_pretrained(bert.checkpoint)
+vocabulary = tokenizer.get_vocab()
 (output / "vocab.txt").write_text(
     "".join(token + "\n" for token in sorted(vocabulary, key=vocabulary.get))
+)
+sample = tokenizer(
+    (bert.checkpoint.parent.parent / "input.txt").read_text().strip(),
+    padding="max_length",
+    max_length=32,
+    truncation=True,
+)
+np.asarray(sample["input_ids"], dtype=np.int64).tofile(output / "input_ids.data")
+np.asarray(sample["attention_mask"], dtype=np.int64).tofile(
+    output / "attention_mask.data"
 )

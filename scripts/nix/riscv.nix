@@ -36,6 +36,25 @@ let
 in
 
 {
+  # Host reference for the target's scalar tanhf, including its fused rounding.
+  newlib-reference-math = pkgs.stdenv.mkDerivation {
+    pname = "newlib-reference-math";
+    version = newlib-nano.version;
+    src = newlib-nano.src;
+    dontConfigure = true;
+    buildPhase = ''
+      gcc -Os -mfma -ffp-contract=fast -fno-builtin -fPIC -shared \
+        -Wl,--no-undefined -Wl,-Bsymbolic \
+        -Inewlib/libm/common -idirafter newlib/libc/include \
+        newlib/libm/math/sf_tanh.c newlib/libm/common/sf_expm1.c \
+        newlib/libm/common/math_errf.c -lm -o libnewlib-reference.so
+    '';
+    installPhase = ''
+      mkdir -p $out/lib
+      cp libnewlib-reference.so $out/lib/
+    '';
+  };
+
   # RISC-V embedded toolchain (bare metal), with riscv64-unknown-elf-* symlinks
   riscv-embedded-gcc = pkgs.symlinkJoin {
     name = "riscv64-unknown-elf-gcc";

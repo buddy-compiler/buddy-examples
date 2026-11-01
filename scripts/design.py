@@ -213,11 +213,20 @@ def cmake(design, design_pb: Path) -> str:
 
     profiles = design.DESCRIPTOR.fields_by_name["profiles"]
     cores = design.device.DESCRIPTOR.fields_by_name["cores"]
+    boot_defs = []
+    if design.HasField("device"):
+        ddr = design.device.ddr
+        stack_top = ddr.base + ddr.bytes - ddr.model
+        heap_limit = stack_top - 4096 * (
+            1 + max(core.hart_id for core in design.device.cores)
+        )
+        boot_defs = [f"DEVICE_STACK_TOP={stack_top}", f"DEVICE_HEAP_LIMIT={heap_limit}"]
     put(
         "DESIGN_DEFS",
         *c_defs(flatten(design.workload, "WORKLOAD")),
         *c_defs(listing(profiles, design.profiles, "PROFILES", deep=False)),
         *c_defs(listing(cores, design.device.cores, "DEVICE_CORES", deep=False)),
+        *boot_defs,
     )
     for profile in design.profiles:
         put(

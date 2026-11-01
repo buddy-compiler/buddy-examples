@@ -5,6 +5,7 @@
 // the prefix padding mask and its keys and values), and checks the velocity
 // against the PyTorch step of the same quantized graph
 // (output/step_velocity.data).
+#include "testutils.h"
 #include <device.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -37,27 +38,27 @@ static float velocity[sizeof(reference) / sizeof(float)]
 
 #define CACHE_TENSORS 32
 
-#define X(hart) +1
-static const unsigned core_count = 0 DEVICE_CORES;
-#undef X
-
 // The step program, lowered by lower-device: its arguments are the
 // pointers of its buffers, the velocity last.
-int step_program_job(void *core, void *argument);
+extern "C" int step_program_job(void *core, void *argument);
 
 int main(void) {
-  static void *arguments[5 + CACHE_TENSORS + 1];
-  arguments[0] = (void *)step_f32;
-  arguments[1] = (void *)step_i8;
-  arguments[2] = (void *)noise;
-  arguments[3] = (void *)time_;
-  arguments[4] = (void *)pad_masks;
-  for (unsigned i = 0; i < CACHE_TENSORS; ++i)
-    arguments[5 + i] = (void *)(cache + i * (sizeof(cache) / CACHE_TENSORS));
-  arguments[5 + CACHE_TENSORS] = velocity;
   uintptr_t hart;
   asm volatile("csrr %0, mhartid" : "=r"(hart));
+  static void *arguments[5 + CACHE_TENSORS + 1];
+  if (hart == DEVICE_CONTROL_HART) {
+    arguments[0] = (void *)step_f32;
+    arguments[1] = (void *)step_i8;
+    arguments[2] = (void *)noise;
+    arguments[3] = (void *)time_;
+    arguments[4] = (void *)pad_masks;
+    for (unsigned i = 0; i < CACHE_TENSORS; ++i)
+      arguments[5 + i] = (void *)(cache + i * (sizeof(cache) / CACHE_TENSORS));
+    arguments[5 + CACHE_TENSORS] = velocity;
+  }
+  const uint64_t begin = read_counter();
   const int status = program_run(step_program_job, arguments);
+  const uint64_t elapsed = read_counter() - begin;
   if (hart != DEVICE_CONTROL_HART)
     return 0;
   if (status) {
@@ -81,9 +82,6 @@ int main(void) {
   printf("velocity: %u of %u differ from PyTorch, max |difference| %d.%09d\n",
          different, (unsigned)(sizeof(velocity) / sizeof(float)), (int)largest,
          (int)((largest - (int)largest) * 1e9f));
-  printf("latency: %lu cycles\n", (unsigned long)program_latency());
-  for (unsigned core = 0; core < core_count; ++core)
-    printf("core %u: jobs took %lu cycles\n", core,
-           (unsigned long)program_busy(core));
-  return 0;
+  printf("Inference cycles: %lu\n", (unsigned long)elapsed);
+  return different != 0;
 }

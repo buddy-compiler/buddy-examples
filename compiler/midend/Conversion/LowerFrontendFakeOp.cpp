@@ -284,18 +284,20 @@ void lowerMXINT8Quantize(Operation *op, int64_t axis) {
                 arith::SubIOp::create(body, loc, i32(body, loc, 254), byte));
             Value scaled =
                 arith::MulFOp::create(body, loc, args[0], multiplier);
-            Value rounded = math::RoundEvenOp::create(body, loc, scaled);
+            // Integer clamp bounds commute with rounding. Keep round and
+            // conversion adjacent so RISC-V can use fcvt.w.s with RNE.
             Value clamped = arith::MinimumFOp::create(
                 body, loc,
                 arith::MaximumFOp::create(
-                    body, loc, rounded,
+                    body, loc, scaled,
                     arith::ConstantOp::create(body, loc,
                                               body.getF32FloatAttr(-127))),
                 arith::ConstantOp::create(body, loc,
                                           body.getF32FloatAttr(127)));
+            Value rounded = math::RoundEvenOp::create(body, loc, clamped);
             linalg::YieldOp::create(body, loc,
                                     ValueRange{arith::FPToSIOp::create(
-                                        body, loc, body.getI8Type(), clamped)});
+                                        body, loc, body.getI8Type(), rounded)});
           })
           .getResult(0);
   codes = tensor::CollapseShapeOp::create(builder, loc, codes,

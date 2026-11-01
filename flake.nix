@@ -45,6 +45,7 @@
             python.python3Packages
             riscv.riscv-embedded-gcc
             riscv.riscv-linux-gcc
+            riscv.newlib-reference-math
             cmake
             ninja
             clang-tools

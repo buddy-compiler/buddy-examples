@@ -26,10 +26,12 @@ from buddy.compiler.ops import tosa
 from compiler.frontend import quant
 from scripts.design import load
 from frontend import reference
-from frontend.layout.graph import ball
+from models.archs.buckyball.poly.layout import ball
 from frontend.partition.graph import cut
 from frontend.permute.graph import permute
 from frontend.quant.graph import quantize
+
+torch.set_num_threads(4)
 
 model_dir = Path(__file__).resolve().parent
 design_pb = sys.argv[1]
@@ -80,9 +82,15 @@ graph.dump(output / "03-quanted.txt")
 # launches of the semantic graphs of the model, each graph defined once per
 # class (graph-<class of core>.mlir), on the reduce core and the poly ranks.
 # ===----------------------------------------------------------------------===
-device = cut(graph, params, load(design_pb))
+design = load(design_pb)
+device = cut(graph, params, design)
 # The weights of the poly cores in the layout their Ball reads in place.
-ball(device)
+ball(
+    device,
+    min(
+        p.thread.mem.bank.entries for p in design.profiles if p.core.component == "poly"
+    ),
+)
 (output / "04-partitioned.txt").write_text(
     "".join(
         f"{s.name}: graph {s.graph} (class {s.graph_class}, on {s.core_class}), {len(s.ops)} operations\n"
@@ -109,7 +117,12 @@ for element, values_ in device.packed().items():
 if order[0] != 0:
     raise ValueError("the tokens are not the first input of the program")
 tokenizer = AutoTokenizer.from_pretrained(model.checkpoint)
-tokens = tokenizer("The capital of France is", return_tensors="pt").input_ids
+with (output / "vocab.txt").open("w") as stream:
+    for token, index in sorted(tokenizer.get_vocab().items(), key=lambda item: item[1]):
+        stream.write(token.replace("\n", "\\n") + "\n")
+(output / "input-order.txt").write_text(" ".join(map(str, order)) + "\n")
+prompt = (model.checkpoint.parent.parent / "input.txt").read_text().strip()
+tokens = tokenizer(prompt, return_tensors="pt").input_ids
 _, start, keys, values = model.inputs(tokens.shape[1])
 arguments = [tokens, start, *keys, *values]
 logits, new_keys, new_values = reference.run(

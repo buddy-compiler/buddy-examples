@@ -28,6 +28,11 @@
 
 #include <runtime.h>
 #include <string.h>
+#ifdef PROGRAM_LINUX
+#include <linux.h>
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #define PROGRAM_JOBS 8192
 #define PROGRAM_WORDS 131072
@@ -56,13 +61,19 @@ static size_t dependencies[PROGRAM_DEPENDENCIES];
 static size_t dependency_count;
 /* The job the program is building. */
 static struct runtime_job job;
+#ifndef PROGRAM_LINUX
 static uint32_t heap;
+#endif
 /* The runs the control hart started, the runs each hart entered, and the
  * harts' exits from runs: a run starts once every hart left the run before,
  * and its results are read once every hart left it. */
 static uint32_t started;
+#ifdef PROGRAM_LINUX
+static struct runtime_linux_worker workers[CORE_COUNT];
+#else
 static uint32_t entered_runs[CORE_COUNT];
 static uint32_t left;
+#endif
 
 /* What each job runs, and when it may start and ended on the virtual clock
  * of its core. */
@@ -78,8 +89,10 @@ static uint64_t clocks[CORE_COUNT];
 static uint64_t busy[CORE_COUNT];
 /* The cycles of each hart in the allocator, and its mcycle when it entered
  * it last. */
+#ifndef PROGRAM_LINUX
 static uint64_t allocating[CORE_COUNT];
 static uint64_t entered[CORE_COUNT];
+#endif
 /* The last job submitted to each core, plus one; 0 if none. */
 static size_t last[CORE_COUNT];
 static size_t control;
@@ -94,17 +107,25 @@ static size_t core_of(uint32_t hart) {
   __builtin_trap();
 }
 
+#ifndef PROGRAM_LINUX
 static size_t this_core(void) {
   uintptr_t hart;
   asm volatile("csrr %0, mhartid" : "=r"(hart));
   return core_of(hart);
 }
+#endif
 
 /* The mcycle of the hart of `core` without its cycles in the allocator. */
 static uint64_t cycles(size_t core) {
   uint64_t value;
+#ifdef PROGRAM_LINUX
+  (void)core;
+  asm volatile("rdcycle %0" : "=r"(value));
+  return value;
+#else
   asm volatile("csrr %0, mcycle" : "=r"(value));
   return value - allocating[core];
+#endif
 }
 
 /* The control core's clock, advanced by the cycles the program ran since
@@ -142,12 +163,15 @@ static int run_program(void *context, void *argument) {
 
 /* The jobs of every core allocate their buffers: newlib's malloc is shared,
  * so it takes a lock. Its cycles from here to the unlock are not counted. */
+#ifndef PROGRAM_LINUX
 void __malloc_lock(void *reent) {
   (void)reent;
   uint64_t now;
   asm volatile("csrr %0, mcycle" : "=r"(now));
   entered[this_core()] = now;
   while (__atomic_exchange_n(&heap, 1, __ATOMIC_ACQUIRE)) {
+    while (__atomic_load_n(&heap, __ATOMIC_RELAXED)) {
+    }
   }
 }
 
@@ -164,13 +188,20 @@ static uint8_t stacks[CORE_COUNT][PROGRAM_STACK_BYTES]
     __attribute__((aligned(16)));
 
 static void work(size_t core) { runtime_baremetal_run(&runtime, core); }
+#endif
 
 int program_run(int (*program)(void *, void *), void *argument) {
+#ifdef PROGRAM_LINUX
+  const size_t core = core_of(DEVICE_CONTROL_HART);
+  ++started;
+  {
+#else
   const size_t core = this_core();
   const uint32_t run = ++entered_runs[core];
   if (core == core_of(DEVICE_CONTROL_HART)) {
     while (__atomic_load_n(&left, __ATOMIC_ACQUIRE) != (run - 1) * CORE_COUNT) {
     }
+#endif
     // A run of its own: its jobs, words and clocks from the start.
     word_count = 0;
     dependency_count = 0;
@@ -188,8 +219,33 @@ int program_run(int (*program)(void *, void *), void *argument) {
                                       .entry = run_program,
                                       .argument = argument};
     last[control] = runtime_submit(&runtime, &first) + 1;
+#ifndef PROGRAM_LINUX
     __atomic_store_n(&started, run, __ATOMIC_RELEASE);
+#endif
   }
+#ifdef PROGRAM_LINUX
+  unsigned cpus[CORE_COUNT];
+  for (size_t index = 0; index < CORE_COUNT; ++index)
+    cpus[index] = UINT32_MAX;
+  FILE *info = fopen("/proc/cpuinfo", "r");
+  if (!info)
+    abort();
+  char line[256];
+  unsigned cpu = UINT32_MAX, hart;
+  while (fgets(line, sizeof(line), info)) {
+    if (sscanf(line, "processor : %u", &cpu) == 1)
+      continue;
+    if (sscanf(line, "hart : %u", &hart) == 1)
+      for (size_t index = 0; index < CORE_COUNT; ++index)
+        if (device_cores[index].hart == hart)
+          cpus[index] = cpu;
+  }
+  fclose(info);
+  for (size_t index = 0; index < CORE_COUNT; ++index)
+    if (cpus[index] == UINT32_MAX)
+      abort();
+  runtime_linux_run(&runtime, workers, cpus, PROGRAM_STACK_BYTES);
+#else
   while (__atomic_load_n(&started, __ATOMIC_ACQUIRE) < run) {
   }
   // The worker runs on the core's stack; the boot stack pointer is kept on
@@ -212,6 +268,7 @@ int program_run(int (*program)(void *, void *), void *argument) {
     return 0;
   while (__atomic_load_n(&left, __ATOMIC_ACQUIRE) != run * CORE_COUNT) {
   }
+#endif
   for (size_t index = 0; index < runtime.job_count; ++index)
     if (results[index].state != RUNTIME_SUCCEEDED || results[index].status)
       return index ? -1 - (int)index : results[0].status;
@@ -269,7 +326,11 @@ uint64_t program_job_submit(void) {
   struct timing *timing = job.argument;
   timing->ready = clocks[control];
   timing->dependency_count = job.dependency_count;
+#ifdef PROGRAM_LINUX
+  const size_t submitted = runtime_linux_submit(&workers[control], &job);
+#else
   const size_t submitted = runtime_submit(&runtime, &job);
+#endif
   last[job.core] = submitted + 1;
   mark = cycles(control);
   return submitted;
@@ -296,11 +357,16 @@ void program_wait(uint64_t waited) {
   advance();
   if (timings[waited].core == control)
     __builtin_trap();
+#ifdef PROGRAM_LINUX
+  if (runtime_linux_wait(&workers[control], waited))
+    abort();
+  if (timings[waited].end > clocks[control])
+    clocks[control] = timings[waited].end;
+  mark = cycles(control);
+#else
   for (;;) {
-    while (__atomic_exchange_n(&runtime.lock, 1, __ATOMIC_ACQUIRE)) {
-    }
-    const enum runtime_state state = results[waited].state;
-    __atomic_store_n(&runtime.lock, 0, __ATOMIC_RELEASE);
+    const enum runtime_state state =
+        __atomic_load_n(&results[waited].state, __ATOMIC_ACQUIRE);
     if (state == RUNTIME_SUCCEEDED) {
       if (timings[waited].end > clocks[control])
         clocks[control] = timings[waited].end;
@@ -310,4 +376,5 @@ void program_wait(uint64_t waited) {
     if (state != RUNTIME_WAITING && state != RUNTIME_RUNNING)
       __builtin_trap();
   }
+#endif
 }

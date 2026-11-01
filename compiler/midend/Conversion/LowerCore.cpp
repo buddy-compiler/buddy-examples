@@ -149,6 +149,7 @@ public:
                 : func::FuncOp();
     func::FuncOp submit = declare("stream_submit", {});
     func::FuncOp wait = declare("stream_wait", {});
+    func::FuncOp touch = declare("dma_touch", {ptr, i64});
 
     // Each outlined body records its Ball commands for its hardware thread.
     DenseSet<Operation *> recorded;
@@ -485,6 +486,11 @@ public:
           }
           if (!launches.empty() && needsHost)
             close(launch);
+          // Hardware threads cannot service Linux faults on destination pages.
+          for (Value output : launch.getOuts())
+            func::CallOp::create(builder, loc, touch,
+                                 ValueRange{pointer(builder, loc, output),
+                                            bytes(builder, loc, output)});
           SmallVector<Value> operands;
           for (auto [value, type] : llvm::zip_equal(launch->getOperands(),
                                                     callee.getArgumentTypes()))

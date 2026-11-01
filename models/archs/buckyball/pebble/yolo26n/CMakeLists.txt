@@ -55,6 +55,7 @@ add_custom_command(
 add_custom_command(
   OUTPUT forward.o
   BYPRODUCTS ${OUTPUT_DIR}/forward.ll
+             ${OUTPUT_DIR}/forward_opt.ll
              ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/forward.mlir
             -buffer-deallocation-simplification
@@ -76,11 +77,13 @@ add_custom_command(
             -o ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/forward.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/forward_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
   DEPENDS ${OUTPUT_DIR}/forward.mlir
           ${DESIGN_TARGET_PLUGIN_pebble}
           ${DESIGN_COMPILER}/bin/buddy-translate
           ${DESIGN_COMPILER}/bin/buddy-llc
+          ${BUDDY_SOURCE}/llvm/build/bin/opt
   COMMENT "Building forward.o"
   VERBATIM
 )
@@ -91,6 +94,7 @@ add_custom_command(
 add_custom_command(
   OUTPUT subgraph0.o
   BYPRODUCTS ${OUTPUT_DIR}/subgraph0.ll
+             ${OUTPUT_DIR}/subgraph0_opt.ll
              ${OUTPUT_DIR}/subgraph0_linalg.mlir
              ${OUTPUT_DIR}/subgraph0_acc.mlir
              ${OUTPUT_DIR}/subgraph0_frontend.mlir
@@ -142,11 +146,13 @@ add_custom_command(
             -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/subgraph0.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${DESIGN_TARGET_PLUGIN_pebble}
           ${DESIGN_COMPILER}/bin/buddy-translate
           ${DESIGN_COMPILER}/bin/buddy-llc
+          ${BUDDY_SOURCE}/llvm/build/bin/opt
   COMMENT "Building subgraph0.o"
   VERBATIM
 )
@@ -237,8 +243,10 @@ add_custom_command(
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${LIB_DIR}
             --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
-  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${RUNTIME_DIR}/services/dma_memory.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
   DEPENDS baremetal.cpp
+          ${RUNTIME_DIR}/services/dma_memory.c
+          ${RUNTIME_DIR}/services/dma_memory.h
           ${STACK_ROOT}/engine/src/location.c
           ${STACK_ROOT}/engine/include/stream.h
           ${STACK_ROOT}/engine/include/engine.h
@@ -269,7 +277,8 @@ add_custom_command(
 file(WRITE ${OUTPUT_DIR}/run.args "--model\nyolo26n.rax\n--image\ninput.bmp\n--output\nboxes.f32\n")
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/model.img
-  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} yolo26n.rax input.bmp run.args
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} yolo26n.rax input.bmp
+            --mapped run.args
   DEPENDS model-pack-tool
           ${OUTPUT_DIR}/yolo26n.rax
           ${OUTPUT_DIR}/run.args

@@ -23,11 +23,11 @@ from compiler.frontend.quant import (
 
 
 def doubled(flow):
-    """The weights read as two MXINT8 terms: those of the MLP of the vision
-    encoder, whose MXINT8 error moves the actions most."""
-    layers = flow.vlm_with_expert.get_vlm_model().vision_model.encoder.layers
-    return {layer.mlp.fc1.weight for layer in layers} | {
-        layer.mlp.fc2.weight for layer in layers
+    """Every Linear weight is stored as two MXINT8 terms."""
+    return {
+        module.weight
+        for module in flow.modules()
+        if isinstance(module, torch.nn.Linear)
     }
 
 

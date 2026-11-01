@@ -1,7 +1,7 @@
 /* The device program runtime: a device program runs on the core of the
  * control hart as the first job of one batch and submits the jobs of the
  * cores while it runs (see program.c). A compiled program calls the job
- * functions; how a value moves between cores is the design's. Baremetal. */
+ * functions; how a value moves between cores is the design's. */
 #pragma once
 
 #include <stdint.h>
@@ -13,7 +13,8 @@ extern "C" {
 /* Every hart calls this, once for each run of the program. The control hart
  * runs `program(core context, argument)` as the first job of the device and
  * returns its status once every job is done; the other harts run the jobs of
- * their cores and return 0. */
+ * their cores and return 0. Under Linux one caller starts the workers and
+ * returns after joining them. Runs on the same device are sequential. */
 int program_run(int (*program)(void *, void *), void *argument);
 
 /* The latency of the last run, from its start to the end of its last job, on

@@ -45,10 +45,13 @@ add_custom_command(
          ${OUTPUT_DIR}/arg1.data
          ${OUTPUT_DIR}/arg2.data
          ${OUTPUT_DIR}/vocab.txt
+         ${OUTPUT_DIR}/input_ids.data
+         ${OUTPUT_DIR}/attention_mask.data
   COMMAND ${PYTHON} buddy-pytorch-importer.py
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
           buddy-pytorch-importer.py
+          ${MODEL_DIR}/bert-base-uncased-emotion/input.txt
           trace/trace.toml
           ${OUTPUT_DIR}/calibration.json
           ${MODEL_DIR}/bert-base-uncased-emotion/model.py
@@ -166,7 +169,13 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 # Link the model and runtime into a RISC-V shared library.
 # ===----------------------------------------------------------------------===
-add_library(bert-base-uncased-emotion-buckyball-goban-model SHARED EXCLUDE_FROM_ALL forward.o subgraph0.o)
+add_library(bert-base-uncased-emotion-buckyball-goban-model SHARED EXCLUDE_FROM_ALL entry.cpp forward.o subgraph0.o)
+target_include_directories(bert-base-uncased-emotion-buckyball-goban-model
+  PRIVATE ${LIB_DIR}
+)
+target_compile_definitions(bert-base-uncased-emotion-buckyball-goban-model
+  PRIVATE DEVICE_CORES_0_SIGNATURE=${DESIGN_DEVICE_CORES_0_SIGNATURE}ULL
+)
 set_target_properties(bert-base-uncased-emotion-buckyball-goban-model
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
              LINKER_LANGUAGE CXX
@@ -205,7 +214,7 @@ target_link_libraries(bert-base-uncased-emotion-buckyball-goban-runner
 # Contents:
 # RISC-V model library (libbert-base-uncased-emotion-buckyball-goban-model.so),
 # RISC-V runner library (libbert-base-uncased-emotion-buckyball-goban-runner.so),
-# FP32 parameters (arg0.data) and the tokenizer vocabulary (vocab.txt).
+# FP32 parameters, INT32 biases, INT8 weights and the tokenizer vocabulary.
 #
 # Output: output/bert-base-uncased-emotion.rax embeds these files alongside
 # RHAL metadata identifying the runner, model entry and parameter buffers.
@@ -228,4 +237,73 @@ add_custom_command(
   COMMENT "Packaging bert-base-uncased-emotion for buckyball-goban"
   VERBATIM
 )
-add_custom_target(bert-base-uncased-emotion-model-build DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rax)
+set(BOOT_DIR "${STACK_ROOT}/runtime/boot")
+list(TRANSFORM DESIGN_DEFS PREPEND "-D" OUTPUT_VARIABLE DESIGN_DEFINES)
+list(
+  APPEND DESIGN_DEFINES
+  "-DDEVICE_TRACE_BASE=${DESIGN_DEVICE_TRACE_BASE}ULL"
+  "-DDEVICE_TRACE_STRIDE=${DESIGN_DEVICE_TRACE_STRIDE}ULL"
+)
+list(TRANSFORM DESIGN_TARGET_DEFS_matmul PREPEND "-D" OUTPUT_VARIABLE TARGET_DEFINES)
+set(BAREMETAL_ELF "${DESIGN_OUTPUT}/workloads/models/goban-bert-base-uncased-emotion-baremetal")
+add_custom_command(
+  OUTPUT ${BAREMETAL_ELF}
+  BYPRODUCTS baremetal.o
+             mlir-baremetal.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin ${DESIGN_DEFINES} -I${LIB_DIR} -I${RUNTIME_DIR}/scheduler
+            --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${RUNTIME_DIR}/services/dma_memory.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o ${DESIGN_CORE_BUILD_goban}/execute.o ${DESIGN_THREAD_BUILD_matmul}/loader.o $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:engine> -lm -lgcc -o ${BAREMETAL_ELF}
+  DEPENDS baremetal.cpp
+          model.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${RUNTIME_DIR}/services/dma.c
+          ${RUNTIME_DIR}/services/dma.h
+          ${RUNTIME_DIR}/services/dma_memory.c
+          ${RUNTIME_DIR}/services/dma_memory.h
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${RUNTIME_DIR}/trace/event.h
+          ${STACK_ROOT}/engine/src/location.c
+          ${STACK_ROOT}/engine/include/stream.h
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/Msan.h
+          ${DESIGN_CORE_BUILD_goban}/execute.o
+          ${DESIGN_THREAD_BUILD_matmul}/loader.o
+          runtime-baremetal
+          runtime
+          engine
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${OUTPUT_DIR}/input_ids.data
+          ${OUTPUT_DIR}/attention_mask.data
+          ${DESIGN_PB}
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+
+file(READ ${MODEL_DIR}/bert-base-uncased-emotion/input.txt PROMPT)
+string(STRIP "${PROMPT}" PROMPT)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MODEL_DIR}/bert-base-uncased-emotion/input.txt)
+file(WRITE ${OUTPUT_DIR}/run.args "--model\nbert-base-uncased-emotion.rax\n--prompt\n${PROMPT}\n--output\nlogits.f32\n")
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/model.img
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} bert-base-uncased-emotion.rax
+            --mapped run.args
+  DEPENDS model-pack-tool
+          ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
+          ${OUTPUT_DIR}/run.args
+  VERBATIM
+)
+add_custom_target(
+  bert-base-uncased-emotion-model-build
+  DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rax ${BAREMETAL_ELF} ${OUTPUT_DIR}/model.img
+)

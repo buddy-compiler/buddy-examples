@@ -1,4 +1,5 @@
 #include "SharedLibrary.h"
+#include "model.h"
 #include "testutils.h"
 #include <buddy/Core/Container.h>
 #include <buddy/LLM/TextContainer.h>
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <dlfcn.h>
 #include <fstream>
 #include <iostream>
@@ -23,10 +25,7 @@ using model::SharedLibrary;
 constexpr size_t sequenceLength = 32;
 constexpr size_t classes = 6;
 
-using Forward = void (*)(MemRef<float, 2> *, MemRef<float, 1> *,
-                         MemRef<int32_t, 1> *, MemRef<int8_t, 1> *,
-                         MemRef<int64_t, 2> *, MemRef<int64_t, 2> *,
-                         MemRef<int64_t, 2> *, MemRef<int64_t, 2> *);
+using bert::Forward;
 
 template <typename T> MemRef<T, 1> load(const std::string &path) {
   std::ifstream file;
@@ -72,12 +71,30 @@ public:
     }
 
     // The compiled function returns an owned memref descriptor.
-    MemRef<float, 2> output(std::vector<size_t>{1, classes}, false, 0);
+    bert::Parameters f32{parameters.getData(),
+                         parameters.getData(),
+                         0,
+                         {int64_t(parameters.getSize())},
+                         {1}};
+    bert::Bias i32{
+        bias.getData(), bias.getData(), 0, {int64_t(bias.getSize())}, {1}};
+    bert::Weights i8{weights.getData(),
+                     weights.getData(),
+                     0,
+                     {int64_t(weights.getSize())},
+                     {1}};
+    bert::Tokens inputIds{ids.getData(), ids.getData(), 0, {1, 32}, {32, 1}};
+    bert::Tokens inputTypes{
+        types.getData(), types.getData(), 0, {1, 32}, {32, 1}};
+    bert::Tokens inputMask{mask.getData(), mask.getData(), 0, {1, 32}, {32, 1}};
+    bert::Tokens inputPositions{
+        positions.getData(), positions.getData(), 0, {1, 32}, {32, 1}};
+    bert::Output output{};
     const auto start = read_time_ns();
-    forward(&output, &parameters, &bias, &weights, &ids, &types, &mask,
-            &positions);
+    forward(&output, &f32, &i32, &i8, &inputIds, &inputTypes, &inputMask,
+            &inputPositions);
     const double elapsed = (read_time_ns() - start) * 1e-9;
-    const float *logits = output.getData();
+    const float *logits = output.data();
     const auto prediction = std::max_element(logits, logits + classes) - logits;
     double sum = 0.0;
     for (size_t i = 0; i < classes; ++i)
@@ -86,6 +103,15 @@ public:
                                              "anger",   "fear", "surprise"};
     std::cout << "Classification: " << labels[prediction] << '\n'
               << "Probability: " << 1.0 / sum << '\n';
+    if (!config.outputPath.empty()) {
+      std::ofstream dump;
+      dump.exceptions(std::ios::failbit | std::ios::badbit);
+      dump.open(config.outputPath, std::ios::binary);
+      dump.write(reinterpret_cast<const char *>(logits),
+                 classes * sizeof(float));
+      dump.close();
+    }
+    std::free(output.allocated);
     if (!config.suppressStats)
       std::cout << "Inference time: " << elapsed << "s\n";
   }

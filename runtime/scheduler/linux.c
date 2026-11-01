@@ -17,8 +17,11 @@ static void *run(void *argument) {
   check(pthread_mutex_lock(worker->mutex));
   for (;;) {
     size_t job;
+    const size_t remaining = runtime->remaining;
     const enum runtime_progress progress =
         runtime_claim(runtime, worker->core, &job);
+    if (runtime->remaining != remaining)
+      check(pthread_cond_broadcast(worker->changed));
     if (progress == RUNTIME_DONE) {
       check(pthread_cond_broadcast(worker->changed));
       break;
@@ -38,6 +41,30 @@ static void *run(void *argument) {
   }
   check(pthread_mutex_unlock(worker->mutex));
   return NULL;
+}
+
+size_t runtime_linux_submit(struct runtime_linux_worker *worker,
+                            const struct runtime_job *job) {
+  check(pthread_mutex_lock(worker->mutex));
+  const size_t index = runtime_submit(worker->runtime, job);
+  check(pthread_cond_broadcast(worker->changed));
+  check(pthread_mutex_unlock(worker->mutex));
+  return index;
+}
+
+int runtime_linux_wait(struct runtime_linux_worker *worker, size_t job) {
+  struct runtime *runtime = worker->runtime;
+  if (runtime->jobs[job].core == worker->core)
+    abort();
+  check(pthread_mutex_lock(worker->mutex));
+  while (runtime->results[job].state == RUNTIME_WAITING ||
+         runtime->results[job].state == RUNTIME_RUNNING)
+    check(pthread_cond_wait(worker->changed, worker->mutex));
+  const struct runtime_result result = runtime->results[job];
+  check(pthread_mutex_unlock(worker->mutex));
+  if (result.state == RUNTIME_CANCELLED)
+    return -1;
+  return result.status;
 }
 
 void runtime_linux_run(struct runtime *runtime,

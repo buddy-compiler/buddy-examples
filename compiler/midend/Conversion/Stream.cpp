@@ -85,11 +85,15 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
   auto begin = declare("stream_loop", {i64});
   auto end = declare("stream_end", {});
   auto release = declare("stream_release", {ptr});
+  auto touch = declare("dma_touch", {ptr, i64});
+  SmallVector<memref::AllocOp> allocations;
   SmallVector<LLVM::CallIntrinsicOp> instructions;
   SmallVector<memref::DeallocOp> deallocations;
   SmallVector<memref::CopyOp> copies;
   SmallVector<scf::ForOp> loops;
   function.walk([&](Operation *op) {
+    if (auto allocation = dyn_cast<memref::AllocOp>(op))
+      allocations.push_back(allocation);
     if (auto intrinsic = dyn_cast<LLVM::CallIntrinsicOp>(op))
       if (intrinsic.getIntrin() == "llvm.riscv.buckyball.custom")
         instructions.push_back(intrinsic);
@@ -144,6 +148,25 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
   function->setAttr("core.host_writes", b.getDenseI64ArrayAttr(hostWrites));
   if (!copies.empty())
     function->setAttr("core.host_completion", b.getUnitAttr());
+  // Recording runs on the core CPU. Make staging pages writable before the
+  // recorded DMA runs on an OS-invisible hardware thread.
+  for (auto allocation : allocations) {
+    b.setInsertionPointAfter(allocation);
+    Location loc = allocation.getLoc();
+    auto type = allocation.getType();
+    Value bytes = arith::ConstantIntOp::create(
+        b, loc, type.getElementTypeBitWidth() / 8, 64);
+    for (int64_t axis = 0; axis < type.getRank(); ++axis) {
+      Value size = arith::IndexCastOp::create(
+          b, loc, i64, memref::DimOp::create(b, loc, allocation, axis));
+      bytes = arith::MulIOp::create(b, loc, bytes, size);
+    }
+    Value address =
+        memref::ExtractAlignedPointerAsIndexOp::create(b, loc, allocation);
+    address = arith::IndexCastOp::create(b, loc, i64, address);
+    address = LLVM::IntToPtrOp::create(b, loc, ptr, address);
+    func::CallOp::create(b, loc, touch, ValueRange{address, bytes});
+  }
   for (auto instruction : instructions) {
     b.setInsertionPoint(instruction);
     Location loc = instruction.getLoc();

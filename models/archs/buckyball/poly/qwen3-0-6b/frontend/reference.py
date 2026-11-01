@@ -37,7 +37,7 @@ def two(values, axis):
 
 
 libm = ctypes.CDLL("libm.so.6")
-for _name in ("cosf", "sinf"):
+for _name in ("cosf", "sinf", "expf", "tanhf"):
     getattr(libm, _name).restype = ctypes.c_float
     getattr(libm, _name).argtypes = [ctypes.c_float]
 
@@ -79,6 +79,19 @@ def pieces(k, ranks):
     return result
 
 
+def linear(x, weight):
+    """MXINT8's exact 32-code dot products, accumulated in block order.
+
+    Within a block both operands have one power-of-two scale, so this FP32
+    dot product is exact (the integer sum fits 24 bits). Across blocks the
+    additions round to FP32, as the Ball does; a whole-K GEMM may reorder them.
+    """
+    result = x.new_zeros((*x.shape[:-1], weight.shape[0]))
+    for low in range(0, x.shape[-1], 32):
+        result = result + F.linear(x[..., low : low + 32], weight[:, low : low + 32])
+    return result
+
+
 class Program(TorchFunctionMode):
     """The products of the decoder as the device program computes them, over
     `ranks` ranks; `rows` are the weights of the Linears split along K."""
@@ -95,8 +108,22 @@ class Program(TorchFunctionMode):
         if function is F.softmax:
             self.probabilities = True
         name = getattr(function, "__name__", None)
-        if name in ("cos", "sin"):
+        if name in ("cos", "sin", "tanh"):
             return libc(f"{name}f", args[0])
+        if name == "rsqrt":
+            return torch.ones_like(args[0]) / torch.sqrt(args[0])
+        if name == "silu":
+            return args[0] / (1 + libc("expf", -args[0]))
+        if name == "softmax":
+            self.probabilities = True
+            dim = args[1] if len(args) > 1 else kwargs["dim"]
+            values = args[0]
+            exponentials = libc("expf", values - values.amax(dim, keepdim=True))
+            parts = exponentials.movedim(dim, 0)
+            total = torch.zeros_like(parts[0])
+            for part in parts:
+                total = total + part
+            return exponentials / total.unsqueeze(dim)
         if name == "mean":
             return mean(*args, **kwargs)
         if name == "linear":
@@ -107,16 +134,25 @@ class Program(TorchFunctionMode):
             row = any(weight is w for w in self.rows)
             x, weight = mxint8(x, -1), mxint8(weight, 1)
             if not row:
-                return F.linear(x, weight)
+                return linear(x, weight)
             total = None
             for low, high in pieces(x.shape[-1], self.ranks):
-                partial = F.linear(x[..., low:high], weight[:, low:high])
+                partial = linear(x[..., low:high], weight[:, low:high])
                 total = partial if total is None else total + partial
             return total
         if name == "matmul" and args[0].shape[-1] % 32 == 0:
             key = mxint8(args[1], -2) if self.probabilities else two(args[1], -2)
+            query = mxint8(args[0], -1)
+            # MXINT8 accumulates 32-code blocks; FP32 accumulates in K order.
+            block = 32 if self.probabilities else 1
             self.probabilities = False
-            return function(mxint8(args[0], -1), key)
+            result = function(query[..., :block], key[..., :block, :])
+            for start in range(block, query.shape[-1], block):
+                result = result + function(
+                    query[..., start : start + block],
+                    key[..., start : start + block, :],
+                )
+            return result
         return function(*args, **kwargs)
 
 

@@ -10,6 +10,8 @@ from torch.overrides import TorchFunctionMode
 from compiler.frontend.quant import quantize, quantize_bias
 from frontend.quant.graph import smooth_inputs
 
+torch.set_num_threads(4)
+
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)

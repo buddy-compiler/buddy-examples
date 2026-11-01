@@ -43,17 +43,6 @@ void dma_bank_transfer(uint64_t source, uint64_t target) {
   dma_bank_set_cols(source, 0);
 }
 
-void dma_touch(void *p, size_t n) {
-  volatile uint8_t *b = (volatile uint8_t *)p;
-  size_t i;
-
-  if (n == 0)
-    return;
-  for (i = 0; i < n; i += 4096)
-    b[i] = b[i];
-  b[n - 1] = b[n - 1];
-}
-
 void dma_touch_mvout(void *p, uint64_t depth, uint64_t stride,
                      uint32_t bank_id) {
   dma_touch(p, dma_span_bytes(depth, stride, dma_bank_cols(bank_id)));

@@ -1,0 +1,14 @@
+rhal.module @smolvla attributes {
+  version = "0.1.0", model_name = "smolvla-base_buckyball-piplus",
+  runner_library = "file:libsmolvla-base-buckyball-piplus-runner.so",
+  image_base = "@MODEL_IMAGE@", action_elements = "@ACTION_ELEMENTS@"
+} {
+  rhal.constant @vision_f32 {id = 1 : i32, storage = "external", type = tensor<?xf32>, uri = "ddr/vision-arg0.data"}
+  rhal.constant @vision_i8 {id = 2 : i32, storage = "external", type = tensor<?xi8>, uri = "ddr/vision-arg1.data"}
+  rhal.constant @prefix_f32 {id = 3 : i32, storage = "external", type = tensor<?xf32>, uri = "ddr/prefix-arg0.data"}
+  rhal.constant @prefix_i8 {id = 4 : i32, storage = "external", type = tensor<?xi8>, uri = "ddr/prefix-arg1.data"}
+  rhal.constant @step_f32 {id = 5 : i32, storage = "external", type = tensor<?xf32>, uri = "ddr/step-arg0.data"}
+  rhal.constant @step_i8 {id = 6 : i32, storage = "external", type = tensor<?xi8>, uri = "ddr/step-arg1.data"}
+  rhal.codeobj @model_kernels {id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
+    uri = "file:libsmolvla-base-buckyball-piplus-model.so", entry_symbol = "smolvla_run"}
+}

@@ -16,6 +16,7 @@
 namespace resources {
 struct Entry {
   uint64_t offset, bytes;
+  bool mapped;
 };
 // There is no model image where one was looked for.
 struct NoImage : std::runtime_error {
@@ -48,7 +49,7 @@ inline void configure(uint64_t base) {
     header.append(static_cast<const char *>(address), page);
     munmap(address, page);
     // An empty region never has the blank line: stop at the first page.
-    if (header.compare(0, 9, "BBMODEL1 ") != 0) {
+    if (header.compare(0, 9, "BBMODEL2 ") != 0) {
       close(fd);
       throw NoImage();
     }
@@ -61,17 +62,21 @@ inline void configure(uint64_t base) {
   std::getline(stream, line);
   std::istringstream first(line);
   uint64_t bytes;
-  if (!(first >> magic >> bytes) || magic != "BBMODEL1")
+  if (!(first >> magic >> bytes) || magic != "BBMODEL2")
     throw NoImage();
   image.base = base;
   image.files.clear();
   while (std::getline(stream, line) && !line.empty()) {
     std::istringstream fields(line);
-    std::string path, offset, size;
+    std::string path, offset, size, kind;
     std::getline(fields, path, '\t');
     std::getline(fields, offset, '\t');
-    std::getline(fields, size);
-    image.files[path] = {std::stoull(offset), std::stoull(size)};
+    std::getline(fields, size, '\t');
+    std::getline(fields, kind);
+    if (kind != "file" && kind != "mapped")
+      throw std::runtime_error("invalid model resource kind: " + kind);
+    image.files[path] = {std::stoull(offset), std::stoull(size),
+                         kind == "mapped"};
   }
 }
 

@@ -27,6 +27,8 @@ from frontend.quant.graph import doubled, quantize
 from frontend.quant.layout import lay_out
 from frontend.quant.reference import Products, mxint8
 
+torch.set_num_threads(4)
+
 model_dir = Path(__file__).resolve().parent
 model = import_module("models.models.smolvla-base.model")
 observation = import_module("models.models.smolvla-base.observation")
@@ -86,8 +88,8 @@ for name, graph in graphs.items():
 
 # ===----------------------------------------------------------------------===
 # Step 2.3: Quantize every matrix product of each graph to MXINT8, K
-# zero-padded to a multiple of 32 where it is not one; the weights of the
-# vision MLP as two MXINT8 terms.
+# zero-padded to a multiple of 32 where it is not one;
+# Linear weights as two MXINT8 terms.
 # ===----------------------------------------------------------------------===
 # The activation scales are computed online; buddy-pytorch-calibrate.py
 # accepts the quantized program of smolvla-base first. Its actions on the
@@ -117,6 +119,12 @@ for name, value in (
     ("actions", reference),
 ):
     value.numpy().tofile(output / f"{name}.data")
+(output / "observation.data").write_bytes(
+    b"".join(
+        value.numpy().tobytes()
+        for value in (images, lang_tokens, lang_masks, state, noise)
+    )
+)
 for name, graph in graphs.items():
     params[name] = quantize(graph, params[name], doubled(flow))
     # The weights in the layout of the mxint8mm Ball, read in place.

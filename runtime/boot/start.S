@@ -17,7 +17,7 @@ _start:
 
     # Set up stack pointer for each hart
     # Each hart gets 4KB stack space (0x1000 bytes)
-    li sp, 0x90000000
+    li sp, DEVICE_STACK_TOP
     li t1, 0x1000
     mul t1, t0, t1
     sub sp, sp, t1

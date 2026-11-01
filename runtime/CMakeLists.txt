@@ -34,7 +34,7 @@ target_link_libraries(runtime
 # ===----------------------------------------------------------------------===
 # One worker per core on baremetal harts.
 # ===----------------------------------------------------------------------===
-add_library(runtime-baremetal STATIC scheduler/baremetal.c)
+add_library(runtime-baremetal STATIC scheduler/baremetal.c services/dma_memory.c)
 target_link_libraries(runtime-baremetal
   PUBLIC runtime
 )
@@ -74,6 +74,7 @@ set(
   scheduler/runtime.c
   scheduler/linux.c
   services/mlir.cpp
+  services/dma_memory.c
   trace/trace.cpp
   trace/location.cpp
 )
@@ -120,4 +121,17 @@ target_link_libraries(runtime-linux-shared
   PUBLIC bindings
          engine-shared
          pthread
+)
+
+add_library(runtime-program-linux STATIC EXCLUDE_FROM_ALL program/program.c)
+target_include_directories(runtime-program-linux
+  PUBLIC "$<BUILD_INTERFACE:${RUNTIME_DIR}/program>"
+)
+target_compile_definitions(runtime-program-linux
+  PRIVATE PROGRAM_LINUX
+          "DEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART}"
+)
+target_compile_options(runtime-program-linux PRIVATE -O2 ${PROGRAM_DEFINES})
+target_link_libraries(runtime-program-linux
+  PUBLIC runtime-linux-shared
 )

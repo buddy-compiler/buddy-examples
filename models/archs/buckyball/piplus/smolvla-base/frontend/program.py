@@ -90,16 +90,20 @@ def graph(name, graph, example):
                     f"%slice{index} = tensor.extract_slice %{dtype}[{offsets[dtype]}] [{count}] [1]"
                     f" : tensor<{sizes[dtype]}x{dtype}> to tensor<{count}x{dtype}>"
                 )
-                body.append(
-                    f"%shape{index} = arith.constant dense<{shape}> : tensor<{len(shape)}xindex>"
-                    if shape
-                    else f"%shape{index} = tensor.empty() : tensor<0xindex>"
-                )
-                body.append(
-                    f"%param{index} = tensor.reshape %slice{index}(%shape{index})"
-                    f" : (tensor<{count}x{dtype}>, tensor<{len(shape)}xindex>) -> {tensor}"
-                )
-                values[index] = f"%param{index}"
+                values[index] = f"%slice{index}"
+                if len(shape) > 1:
+                    body.append(
+                        f"%param{index} = tensor.expand_shape %slice{index}"
+                        f" [{list(range(len(shape)))}] output_shape {shape}"
+                        f" : tensor<{count}x{dtype}> into {tensor}"
+                    )
+                    values[index] = f"%param{index}"
+                elif not shape:
+                    body.append(
+                        f"%param{index} = tensor.collapse_shape %slice{index} []"
+                        f" : tensor<{count}x{dtype}> into {tensor}"
+                    )
+                    values[index] = f"%param{index}"
                 offsets[dtype] += count
         operands = values + [f"%input{index}" for index in order]
         returned = ", ".join(results)

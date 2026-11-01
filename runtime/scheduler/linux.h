@@ -21,6 +21,12 @@ void runtime_linux_run(struct runtime *runtime,
                        struct runtime_linux_worker *workers,
                        const unsigned *cpus, size_t stack_bytes);
 
+/* A running job can submit work to another core and wait for it. The caller
+ * uses its own worker; waiting on its own core would deadlock. */
+size_t runtime_linux_submit(struct runtime_linux_worker *worker,
+                            const struct runtime_job *job);
+int runtime_linux_wait(struct runtime_linux_worker *worker, size_t job);
+
 /* Runs one job on the core at Linux CPU `cpu` (its platform identity) and
  * returns the job's status; jobs of a core with threads receive its engine. */
 int runtime_linux_job(unsigned cpu, uint64_t signature,

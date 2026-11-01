@@ -1,4 +1,19 @@
+#include <errno.h>
 #include <stdint.h>
+
+extern char _end[];
+static uintptr_t heap = (uintptr_t)_end;
+
+void *_sbrk(intptr_t bytes) {
+  const uintptr_t next = heap + bytes;
+  if (next < (uintptr_t)_end || next > DEVICE_HEAP_LIMIT) {
+    errno = ENOMEM;
+    return (void *)-1;
+  }
+  void *previous = (void *)heap;
+  heap = next;
+  return previous;
+}
 
 #define MMIO_SIM_EXIT ((volatile uint32_t *)0x60000000UL)
 #define MMIO_UART_TX ((volatile uint32_t *)0x60020000UL)

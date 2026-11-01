@@ -1,6 +1,7 @@
 #ifndef _MEM_H_
 #define _MEM_H_
 
+#include "dma_memory.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -23,14 +24,6 @@ void dma_bank_set_cols(uint32_t bank_id, uint32_t cols);
 void dma_bank_allocate(uint32_t bank_id, uint32_t cols);
 uint32_t dma_bank_cols(uint32_t bank_id);
 void dma_bank_transfer(uint64_t source, uint64_t target);
-
-/*
- * Force private writable pages for a DMA buffer under Linux.
- * Untouched BSS is CoW-mapped to the shared zero page; accelerator stores
- * translate to that PPN and do not install a private page, so CPU reads stay 0.
- * Prefer clear_* or memset when the buffer should also be zeroed.
- */
-void dma_touch(void *p, size_t n);
 
 /* Touch host span for mvout using cols recorded by dma_bank_set_cols. */
 void dma_touch_mvout_group(void *p, uint64_t depth, uint64_t stride);
