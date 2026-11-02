@@ -27,6 +27,7 @@ from compiler.frontend import quant
 from scripts.design import load
 from frontend import reference
 from models.archs.buckyball.poly.layout import ball
+from models.archs.buckyball.poly.attention import group_queries
 from frontend.partition.graph import cut
 from frontend.permute.graph import permute
 from frontend.quant.graph import quantize
@@ -46,6 +47,8 @@ model = import_module("models.models.deepseek-r1-0528-qwen3-8b.model")
 decoder = model.load()
 tokens, start, keys, values = model.inputs(8)
 torch._dynamo.mark_dynamic(tokens, 1, min=1, max=model.capacity)
+for cache in [*keys, *values]:
+    torch._dynamo.mark_dynamic(cache, 2, min=32, max=model.capacity)
 compiler = DynamoCompiler(
     primary_registry={**tosa.ops_registry, **quant.ops_registry},
     aot_autograd_decomposition=decompositions,
@@ -69,6 +72,7 @@ graph.dump(output / "01-import.txt")
 # Step 2.2: Absorb the transposes PyTorch puts on the Linear weights.
 # ===----------------------------------------------------------------------===
 permute(graph)
+group_queries(graph)
 graph.dump(output / "02-permuted.txt")
 
 # ===----------------------------------------------------------------------===
@@ -121,9 +125,13 @@ with (output / "vocab.txt").open("w") as stream:
     for token, index in sorted(tokenizer.get_vocab().items(), key=lambda item: item[1]):
         stream.write(token.replace("\n", "\\n") + "\n")
 (output / "input-order.txt").write_text(" ".join(map(str, order)) + "\n")
+(directory / "input-order.txt").write_text(" ".join(map(str, order)) + "\n")
 prompt = (model.checkpoint.parent.parent / "input.txt").read_text().strip()
 tokens = tokenizer(prompt, return_tensors="pt").input_ids
 _, start, keys, values = model.inputs(tokens.shape[1])
+cache_capacity = (tokens.shape[1] + 8 + 31) // 32 * 32
+keys = [cache[:, :, :cache_capacity, :].contiguous() for cache in keys]
+values = [cache[:, :, :cache_capacity, :].contiguous() for cache in values]
 arguments = [tokens, start, *keys, *values]
 logits, new_keys, new_values = reference.run(
     decoder, tokens, start, keys, values, device.ranks
@@ -137,13 +145,40 @@ print(
     f"(FP32 {tokenizer.decode(plain[0, -1].argmax())!r})"
 )
 sizes = []
-for kind, tensors in (
-    ("input", [arguments[position] for position in order]),
-    ("output", [logits, *new_keys, *new_values]),
+for kind, tensors, metadata in (
+    (
+        "input",
+        [arguments[position] for position in order],
+        [node.tensor_meta for node in graph.inputs],
+    ),
+    (
+        "output",
+        [logits, *new_keys, *new_values],
+        [device.meta[name] for name in device.output.args],
+    ),
 ):
     with open(directory / f"{kind}s.data", "wb") as file:
-        for tensor in tensors:
+        for tensor, meta in zip(tensors, metadata, strict=True):
             data = tensor.contiguous().numpy().tobytes()
             file.write(data + bytes(-len(data) % 64))
-            sizes.append(f"{kind} {len(data)}\n")
+            dimensions = "".join(
+                f" {tensor.shape[axis]}"
+                for axis, size in enumerate(meta["shape"])
+                if isinstance(size, torch.SymInt)
+            )
+            sizes.append(f"{kind} {len(data)}{dimensions}\n")
 (directory / "sizes.txt").write_text("".join(sizes))
+
+# Seven decode steps follow the prompt; validate all eight generated tokens.
+position = tokens.shape[1]
+with (directory / "outputs.data").open("ab") as file:
+    for step in range(1, 8):
+        tokens = logits[:, -1, :].argmax(dim=-1, keepdim=True)
+        start = torch.tensor([position], dtype=start.dtype).reshape(start.shape)
+        logits, new_keys, new_values = reference.run(
+            decoder, tokens, start, new_keys, new_values, device.ranks
+        )
+        for tensor in [logits, *new_keys, *new_values]:
+            data = tensor.contiguous().numpy().tobytes()
+            file.write(data + bytes(-len(data) % 64))
+        position += 1

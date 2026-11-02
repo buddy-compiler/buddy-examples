@@ -8,7 +8,10 @@ struct runtime_linux_worker {
   struct runtime *runtime;
   size_t core;
   pthread_mutex_t *mutex;
-  pthread_cond_t *changed;
+  pthread_cond_t changed;
+  struct runtime_linux_worker *workers;
+  size_t waiting_for;
+  int sleeping;
 };
 
 #ifdef __cplusplus

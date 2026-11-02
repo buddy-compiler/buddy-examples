@@ -212,13 +212,19 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
                             "no carried values");
     b.setInsertionPoint(loop);
     Location loc = loop.getLoc();
+    // Empty tail tiles need neither recorded instructions nor DMA preparation.
+    Value nonempty = arith::CmpIOp::create(
+        b, loc, arith::CmpIPredicate::ugt, loop.getUpperBound(),
+        arith::ConstantIndexOp::create(b, loc, 0));
+    auto record = scf::IfOp::create(b, loc, nonempty, false);
+    b.setInsertionPointToStart(&record.getThenRegion().front());
     Value count = arith::IndexCastOp::create(b, loc, i64, loop.getUpperBound());
     func::CallOp::create(b, loc, begin, ValueRange{count});
     loop.getInductionVar().replaceAllUsesWith(
         arith::ConstantIndexOp::create(b, loc, 0));
     loop.getBody()->getTerminator()->erase();
-    loop->getBlock()->getOperations().splice(loop->getIterator(),
-                                             loop.getBody()->getOperations());
+    record.getThenRegion().front().getOperations().splice(
+        b.getInsertionPoint(), loop.getBody()->getOperations());
     func::CallOp::create(b, loc, end, ValueRange{});
     loop.erase();
   }

@@ -59,6 +59,7 @@ from buddy.compiler.graph.operation import (
     SplitOp,
     SqueezeDimOp,
     SumDimOp,
+    SymSizeOp,
     TransposeMatmulFusedOp,
     UnbindOp,
     UnsqueezeOp,
@@ -269,6 +270,7 @@ def partition(graph, params, count, states, replicated, columns, segments, class
     among them (q, k, v or gate, up in one) and their number of segments,
     each split across the ranks on its own. classify(device, segment): the
     name of the graph class of a segment."""
+    replicated = set(replicated)
     values = dict(zip((node.name for node in graph.params), params, strict=True))
     body = [
         node for node in graph.body if not isinstance(node, (PlaceholderOp, OutputOp))
@@ -324,11 +326,24 @@ def partition(graph, params, count, states, replicated, columns, segments, class
             axes[node.name], pieces[node.name] = follow(graph, node, axes, pieces)
     for name in axes:
         for child in graph.node_table[name].children:
+            reader = graph.node_table[child]
+            if (
+                name in states
+                and isinstance(reader, SymSizeOp)
+                and reader.args[1] % len(graph.node_table[name].tensor_meta["shape"])
+                != axes[name]
+            ):
+                continue
             if child not in axes and child not in rows and child != output.name:
                 raise ValueError(f"{child} uses the sharded {name} whole")
-    # The weights of the split Linears and the dequantized inputs of the
-    # column Linears, which the ranks compute instead of core 0.
-    weights = {graph.node_table[name].args[1] for name in columns | rows}
+    # A projection that is not sharded still runs on a compute core.
+    whole = {
+        node.name
+        for node in body
+        if isinstance(node, TransposeMatmulFusedOp)
+        and node.name not in replicated | columns | rows
+    }
+    weights = {graph.node_table[name].args[1] for name in columns | rows | whole}
     for name in weights:
         restored = graph.node_table[name]
         if not isinstance(restored, MXINT8ToFP32DequantOp) or restored.args[1] != 1:
@@ -337,7 +352,7 @@ def partition(graph, params, count, states, replicated, columns, segments, class
         node.name
         for node in body
         if isinstance(node, MXINT8ToFP32DequantOp)
-        and all(child in columns for child in node.children)
+        and all(child in columns | whole for child in node.children)
     }
 
     def local(node, rank):
@@ -387,7 +402,16 @@ def partition(graph, params, count, states, replicated, columns, segments, class
             or node.name in replicated
         ):
             continue
-        if node.name in columns or node.name in rows:
+        if node.name in whole:
+            arguments = list(node.args)
+            for index in (0, 1):
+                source = graph.node_table[node.args[index]]
+                if isinstance(source, MXINT8ToFP32DequantOp):
+                    name = f"{source.name}_{node.name}_whole"
+                    operations[1].append((key, copied(source, name, list(source.args))))
+                    arguments[index] = name
+            operations[1].append((key, copied(node, node.name, arguments)))
+        elif node.name in columns or node.name in rows:
             restored = graph.node_table[node.args[1]]
             weight = graph.node_table[restored.args[0]]
             packed = values[weight.name]
@@ -581,13 +605,15 @@ def partition(graph, params, count, states, replicated, columns, segments, class
 
     # ===------------------------------------------------------------------===
     # The outputs: core 0 joins the slices the ranks hold of every sharded
-    # one; it computes the others itself, the replicated ones as well.
+    # one. A replicated output is materialized once on the first compute
+    # core; its consumers share that value instead of recomputing it.
     # ===------------------------------------------------------------------===
     joins = set()
     for name in output.args:
         if name in replicated:
             node = graph.node_table[name]
-            operations[0].append((len(graph.body), copied(node, name, list(node.args))))
+            replicated.remove(name)
+            operations[1].append((position[name], copied(node, name, list(node.args))))
             joins.add(name)
             continue
         if name not in axes:
@@ -821,8 +847,6 @@ class Device:
                 if name in owner and name not in owner[name].outputs:
                     owner[name].outputs.append(name)
         for name in output.args:
-            if producer.get(name) != 0:
-                raise ValueError(f"{name}: an output core 0 does not compute")
             if name not in owner[name].outputs:
                 owner[name].outputs.append(name)
         for segment in segments:
@@ -1013,6 +1037,9 @@ class Device:
                 name = f"%size{len(sizes)}"
                 if expression.is_Integer:
                     body.append(f"{name} = arith.constant {int(expression)} : index")
+                elif expression.func.__name__ == "FloorDiv":
+                    left, right = [size(term) for term in expression.args]
+                    body.append(f"{name} = arith.divui {left}, {right} : index")
                 elif expression.is_Add or expression.is_Mul:
                     terms = [size(term) for term in expression.args]
                     operation = "arith.addi" if expression.is_Add else "arith.muli"
@@ -1043,7 +1070,52 @@ class Device:
                 f" : {tensor_type(self.meta[state])} to {tensor_type(self.meta[name])}"
             )
             values[name] = f"%state_{name}"
+        # Contiguous output shards can be produced directly in disjoint
+        # slices of the final tensor, without a gather task on the control core.
+        joined, destinations = {}, {}
         for segment in self.segments:
+            if not segment.join or not all(
+                isinstance(node, CatOp)
+                and isinstance(node.tensor_meta["shape"][node.args[1]], int)
+                and all(
+                    isinstance(d, int) and d == 1
+                    for d in node.tensor_meta["shape"][: node.args[1]]
+                )
+                for _, node in segment.ops
+            ):
+                continue
+            for _, node in segment.ops:
+                shape = node.tensor_meta["shape"]
+                operands = ", ".join(
+                    size(d.node.expr) for d in shape if isinstance(d, torch.SymInt)
+                )
+                joined[node.name] = f"%joined_{node.name}"
+                body.append(
+                    f"{joined[node.name]} = tensor.empty({operands})"
+                    f" : {tensor_type(node.tensor_meta)}"
+                )
+                low = 0
+                for part in node.args[0]:
+                    extent = self.meta[part]["shape"]
+                    offsets = [
+                        low if i == node.args[1] else 0 for i in range(len(shape))
+                    ]
+                    dimensions = [
+                        size(d.node.expr) if isinstance(d, torch.SymInt) else d
+                        for d in extent
+                    ]
+                    region = (
+                        f"[{', '.join(map(str, offsets))}]"
+                        f" [{', '.join(map(str, dimensions))}]"
+                        f" [{', '.join('1' for _ in shape)}]"
+                    )
+                    destinations[part] = node.name, region
+                    low += extent[node.args[1]]
+        for segment in self.segments:
+            if segment.join and all(name in joined for name in segment.outputs):
+                for name in segment.outputs:
+                    values[name] = joined[name]
+                continue
             for name in segment.params:
                 if name in values:
                     continue
@@ -1061,9 +1133,17 @@ class Device:
                     for d in self.meta[name]["shape"]
                     if isinstance(d, torch.SymInt)
                 )
-                body.append(
-                    f"%{segment.name}_out{index} = tensor.empty({operands}) : {results[index]}"
-                )
+                if name in destinations:
+                    whole, region = destinations[name]
+                    body.append(
+                        f"%{segment.name}_out{index} = tensor.extract_slice"
+                        f" {joined[whole]}{region} : {tensor_type(self.meta[whole])}"
+                        f" to {results[index]}"
+                    )
+                else:
+                    body.append(
+                        f"%{segment.name}_out{index} = tensor.empty({operands}) : {results[index]}"
+                    )
                 outs.append(f"%{segment.name}_out{index}")
             many = f":{len(results)}" if len(results) > 1 else ""
             operands = [values[name] for name in segment.params + segment.inputs] + outs
@@ -1071,12 +1151,22 @@ class Device:
                 f'%{segment.name}{many} = "device.launch"({", ".join(operands)})'
                 f' <{{callee = @{segment.graph}, core_class = "{segment.core_class}",'
                 f" operandSegmentSizes = array<i32: {len(arguments)}, {len(results)}>}}>"
+                f" {{device.rank = {segment.core - 1 if segment.core else 0} : i64}}"
                 f" : ({', '.join(arguments + results)}) -> ({', '.join(results)})"
             )
             for index, name in enumerate(segment.outputs):
                 values[name] = (
                     f"%{segment.name}#{index}" if many else f"%{segment.name}"
                 )
+                if name in destinations:
+                    whole, region = destinations[name]
+                    result = f"%joined_{name}"
+                    body.append(
+                        f"{result} = tensor.insert_slice {values[name]} into"
+                        f" {joined[whole]}{region} : {results[index]}"
+                        f" into {tensor_type(self.meta[whole])}"
+                    )
+                    joined[whole] = result
         returned = [tensor_type(self.meta[name]) for name in self.output.args]
         body.append(
             f"return {', '.join(values[name] for name in self.output.args)} : {', '.join(returned)}"

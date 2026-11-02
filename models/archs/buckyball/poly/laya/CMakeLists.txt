@@ -64,8 +64,8 @@ add_custom_command(
   BYPRODUCTS ${OUTPUT_DIR}/program_placed.mlir
              ${OUTPUT_DIR}/program_bufferized.mlir
   COMMAND ${OPT} ${OUTPUT_DIR}/program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/program_placed.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -o ${OUTPUT_DIR}/program_bufferized.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_bufferized.mlir -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -o ${OUTPUT_DIR}/program_bufferized.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_bufferized.mlir -canonicalize -cse -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
   DEPENDS ${OUTPUT_DIR}/program.mlir
           ${DEVICE_COMPILER}
           ${DESIGN_PB}

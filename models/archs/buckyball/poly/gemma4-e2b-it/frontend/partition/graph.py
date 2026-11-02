@@ -19,9 +19,9 @@ def cut(graph, params, design):
     """The decoder across poly: the reduce core and a rank on each of its
     poly cores (as many as design.pb has), with the query heads, the FFN
     channels and the vocabulary split across the ranks. Gemma 4 E2B has one
-    KV head: every poly core computes the keys and values and keeps the
-    whole KV cache, and reads the head of its query. The reduce core computes the per-layer inputs of all layers whole:
-    their projection reads the embedding, not a normalized activation.
+    KV head: the first poly core produces the keys and values, which all
+    query ranks share. The unsharded per-layer projection also runs there;
+    the reduce core normalizes and distributes its results.
     Every core computes the positions, the masks and the rotary tables it
     uses."""
     hidden = set()
@@ -94,21 +94,20 @@ def cut(graph, params, design):
 
 def classify(device, segment):
     """The semantic graphs of Gemma 4. On each rank: `attention`, the
-    attention of a layer over its query heads, with the keys and values it
-    computes itself (a graph per kind of layer: sliding or full, with its
-    own KV or reading that of an earlier layer); `mlp`, the MLP of a layer
+    attention of a layer over its query heads, reading the shared keys and
+    values (sliding or full, including layers sharing an earlier cache);
+    `projection`, independent dense projections before attention;
+    `cache`, the shared KV producer on the first rank; `mlp`, the MLP of a layer
     over its channels (the layers that share KV have a wider one);
     `per_layer`, the gate of the per-layer input of a layer over its
     channels, which reads its piece of that input; `lm_head`, its piece of
-    the vocabulary. On the reduce core: `embed`, the embedding, the
-    per-layer inputs of all layers dealt out to the ranks and the start of
+    the vocabulary. On the reduce core: `embed`, the embedding and the start of
     the first attention; after each block of a layer the partial sums of
     the ranks in rank order, the norms and the residual of the block and the
     start of the next block: `attention_out`, `mlp_out` and `layer_out`
     (with the layer scale; the next attention reads its own keys and values
     or not); `final`, the end of the last layer, the final norm and the
-    input of the LM head; `cache`, the keys and values of a layer that has
-    its own, for the program's outputs (sliding or full); `logits`, the
+    input of the LM head; `logits`, the
     logits joined from the ranks' pieces."""
 
     def head(segment):
@@ -118,12 +117,20 @@ def classify(device, segment):
 
     ops = [node for _, node in segment.ops]
     if segment.core_class == "poly":
+        if segment.join:
+            return "cache"
         if any(isinstance(node, BatchMatmulOp) for node in ops):
             return "attention"
         if head(segment):
             return "lm_head"
         if any(isinstance(device.nodes.get(name), SliceOp) for name in segment.inputs):
             return "per_layer"
+        if any(
+            device.owner[name].graph_class == "embed"
+            for name in segment.inputs
+            if name in device.owner
+        ):
+            return "projection"
         return "mlp"
     if segment.join:
         return "logits" if device.output.args[0] in segment.outputs else "cache"

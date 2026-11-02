@@ -24,11 +24,12 @@ struct runtime_core {
   int (*execute)(void *context, int (*entry)(void *, void *), void *argument);
 };
 
-/* Each kind of core registers how it executes a job in the `runtime_bindings`
- * section: static const struct runtime_binding binding
+/* Each kind of core registers how it executes an entry in the
+ * `runtime_bindings` section: static const struct runtime_binding binding
  *       __attribute__((section("runtime_bindings"), used)) = {CORE_SIGNATURE,
  * execute}; A core without hardware threads calls the entry directly; a core
- * with threads passes its engine as the entry's core context. */
+ * with threads passes its engine as the entry's core context. A worker runs
+ * its entire batch inside this entry, keeping the context alive across jobs. */
 struct runtime_binding {
   uint64_t signature;
   int (*execute)(void *context, int (*entry)(void *, void *), void *argument);
@@ -62,6 +63,8 @@ struct runtime {
   size_t job_count;
   struct runtime_result *results;
   size_t remaining;
+  /* Jobs before this index are terminal. */
+  size_t first;
   uint32_t lock;
 };
 

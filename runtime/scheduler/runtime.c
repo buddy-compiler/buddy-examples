@@ -68,7 +68,8 @@ enum runtime_progress runtime_claim(struct runtime *runtime, size_t core,
   /* Published jobs are immutable and terminal states never move backwards.
    * Wait without taking the lock until this worker can do useful work. */
   const size_t count = __atomic_load_n(&runtime->job_count, __ATOMIC_ACQUIRE);
-  size_t waiting = 0;
+  const size_t first = __atomic_load_n(&runtime->first, __ATOMIC_ACQUIRE);
+  size_t waiting = first;
   for (; waiting < count; ++waiting) {
     if (__atomic_load_n(&runtime->results[waiting].state, __ATOMIC_ACQUIRE) !=
         RUNTIME_WAITING)
@@ -96,13 +97,14 @@ enum runtime_progress runtime_claim(struct runtime *runtime, size_t core,
     while (__atomic_load_n(&runtime->lock, __ATOMIC_RELAXED)) {
     }
   }
-  for (size_t active = 0; active < runtime->job_count; ++active)
+  for (size_t active = runtime->first; active < runtime->job_count; ++active)
     if (runtime->results[active].state == RUNTIME_RUNNING &&
         runtime->results[active].core == core) {
       __atomic_store_n(&runtime->lock, 0, __ATOMIC_RELEASE);
       return RUNTIME_IDLE;
     }
-  for (size_t candidate = 0; candidate < runtime->job_count; ++candidate) {
+  for (size_t candidate = runtime->first; candidate < runtime->job_count;
+       ++candidate) {
     struct runtime_result *result = &runtime->results[candidate];
     const struct runtime_job *request = &runtime->jobs[candidate];
     if (result->state != RUNTIME_WAITING)
@@ -149,6 +151,11 @@ void runtime_complete(struct runtime *runtime, size_t core, size_t job,
   __atomic_store_n(&result->state, status ? RUNTIME_FAILED : RUNTIME_SUCCEEDED,
                    __ATOMIC_RELEASE);
   __atomic_sub_fetch(&runtime->remaining, 1, __ATOMIC_RELEASE);
+  size_t first = runtime->first;
+  while (first < runtime->job_count &&
+         runtime->results[first].state >= RUNTIME_SUCCEEDED)
+    ++first;
+  __atomic_store_n(&runtime->first, first, __ATOMIC_RELEASE);
   __atomic_store_n(&runtime->lock, 0, __ATOMIC_RELEASE);
 }
 

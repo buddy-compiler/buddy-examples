@@ -6,6 +6,7 @@
 #include <buddy/runtime/llm/Sampler.h>
 #include <resources.h>
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iostream>
@@ -13,7 +14,6 @@
 
 namespace {
 constexpr size_t layers = 36, capacity = 256, vocabulary = 151936;
-constexpr size_t cacheSize = 8 * capacity * 128;
 
 class QwenRunner final : public buddy::runtime::InferenceRunner {
 public:
@@ -46,6 +46,11 @@ public:
     const size_t used = ids.size();
     if (!used || used >= capacity || config.maxNewTokens < 1)
       throw std::runtime_error("Invalid prompt or generation length");
+    const size_t requested = used + config.maxNewTokens;
+    if (requested > capacity)
+      throw std::runtime_error("Request exceeds KV cache capacity");
+    size_t cacheCapacity = (used + 31) / 32 * 32;
+    const size_t cacheSize = 8 * cacheCapacity * 128;
     std::array<std::vector<float>, 2 * layers> cache, updated;
     for (size_t index = 0; index < cache.size(); ++index) {
       cache[index].resize(cacheSize);
@@ -53,6 +58,20 @@ public:
     }
     std::vector<float> logits;
     auto step = [&](const long long *ids, size_t count, int64_t position) {
+      const size_t needed =
+          (static_cast<size_t>(position) + count + 31) / 32 * 32;
+      if (needed > cacheCapacity) {
+        for (size_t index = 0; index < cache.size(); ++index) {
+          std::vector<float> grown(8 * needed * 128);
+          for (size_t head = 0; head < 8; ++head)
+            std::copy_n(cache[index].data() + head * cacheCapacity * 128,
+                        cacheCapacity * 128,
+                        grown.data() + head * needed * 128);
+          cache[index].swap(grown);
+          updated[index].resize(8 * needed * 128);
+        }
+        cacheCapacity = needed;
+      }
       logits.resize(count * vocabulary);
       std::array<void *, 2 + 2 * layers> inputs;
       inputs[0] = const_cast<long long *>(ids);
@@ -64,11 +83,15 @@ public:
         words.push_back(inputs.at(index));
         if (index == 0)
           words.push_back(reinterpret_cast<void *>(count));
+        else if (index >= 2)
+          words.push_back(reinterpret_cast<void *>(cacheCapacity));
       }
       words.push_back(logits.data());
       words.push_back(reinterpret_cast<void *>(count));
-      for (auto &buffer : updated)
+      for (auto &buffer : updated) {
         words.push_back(buffer.data());
+        words.push_back(reinterpret_cast<void *>(cacheCapacity));
+      }
       if (forward(words.data()))
         throw std::runtime_error("Device program failed");
       cache.swap(updated);

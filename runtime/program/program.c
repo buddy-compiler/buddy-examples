@@ -27,11 +27,11 @@
 #include "program.h"
 
 #include <runtime.h>
+#include <stdlib.h>
 #include <string.h>
 #ifdef PROGRAM_LINUX
 #include <linux.h>
 #include <stdio.h>
-#include <stdlib.h>
 #endif
 
 #define PROGRAM_JOBS 8192
@@ -334,6 +334,23 @@ uint64_t program_job_submit(void) {
   last[job.core] = submitted + 1;
   mark = cycles(control);
   return submitted;
+}
+
+static int cleanup_entry(void *core, void *argument) {
+  (void)core;
+  void *const *buffers = argument;
+  const size_t count = (uintptr_t)buffers[0];
+  for (size_t i = 0; i < count; ++i)
+    free(buffers[i + 1]);
+  return 0;
+}
+
+void program_cleanup_begin(uint64_t count) {
+  program_job_begin(control, cleanup_entry);
+  program_job_argument(count);
+  for (size_t core = 0; core < CORE_COUNT; ++core)
+    if (core != control && last[core])
+      program_job_after(last[core] - 1);
 }
 
 static int copy_entry(void *core, void *argument) {

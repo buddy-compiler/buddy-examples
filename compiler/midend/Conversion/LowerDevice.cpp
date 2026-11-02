@@ -94,6 +94,7 @@ public:
     func::FuncOp after = declare("program_job_after", {i64}, {});
     func::FuncOp submit = declare("program_job_submit", {}, {i64});
     func::FuncOp wait = declare("program_wait", {i64}, {});
+    func::FuncOp cleanup = declare("program_cleanup_begin", {i64}, {});
     func::FuncOp copy =
         declare("program_copy", {i64, i64, i64, i64, i64}, {i64});
     func::FuncOp transfer =
@@ -175,10 +176,20 @@ public:
 
     auto contiguous = [](Value buffer) {
       auto type = cast<MemRefType>(buffer.getType());
-      if (!type.getLayout().isIdentity() &&
-          !memref::isStaticShapeAndContiguousRowMajor(type))
-        llvm::report_fatal_error("a job reads or writes a buffer that is "
-                                 "not contiguous");
+      if (type.getLayout().isIdentity())
+        return;
+      auto [strides, offset] = type.getStridesAndOffset();
+      int64_t expected = 1;
+      for (int64_t axis = type.getRank() - 1; axis >= 0; --axis) {
+        int64_t size = type.getDimSize(axis);
+        if (size == 1)
+          continue;
+        if (ShapedType::isDynamic(expected) || strides[axis] != expected)
+          llvm::report_fatal_error(
+              "a job reads or writes a buffer that is not contiguous");
+        expected = ShapedType::isDynamic(size) ? ShapedType::kDynamic
+                                               : expected * size;
+      }
     };
     // The address of the first element of a buffer.
     auto address = [&](OpBuilder &builder, Location loc, Value buffer) {
@@ -232,6 +243,9 @@ public:
     };
     // A buffer each launch and transfer writes: its own.
     auto own = [](Value buffer) {
+      while (auto view =
+                 dyn_cast_or_null<ViewLikeOpInterface>(buffer.getDefiningOp()))
+        buffer = view.getViewSource();
       if (!isa<BlockArgument>(buffer) &&
           !buffer.getDefiningOp<memref::AllocOp>())
         llvm::report_fatal_error("a job writes a buffer that is not its own");
@@ -325,6 +339,10 @@ public:
           continue;
         }
         if (auto copied = dyn_cast<memref::CopyOp>(op)) {
+          if (copied.getSource() == copied.getTarget()) {
+            copied.erase();
+            continue;
+          }
           Value writer = writers.lookup(copied.getSource());
           if (!writer)
             continue;
@@ -348,6 +366,29 @@ public:
             llvm::report_fatal_error(
                 llvm::Twine("the program reads a value of a job in ") +
                 op.getName().getStringRef());
+      }
+      // Intermediate buffers outlive the program's submission job. Free
+      // them in a final job after the consumers on every core have finished.
+      SmallVector<Value> allocations;
+      for (auto allocation : program.getOps<memref::AllocOp>())
+        allocations.push_back(allocation.getResult());
+      if (!allocations.empty()) {
+        OpBuilder builder(program.getBody().front().getTerminator());
+        Location loc = program.getLoc();
+        func::CallOp::create(
+            builder, loc, cleanup,
+            ValueRange{constant(builder, loc, allocations.size())});
+        for (Value buffer : allocations) {
+          Value descriptor =
+              UnrealizedConversionCastOp::create(
+                  builder, loc, converter.convertType(buffer.getType()), buffer)
+                  .getResult(0);
+          Value pointer =
+              MemRefDescriptor(descriptor).allocatedPtr(builder, loc);
+          Value word = LLVM::PtrToIntOp::create(builder, loc, i64, pointer);
+          func::CallOp::create(builder, loc, argument, ValueRange{word});
+        }
+        func::CallOp::create(builder, loc, submit, ValueRange{});
       }
       entry(program);
     }

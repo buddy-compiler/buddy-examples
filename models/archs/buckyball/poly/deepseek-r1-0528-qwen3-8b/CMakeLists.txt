@@ -8,6 +8,8 @@ set(WEIGHTS "${MODEL_DIR}/deepseek-r1-0528-qwen3-8b/output/deepseek-r1-0528-qwen
 # with it.
 set(DEVICE_COMPILER "${DESIGN_DEVICE_BUILD}/compiler/libdevice-compiler.so")
 set(OPT ${DESIGN_COMPILER}/bin/buddy-opt --load-dialect-plugin=${DEVICE_COMPILER} --load-pass-plugin=${DEVICE_COMPILER})
+set(REDUCE_TARGET ${DESIGN_DEVICE_CORES_${DESIGN_CORE_HART_reduce}_PROFILE})
+set(REDUCE_OPT ${DESIGN_TARGET_OPT_${REDUCE_TARGET}})
 # The core compiler of poly: the core dialect, the placement of the graphs of
 # the poly cores on their attention and ffn threads and its lowering to the
 # engine, and lower-frontend-fake-op. The graphs of the poly cores are compiled with
@@ -39,6 +41,7 @@ add_custom_command(
          ${OUTPUT_DIR}/prompt/inputs.data
          ${OUTPUT_DIR}/prompt/outputs.data
          ${OUTPUT_DIR}/prompt/sizes.txt
+         ${OUTPUT_DIR}/prompt/input-order.txt
   BYPRODUCTS ${OUTPUT_DIR}/01-import.txt
              ${OUTPUT_DIR}/02-permuted.txt
              ${OUTPUT_DIR}/03-quanted.txt
@@ -47,6 +50,7 @@ add_custom_command(
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
           ${CMAKE_CURRENT_SOURCE_DIR}/../layout.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/../attention.py
           ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
           ${DESIGN_PB}
           ${MODEL_DIR}/deepseek-r1-0528-qwen3-8b/model.py
@@ -68,8 +72,8 @@ add_custom_command(
   BYPRODUCTS ${OUTPUT_DIR}/program_placed.mlir
              ${OUTPUT_DIR}/program_bufferized.mlir
   COMMAND ${OPT} ${OUTPUT_DIR}/program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/program_placed.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -o ${OUTPUT_DIR}/program_bufferized.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_bufferized.mlir -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -o ${OUTPUT_DIR}/program_bufferized.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_bufferized.mlir -canonicalize -cse -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
   DEPENDS ${OUTPUT_DIR}/program.mlir
           ${DEVICE_COMPILER}
           ${DESIGN_PB}
@@ -109,7 +113,7 @@ add_custom_command(
   COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_attention_acc.mlir
             --buckyball-target=ffn -convert-linalg-to-acc -o ${OUTPUT_DIR}/poly_ffn_acc.mlir
   COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_ffn_acc.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/poly_frontend.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_frontend.mlir -inline -eliminate-empty-tensors -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/poly_bufferized.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_frontend.mlir -inline -eliminate-empty-tensors -convert-elementwise-to-linalg -linalg-fuse-elementwise-ops "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/poly_bufferized.mlir
   COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_bufferized.mlir
             --buckyball-target=attention -assign-physical-banks -o ${OUTPUT_DIR}/poly_attention_banks.mlir
   COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_attention_banks.mlir
@@ -148,7 +152,8 @@ add_custom_command(
 )
 
 # ===----------------------------------------------------------------------===
-# The graphs of DeepSeek-R1-0528-Qwen3-8B on the reduce core, on its CPU in software:
+# The reduce core runs ordered sum chains on its accelerator;
+# normalization and quantization stay on its CPU.
 # lower-frontend-fake-op computes the quantization (reduce_frontend.mlir),
 # each graph inlined into its function writes its outputs into the buffers
 # of the program (reduce_bufferized.mlir).
@@ -158,22 +163,24 @@ add_custom_command(
   BYPRODUCTS ${OUTPUT_DIR}/reduce_linalg.mlir
              ${OUTPUT_DIR}/reduce_frontend.mlir
              ${OUTPUT_DIR}/reduce_bufferized.mlir
+             ${OUTPUT_DIR}/reduce_instructions.mlir
              ${OUTPUT_DIR}/reduce_copies.mlir
              ${OUTPUT_DIR}/reduce_llvm.mlir
              ${OUTPUT_DIR}/reduce.ll
              ${OUTPUT_DIR}/reduce_opt.ll
-  COMMAND ${OPT} ${OUTPUT_DIR}/graph-reduce.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,canonicalize,cse))" -o ${OUTPUT_DIR}/reduce_linalg.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/reduce_linalg.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/reduce_frontend.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/reduce_frontend.mlir -inline -eliminate-empty-tensors -forward-materialized-tensors -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/reduce_bufferized.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/reduce_bufferized.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/reduce_copies.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/reduce_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/reduce_llvm.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/graph-reduce.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,canonicalize,cse))" -o ${OUTPUT_DIR}/reduce_linalg.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_linalg.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/reduce_frontend.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_frontend.mlir -inline -eliminate-empty-tensors -forward-materialized-tensors -convert-elementwise-to-linalg -convert-linalg-to-acc -canonicalize "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/reduce_bufferized.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_bufferized.mlir -assign-physical-banks -lower-acc -o ${OUTPUT_DIR}/reduce_instructions.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_instructions.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/reduce_copies.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/reduce_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/reduce_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/reduce.ll
-  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/reduce.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/reduce_opt.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/reduce_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o reduce.o
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/reduce.ll -mtriple=riscv64 -mattr=+xbuckyball,+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/reduce_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/reduce_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+xbuckyball,+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o reduce.o
   DEPENDS ${OUTPUT_DIR}/graph-reduce.mlir
-          ${DEVICE_COMPILER}
-  COMMENT "Building the DeepSeek-R1-0528-Qwen3-8B graphs of the reduce core for poly"
+          ${DESIGN_TARGET_PLUGIN_${REDUCE_TARGET}}
+  COMMENT "Building the deepseek-r1-0528-qwen3-8b graphs of the reduce core for poly"
   VERBATIM
 )
 
@@ -237,7 +244,7 @@ add_custom_command(
 add_custom_command(
   OUTPUT ${ELF}-ddr.bin
   BYPRODUCTS model.img
-  COMMAND ${CMAKE_BINARY_DIR}/model-pack model.img ${OUTPUT_DIR}/prompt pack-f32.data pack-i8.data inputs.data outputs.data sizes.txt
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack model.img ${OUTPUT_DIR}/prompt pack-f32.data pack-i8.data inputs.data outputs.data sizes.txt input-order.txt
   COMMAND ${CMAKE_COMMAND} -E rm -f ${ELF}-ddr.bin
   COMMAND dd if=model.img of=${ELF}-ddr.bin bs=1M oflag=seek_bytes seek=${MODEL_OFFSET} conv=sparse status=none
   DEPENDS ${OUTPUT_DIR}/prompt/pack-f32.data
@@ -245,6 +252,7 @@ add_custom_command(
           ${OUTPUT_DIR}/prompt/inputs.data
           ${OUTPUT_DIR}/prompt/outputs.data
           ${OUTPUT_DIR}/prompt/sizes.txt
+          ${OUTPUT_DIR}/prompt/input-order.txt
           model-pack-tool
   COMMENT "Packing the DeepSeek-R1-0528-Qwen3-8B prompt into the model region"
   VERBATIM
@@ -296,7 +304,7 @@ add_custom_command(
 file(READ ${MODEL_DIR}/deepseek-r1-0528-qwen3-8b/input.txt PROMPT)
 string(STRIP "${PROMPT}" PROMPT)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MODEL_DIR}/deepseek-r1-0528-qwen3-8b/input.txt)
-file(WRITE ${OUTPUT_DIR}/run.args "--model\ndeepseek-r1-0528-qwen3-8b.rax\n--prompt\n${PROMPT}\n--max-tokens\n1\n")
+file(WRITE ${OUTPUT_DIR}/run.args "--model\ndeepseek-r1-0528-qwen3-8b.rax\n--prompt\n${PROMPT}\n--max-tokens\n128\n")
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/model.img
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/prompt ${OUTPUT_DIR}/ddr

@@ -35,6 +35,19 @@ target_link_libraries(runtime
 # One worker per core on baremetal harts.
 # ===----------------------------------------------------------------------===
 add_library(runtime-baremetal STATIC scheduler/baremetal.c services/dma_memory.c)
+if(RUNTIME_DEFS)
+  find_program(ELF_CC riscv64-unknown-elf-gcc REQUIRED)
+  list(TRANSFORM RUNTIME_DEFS PREPEND "-D" OUTPUT_VARIABLE DMA_BAREMETAL_DEFINES)
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dma-baremetal.o
+    COMMAND ${ELF_CC} -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -ftls-model=local-exec -ffreestanding -fno-builtin -msmall-data-limit=0 ${DMA_BAREMETAL_DEFINES} -I${RUNTIME_DIR}/services -c ${RUNTIME_DIR}/services/dma.c -o ${CMAKE_CURRENT_BINARY_DIR}/dma-baremetal.o
+    DEPENDS services/dma.c
+            services/dma.h
+            services/dma_memory.h
+    VERBATIM
+  )
+  target_sources(runtime-baremetal PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/dma-baremetal.o)
+endif()
 target_link_libraries(runtime-baremetal
   PUBLIC runtime
 )

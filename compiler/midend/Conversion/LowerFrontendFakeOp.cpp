@@ -285,7 +285,7 @@ void lowerMXINT8Quantize(Operation *op, int64_t axis) {
             Value scaled =
                 arith::MulFOp::create(body, loc, args[0], multiplier);
             // Integer clamp bounds commute with rounding. Keep round and
-            // conversion adjacent so RISC-V can use fcvt.w.s with RNE.
+            // conversion adjacent so RISC-V can use fcvt with RNE.
             Value clamped = arith::MinimumFOp::create(
                 body, loc,
                 arith::MaximumFOp::create(

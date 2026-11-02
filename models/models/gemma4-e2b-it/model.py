@@ -57,9 +57,9 @@ class Decoder(torch.nn.Module):
 
     def forward(self, tokens, start, keys, values):
         positions = start + torch.arange(tokens.shape[1])
-        visible = torch.arange(self.capacity)[None, :] <= positions[:, None]
+        visible = torch.arange(keys[0].shape[2])[None, :] <= positions[:, None]
         sliding = visible & (
-            torch.arange(self.capacity)[None, :]
+            torch.arange(keys[0].shape[2])[None, :]
             > positions[:, None] - self.model.config.sliding_window
         )
         mask = torch.where(visible, 0.0, torch.finfo(torch.float32).min)

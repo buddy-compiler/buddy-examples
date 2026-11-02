@@ -147,7 +147,7 @@ def quantize(graph, params):
             convert(graph, op, 0, rank - 1)
         elif isinstance(op, BatchMatmulOp):
             k = graph.node_table[op.args[0]].tensor_meta["shape"][-1]
-            if k % 32:
+            if isinstance(k, int) and k % 32:
                 continue
             if probabilities(graph, op):
                 split(graph, op, 0, 2)

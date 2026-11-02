@@ -32,6 +32,9 @@ uint64_t program_run_index(void);
  * its words. Only the program submits jobs; the jobs of a core run in the
  * order they were submitted. */
 void program_job_begin(uint64_t core, int (*entry)(void *, void *));
+/* Begin a cleanup job after all submitted jobs. Append `count` malloc
+ * pointers with program_job_argument, then submit it normally. */
+void program_cleanup_begin(uint64_t count);
 void program_job_argument(uint64_t word);
 void program_job_after(uint64_t job);
 uint64_t program_job_submit(void);
