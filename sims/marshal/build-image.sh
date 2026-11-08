@@ -17,12 +17,7 @@ WORKLOAD=$1
 ROOT=$(git rev-parse --show-toplevel)
 MARSHAL_DIR=$ROOT/sims/marshal
 
-source $ROOT/env.sh
-
-# Preload conda libstdc++ for MLIR Python (GLIBCXX_3.4.29). 
-# export LD_PRELOAD=$(conda info --base)/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}
-
-# step 1: build workload 
+# step 1: build workload
 if [ $WORKLOAD == "lenet-gemmini" ]; then
   cd $ROOT/models
   mkdir -p build && cd build
@@ -170,13 +165,13 @@ elif [ $WORKLOAD == "llama2-gemmini" ]; then
 elif [ $WORKLOAD == "deepseekr1-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
-  if [ ! -f $ROOT/models/build/archs/gemmini/deepseek-r1-distill-qwen-1.5b/buddy-gemmini-deepseekr1-run ]; then
+  if [ ! -f $ROOT/models/build/archs/gemmini/deepseek-r1-distill-qwen-1-5b/buddy-gemmini-deepseekr1-run ]; then
     echo "Error: buddy-gemmini-deepseekr1-run not found"
     exit 1
   fi
-  cp $ROOT/models/build/archs/gemmini/deepseek-r1-distill-qwen-1.5b/buddy-gemmini-deepseekr1-run ./
-  cp $ROOT/models/models/deepseek-r1-distill-qwen-1.5b/arg0.data ./
-  cp $ROOT/models/models/deepseek-r1-distill-qwen-1.5b/vocab.txt ./
+  cp $ROOT/models/build/archs/gemmini/deepseek-r1-distill-qwen-1-5b/buddy-gemmini-deepseekr1-run ./
+  cp $ROOT/models/models/deepseek-r1-distill-qwen-1-5b/arg0.data ./
+  cp $ROOT/models/models/deepseek-r1-distill-qwen-1-5b/vocab.txt ./
 elif [ $WORKLOAD == "qwen3-gemmini" ]; then
   mkdir -p $ROOT/models/bin && cd $ROOT/models/bin
   rm -r $ROOT/models/bin/* 2>/dev/null || true
@@ -218,7 +213,7 @@ elif [ $WORKLOAD == "cnn-gemmini" ]; then
   cp $ROOT/models/models/resnet18/arg0.data ./
   cp -r $ROOT/models/models/resnet18/images ./
   cp $ROOT/models/models/resnet18/Labels.txt ./
-  
+
   mkdir -p $ROOT/models/bin/mobilenetv3 && cd $ROOT/models/bin/mobilenetv3
   if [ ! -f $ROOT/models/build/archs/gemmini/mobilenet-v3-small/buddy-gemmini-mobilenetv3-run ]; then
     echo "Error: buddy-gemmini-mobilenetv3-run not found"

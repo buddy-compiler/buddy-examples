@@ -1,28 +1,29 @@
-set(TRAIN_EPOCHS 150 CACHE STRING "Checkpoint training epochs")
-set(CHECKPOINT "" CACHE FILEPATH "Prepared LeNet checkpoint; empty trains a checkpoint")
-if(CHECKPOINT)
-  get_filename_component(CHECKPOINT "${CHECKPOINT}" ABSOLUTE BASE_DIR "${REPO_ROOT}")
-  if(NOT EXISTS "${CHECKPOINT}")
-    message(FATAL_ERROR "Prepared LeNet checkpoint does not exist: ${CHECKPOINT}")
-  endif()
-else()
-  add_custom_command(OUTPUT ${GENERATED_DIR}/lenet-model.pth
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_DIR}
-    COMMAND ${PYTHON} -m stack.models.models.lenet.prepare
-            --output ${GENERATED_DIR}/lenet-model.pth --data ${GENERATED_DIR}/datasets --epochs ${TRAIN_EPOCHS}
-    DEPENDS prepare.py model.py ${CMAKE_CURRENT_SOURCE_DIR}/configs/importer-param.py
-    WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-  set(CHECKPOINT ${GENERATED_DIR}/lenet-model.pth)
-endif()
+# ===----------------------------------------------------------------------===
+# Train LeNet and save its checkpoint.
+# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${GENERATED_DIR}/forward.mlir ${GENERATED_DIR}/subgraph0.mlir
-         ${GENERATED_DIR}/model.json
-         ${GENERATED_DIR}/lenet.payload/params.f32 ${GENERATED_DIR}/lenet.payload/weights.bin
-  COMMAND ${PYTHON} -m stack.models.models.lenet.importer
-          --output-dir ${GENERATED_DIR} --compiler-build ${COMPILER_BUILD}
-          --design ${DESIGN_MODULE} --checkpoint ${CHECKPOINT} ${TRACE_ARGS}
-  DEPENDS importer.py ${CHECKPOINT} ${DESIGN_DEPENDS}
-           ${CALIBRATION_IMAGES}
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-add_custom_target(lenet-model-build DEPENDS ${GENERATED_DIR}/forward.mlir
-  ${GENERATED_DIR}/subgraph0.mlir ${GENERATED_DIR}/model.json)
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/lenet/model.pth
+  COMMAND ${PYTHON} buddy-pytorch-lenet-prepare.py
+            --epochs 150
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-lenet-prepare.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Training LeNet checkpoint"
+  VERBATIM
+)
+add_custom_target(lenet-prepare DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/lenet/model.pth)
+
+# ===----------------------------------------------------------------------===
+# Export the uninstrumented graph for inspection.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
+  COMMAND ${PYTHON} buddy-pytorch-lenet-graph.py
+  DEPENDS buddy-pytorch-lenet-graph.py
+          model.py
+          output/lenet/model.pth
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Exporting LeNet graph"
+  VERBATIM
+)
+add_custom_target(buddy-lenet-graph DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt)

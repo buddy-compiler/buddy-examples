@@ -1,22 +1,27 @@
-set(MODEL_CONFIG_ARGS)
-if(DEFINED CHECKPOINT)
-  list(APPEND MODEL_CONFIG_ARGS --checkpoint "${CHECKPOINT}")
-endif()
-if(DEFINED REVISION)
-  list(APPEND MODEL_CONFIG_ARGS --revision "${REVISION}")
-endif()
-set(MODEL_CONFIG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/model.toml ${CMAKE_CURRENT_SOURCE_DIR}/configs/importer-param.py)
-set(KERNEL_MLIR)
-foreach(GRAPH IN LISTS KERNEL_GRAPHS)
-  list(APPEND KERNEL_MLIR ${GENERATED_DIR}/${GRAPH}.mlir)
-endforeach()
+# ===----------------------------------------------------------------------===
+# Prepare model weights before exporting or compiling a graph.
+# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${KERNEL_MLIR} ${GENERATED_DIR}/mixer-parameters.h
-         ${GENERATED_DIR}/model.json ${GENERATED_DIR}/input.f32 ${GENERATED_DIR}/reference.f32
-         ${GENERATED_DIR}/mixer.payload/params.f32 ${GENERATED_DIR}/mixer.payload/weights.bin
-  COMMAND ${PYTHON} -m stack.models.models.mlp-mixer.importer ${MODEL_CONFIG_ARGS}
-          --output-dir ${GENERATED_DIR} --compiler-build ${COMPILER_BUILD}
-          --design ${DESIGN_MODULE} --chip ${CHIP} ${TRACE_ARGS}
-  DEPENDS ${MODEL_CONFIG_FILES} importer.py prepare.py ../alexnet/images/dog.bmp ${DESIGN_DEPENDS}
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-add_custom_target(mixer-model-build DEPENDS ${KERNEL_MLIR} ${GENERATED_DIR}/mixer-parameters.h ${GENERATED_DIR}/model.json)
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/mlp-mixer/model.safetensors
+  COMMAND ${PYTHON} buddy-pytorch-mlp-mixer-prepare.py
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-mlp-mixer-prepare.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Preparing mlp-mixer weights"
+  VERBATIM
+)
+add_custom_target(mlp-mixer-prepare DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/mlp-mixer/model.safetensors)
+
+# ===----------------------------------------------------------------------===
+# Export the uninstrumented graph for inspection.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
+  COMMAND ${PYTHON} buddy-pytorch-mlp-mixer-graph.py
+  DEPENDS buddy-pytorch-mlp-mixer-graph.py
+          output/mlp-mixer/model.safetensors
+          model.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Exporting mlp-mixer graph"
+  VERBATIM
+)
+add_custom_target(buddy-mlp-mixer-graph DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt)

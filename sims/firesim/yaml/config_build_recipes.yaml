@@ -38,7 +38,7 @@ vcu118_firesim_GemminiVCU118Config_no_nic:
     TARGET_PROJECT: firesim
     TARGET_PROJECT_MAKEFRAG: ../makefrag/firesim
     DESIGN: FireSim
-    TARGET_CONFIG: platform.FireSimGemminiVCU118Config
+    TARGET_CONFIG: FireSimGemminiVCU118Config
     PLATFORM_CONFIG: BaseXilinxVCU118Config
     deploy_quintuplet: null
     platform_config_args:
@@ -53,7 +53,7 @@ alveo_u280_firesim_GemminiU280Config_no_nic:
     TARGET_PROJECT: firesim
     TARGET_PROJECT_MAKEFRAG: ../makefrag/firesim
     DESIGN: FireSim
-    TARGET_CONFIG: platform.FireSimGemminiU280Config
+    TARGET_CONFIG: FireSimGemminiU280Config
     PLATFORM_CONFIG: BaseXilinxAlveoU280Config
     deploy_quintuplet: null
     platform_config_args:
@@ -62,4 +62,3 @@ alveo_u280_firesim_GemminiU280Config_no_nic:
     post_build_hook: null
     metasim_customruntimeconfig: null
     bit_builder_recipe: bit-builder-recipes/xilinx_alveo_u280.yaml
-    

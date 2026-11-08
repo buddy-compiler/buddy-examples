@@ -13,7 +13,6 @@ $(FIRRTL_FILE) $(ANNO_FILE) &: SHELL := /usr/bin/env bash # needed for running s
 $(FIRRTL_FILE) $(ANNO_FILE) &: firesim_target_symlink_hook
 	@mkdir -p $(@D)
 	@mkdir -p $(TARGET_SBT_DIR)/target/generated-src/$(long_name)
-	source $(TARGET_SBT_DIR)/../env.sh
 	cd $(TARGET_SBT_DIR) && \
 		pwd && \
 		${SBT} ";project $(TARGET_SBT_PROJECT); runMain chipyard.Generator \
@@ -27,30 +26,3 @@ $(FIRRTL_FILE) $(ANNO_FILE) &: firesim_target_symlink_hook
 	ln -sf $(TARGET_SBT_DIR)/target/generated-src/$(long_name)/$(long_name).anno.json $(ANNO_FILE)
 	# .d needed to run metasim CI tests
 	ln -sf $(TARGET_SBT_DIR)/target/generated-src/$(long_name)/$(long_name).d $(GENERATED_DIR)/$(long_name).d
-
-#######################################
-# Setup Extra Verilator Compile Flags #
-#######################################
-
-## default flags added for cva6
-CVA6_VERILATOR_FLAGS = \
-	--unroll-count 256 \
-	-Werror-PINMISSING \
-	-Werror-IMPLICIT \
-	-Wno-fatal \
-	-Wno-PINCONNECTEMPTY \
-	-Wno-ASSIGNDLY \
-	-Wno-DECLFILENAME \
-	-Wno-UNUSED \
-	-Wno-UNOPTFLAT \
-	-Wno-BLKANDNBLK \
-	-Wno-style \
-	-Wall
-
-# normal flags used for midas builds (that are incompatible with cva6)
-DEFAULT_MIDAS_VERILATOR_FLAGS = \
-	--assert
-
-# AJG: this must be evaluated after verilog generation to work (hence the =)
-EXTRA_VERILATOR_FLAGS = \
-	$(shell if ! grep -iq "module.*cva6" $(simulator_verilog); then echo "$(DEFAULT_MIDAS_VERILATOR_FLAGS)"; else echo "$(CVA6_VERILATOR_FLAGS)"; fi)

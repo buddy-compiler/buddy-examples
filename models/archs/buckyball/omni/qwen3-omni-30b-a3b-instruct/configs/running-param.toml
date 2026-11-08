@@ -1,7 +1,0 @@
-inputs = ["Say hello in one short sentence."]
-max_tokens = 32
-max_audio_tokens = 128
-temperature = 0.0
-memory_mib = 16384
-threads = 4
-timeout = 21600

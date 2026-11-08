@@ -1,0 +1,5 @@
+add_subdirectory(alexnet)
+add_subdirectory(lenet)
+add_subdirectory(mobilenet-v3-small)
+add_subdirectory(resnet18)
+add_subdirectory(yolo26n)

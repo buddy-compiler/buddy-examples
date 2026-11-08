@@ -3,9 +3,9 @@
   "distro" : {
       "name" : "br",
       "opts" : {
-          "configs" : ["./buildroot-config"] 
+          "configs" : ["./buildroot-config"]
       }
-  }, 
+  },
   "overlay" : "./overlay",
   "linux" : {
       "source" : "../../../../software/firemarshal/boards/prototype/linux",

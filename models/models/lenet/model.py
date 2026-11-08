@@ -18,8 +18,12 @@
 #
 # ===---------------------------------------------------------------------------
 
+from pathlib import Path
+
 import torch
 import torch.nn as nn
+
+checkpoint = Path(__file__).resolve().parent / "output/lenet"
 
 
 class LeNet(nn.Module):
@@ -40,3 +44,15 @@ class LeNet(nn.Module):
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+
+
+def load():
+    """LeNet with the trained weights, ready to import."""
+    model = LeNet().eval()
+    model.load_state_dict(torch.load(checkpoint / "model.pth", weights_only=True))
+    return model
+
+
+def inputs():
+    """Example inputs of the graph: one 28x28 grayscale image."""
+    return (torch.zeros((1, 1, 28, 28)),)

@@ -1,3 +1,0 @@
-prefill_length = 16
-cache_length = 256
-vision_buckets = [4, 16, 64, 256]

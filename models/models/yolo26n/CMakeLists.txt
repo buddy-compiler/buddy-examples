@@ -1,23 +1,31 @@
-set(MODEL_CONFIG_ARGS)
-if(DEFINED IMAGE_SIZE)
-  list(APPEND MODEL_CONFIG_ARGS --img-size "${IMAGE_SIZE}")
-endif()
-set(MODEL_CONFIG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/model.toml ${CMAKE_CURRENT_SOURCE_DIR}/configs/importer-param.py)
-add_custom_command(OUTPUT ${GENERATED_DIR}/yolo26n.pt
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${GENERATED_DIR}
-  COMMAND ${CMAKE_COMMAND} -E chdir ${GENERATED_DIR} ${PYTHON} -c
-          "from ultralytics import YOLO; YOLO('yolo26n.pt')"
-  VERBATIM)
-set(CHECKPOINT ${GENERATED_DIR}/yolo26n.pt)
+#===------------------------------------------------------------------===#
+# Download weights and prepare model.
+#===------------------------------------------------------------------===#
 add_custom_command(
-  OUTPUT ${GENERATED_DIR}/forward.mlir ${GENERATED_DIR}/subgraph0.mlir
-         ${GENERATED_DIR}/model.json
-         ${GENERATED_DIR}/yolo26.payload/params.f32 ${GENERATED_DIR}/yolo26.payload/weights.bin
-  COMMAND ${PYTHON} -m stack.models.models.yolo26n.importer ${MODEL_CONFIG_ARGS}
-          --output-dir ${GENERATED_DIR} --compiler-build ${COMPILER_BUILD}
-          --design ${DESIGN_MODULE} --checkpoint ${CHECKPOINT} --calibration-images ${CALIBRATION_IMAGES} ${TRACE_ARGS}
-  DEPENDS ${MODEL_CONFIG_FILES} importer.py ${CHECKPOINT} ${DESIGN_DEPENDS}
-           ${CALIBRATION_IMAGES}
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-add_custom_target(yolo26-model-build DEPENDS ${GENERATED_DIR}/forward.mlir
-  ${GENERATED_DIR}/subgraph0.mlir ${GENERATED_DIR}/model.json)
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/yolo26n/yolo26n.pt
+  COMMAND ${PYTHON} buddy-pytorch-yolo26n-prepare.py
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-yolo26n-prepare.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Preparing yolo26n weights"
+  VERBATIM
+)
+add_custom_target(yolo26n-prepare DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/yolo26n/yolo26n.pt)
+
+# ===----------------------------------------------------------------------===
+# Export the uninstrumented graph for inspection.
+# ===----------------------------------------------------------------------===
+# ===----------------------------------------------------------------------===
+# Export the uninstrumented graph for inspection.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
+  COMMAND ${PYTHON} buddy-pytorch-yolo26n-graph.py
+  DEPENDS buddy-pytorch-yolo26n-graph.py
+          output/yolo26n/yolo26n.pt
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Exporting yolo26n graph"
+  VERBATIM
+)
+
+add_custom_target(buddy-yolo26n-graph DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt)

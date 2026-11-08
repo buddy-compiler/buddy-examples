@@ -1,0 +1,6 @@
+add_subdirectory(deepseek-r1-0528-qwen3-8b)
+add_subdirectory(gemma4-e2b-it)
+add_subdirectory(laya)
+add_subdirectory(llama3-2-3b-instruct)
+add_subdirectory(qwen3-0-6b)
+add_subdirectory(qwen3-8b)

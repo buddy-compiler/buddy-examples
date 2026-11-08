@@ -1,23 +1,32 @@
-set(MODEL_CONFIG_ARGS)
-list(APPEND MODEL_CONFIG_ARGS --prefill-length "${PREFILL_LENGTH}")
-list(APPEND MODEL_CONFIG_ARGS --run-config "${DESIGN_DIR}/configs/running-param.toml"
-  --isa-dir "${ISA_DIR}" --kernel-passes "${GEMMA_KERNEL_PIPELINE}")
-if(DEFINED CHECKPOINT)
-  list(APPEND MODEL_CONFIG_ARGS --checkpoint "${CHECKPOINT}")
-endif()
-set(MODEL_CONFIG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/configs/model.toml ${CMAKE_CURRENT_SOURCE_DIR}/configs/importer-param.py)
-set(MODEL_OUTPUTS ${GENERATED_DIR}/tasks/manifest.json
-  ${GENERATED_DIR}/tasks/task_api.h ${GENERATED_DIR}/tasks/task_index.cpp
-  ${GENERATED_DIR}/tasks/CMakeLists.txt)
+file(GLOB MODEL_WEIGHTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/output/gemma4-e2b-it/*.safetensors"
+  "${CMAKE_CURRENT_SOURCE_DIR}/output/gemma4-e2b-it/*.bin"
+)
+
+# ===----------------------------------------------------------------------===
+# Prepare model weights before exporting or compiling a graph.
+# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${MODEL_OUTPUTS} ${GENERATED_DIR}/model.json ${GENERATED_DIR}/gemma-parameters.h ${GENERATED_DIR}/vocab.txt
-         ${GENERATED_DIR}/prefill/params.f32 ${GENERATED_DIR}/prefill/weights.bin
-         ${GENERATED_DIR}/decode/params.f32 ${GENERATED_DIR}/decode/weights.bin
-  COMMAND ${PYTHON} -m stack.models.models.gemma4-e2b-it.import-gemma4 ${MODEL_CONFIG_ARGS}
-          --chip ${CHIP} --design-module ${DESIGN_MODULE} --output-dir ${GENERATED_DIR} --compiler-build ${COMPILER_BUILD}
-          ${TRACE_ARGS}
-  DEPENDS ${MODEL_CONFIG_FILES} ${MODEL_SOURCE}/import-gemma4.py ${MODEL_SOURCE}/abi.py ${MODEL_SOURCE}/cache.py ${MODEL_SOURCE}/native.py
-          ${DESIGN_DEPENDS}
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-add_custom_target(gemma4-model-build DEPENDS ${MODEL_OUTPUTS}
-  ${GENERATED_DIR}/model.json ${GENERATED_DIR}/gemma-parameters.h ${GENERATED_DIR}/vocab.txt)
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/gemma4-e2b-it/config.json
+  COMMAND ${PYTHON} buddy-pytorch-gemma4-e2b-it-prepare.py
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-gemma4-e2b-it-prepare.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Preparing gemma4-e2b-it weights"
+  VERBATIM
+)
+add_custom_target(gemma4-e2b-it-prepare DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/gemma4-e2b-it/config.json)
+
+# ===----------------------------------------------------------------------===
+# Export the uninstrumented graph for inspection.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
+  COMMAND ${PYTHON} buddy-pytorch-gemma4-e2b-it-graph.py
+  DEPENDS buddy-pytorch-gemma4-e2b-it-graph.py
+          model.py
+          ${MODEL_WEIGHTS}
+          output/gemma4-e2b-it/config.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Exporting gemma4-e2b-it graph"
+  VERBATIM
+)
+add_custom_target(buddy-gemma4-e2b-it-graph DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt)

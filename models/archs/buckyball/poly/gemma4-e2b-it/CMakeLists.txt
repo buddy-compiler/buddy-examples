@@ -1,127 +1,324 @@
-set(DESIGN_MODULE examples.models.poly.gemma4-e2b-it)
-set(TRACE_SUPPORTED TRUE PARENT_SCOPE)
-set(DESIGN_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(MODEL_SOURCE "${REPO_ROOT}/stack/models/models/gemma4-e2b-it")
-set(LLVM_OPT_LEVEL 2)
-set(LLVM_PASSES "")
-set(MATTR "+xbuckyball,+m,+D")
-set(PREFILL_LENGTH 16)
-set(TRACE_ARGS)
-set(TRACE_MODES)
-set(TRACE_PASS)
-if(CTRACE OR DTRACE)
-  list(APPEND TRACE_ARGS --trace --trace-config ${CMAKE_CURRENT_SOURCE_DIR}/trace/trace.toml)
-endif()
-if(CTRACE)
-  list(APPEND TRACE_MODES cycle-trace)
-endif()
-if(DTRACE)
-  list(APPEND TRACE_MODES tensor-trace)
-endif()
-if(TRACE_MODES)
-  list(JOIN TRACE_MODES "," TRACE_MODES)
-  set(TRACE_PASS "-convert-trace-to-llvm=${TRACE_MODES}")
-endif()
-file(GLOB_RECURSE DESIGN_DEPENDS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/trace/*"
-  "${CMAKE_CURRENT_SOURCE_DIR}/quant/*.py" "${CMAKE_CURRENT_SOURCE_DIR}/permute/*.py")
-list(APPEND DESIGN_DEPENDS
-  "${DESIGN_DIR}/kernels.py"
-  "${DESIGN_DIR}/attention.py"
-  "${DESIGN_DIR}/attention_mxfp8.py"
-  "${DESIGN_DIR}/linear.py"
-  "${DESIGN_DIR}/partition.py"
-  "${DESIGN_DIR}/tasks.py"
-  "${DESIGN_DIR}/entry.py"
-  "${MODEL_SOURCE}/task_export.py"
-  "${MODEL_SOURCE}/task_abi.py"
-  "${MODEL_SOURCE}/task_plan.py"
-  "${REPO_ROOT}/stack/compiler/quant/mxfp8_graph.py"
-  "${REPO_ROOT}/stack/compiler/quant/mxfp8_embedding.py"
-  "${REPO_ROOT}/stack/compiler/quant/mxfp8_lowering.py"
-  "${REPO_ROOT}/examples/balls/mxmm/compiler/python/layout.py")
-set(KERNEL_PASSES
-  -eliminate-empty-tensors -convert-elementwise-to-linalg
-  -convert-tensor-to-linalg
-  -fold-unit-transpose -canonicalize
-  -outline-rvv-kernels -fuse-pointwise -outline-rvv-kernels -outline-rvv-matmul
-  -canonicalize -cse
-  -one-shot-bufferize=bufferize-function-boundaries -lower-rvv-kernels
-  -lower-rvv-pointwise
-  -lower-gather-rows
-  -buffer-deallocation-pipeline=private-function-dynamic-ownership=false
-  -optimize-allocation-liveness
-  -convert-linalg-to-tile=quantized-only -convert-tile-to-buckyball
-  -lower-buckyball-to-bank-ssa -assign-physical-banks
-  -llvm-request-c-wrappers -lower-bank-ssa-to-intrinsics
-  -expand-strided-metadata -convert-linalg-to-loops
-  -lower-buckyball -convert-vector-to-scf=target-rank=0
-  -lower-affine -canonicalize -cse
-  -convert-scf-to-cf -convert-cf-to-llvm -convert-vector-to-llvm
-  -buffer-deallocation-simplification
-  -bufferization-lower-deallocations -convert-math-to-llvm
-  -convert-math-to-libm -convert-arith-to-llvm -convert-func-to-llvm
-  -finalize-memref-to-llvm -reconcile-unrealized-casts -canonicalize -cse
-  -lower-tile-runtime -lower-ant-runtime -verify-npu-compute)
-string(JOIN " " GEMMA_KERNEL_PIPELINE ${KERNEL_PASSES})
-add_subdirectory(${MODEL_SOURCE} prepare)
-set(TASK_RUNTIME_DIR "${CMAKE_CURRENT_BINARY_DIR}/task-runtime")
-set(TASK_ARCHIVE "${CMAKE_CURRENT_BINARY_DIR}/task-kernels/libgemma4_kernels.a")
-add_custom_command(OUTPUT "${TASK_ARCHIVE}"
-  COMMAND ${CMAKE_COMMAND} -S "${GENERATED_DIR}/tasks" -B "${CMAKE_CURRENT_BINARY_DIR}/task-kernels"
-    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_OBJCOPY=${CMAKE_OBJCOPY}
-    -DCOMPILER_BUILD=${COMPILER_BUILD} -DGEMMA_RENAMES=${TASK_RUNTIME_DIR}
-    -DMODEL_SOURCE=${MODEL_SOURCE} -DREPO_ROOT=${REPO_ROOT}
-    -DLLVM_MLIR_EXECUTION_ENGINE_DIR=${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine
-  COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/task-kernels"
-  DEPENDS "${GENERATED_DIR}/tasks/CMakeLists.txt" "${GENERATED_DIR}/tasks/manifest.json"
-          "${TASK_RUNTIME_DIR}/ffn.rename" "${TASK_RUNTIME_DIR}/attention.rename"
-  VERBATIM)
-add_custom_target(gemma-task-kernels DEPENDS "${TASK_ARCHIVE}")
-add_library(gemma4_kernels STATIC IMPORTED)
-set_target_properties(gemma4_kernels PROPERTIES IMPORTED_LOCATION "${TASK_ARCHIVE}")
-add_dependencies(gemma4_kernels gemma-task-kernels)
-find_program(GEMMA_HOST_CXX NAMES c++ REQUIRED NO_CMAKE_FIND_ROOT_PATH)
-set(PREPARE_TOOL "${CMAKE_CURRENT_BINARY_DIR}/prepare-input")
-add_custom_command(OUTPUT "${PREPARE_TOOL}"
-  COMMAND "${GEMMA_HOST_CXX}" -std=c++17 -O2
-    -I${BUDDY_SOURCE}/frontend/Interfaces ${MODEL_SOURCE}/prepare.cpp -o "${PREPARE_TOOL}"
-  DEPENDS ${MODEL_SOURCE}/prepare.cpp ${BUDDY_SOURCE}/frontend/Interfaces/buddy/LLM/TextContainer.h
-  VERBATIM)
-add_custom_target(gemma-input-prepare DEPENDS "${PREPARE_TOOL}")
-add_executable(gemma4-e2b-it-run ${MODEL_SOURCE}/main.cpp ${MODEL_SOURCE}/generation.cpp ${MODEL_SOURCE}/execution.cpp ${MODEL_SOURCE}/task_worker.cpp ${MODEL_SOURCE}/layer_execution.cpp)
-add_dependencies(gemma4-e2b-it-run model-loader gemma-input-prepare gemma4-model-build gemma-task-kernels gemma-target-rvv)
-target_include_directories(gemma4-e2b-it-run PRIVATE ${MODEL_SOURCE} ${ISA_DIR}/chip ${BUDDY_SOURCE}/frontend/Interfaces ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine ${GENERATED_DIR} ${GENERATED_DIR}/tasks)
-add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv" rvv)
-add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxfp8" mxfp8)
-add_subdirectory("${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/mxquant" mxquant)
-find_program(GEMMA_TARGET_NM NAMES riscv64-unknown-linux-gnu-nm REQUIRED)
-add_custom_command(OUTPUT "${TASK_RUNTIME_DIR}/ffn.rename" "${TASK_RUNTIME_DIR}/attention.rename"
-  "${TASK_RUNTIME_DIR}/libgemma_rvv_ffn.a" "${TASK_RUNTIME_DIR}/libgemma_rvv_attention.a"
-  COMMAND ${PYTHON} -m stack.models.models.gemma4-e2b-it.task_runtime
-    --repo "${REPO_ROOT}" --output "${TASK_RUNTIME_DIR}" --isa "${ISA_DIR}"
-    --images "${CMAKE_CURRENT_BINARY_DIR}/rvv" --compiler "${CMAKE_CXX_COMPILER}"
-    --ar "${CMAKE_AR}" --nm "${GEMMA_TARGET_NM}" --objcopy "${CMAKE_OBJCOPY}"
-  DEPENDS rvv-images ${MODEL_SOURCE}/task_runtime.py
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/matmul_dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/cache_dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/normalization_dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/pointwise_dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/activation_dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/flash_attention_dispatch.cpp
-    ${REPO_ROOT}/bb-tests/workloads/lib/bbsw/kernels/rvv/flash_attention_mxfp8_dispatch.cpp
-  WORKING_DIRECTORY "${REPO_ROOT}" VERBATIM)
-add_custom_target(gemma-target-rvv DEPENDS "${TASK_RUNTIME_DIR}/ffn.rename" "${TASK_RUNTIME_DIR}/attention.rename"
-  "${TASK_RUNTIME_DIR}/libgemma_rvv_ffn.a" "${TASK_RUNTIME_DIR}/libgemma_rvv_attention.a")
-target_link_libraries(gemma4-e2b-it-run PRIVATE -static gemma4_kernels
-  "${TASK_RUNTIME_DIR}/libgemma_rvv_ffn.a" "${TASK_RUNTIME_DIR}/libgemma_rvv_attention.a"
-  runtime_ant_tasks rvv_images mxfp8_pack_ant mxquant_backend_ant)
-add_custom_command(TARGET gemma4-e2b-it-run POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${ARTIFACT_DIR}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:gemma4-e2b-it-run> ${ARTIFACT_DIR}/gemma4-e2b-it-run
-  COMMAND ${PYTHON} -m stack.models.models.gemma4-e2b-it.pack
-          --generated-dir ${GENERATED_DIR} --model-dir ${ARTIFACT_DIR}
-          --chip ${CHIP} --run-config ${DESIGN_DIR}/configs/running-param.toml --tokenizer ${PREPARE_TOOL} --rax-pack ${COMPILER_BUILD}/bin/rax-pack
-  WORKING_DIRECTORY ${REPO_ROOT} VERBATIM)
-set_property(TARGET gemma4-e2b-it-run APPEND PROPERTY LINK_DEPENDS
-  ${MODEL_SOURCE}/pack.py ${MODEL_SOURCE}/inputs.py ${DESIGN_DIR}/configs/running-param.toml ${PREPARE_TOOL} ${REPO_ROOT}/stack/compiler/package.py)
+file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
+
+set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
+set(WEIGHTS "${MODEL_DIR}/gemma4-e2b-it/output/gemma4-e2b-it")
+# The device compiler of poly: the device dialect, its placement and
+# lowering, and lower-frontend-fake-op; built by the device stack. The program and
+# the graphs of the reduce core, which has no hardware thread, are compiled
+# with it.
+set(DEVICE_COMPILER "${DESIGN_DEVICE_BUILD}/compiler/libdevice-compiler.so")
+set(OPT ${DESIGN_COMPILER}/bin/buddy-opt --load-dialect-plugin=${DEVICE_COMPILER} --load-pass-plugin=${DEVICE_COMPILER})
+set(REDUCE_TARGET ${DESIGN_DEVICE_CORES_${DESIGN_CORE_HART_reduce}_PROFILE})
+set(REDUCE_OPT ${DESIGN_TARGET_OPT_${REDUCE_TARGET}})
+# The core compiler of poly: the core dialect, the placement of the graphs of
+# the poly cores on their attention and ffn threads and its lowering to the
+# engine, and lower-frontend-fake-op. The graphs of the poly cores are compiled with
+# it.
+set(CORE_COMPILER "${DESIGN_DEVICE_BUILD}/core/compiler/libcore-compiler.so")
+set(
+  CORE_OPT
+  ${DESIGN_COMPILER}/bin/buddy-opt
+  --load-dialect-plugin=${CORE_COMPILER}
+  --load-pass-plugin=${CORE_COMPILER}
+)
+set(ACC_OPT ${CORE_OPT} --buckyball-design-pb=${DESIGN_PB})
+# The boot of every hart of the device: start.S, syscalls.c, device.ld.
+set(BOOT_DIR "${DESIGN_REPO}/stack/runtime/boot")
+list(TRANSFORM DESIGN_DEFS PREPEND "-D" OUTPUT_VARIABLE DESIGN_DEFINES)
+
+# ===----------------------------------------------------------------------===
+# Import Gemma4-E2B-IT for any number of tokens: the device program and the
+# graphs of each class of core.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/program.mlir
+         ${OUTPUT_DIR}/vocab.txt
+         ${OUTPUT_DIR}/input-order.txt
+         ${OUTPUT_DIR}/graph-reduce.mlir
+         ${OUTPUT_DIR}/graph-poly.mlir
+         ${OUTPUT_DIR}/prompt/pack-f32.data
+         ${OUTPUT_DIR}/prompt/pack-i8.data
+         ${OUTPUT_DIR}/prompt/inputs.data
+         ${OUTPUT_DIR}/prompt/outputs.data
+         ${OUTPUT_DIR}/prompt/sizes.txt
+         ${OUTPUT_DIR}/prompt/input-order.txt
+  BYPRODUCTS ${OUTPUT_DIR}/01-import.txt
+             ${OUTPUT_DIR}/02-permuted.txt
+             ${OUTPUT_DIR}/03-quanted.txt
+             ${OUTPUT_DIR}/04-partitioned.txt
+  COMMAND ${PYTHON} buddy-pytorch-importer.py ${DESIGN_PB}
+  DEPENDS ${COMPILER_FRONTEND_SOURCES}
+          ${RECIPE_FRONTEND_SOURCES}
+          ${CMAKE_CURRENT_SOURCE_DIR}/../layout.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+          ${STACK_ROOT}/flake.lock
+          ${STACK_ROOT}/scripts/nix/riscv.nix
+          ${STACK_ROOT}/result/lib/libnewlib-reference.so
+          ${DESIGN_PB}
+          ${MODEL_DIR}/gemma4-e2b-it/model.py
+          ${MODEL_DIR}/gemma4-e2b-it/input.txt
+          ${WEIGHTS}/config.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing the Gemma4-E2B-IT graph"
+  VERBATIM
+)
+add_custom_target(gemma4-e2b-it-import DEPENDS ${OUTPUT_DIR}/program.mlir)
+
+# ===----------------------------------------------------------------------===
+# The device program of Gemma4-E2B-IT placed on the cores and lowered to the
+# device runtime (program_placed.mlir, program_bufferized.mlir,
+# program_lowered.mlir).
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/program_lowered.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/program_placed.mlir
+             ${OUTPUT_DIR}/program_bufferized.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/program_placed.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -o ${OUTPUT_DIR}/program_bufferized.mlir
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_bufferized.mlir -canonicalize -cse -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
+  DEPENDS ${OUTPUT_DIR}/program.mlir
+          ${DEVICE_COMPILER}
+          ${DESIGN_PB}
+  COMMENT "Placing and lowering the Gemma4-E2B-IT program on poly"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# The graphs of Gemma4-E2B-IT on the poly cores through the core level, common
+# subexpressions merged with the conversion to linalg:
+# convert-linalg-to-core puts their MXINT8 quantizations and products on the
+# attention or ffn threads as subgraphs launched as early as their inputs
+# allow (poly_core.mlir),
+# lower-frontend-fake-op computes the rest of the frontend operations
+# (poly_frontend.mlir), each segment's graph inlined into it is bufferized
+# (poly_bufferized.mlir) and lower-core makes the transfers DDR buffers
+# and the launches batches of asynchronous engine jobs
+# (poly_memref.mlir). Each thread profile gets its own acc and bank lowering.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/poly_memref.mlir
+  BYPRODUCTS ${OUTPUT_DIR}/poly_linalg.mlir
+             ${OUTPUT_DIR}/poly_core.mlir
+             ${OUTPUT_DIR}/poly_attention_acc.mlir
+             ${OUTPUT_DIR}/poly_ffn_acc.mlir
+             ${OUTPUT_DIR}/poly_attention_banks.mlir
+             ${OUTPUT_DIR}/poly_attention_instructions.mlir
+             ${OUTPUT_DIR}/poly_ffn_banks.mlir
+             ${OUTPUT_DIR}/poly_ffn_instructions.mlir
+             ${OUTPUT_DIR}/poly_addresses.mlir
+             ${OUTPUT_DIR}/poly_frontend.mlir
+             ${OUTPUT_DIR}/poly_bufferized.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/graph-poly.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))" -o ${OUTPUT_DIR}/poly_linalg.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_linalg.mlir "-convert-linalg-to-core=design=${DESIGN_PB} core=poly" -o ${OUTPUT_DIR}/poly_core.mlir
+  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_core.mlir
+            --buckyball-target=attention -convert-linalg-to-acc -o ${OUTPUT_DIR}/poly_attention_acc.mlir
+  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_attention_acc.mlir
+            --buckyball-target=ffn -convert-linalg-to-acc -o ${OUTPUT_DIR}/poly_ffn_acc.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_ffn_acc.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/poly_frontend.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_frontend.mlir -inline -eliminate-empty-tensors -forward-materialized-tensors -convert-elementwise-to-linalg -linalg-fuse-elementwise-ops "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/poly_bufferized.mlir
+  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_bufferized.mlir
+            --buckyball-target=attention -assign-physical-banks -o ${OUTPUT_DIR}/poly_attention_banks.mlir
+  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_attention_banks.mlir
+            --buckyball-target=attention -lower-acc -o ${OUTPUT_DIR}/poly_attention_instructions.mlir
+  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_attention_instructions.mlir
+            --buckyball-target=ffn -assign-physical-banks -o ${OUTPUT_DIR}/poly_ffn_banks.mlir
+  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/poly_ffn_banks.mlir
+            --buckyball-target=ffn -lower-acc -o ${OUTPUT_DIR}/poly_ffn_instructions.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_ffn_instructions.mlir -expand-strided-metadata -lower-affine -canonicalize -o ${OUTPUT_DIR}/poly_addresses.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_addresses.mlir "-lower-core=design=${DESIGN_PB} core=poly" -o ${OUTPUT_DIR}/poly_memref.mlir
+  DEPENDS ${OUTPUT_DIR}/graph-poly.mlir
+          ${CORE_COMPILER}
+          ${DESIGN_PB}
+  COMMENT "Lowering the Gemma4-E2B-IT graphs to the poly cores"
+  VERBATIM
+)
+add_custom_target(gemma4-e2b-it-core DEPENDS ${OUTPUT_DIR}/poly_memref.mlir)
+
+# ===----------------------------------------------------------------------===
+# The program of Gemma4-E2B-IT to RISC-V on the reduce core (program.ll).
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT program.o
+  BYPRODUCTS ${OUTPUT_DIR}/program_llvm.mlir
+             ${OUTPUT_DIR}/program.ll
+             ${OUTPUT_DIR}/program_opt.ll
+  COMMAND ${OPT} ${OUTPUT_DIR}/program_lowered.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/program_llvm.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/program_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/program.ll
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/program.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/program_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/program_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o program.o
+  DEPENDS ${OUTPUT_DIR}/program_lowered.mlir
+          ${DEVICE_COMPILER}
+  COMMENT "Building the Gemma4-E2B-IT program for poly"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# The reduce core runs ordered sum chains on its accelerator;
+# normalization and quantization stay on its CPU.
+# lower-frontend-fake-op computes the quantization (reduce_frontend.mlir),
+# each graph inlined into its function writes its outputs into the buffers
+# of the program (reduce_bufferized.mlir).
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT reduce.o
+  BYPRODUCTS ${OUTPUT_DIR}/reduce_linalg.mlir
+             ${OUTPUT_DIR}/reduce_frontend.mlir
+             ${OUTPUT_DIR}/reduce_bufferized.mlir
+             ${OUTPUT_DIR}/reduce_instructions.mlir
+             ${OUTPUT_DIR}/reduce_copies.mlir
+             ${OUTPUT_DIR}/reduce_llvm.mlir
+             ${OUTPUT_DIR}/reduce.ll
+             ${OUTPUT_DIR}/reduce_opt.ll
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/graph-reduce.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,canonicalize,cse))" -o ${OUTPUT_DIR}/reduce_linalg.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_linalg.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/reduce_frontend.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_frontend.mlir -inline -eliminate-empty-tensors -forward-materialized-tensors -convert-elementwise-to-linalg -convert-linalg-to-acc -canonicalize "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/reduce_bufferized.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_bufferized.mlir -assign-physical-banks -lower-acc -o ${OUTPUT_DIR}/reduce_instructions.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_instructions.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/reduce_copies.mlir
+  COMMAND ${REDUCE_OPT} ${OUTPUT_DIR}/reduce_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/reduce_llvm.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/reduce_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/reduce.ll
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/reduce.ll -mtriple=riscv64 -mattr=+xbuckyball,+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/reduce_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/reduce_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+xbuckyball,+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o reduce.o
+  DEPENDS ${OUTPUT_DIR}/graph-reduce.mlir
+          ${DESIGN_TARGET_PLUGIN_${REDUCE_TARGET}}
+  COMMENT "Building the gemma4-e2b-it graphs of the reduce core for poly"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# The graphs of Gemma4-E2B-IT on the poly cores from the core level
+# (poly_memref.mlir) to RISC-V: CPU control code records the Ball instruction
+# streams that the core's hardware threads execute.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT poly.o
+  BYPRODUCTS ${OUTPUT_DIR}/poly_copies.mlir
+             ${OUTPUT_DIR}/poly_llvm.mlir
+             ${OUTPUT_DIR}/poly.ll
+             ${OUTPUT_DIR}/poly_opt.ll
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_memref.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/poly_copies.mlir
+  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/poly_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/poly_llvm.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/poly_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/poly.ll
+  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/poly.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/poly_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/poly_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o poly.o
+  DEPENDS ${OUTPUT_DIR}/poly_memref.mlir
+          ${CORE_COMPILER}
+  COMMENT "Building the Gemma4-E2B-IT graphs of the poly cores for poly"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# The baremetal image of Gemma4-E2B-IT: the runner (baremetal.cpp, every hart enters
+# it), the program and the graphs, the device runtime, the bindings of the
+# cores and the loaders of their threads. The parameters, the inputs and
+# the PyTorch outputs of the prompt are the model image (model-pack), at the
+# model region of the DDR: <elf>-ddr.bin holds it at its offset in the DDR,
+# zeros before it unwritten. Both go with the workloads of the device, where
+# BEMU finds them.
+# ===----------------------------------------------------------------------===
+math(EXPR MODEL_OFFSET "${DESIGN_DEVICE_DDR_BYTES} - ${DESIGN_DEVICE_DDR_MODEL}")
+math(EXPR MODEL_IMAGE "${DESIGN_DEVICE_DDR_BASE} + ${MODEL_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+set(ELF "${DESIGN_OUTPUT}/workloads/models/poly-gemma4-e2b-it-baremetal")
+add_custom_command(
+  OUTPUT ${ELF}
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -fno-exceptions -fno-rtti ${DESIGN_DEFINES} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -DMODEL_IMAGE=${MODEL_IMAGE}ULL -I${LIB_DIR} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
+  COMMAND ${ELF_CC} -g -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -DMODEL_IMAGE=${MODEL_IMAGE}ULL -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c baremetal.o program.o reduce.o poly.o ${DESIGN_CORE_BUILD_reduce}/execute.o ${DESIGN_CORE_BUILD_poly}/execute.o ${DESIGN_THREAD_BUILD_attention}/loader.o ${DESIGN_THREAD_BUILD_ffn}/loader.o $<TARGET_FILE:poly-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:engine> -lm -lgcc -o ${ELF}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp
+          ${LIB_DIR}/testutils.h
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          program.o
+          reduce.o
+          poly.o
+          ${DESIGN_DEVICE_STACK}/runtime/device.h
+          poly-runtime
+          runtime-program
+          runtime-baremetal
+          runtime
+          engine
+  COMMENT "Linking Gemma4-E2B-IT for the poly device"
+  VERBATIM
+)
+add_custom_command(
+  OUTPUT ${ELF}-ddr.bin
+  BYPRODUCTS model.img
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack model.img ${OUTPUT_DIR}/prompt pack-f32.data pack-i8.data inputs.data outputs.data sizes.txt input-order.txt
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${ELF}-ddr.bin
+  COMMAND dd if=model.img of=${ELF}-ddr.bin bs=1M oflag=seek_bytes seek=${MODEL_OFFSET} conv=sparse status=none
+  DEPENDS ${OUTPUT_DIR}/prompt/pack-f32.data
+          ${OUTPUT_DIR}/prompt/pack-i8.data
+          ${OUTPUT_DIR}/prompt/inputs.data
+          ${OUTPUT_DIR}/prompt/outputs.data
+          ${OUTPUT_DIR}/prompt/sizes.txt
+          ${OUTPUT_DIR}/prompt/input-order.txt
+          model-pack-tool
+  COMMENT "Packing the Gemma4-E2B-IT prompt into the model region"
+  VERBATIM
+)
+add_library(gemma4-e2b-it-buckyball-poly-model SHARED EXCLUDE_FROM_ALL entry.cpp program.o reduce.o poly.o)
+target_link_libraries(gemma4-e2b-it-buckyball-poly-model
+  PRIVATE poly-runtime-linux
+)
+set_target_properties(gemma4-e2b-it-buckyball-poly-model
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+             BUILD_WITH_INSTALL_RPATH TRUE
+             INSTALL_RPATH "$ORIGIN;/lib"
+)
+
+get_filename_component(FLATBUFFERS_HEADER "${TOOLCHAIN}/include/flatbuffers/flatbuffers.h" REALPATH)
+get_filename_component(FLATBUFFERS_INCLUDE "${FLATBUFFERS_HEADER}/../.." ABSOLUTE)
+add_library(gemma4-e2b-it-buckyball-poly-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
+target_include_directories(gemma4-e2b-it-buckyball-poly-runner
+  PRIVATE ${LIB_DIR}
+          ${RUNTIME_DIR}/services
+          ${FLATBUFFERS_INCLUDE}
+          ${BUDDY_SOURCE}/frontend/Interfaces
+          ${BUDDY_SOURCE}/runtime/include
+          ${DESIGN_COMPILER}/runtime/include
+)
+target_link_libraries(gemma4-e2b-it-buckyball-poly-runner
+  PRIVATE dl
+)
+set_target_properties(gemma4-e2b-it-buckyball-poly-runner
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+             BUILD_WITH_INSTALL_RPATH TRUE
+             INSTALL_RPATH "$ORIGIN;/lib"
+)
+configure_file(gemma4-e2b-it.rhal.mlir.in ${OUTPUT_DIR}/gemma4-e2b-it.rhal.mlir @ONLY)
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/gemma4-e2b-it.rax
+  COMMAND ${DESIGN_COMPILER}/bin/rax-pack ${OUTPUT_DIR}/gemma4-e2b-it.rhal.mlir
+          --embed-payload
+          -o ${OUTPUT_DIR}/gemma4-e2b-it.rax
+  DEPENDS ${OUTPUT_DIR}/gemma4-e2b-it.rhal.mlir
+          ${OUTPUT_DIR}/vocab.txt
+          ${OUTPUT_DIR}/input-order.txt
+          gemma4-e2b-it-buckyball-poly-model
+          gemma4-e2b-it-buckyball-poly-runner
+          ${DESIGN_COMPILER}/bin/rax-pack
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM
+)
+file(READ ${MODEL_DIR}/gemma4-e2b-it/input.txt PROMPT)
+string(STRIP "${PROMPT}" PROMPT)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MODEL_DIR}/gemma4-e2b-it/input.txt)
+file(WRITE ${OUTPUT_DIR}/run.args "--model\ngemma4-e2b-it.rax\n--prompt\n${PROMPT}\n--max-tokens\n128\n")
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/model.img
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/prompt ${OUTPUT_DIR}/ddr
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} gemma4-e2b-it.rax
+            --mapped run.args
+            --mapped ddr/pack-f32.data
+            --mapped ddr/pack-i8.data
+  DEPENDS ${OUTPUT_DIR}/gemma4-e2b-it.rax
+          ${OUTPUT_DIR}/run.args
+          ${OUTPUT_DIR}/prompt/pack-f32.data
+          ${OUTPUT_DIR}/prompt/pack-i8.data
+          model-pack-tool
+  VERBATIM
+)
+add_custom_target(gemma4-e2b-it-model-build DEPENDS ${ELF} ${ELF}-ddr.bin ${OUTPUT_DIR}/model.img)

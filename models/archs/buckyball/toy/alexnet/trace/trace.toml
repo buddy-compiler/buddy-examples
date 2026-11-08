@@ -2,38 +2,152 @@
 node = "convolution"
 id = 0
 tag = "convolution"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu"
+id = 1
+tag = "relu"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem"
+id = 2
+tag = "getitem"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_1"
-id = 1
+id = 3
 tag = "convolution_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_1"
+id = 4
+tag = "relu_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_2"
+id = 5
+tag = "getitem_2"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_2"
-id = 2
+id = 6
 tag = "convolution_2"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_2"
+id = 7
+tag = "relu_2"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_3"
-id = 3
+id = 8
 tag = "convolution_3"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_3"
+id = 9
+tag = "relu_3"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "convolution_4"
-id = 4
+id = 10
 tag = "convolution_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_4"
+id = 11
+tag = "relu_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "getitem_4"
+id = 12
+tag = "getitem_4"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "_adaptive_avg_pool2d"
+id = 13
+tag = "_adaptive_avg_pool2d"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "view"
+id = 14
+tag = "view"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone"
+id = 15
+tag = "clone"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm"
-id = 5
+id = 16
 tag = "addmm"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_5"
+id = 17
+tag = "relu_5"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "clone_1"
+id = 18
+tag = "clone_1"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_1"
-id = 6
+id = 19
 tag = "addmm_1"
+cycle = true
+tensor = false
+
+[[trace.node]]
+node = "relu_6"
+id = 20
+tag = "relu_6"
+cycle = true
+tensor = false
 
 [[trace.node]]
 node = "addmm_2"
-id = 7
+id = 21
 tag = "addmm_2"
+cycle = true
+tensor = false

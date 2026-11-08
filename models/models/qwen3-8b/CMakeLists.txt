@@ -1,19 +1,32 @@
+file(GLOB MODEL_WEIGHTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/output/qwen3-8b/*.safetensors"
+  "${CMAKE_CURRENT_SOURCE_DIR}/output/qwen3-8b/*.bin"
+)
+
+# ===----------------------------------------------------------------------===
+# Prepare model weights before exporting or compiling a graph.
+# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${QWEN_MLIR} ${GENERATED_DIR}/model.json
-         ${GENERATED_DIR}/qwen-parameters.h ${GENERATED_DIR}/tokenizer/generation_config.json
-  BYPRODUCTS ${GENERATED_DIR}/tokenizer/config.json
-             ${GENERATED_DIR}/tokenizer/tokenizer.json
-             ${GENERATED_DIR}/tokenizer/tokenizer_config.json
-  COMMAND ${PYTHON} -m stack.models.models.qwen3-8b.importer
-          --output-dir ${GENERATED_DIR}
-          --compiler-build ${COMPILER_BUILD}
-          --design ${DESIGN_MODULE}
-          --prefill-len ${PREFILL_LENGTH}
-          --max-cache-len ${CACHE_LENGTH}
-          --parts ${PARTS}
-          --model ${CHECKPOINT}
-  DEPENDS ${DESIGN_DEPENDS} ${MODEL_SOURCE}/importer.py ${MODEL_SOURCE}/configs/importer-param.py ${MODEL_SOURCE}/stages.py ${MODEL_SOURCE}/ffn.py ${MODEL_SOURCE}/output.py ${MODEL_SOURCE}/attention.py ${MODEL_SOURCE}/parameters.py
-  WORKING_DIRECTORY ${REPO_ROOT}
-  VERBATIM)
-add_custom_target(qwen-model-build DEPENDS ${QWEN_MLIR}
-  ${GENERATED_DIR}/model.json ${GENERATED_DIR}/qwen-parameters.h)
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/qwen3-8b/config.json
+  COMMAND ${PYTHON} buddy-pytorch-qwen3-8b-prepare.py
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-qwen3-8b-prepare.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Preparing qwen3-8b weights"
+  VERBATIM
+)
+add_custom_target(qwen3-8b-prepare DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/qwen3-8b/config.json)
+
+# ===----------------------------------------------------------------------===
+# Export the uninstrumented graph for inspection.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt
+  COMMAND ${PYTHON} buddy-pytorch-qwen3-8b-graph.py
+  DEPENDS buddy-pytorch-qwen3-8b-graph.py
+          model.py
+          ${MODEL_WEIGHTS}
+          output/qwen3-8b/config.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Exporting qwen3-8b graph"
+  VERBATIM
+)
+add_custom_target(buddy-qwen3-8b-graph DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/output/buddy-graph.txt)

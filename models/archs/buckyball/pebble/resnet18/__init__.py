@@ -1,1 +1,1 @@
-chip = "pebble"
+design = "pebble"

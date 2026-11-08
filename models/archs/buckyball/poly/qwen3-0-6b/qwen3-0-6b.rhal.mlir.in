@@ -1,0 +1,17 @@
+rhal.module @qwen3_0_6b attributes {
+  version = "0.1.0",
+  model_name = "qwen3-0-6b_buckyball-poly",
+  runner_library = "file:libqwen3-0-6b-buckyball-poly-runner.so",
+  vocab_uri = "file:vocab.txt",
+  image_base = "@MODEL_IMAGE@"
+} {
+  rhal.constant @params {id = 1 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "ddr/pack-f32.data"}
+  rhal.constant @weights {id = 2 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "ddr/pack-i8.data"}
+  rhal.constant @input_order {id = 3 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:input-order.txt"}
+  rhal.codeobj @model_kernels {id = 1 : i32, kind = "host_shared_lib",
+    backend = "cpu", uri = "file:libqwen3-0-6b-buckyball-poly-model.so",
+    entry_symbol = "qwen_run"}
+}

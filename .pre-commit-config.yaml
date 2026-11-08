@@ -1,0 +1,32 @@
+exclude: (^|/)(thirdparty|build|generated|__pycache__|\.venv|venv)/
+repos:
+  - repo: local
+    hooks:
+      - id: gersemi
+        name: Format CMake
+        entry: gersemi -i
+        language: system
+        files: (^|/)(CMakeLists\.txt|[^/]+\.cmake)$
+      - id: clang-format
+        name: Format C and C++
+        entry: clang-format -i --style=llvm
+        language: system
+        types_or: [c, c++]
+      - id: black
+        name: Format Python
+        entry: black
+        language: system
+        types: [python]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+        language: system
+      - id: trailing-whitespace
+        language: system
+      - id: check-merge-conflict
+        language: system
+      - id: check-yaml
+        language: system
+      - id: check-added-large-files
+        language: system

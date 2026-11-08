@@ -1,5 +1,5 @@
 inputs = ["I am happy today."]
-tile_indices = [0]
+core_indices = [0]
 memory_mib = 3072
 timeout = 7200
 threads = 4

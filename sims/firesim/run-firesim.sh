@@ -1,19 +1,15 @@
-#!/bin/bash
-
-set -e
-
-ROOT=$(git rev-parse --show-toplevel)
-FIRESIM_CONFIG_DIR=$ROOT/sims/firesim/yaml
-FIRESIM_DEPLOY_DIR=$ROOT/platforms/thirdparty/chipyard/sims/firesim/deploy
-
-firesim infrasetup \
-  -a $FIRESIM_CONFIG_DIR/config_hwdb.yaml \
-  -b $FIRESIM_CONFIG_DIR/config_build.yaml \
-  -r $FIRESIM_CONFIG_DIR/config_build_recipes.yaml \
-  -c $FIRESIM_CONFIG_DIR/config_runtime.yaml
-
-firesim runworkload \
-  -a $FIRESIM_CONFIG_DIR/config_hwdb.yaml \
-  -b $FIRESIM_CONFIG_DIR/config_build.yaml \
-  -r $FIRESIM_CONFIG_DIR/config_build_recipes.yaml \
-  -c $FIRESIM_CONFIG_DIR/config_runtime.yaml
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
+CONFIG="$ROOT/sims/firesim/yaml"
+cd "$ROOT/platforms/thirdparty/chipyard/sims/firesim/deploy"
+./firesim infrasetup \
+  -a "$CONFIG/config_hwdb.yaml" \
+  -b "$CONFIG/config_build.yaml" \
+  -r "$CONFIG/config_build_recipes.yaml" \
+  -c "$CONFIG/config_runtime.yaml"
+./firesim runworkload \
+  -a "$CONFIG/config_hwdb.yaml" \
+  -b "$CONFIG/config_build.yaml" \
+  -r "$CONFIG/config_build_recipes.yaml" \
+  -c "$CONFIG/config_runtime.yaml"

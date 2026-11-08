@@ -1,139 +1,219 @@
-# Host x86 + NVIDIA GPU path (copied from nv/LeNet, adapted).
-
-set(MODEL_MOBILENETV3_DIR ${MODEL_DIR}/mobilenet-v3-small)
-set(INTERFACE_DIR ${NV_INTERFACE_DIR})
-set(INCLUDE_DIR ${MODELTEST_LIB_DIR})
-
+file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
+set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
 add_custom_command(
-  OUTPUT forward_gpu.o
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/forward.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -buffer-hoisting
-          -canonicalize -cse -expand-strided-metadata
-          -convert-memcpy-to-gpu -gpu-async-region |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers --gpu-to-llvm |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/forward_gpu.o
-  DEPENDS ${MODEL_MOBILENETV3_DIR}/forward.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
-  COMMENT "Building NV forward_gpu.o"
-  VERBATIM)
-
-
-add_custom_command(
-  OUTPUT subgraph0_gpu.o
-  BYPRODUCTS subgraph0_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))"
-            > ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_gpu_linalg.mlir
-  COMMAND ${BUDDY_BINARY_DIR}/buddy-opt ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
-          -convert-trace-to-llvm=cycle-trace |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, tosa-to-tensor, tosa-to-arith))" |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -eliminate-empty-tensors
-          -convert-elementwise-to-linalg
-          -convert-tensor-to-linalg
-          -one-shot-bufferize="bufferize-function-boundaries"
-          -ownership-based-buffer-deallocation
-          -buffer-deallocation-simplification
-          -bufferization-lower-deallocations
-          -convert-linalg-to-parallel-loops
-          -canonicalize
-          -gpu-map-parallel-loops
-          -convert-parallel-loops-to-gpu
-          -gpu-kernel-outlining
-          -buffer-hoisting
-          -canonicalize
-          -cse |
-          ${BUDDY_BINARY_DIR}/buddy-opt
-          -convert-memcpy-to-gpu=${NV_CONVERT_MEMCPY_TO_GPU_OPTION_DISABLE_PROCESS_ARG}
-          -gpu-async-region -canonicalize |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt
-          -llvm-request-c-wrappers
-          -gpu-lower-to-nvvm-pipeline=${NV_LOWER_TO_NVVM_OPTION} |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-translate -mlir-to-llvmir |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llvm-as |
-          ${NV_LLVM_TOOLS_BINARY_DIR}/llc -filetype=obj -relocation-model=pic -O2
-          -o ${CMAKE_CURRENT_BINARY_DIR}/subgraph0_gpu.o
-  DEPENDS ${MODEL_MOBILENETV3_DIR}/subgraph0.mlir
-          ${BUDDY_BINARY_DIR}/buddy-opt
-  COMMENT "Building NV subgraph0_gpu.o (TOSA→NVVM)"
-  VERBATIM)
-
-add_library(NvMOBILENETV3 STATIC subgraph0_gpu.o forward_gpu.o)
-set_target_properties(NvMOBILENETV3 PROPERTIES LINKER_LANGUAGE CXX)
-add_dependencies(NvMOBILENETV3 mobilenetv3-model-build)
-
-add_executable(buddy-nv-mobilenetv3-run ${MODEL_MOBILENETV3_DIR}/main.cpp)
-add_dependencies(buddy-nv-mobilenetv3-run NvMOBILENETV3)
-target_include_directories(buddy-nv-mobilenetv3-run PRIVATE ${INTERFACE_DIR} ${INCLUDE_DIR})
-target_link_directories(buddy-nv-mobilenetv3-run PRIVATE ${NV_LLVM_LIBRARY_DIR} ${BUDDY_MLIR_DIR}/build/lib)
-target_link_libraries(buddy-nv-mobilenetv3-run
-  NvMOBILENETV3
-  NvHostCRunnerUtils
-  PNG::PNG
-  ${NV_BUDDY_LIB_DIP}
-  ${NV_MLIR_C_RUNNER_UTILS_LIB}
-  ${NV_MLIR_RUNNER_UTILS_LIB}
-  ${NV_MLIR_ASYNC_RUNTIME_LIB}
-  ${NV_MLIR_CUDA_RUNTIME_LIB}
-  dl
-  pthread
+  OUTPUT ${OUTPUT_DIR}/calibration.json
+  COMMAND ${PYTHON} buddy-pytorch-calibrate.py
+  DEPENDS ${STACK_ROOT}/compiler/frontend/quant.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-calibrate.py
+          ${MODEL_DIR}/mobilenet-v3-small/output/mobilenet-v3-small/model.pth
+          ${MODEL_DIR}/mobilenet-v3-small/model.py
+          ${MODEL_DIR}/mobilenet-v3-small/data.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Calibrating the mobilenet-v3-small activations for nv"
+  VERBATIM
 )
 
-add_custom_target(sync-nv-mobilenetv3-deps
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/trace/cycle
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-          ${MODEL_MOBILENETV3_DIR}/images
-          ${CMAKE_CURRENT_BINARY_DIR}/images
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_MOBILENETV3_DIR}/arg0.data
-          ${CMAKE_CURRENT_BINARY_DIR}/arg0.data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${MODEL_MOBILENETV3_DIR}/Labels.txt
-          ${CMAKE_CURRENT_BINARY_DIR}/Labels.txt
-  COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
-          ${MODEL_MOBILENETV3_DIR}/quant/out
-          ${CMAKE_CURRENT_BINARY_DIR}/quant/out
-  DEPENDS
-          ${MODEL_MOBILENETV3_DIR}/arg0.data
-          ${MODEL_MOBILENETV3_DIR}/Labels.txt
-  COMMENT "Syncing NV mobilenetv3 runtime deps"
-  VERBATIM)
-add_dependencies(buddy-nv-mobilenetv3-run sync-nv-mobilenetv3-deps)
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/01-import.txt
+         ${OUTPUT_DIR}/02-permuted.txt
+         ${OUTPUT_DIR}/03-quanted.txt
+         ${OUTPUT_DIR}/forward.mlir
+         ${OUTPUT_DIR}/subgraph0.mlir
+         ${OUTPUT_DIR}/arg0.data
+         ${OUTPUT_DIR}/arg1.data
+         ${OUTPUT_DIR}/arg2.data
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
+  COMMAND ${PYTHON} buddy-pytorch-importer.py
+  DEPENDS ${RECIPE_FRONTEND_SOURCES}
+          ${COMPILER_FRONTEND_SOURCES}
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
+          ${OUTPUT_DIR}/calibration.json
+          ${MODEL_DIR}/mobilenet-v3-small/output/mobilenet-v3-small/model.pth
+          ${MODEL_DIR}/mobilenet-v3-small/model.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Importing mobilenet-v3-small for nv"
+  VERBATIM
+)
 
-if(DEFINED OUTPUT_BIN_DIR)
-  set(OUT_DIR ${OUTPUT_BIN_DIR}/nv/mobilenet-v3-small)
-  add_custom_command(TARGET buddy-nv-mobilenetv3-run POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${OUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${OUT_DIR}/trace/cycle
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:buddy-nv-mobilenetv3-run>
-            ${OUT_DIR}/buddy-nv-mobilenetv3-run
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${MODEL_MOBILENETV3_DIR}/images
-            ${OUT_DIR}/images
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_MOBILENETV3_DIR}/arg0.data
-            ${OUT_DIR}/arg0.data
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${MODEL_MOBILENETV3_DIR}/Labels.txt
-            ${OUT_DIR}/Labels.txt
-    COMMAND bash -c "if [ -d \"$0\" ]; then mkdir -p \"$1\" && cp -rf \"$0/.\" \"$1/\"; fi"
-            ${MODEL_MOBILENETV3_DIR}/quant/out
-            ${OUT_DIR}/quant/out
-    COMMENT "Copying NV mobilenetv3 executable and deps to output directory"
-    VERBATIM)
-endif()
+# ===----------------------------------------------------------------------===
+# Compile the host entry point. Each command must succeed before the next runs.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT forward_gpu.o
+  BYPRODUCTS ${OUTPUT_DIR}/forward_linalg.mlir
+             ${OUTPUT_DIR}/forward_gpu.mlir
+             ${OUTPUT_DIR}/forward_gpu_llvm.mlir
+             ${OUTPUT_DIR}/forward_gpu.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
+            -o ${OUTPUT_DIR}/forward_linalg.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_linalg.mlir
+            -pass-pipeline "builtin.module(func.func(buffer-hoisting),canonicalize,cse,expand-strided-metadata,func.func(convert-memcpy-to-gpu,gpu-async-region))"
+            -o ${OUTPUT_DIR}/forward_gpu.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/forward_gpu.mlir
+            -llvm-request-c-wrappers
+            -gpu-to-llvm
+            -o ${OUTPUT_DIR}/forward_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/forward_gpu_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/forward_gpu.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/forward_gpu.ll -filetype=obj -relocation-model=pic -O2 -o forward_gpu.o
+  DEPENDS ${OUTPUT_DIR}/forward.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+  COMMENT "Compiling mobilenet-v3-small host entry point"
+  VERBATIM
+)
 
-add_custom_target(buddy-nv-mobilenetv3-all-run DEPENDS buddy-nv-mobilenetv3-run)
+# ===----------------------------------------------------------------------===
+# Lower model computation to GPU kernels and embed the NVIDIA binary.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT subgraph0_gpu.o
+  BYPRODUCTS ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
+             ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+             ${OUTPUT_DIR}/subgraph0_copies.mlir
+             ${OUTPUT_DIR}/subgraph0_kernels.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_gpu.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_async.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
+             ${OUTPUT_DIR}/subgraph0_gpu.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
+            -o ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_linalg.mlir
+            --load-dialect-plugin=${GENERIC_COMPILER}
+            --load-pass-plugin=${GENERIC_COMPILER}
+            -lower-frontend-fake-op=gpu=true
+            -o ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_frontend.mlir
+            -one-shot-bufferize=bufferize-function-boundaries
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+            -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))"
+            -o ${OUTPUT_DIR}/subgraph0_copies.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_copies.mlir
+            --load-dialect-plugin=${NV_COMPILER}
+            --load-pass-plugin=${NV_COMPILER}
+            -linalg-generalize-named-ops
+            -linalg-to-gpu-kernels
+            -o ${OUTPUT_DIR}/subgraph0_kernels.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_kernels.mlir
+            -canonicalize
+            -gpu-map-parallel-loops
+            -convert-parallel-loops-to-gpu
+            -gpu-launch-sink-index-computations
+            -gpu-kernel-outlining
+            -buffer-hoisting
+            -canonicalize
+            -cse
+            -o ${OUTPUT_DIR}/subgraph0_gpu_gpu.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_gpu.mlir
+            -pass-pipeline "builtin.module(func.func(convert-memcpy-to-gpu{process-args=0},gpu-async-region),canonicalize)"
+            -o ${OUTPUT_DIR}/subgraph0_gpu_async.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_gpu_async.mlir
+            -llvm-request-c-wrappers "-gpu-lower-to-nvvm-pipeline=cubin-chip=${NV_CUBIN_VERSION} cubin-features=+ptx71 cubin-format=fatbin"
+            -o ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_gpu_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/subgraph0_gpu.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_gpu.ll -filetype=obj -relocation-model=pic -O2 -o subgraph0_gpu.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${GENERIC_COMPILER}
+          ${NV_COMPILER}
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+  COMMENT "Compiling mobilenet-v3-small NVIDIA kernels"
+  VERBATIM
+)
+
+add_library(mobilenet-v3-small-nv-custom-model SHARED EXCLUDE_FROM_ALL forward_gpu.o subgraph0_gpu.o)
+set_target_properties(mobilenet-v3-small-nv-custom-model
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+             LINKER_LANGUAGE CXX
+             BUILD_WITH_INSTALL_RPATH TRUE
+             INSTALL_RPATH "$ORIGIN"
+)
+target_link_directories(mobilenet-v3-small-nv-custom-model
+  PRIVATE ${BUDDY_SOURCE}/llvm/build/lib
+)
+target_link_libraries(mobilenet-v3-small-nv-custom-model
+  PRIVATE nv-runtime
+          mlir_c_runner_utils
+          mlir_runner_utils
+          mlir_async_runtime
+          mlir_cuda_runtime
+          dl
+          pthread
+)
+
+# ===----------------------------------------------------------------------===
+# Build the Buddy InferenceRunner plugin.
+# ===----------------------------------------------------------------------===
+add_library(mobilenet-v3-small-nv-custom-runner SHARED EXCLUDE_FROM_ALL runner.cpp)
+set_target_properties(mobilenet-v3-small-nv-custom-runner
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
+             BUILD_WITH_INSTALL_RPATH TRUE
+             INSTALL_RPATH "$ORIGIN"
+)
+target_include_directories(mobilenet-v3-small-nv-custom-runner
+  PRIVATE ${LIB_DIR}
+          ${OUTPUT_DIR}
+          ${BUDDY_SOURCE}/frontend/Interfaces
+          ${BUDDY_SOURCE}/runtime/include
+          ${COMPILER_BUILD}/runtime/include
+)
+target_link_directories(mobilenet-v3-small-nv-custom-runner
+  PRIVATE ${BUDDY_SOURCE}/llvm/build/lib
+)
+target_link_libraries(mobilenet-v3-small-nv-custom-runner
+  PRIVATE dl
+          opencv_core
+          opencv_imgproc
+          opencv_imgcodecs
+          mlir_c_runner_utils
+)
+
+# ===----------------------------------------------------------------------===
+# Package the RAX
+#
+# Contents:
+# model library (libmobilenet-v3-small-nv-custom-model.so),
+# runner library (libmobilenet-v3-small-nv-custom-runner.so),
+# FP32 parameters (arg0.data), INT32 biases (arg1.data), INT8 weights (arg2.data),
+# class labels (Labels.txt),
+# MLIR runtime libraries (libmlir_c_runner_utils.so, libmlir_runner_utils.so,
+# libmlir_async_runtime.so, libmlir_cuda_runtime.so).
+#
+# Output: output/mobilenet-v3-small.rax embeds these files alongside RHAL metadata that
+# identifies the runner, model library, parameters and runtime dependencies.
+#
+# ===----------------------------------------------------------------------===
+configure_file(mobilenet-v3-small.rhal.mlir.in ${OUTPUT_DIR}/mobilenet-v3-small.rhal.mlir @ONLY)
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/mobilenet-v3-small.rax
+  COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/mobilenet-v3-small.rhal.mlir
+          -o ${OUTPUT_DIR}/mobilenet-v3-small.rax
+          --embed-payload
+  DEPENDS ${OUTPUT_DIR}/mobilenet-v3-small.rhal.mlir
+          mobilenet-v3-small-nv-custom-model
+          mobilenet-v3-small-nv-custom-runner
+          ${COMPILER_BUILD}/bin/rax-pack
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${MODEL_DIR}/mobilenet-v3-small/Labels.txt
+          ${BUDDY_SOURCE}/llvm/build/lib/libmlir_c_runner_utils.so
+          ${BUDDY_SOURCE}/llvm/build/lib/libmlir_runner_utils.so
+          ${BUDDY_SOURCE}/llvm/build/lib/libmlir_async_runtime.so
+          ${BUDDY_SOURCE}/llvm/build/lib/libmlir_cuda_runtime.so
+  COMMENT "Packaging NVIDIA mobilenet-v3-small as RAX"
+  VERBATIM
+)
+add_custom_target(buddy-nv-mobilenet-v3-small-rax-custom-build DEPENDS ${OUTPUT_DIR}/mobilenet-v3-small.rax)
+
+add_subdirectory(origin)

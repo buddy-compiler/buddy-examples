@@ -1,106 +1,84 @@
-set(NV_DIR ${ARCH_DIR}/nv)
-
-set(NV_LLVM_BUILD_DIR "${BUDDY_MLIR_DIR}/llvm/build" CACHE PATH "LLVM build directory")
-set(NV_LLVM_TOOLS_BINARY_DIR ${NV_LLVM_BUILD_DIR}/bin)
-set(NV_LLVM_LIBRARY_DIR ${NV_LLVM_BUILD_DIR}/lib)
-
-if(NOT EXISTS ${NV_LLVM_TOOLS_BINARY_DIR}/mlir-opt)
-  message(FATAL_ERROR "mlir-opt not found at ${NV_LLVM_TOOLS_BINARY_DIR}")
-endif()
-if(NOT EXISTS ${BUDDY_BINARY_DIR}/buddy-opt)
-  message(FATAL_ERROR "buddy-opt not found at ${BUDDY_BINARY_DIR}")
-endif()
-
-find_library(NV_MLIR_CUDA_RUNTIME_LIB
-  NAMES mlir_cuda_runtime
-  PATHS ${NV_LLVM_LIBRARY_DIR}
-  NO_DEFAULT_PATH
+# ===----------------------------------------------------------------------===
+# Detect GPU 0 compute capability and form the NVVM target (e.g. 7.5 -> sm_75).
+# ===----------------------------------------------------------------------===
+execute_process(
+  COMMAND nvidia-smi --id=0 --query-gpu=compute_cap --format=csv,noheader
+  OUTPUT_VARIABLE NV_CUBIN_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  COMMAND_ERROR_IS_FATAL ANY
 )
-if(NOT NV_MLIR_CUDA_RUNTIME_LIB)
-  message(FATAL_ERROR
-    "libmlir_cuda_runtime not found under ${NV_LLVM_LIBRARY_DIR}. "
-    "Rebuild LLVM/MLIR with -DLLVM_TARGETS_TO_BUILD=host;NVPTX "
-    "-DMLIR_ENABLE_CUDA_RUNNER=ON.")
-endif()
+string(REPLACE "." "" NV_CUBIN_VERSION "sm_${NV_CUBIN_VERSION}")
+message(STATUS "NVIDIA GPU target: ${NV_CUBIN_VERSION}")
 
-find_library(NV_MLIR_C_RUNNER_UTILS_LIB NAMES mlir_c_runner_utils PATHS ${NV_LLVM_LIBRARY_DIR} NO_DEFAULT_PATH)
-find_library(NV_MLIR_RUNNER_UTILS_LIB NAMES mlir_runner_utils PATHS ${NV_LLVM_LIBRARY_DIR} NO_DEFAULT_PATH)
-find_library(NV_MLIR_ASYNC_RUNTIME_LIB NAMES mlir_async_runtime PATHS ${NV_LLVM_LIBRARY_DIR} NO_DEFAULT_PATH)
-if(NOT NV_MLIR_C_RUNNER_UTILS_LIB OR NOT NV_MLIR_RUNNER_UTILS_LIB)
-  message(FATAL_ERROR "mlir runner utils not found under ${NV_LLVM_LIBRARY_DIR}")
-endif()
-
-set(BUDDY_BUILD_LIB_DIR ${BUDDY_MLIR_DIR}/build/lib)
-find_library(NV_BUDDY_LIB_DIP NAMES BuddyLibDIP PATHS ${BUDDY_BUILD_LIB_DIR} NO_DEFAULT_PATH)
-find_library(NV_BUDDY_LIB_DAP NAMES BuddyLibDAP PATHS ${BUDDY_BUILD_LIB_DIR} NO_DEFAULT_PATH)
-
+# ===----------------------------------------------------------------------===
+# Image dependencies
+# NVIDIA model executables use the host libpng provided by Nix via PNG::PNG.
+# Keep this lookup in the NV backend: RISC-V executables require a libpng
+# built for RISC-V and cannot link against the host library.
+# ===----------------------------------------------------------------------===
 find_package(PNG REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs HINTS "${TOOLCHAIN}")
 
-set(NV_CUBIN_CHIP sm_80 CACHE STRING "CUDA target architecture")
-set(NV_LOWER_TO_NVVM_OPTION
-  "cubin-chip=${NV_CUBIN_CHIP} cubin-features=+ptx71 cubin-format=fatbin")
-set(NV_CONVERT_MEMCPY_TO_GPU_OPTION_DISABLE_PROCESS_ARG "process-args=0")
+# ===----------------------------------------------------------------------===
+# Shared MLIR runtime utilities and tracing for NVIDIA models
+# ===----------------------------------------------------------------------===
+add_library(nv-runtime OBJECT EXCLUDE_FROM_ALL "${LIB_DIR}/CRunnerUtils.cpp" "${LIB_DIR}/native_trace.cpp"
+  "${RUNTIME_DIR}/trace/trace.cpp"
+)
+target_include_directories(nv-runtime
+  PRIVATE "${RUNTIME_DIR}/trace"
+          "${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine"
+)
+set_target_properties(nv-runtime
+  PROPERTIES POSITION_INDEPENDENT_CODE ON
+)
 
-add_library(NvHostCRunnerUtils OBJECT ${MODELTEST_LIB_DIR}/CRunnerUtils.cpp)
-target_include_directories(NvHostCRunnerUtils PUBLIC
-  ${BUDDY_MLIR_DIR}/llvm/mlir/include/mlir/ExecutionEngine)
-set_target_properties(NvHostCRunnerUtils PROPERTIES
-  CXX_STANDARD 17
-  POSITION_INDEPENDENT_CODE ON)
+# ===----------------------------------------------------------------------===
+# The generic midend: buddy-opt loads libgeneric-compiler.so for the frontend
+# dialect and lower-frontend-fake-op, which computes the frontend operations
+# in software.
+# ===----------------------------------------------------------------------===
+include(ExternalProject)
+set(GENERIC_COMPILER "${CMAKE_BINARY_DIR}/generic-compiler/libgeneric-compiler.so")
+ExternalProject_Add(
+  generic-compiler
+  SOURCE_DIR "${STACK_ROOT}/compiler/generic"
+  BINARY_DIR "${CMAKE_BINARY_DIR}/generic-compiler"
+  CMAKE_ARGS "-DMLIR_DIR=${BUDDY_SOURCE}/llvm/build/lib/cmake/mlir"
+  INSTALL_COMMAND ""
+  BUILD_ALWAYS ON
+  BUILD_BYPRODUCTS "${GENERIC_COMPILER}"
+)
 
-set(NV_INTERFACE_DIR ${BUDDY_MLIR_DIR}/frontend/Interfaces)
+# ===----------------------------------------------------------------------===
+# The nv backend's own passes: buddy-opt loads libnv-compiler.so (the
+# framework's frontend dialect, fuse-mxint8-weights and linalg-to-gpu-kernels).
+# ===----------------------------------------------------------------------===
+set(NV_COMPILER "${CMAKE_BINARY_DIR}/nv-compiler/libnv-compiler.so")
+ExternalProject_Add(
+  nv-compiler
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/compiler"
+  BINARY_DIR "${CMAKE_BINARY_DIR}/nv-compiler"
+  CMAKE_ARGS "-DMLIR_DIR=${BUDDY_SOURCE}/llvm/build/lib/cmake/mlir" "-DFRAMEWORK_MIDEND=${STACK_ROOT}/compiler/midend"
+  INSTALL_COMMAND ""
+  BUILD_ALWAYS ON
+  BUILD_BYPRODUCTS "${NV_COMPILER}"
+)
 
-message(STATUS "NV arch: LLVM tools ${NV_LLVM_TOOLS_BINARY_DIR}")
-message(STATUS "NV arch: cubin-chip=${NV_CUBIN_CHIP}")
-message(STATUS "NV arch: cuda runtime ${NV_MLIR_CUDA_RUNTIME_LIB}")
-if(NV_BUDDY_LIB_DIP)
-  message(STATUS "NV arch: BuddyLibDIP ${NV_BUDDY_LIB_DIP}")
-endif()
-if(NV_BUDDY_LIB_DAP)
-  message(STATUS "NV arch: BuddyLibDAP ${NV_BUDDY_LIB_DAP}")
-endif()
-
-if((MODEL_RESNET18 OR MODEL_MOBILENETV3 OR MODEL_YOLO26 OR MODEL_BERT OR MODEL_STABLEDIFFUSION)
-   AND NOT NV_BUDDY_LIB_DIP)
-  message(FATAL_ERROR "BuddyLibDIP not found under ${BUDDY_BUILD_LIB_DIR} (required by selected NV models)")
-endif()
-if(MODEL_WHISPER AND NOT NV_BUDDY_LIB_DAP)
-  message(FATAL_ERROR "BuddyLibDAP not found under ${BUDDY_BUILD_LIB_DIR} (required by NV Whisper)")
-endif()
-
-if (MODEL_LENET)
-  add_subdirectory(lenet)
-endif()
-if (MODEL_RESNET18)
-  add_subdirectory(resnet18)
-endif()
-if (MODEL_MOBILENETV3)
-  add_subdirectory(mobilenet-v3-small)
-endif()
-if (MODEL_YOLO26)
-  add_subdirectory(yolo26n)
-endif()
-if (MODEL_BERT)
+if(MODEL)
+  add_subdirectory("${MODEL}")
+else()
+  add_subdirectory(alexnet)
   add_subdirectory(bert-base-uncased-emotion)
-endif()
-if (MODEL_DEEPSEEKR1)
-  add_subdirectory(deepseek-r1-distill-qwen-1.5b)
-endif()
-if (MODEL_QWEN3)
-  add_subdirectory(qwen3-8b)
-endif()
-if (MODEL_GEMMA4)
+  add_subdirectory(deepseek-r1-distill-qwen-1-5b)
   add_subdirectory(gemma4-e2b-it)
-endif()
-if (MODEL_STABLEDIFFUSION)
+  add_subdirectory(lenet)
+  add_subdirectory(mobilenet-v3-small)
+  add_subdirectory(pi05-base)
+  add_subdirectory(qwen3-8b)
+  add_subdirectory(resnet18)
+  add_subdirectory(smolvla-base)
   add_subdirectory(stable-diffusion)
-endif()
-if (MODEL_WHISPER)
   add_subdirectory(whisper)
-endif()
-if (MODEL_MINIMAX_H3_FL2VA)
-  add_subdirectory(minimax-h3-fl2va)
-endif()
-if (MODEL_MINIMAX_H3_REF2VA)
-  add_subdirectory(minimax-h3-ref2va)
+  add_subdirectory(yolo26n)
 endif()
