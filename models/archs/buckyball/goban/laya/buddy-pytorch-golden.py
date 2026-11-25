@@ -12,6 +12,7 @@
 # ===---------------------------------------------------------------------===
 
 from importlib import import_module
+import multiprocessing
 from pathlib import Path
 import sys
 import json
@@ -21,10 +22,11 @@ import torch
 from torch.nn.attention import SDPBackend, sdpa_kernel
 
 from frontend.quant.graph import smooth_inputs
-from frontend.reference import evaluate
+from frontend.reference import evaluate, prepare
 
-# Eight threads: many threads on one process are slower on a loaded host.
-torch.set_num_threads(8)
+# One thread here: a forked worker would wait forever at the barrier of an
+# OpenMP team this process had started.
+torch.set_num_threads(1)
 
 
 model_dir = Path(__file__).resolve().parent
@@ -40,6 +42,8 @@ model = laya.load()
 # The smoothing of buddy-pytorch-calibrate.py, as the importer applies it.
 calibration = json.loads((model_dir / "output/calibration.json").read_text())
 smooth_inputs(model, calibration["smooth"])
+# The weights quantized once, as the program holds them.
+weights = prepare(model, calibration)
 
 sample, labels = decisions.load(64, 1)
 sample = tuple(value[:1] for value in sample)
@@ -48,7 +52,7 @@ sample = tuple(value[:1] for value in sample)
 )
 # The attention of the head runs as its math, as the importer traces it.
 with sdpa_kernel(SDPBackend.MATH):
-    expected = evaluate(model, calibration, sample, newlib)
+    expected = evaluate(model, calibration, weights, sample, newlib)
 np.concatenate([value.numpy().reshape(-1) for value in expected]).tofile(
     output / "expected.data"
 )
@@ -71,17 +75,24 @@ np.concatenate([value.numpy().reshape(-1) for value in expected]).tofile(
 # ===----------------------------------------------------------------------===
 tests, labels = decisions.load(200, 200)
 # One question at a time, as the program runs them: evaluate() of a batch
-# differs from it (by a tenth on some questions).
-with sdpa_kernel(SDPBackend.MATH):
-    results = [
-        evaluate(
+# differs from it (by a tenth on some questions). 16 forked processes of 2
+# threads share the prepared model.
+
+
+def question(index):
+    torch.set_num_threads(2)
+    with sdpa_kernel(SDPBackend.MATH):
+        return evaluate(
             model,
             calibration,
+            weights,
             tuple(value[index : index + 1] for value in tests),
             newlib,
         )
-        for index in range(len(labels))
-    ]
+
+
+with multiprocessing.get_context("fork").Pool(16) as pool:
+    results = pool.map(question, range(len(labels)))
 choices = torch.cat([choice for choice, _ in results])
 actions = torch.cat([action for _, action in results])
 dataset = output / "dataset"

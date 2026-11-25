@@ -88,9 +88,9 @@ def layer_norm(input, shape, weight=None, bias=None, eps=1e-5):
     return torch.from_numpy(result)
 
 
-def evaluate(model, calibration, inputs, newlib):
-    """Evaluate the smoothed model with the recipe's calibrated INT8 operands."""
-    names = {parameter: name for name, parameter in model.named_parameters()}
+def prepare(model, calibration):
+    """Quantize the smoothed model's calibrated weights and biases in place,
+    once: their codes and steps per module, for evaluate()."""
     parameters = dict(model.named_parameters())
     weights = {}
     for name, parameter in parameters.items():
@@ -104,6 +104,13 @@ def evaluate(model, calibration, inputs, newlib):
         if bias is not None:
             bias_step = step.reshape(-1) * torch.tensor(calibration[module] / 127)
             bias.data = quantize_bias(bias.detach(), bias_step) * bias_step
+    return weights
+
+
+def evaluate(model, calibration, weights, inputs, newlib):
+    """Evaluate the model prepare() quantized with the recipe's calibrated
+    INT8 operands."""
+    names = {parameter: name for name, parameter in model.named_parameters()}
 
     # As the program computes them: INT8 codes, an exact INT32 sum, converted
     # to FP32 and scaled by the product of both steps; a bias decoded apart
