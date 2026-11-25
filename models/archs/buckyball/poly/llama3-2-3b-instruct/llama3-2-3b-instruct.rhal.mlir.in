@@ -11,7 +11,9 @@ rhal.module @llama3_2_3b_instruct attributes {
     type = tensor<?xi8>, uri = "ddr/pack-i8.data"}
   rhal.constant @input_order {id = 3 : i32, storage = "external",
     type = tensor<?xi8>, uri = "file:input-order.txt"}
-  rhal.codeobj @model_kernels {id = 1 : i32, kind = "host_shared_lib",
+  rhal.constant @candidates {id = 4 : i32, storage = "external",
+    type = tensor<?xi8>, uri = "file:candidates.txt"}
+  rhal.codeobj @model_operators {id = 1 : i32, kind = "host_shared_lib",
     backend = "cpu", uri = "file:libllama3-2-3b-instruct-buckyball-poly-model.so",
     entry_symbol = "llama_run"}
 }

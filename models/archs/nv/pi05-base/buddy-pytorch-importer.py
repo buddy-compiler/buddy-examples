@@ -1,7 +1,6 @@
 # ===- buddy-pytorch-importer.py ------------------------------------------
 #
-# pi0.5 AOT importer: the whole policy as one graph, plus a test case of the
-# runner sampled by PyTorch.
+# pi0.5 AOT importer: the whole policy as one graph.
 #
 # ===---------------------------------------------------------------------------
 
@@ -32,23 +31,7 @@ model.flow.paligemma_with_expert.paligemma.model.vision_tower.config._attn_imple
     "eager"
 )
 
-# The test case of the runner: fixed random inputs and the actions PyTorch
-# samples from them.
 example = pi05.inputs()
-torch.manual_seed(0)
-images = torch.rand(example[0].shape) * 2 - 1
-tokens = torch.randint(0, 1000, example[1].shape)
-masks = example[2]
-noise = torch.randn(example[3].shape)
-with torch.no_grad():
-    actions = model(images, tokens, masks, noise)
-testcase = output / "testcase"
-testcase.mkdir(exist_ok=True)
-images.numpy().tofile(testcase / "images.data")
-tokens.numpy().tofile(testcase / "tokens.data")
-masks.numpy().tofile(testcase / "masks.data")
-noise.numpy().tofile(testcase / "noise.data")
-actions.numpy().tofile(testcase / "actions.data")
 
 compiler = DynamoCompiler(
     primary_registry={**tosa.ops_registry, **quant.ops_registry},

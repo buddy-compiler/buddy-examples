@@ -1,3 +1,4 @@
+from models.archs.buckyball.goban.exp import softmax
 from importlib import import_module
 from pathlib import Path
 import json
@@ -25,6 +26,8 @@ class Products(TorchFunctionMode):
         self.index = 0
 
     def __torch_function__(self, function, types, args=(), kwargs=None):
+        if getattr(function, "__name__", None) == "softmax":
+            return softmax(args[0], args[1] if len(args) > 1 else kwargs["dim"])
         # `a @ b` arrives as the matmul method of the tensor.
         if getattr(function, "__name__", None) == "matmul":
             args = self.hook(self.index, args)

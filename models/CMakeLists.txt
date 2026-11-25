@@ -7,6 +7,8 @@ set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 set(RUNTIME_DIR "${STACK_ROOT}/runtime")
 set(BUDDY_SOURCE "${STACK_ROOT}/thirdparty/buddy-mlir")
 set(COMPILER_BUILD "${BUDDY_SOURCE}/build")
+# LLVM IR optimization of the lowered models; Buddy has no IR-level optimizer.
+set(LLVM_OPT "${BUDDY_SOURCE}/llvm/build/bin/opt")
 
 # ===----------------------------------------------------------------------===
 # Toolchain
@@ -21,7 +23,9 @@ set(
   "${TOOLCHAIN}/bin/python3"
 )
 # Programs of OS-invisible hardware threads are freestanding RISC-V images.
-set(ELF_CC "${TOOLCHAIN}/bin/riscv64-unknown-elf-gcc")
+# Make a toolchain upgrade visible to Ninja's compile and link commands.
+file(REAL_PATH "${TOOLCHAIN}" ELF_TOOLCHAIN)
+set(ELF_CC "${ELF_TOOLCHAIN}/bin/riscv64-unknown-elf-gcc")
 set(ELF_OBJCOPY "${TOOLCHAIN}/bin/riscv64-unknown-elf-objcopy")
 
 if(ARCH STREQUAL "nv" OR ARCH STREQUAL "x86")
@@ -43,7 +47,7 @@ file(GLOB_RECURSE COMPILER_FRONTEND_SOURCES CONFIGURE_DEPENDS "${STACK_ROOT}/com
 # DDR. A host tool: it runs while building, whatever the target.
 add_custom_command(
   OUTPUT ${CMAKE_BINARY_DIR}/model-pack
-  COMMAND g++ -std=c++20 -O2 -o ${CMAKE_BINARY_DIR}/model-pack ${STACK_ROOT}/tools/model-pack.cpp
+  COMMAND ${TOOLCHAIN}/bin/g++ -std=c++20 -O2 -o ${CMAKE_BINARY_DIR}/model-pack ${STACK_ROOT}/tools/model-pack.cpp
   DEPENDS ${STACK_ROOT}/tools/model-pack.cpp
   VERBATIM
 )

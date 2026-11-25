@@ -100,8 +100,8 @@ def permute(graph):
     """The convolutions and the layers around them run in NHWC, the layout
     TOSA convolves and pools in; the activations turn NHWC once where the
     region starts and back to NCHW where it ends. x @ W.T of a Linear becomes
-    one matmul with a transposed right operand. Every weight keeps its
-    checkpoint layout."""
+    one matmul with a transposed right operand. The convolution weights take
+    their layout where they are quantized (frontend/quant)."""
     for t in [node for node in graph.body if isinstance(node, TOp)]:
         permute = PermuteOp()
         permute.name = t.name

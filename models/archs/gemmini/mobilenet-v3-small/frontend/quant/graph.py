@@ -3,6 +3,7 @@ import torch
 from buddy.compiler.graph.graph import NodeType
 from buddy.compiler.graph.operation import (
     Conv2dOp,
+    MatmulOp,
     PlaceholderOp,
     TransposeMatmulFusedOp,
 )
@@ -93,6 +94,16 @@ def quantize(graph, params, parameter_names, calibration):
         step = torch.where(maximum == 0, 1.0, maximum / 127)
         values[weight.name] = quantize_values(value, 1 / step)
         weight.tensor_meta["dtype"] = TensorDType.Int8
+        if isinstance(op, Conv2dOp):
+            # Stored as TOSA convolves, [F, H, W, C] or [H, W, C, 1] for a
+            # depthwise one: no weight is transposed at run time.
+            depthwise = op.args[-1] > 1
+            order = (2, 3, 0, 1) if depthwise else (0, 2, 3, 1)
+            values[weight.name] = values[weight.name].permute(order).contiguous()
+            weight.tensor_meta["shape"] = [
+                weight.tensor_meta["shape"][i] for i in order
+            ]
+            op._layout = "NHWC_HWCM" if depthwise else "NHWC_FHWC"
 
         # Input: one scale for the smoothed tensor, from the calibrated
         # maximum; the channels are the last axis of the NHWC convolution
@@ -155,5 +166,16 @@ def quantize(graph, params, parameter_names, calibration):
             TensorDType.Float32,
         )
         replace_uses(graph, accumulator, restored)
+
+        if isinstance(op, TransposeMatmulFusedOp):
+            # The Linear weight stored [K, N]: a plain product reads it as it
+            # is stored, no transpose at run time.
+            values[weight.name] = values[weight.name].t().contiguous()
+            weight.tensor_meta["shape"] = weight.tensor_meta["shape"][::-1]
+            matmul = MatmulOp()
+            matmul.name = op.name
+            graph.displace_node(op, matmul)
+            # Without the permutation the fusion appended.
+            matmul._arguments = matmul.args[:2]
     sort_graph(graph)
     return [values[node.name] for node in graph.params]

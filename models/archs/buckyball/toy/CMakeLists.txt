@@ -1,2 +1,2 @@
-add_subdirectory(alexnet)
 add_subdirectory(lenet)
+add_subdirectory(mobilenet-v3-small)

@@ -130,6 +130,43 @@ void classifyImage(const buddy::runtime::RunConfig &config, Forward forward,
     std::cout << "Inference time: " << elapsed << "s\n";
 }
 
+// The prepared image of the recipe against its reference, as baremetal.cpp
+// checks it: the same lines, and a failure when the logits differ.
+void checkInput(const buddy::runtime::RunConfig &config, Forward forward,
+                lenet::Parameters &parameters, lenet::Bias &quantizedBias,
+                lenet::Weights &quantizedWeights) {
+  std::array<float, 28 * 28> inputData{};
+  std::array<float, 10> expected{};
+  std::ifstream file;
+  file.exceptions(std::ios::failbit | std::ios::badbit);
+  file.open(config.inputPath, std::ios::binary);
+  file.read(reinterpret_cast<char *>(inputData.data()), sizeof(inputData));
+  file.close();
+  file.open(config.referencePath, std::ios::binary);
+  file.read(reinterpret_cast<char *>(expected.data()), sizeof(expected));
+  lenet::Input input{
+      inputData.data(), inputData.data(), 0, {1, 1, 28, 28}, {784, 784, 28, 1}};
+  lenet::Output output{};
+  const uint64_t start = read_counter();
+  forward(&output, &parameters, &quantizedBias, &quantizedWeights, &input);
+  const uint64_t elapsed = read_counter() - start;
+  const float *values = output.data();
+  unsigned best = 0, gold = 0;
+  for (unsigned i = 1; i < 10; ++i) {
+    if (values[i] > values[best])
+      best = i;
+    if (expected[i] > expected[gold])
+      gold = i;
+  }
+  printf("Classification: %u, reference %u\nInference cycles: %lu\n", best,
+         gold, static_cast<unsigned long>(elapsed));
+  const int failed =
+      check_output(values, expected.data(), 10, 0.02f) || best != gold;
+  std::free(output.allocated);
+  if (failed)
+    throw std::runtime_error("Output differs from the reference");
+}
+
 class LeNetRunner final : public buddy::runtime::InferenceRunner {
 public:
   void run(const buddy::runtime::RunConfig &config) override {
@@ -187,7 +224,9 @@ public:
     weights.seekg(0);
     weights.read(reinterpret_cast<char *>(weightData.data()), weightBytes);
 
-    if (!config.datasetPath.empty())
+    if (!config.referencePath.empty())
+      checkInput(config, forward, parameters, quantizedBias, quantizedWeights);
+    else if (!config.datasetPath.empty())
       evaluateMnist(config, forward, parameters, quantizedBias,
                     quantizedWeights);
     else

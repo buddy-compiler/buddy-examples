@@ -3,6 +3,8 @@
 
 
 _start:
+    csrci mstatus, 8
+    csrw mie, zero
     # Get hart ID
     csrr t0, mhartid
 
@@ -40,10 +42,25 @@ _start:
     j .Lcopy_tls
 .Lzero_tls:
     bgeu t2, t4, .Lrun_main
+    andi a0, t6, 7
+    beqz a0, .Lzero_tls_words
     sb zero, 0(t6)
     addi t2, t2, 1
     addi t6, t6, 1
     j .Lzero_tls
+.Lzero_tls_words:
+    addi a0, t2, 8
+    bgtu a0, t4, .Lzero_tls_tail
+    sd zero, 0(t6)
+    addi t2, t2, 8
+    addi t6, t6, 8
+    j .Lzero_tls_words
+.Lzero_tls_tail:
+    bgeu t2, t4, .Lrun_main
+    sb zero, 0(t6)
+    addi t2, t2, 1
+    addi t6, t6, 1
+    j .Lzero_tls_tail
 .Lrun_main:
     # Loaders write only the file image, so .bss can hold a previous run's values on P2E DDR.
     # The reporting hart clears it, then releases the others through the last flag write.
@@ -81,7 +98,7 @@ _start:
     beqz t2, .Lwait_bss
     fence r, rw
 .Lcall_main:
-    # Jump to main for all harts; the workload dispatches by core id.
+    # Jump to main for all harts; the workload dispatches by hart id.
     li a0, 0
     li a1, 0
     call main
@@ -98,9 +115,50 @@ _start:
     wfi
     j 1b
 
-# Reports 1 through the trapping hart's exit slot and parks the hart.
+# Prints trap context without using the stack, reports 1, and parks the hart.
 .balign 4
 .Ltrap:
+    csrr a0, mhartid
+    csrr a1, mcause
+    csrr a2, mepc
+    csrr a3, mtval
+    li t1, 0x60020000
+    slli t2, a0, 18
+    add t1, t1, t2
+    la t2, .Ltrap_message
+.Ltrap_text:
+    lbu t3, 0(t2)
+    beqz t3, .Ltrap_values
+    sw t3, 0(t1)
+    addi t2, t2, 1
+    j .Ltrap_text
+.Ltrap_values:
+    li t4, 4
+.Ltrap_value:
+    mv t5, a0
+    mv a0, a1
+    mv a1, a2
+    mv a2, a3
+    li t6, 60
+.Ltrap_hex:
+    srl t2, t5, t6
+    andi t2, t2, 15
+    li t3, 10
+    bltu t2, t3, .Ltrap_digit
+    addi t2, t2, 87
+    j .Ltrap_emit
+.Ltrap_digit:
+    addi t2, t2, 48
+.Ltrap_emit:
+    sw t2, 0(t1)
+    addi t6, t6, -4
+    bgez t6, .Ltrap_hex
+    li t2, 32
+    sw t2, 0(t1)
+    addi t4, t4, -1
+    bnez t4, .Ltrap_value
+    li t2, 10
+    sw t2, 0(t1)
     csrr t0, mhartid
     li t1, 0x60000000
     slli t0, t0, 18
@@ -110,6 +168,10 @@ _start:
 2:
     wfi
     j 2b
+
+.section .rodata
+.Ltrap_message:
+    .asciz "TRAP hart mcause mepc mtval: "
 
 # Outside .bss so the clear cannot reset it; a stale 1 from a previous run is
 # overwritten by the image load because .data is part of the file image.

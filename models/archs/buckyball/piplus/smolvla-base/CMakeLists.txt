@@ -1,83 +1,57 @@
 file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
 
-set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
-# The device compiler of piplus: the device dialect, its placement and
-# lowering; built by the device stack. The program is compiled with it.
-set(DEVICE_COMPILER "${DESIGN_DEVICE_BUILD}/compiler/libdevice-compiler.so")
-set(OPT ${DESIGN_COMPILER}/bin/buddy-opt --load-dialect-plugin=${DEVICE_COMPILER} --load-pass-plugin=${DEVICE_COMPILER})
-# The core compiler of piplus: the core dialect, its placement and lowering,
-# and lower-frontend-fake-op; built by the device stack. The graphs are compiled
-# with it.
-set(CORE_COMPILER "${DESIGN_DEVICE_BUILD}/core/compiler/libcore-compiler.so")
-set(
-  CORE_OPT
-  ${DESIGN_COMPILER}/bin/buddy-opt
-  --load-dialect-plugin=${CORE_COMPILER}
-  --load-pass-plugin=${CORE_COMPILER}
-)
+# What the recipe compiles for this device config; the calibration of the
+# model belongs to the recipe.
+set(OUTPUT_DIR "${DESIGN_OUTPUT}/models/smolvla-base")
+set(CALIBRATION "${CMAKE_CURRENT_SOURCE_DIR}/output/calibration.json")
+# The program is compiled with the device's plugin (DESIGN_DEVICE_OPT), each
+# graph with the plugins of every level its target passes through
+# (DESIGN_TARGET_OPT_<target>): the vision graph runs on the dense harts and
+# their thread, the ranks of the partitioned prefix and denoising step on the
+# action and dense harts.
 # The boot of every hart of the device: start.S, syscalls.c, device.ld.
 set(BOOT_DIR "${DESIGN_REPO}/stack/runtime/boot")
+# The operator image of the GP domain of a thread: the operators convert-linalg-to-acc
+# leaves in a graph and their entry `operator`, linked by the hart's operators.ld.
+set(DENSE_OPERATOR_LINKER "${DESIGN_HART_STACK_dense}/operators.ld")
+set(ACTION_OPERATOR_LINKER "${DESIGN_HART_STACK_action}/operators.ld")
 list(TRANSFORM DESIGN_DEFS PREPEND "-D" OUTPUT_VARIABLE DESIGN_DEFINES)
 
 # ===----------------------------------------------------------------------===
-# Check the quantized program of smolvla-base on SO100 frames.
+# The DSE measures latency and area, not accuracy: the check of the
+# quantized program of smolvla-base on SO100 frames (buddy-pytorch-calibrate.py,
+# over an hour) is replaced by dse-calibration.json.
 # ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/calibration.json
-  COMMAND ${PYTHON} buddy-pytorch-calibrate.py
-  # The frontend sources the check imports: the layout of the weights
-  # (frontend/quant/layout.py) changes no value and is not among them.
-  DEPENDS ${STACK_ROOT}/compiler/frontend/quant.py
-          ${STACK_ROOT}/flake.lock
-          ${STACK_ROOT}/scripts/nix/riscv.nix
-          ${STACK_ROOT}/result/lib/libnewlib-reference.so
-          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/graphs.py
-          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/program.py
-          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/quant/graph.py
-          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/quant/reference.py
-          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-calibrate.py
-          ${MODEL_DIR}/smolvla-base/model.py
-          ${MODEL_DIR}/smolvla-base/observation.py
-          ${MODEL_DIR}/smolvla-base/output/smolvla-base/config.json
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "Checking the quantized smolvla-base actions for piplus"
+  OUTPUT ${CALIBRATION}
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/dse-calibration.json ${CALIBRATION}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dse-calibration.json
+  COMMENT "Recording no accuracy check of smolvla-base for piplus (DSE)"
   VERBATIM
 )
 
 # ===----------------------------------------------------------------------===
-# Import smolvla-base: its graphs, quantized, the device program, its inputs
-# (one SO100 observation) and the actions of the quantized program in
-# PyTorch; the program of the first denoising step alone, its inputs and its
-# velocity in PyTorch.
+# Import smolvla-base: its graphs, quantized, the device program and the
+# program of the first denoising step alone.
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/program.mlir
          ${OUTPUT_DIR}/graph-vision.mlir
-         ${OUTPUT_DIR}/graph-prefix.mlir
-         ${OUTPUT_DIR}/graph-step.mlir
-         ${OUTPUT_DIR}/actions.data
+         ${OUTPUT_DIR}/graph-prefix-dense.mlir
+         ${OUTPUT_DIR}/graph-step-action.mlir
          ${OUTPUT_DIR}/step_program.mlir
-         ${OUTPUT_DIR}/step_velocity.data
          ${OUTPUT_DIR}/vision-arg0.data
          ${OUTPUT_DIR}/vision-arg1.data
-         ${OUTPUT_DIR}/prefix-arg0.data
-         ${OUTPUT_DIR}/prefix-arg1.data
-         ${OUTPUT_DIR}/step-arg0.data
-         ${OUTPUT_DIR}/step-arg1.data
-         ${OUTPUT_DIR}/images.data
-         ${OUTPUT_DIR}/lang_tokens.data
-         ${OUTPUT_DIR}/lang_masks.data
-         ${OUTPUT_DIR}/state.data
-         ${OUTPUT_DIR}/noise.data
-         ${OUTPUT_DIR}/step_time.data
-         ${OUTPUT_DIR}/step_pad_masks.data
-         ${OUTPUT_DIR}/step_cache.data
-         ${OUTPUT_DIR}/observation.data
-  COMMAND ${PYTHON} buddy-pytorch-importer.py
+         ${OUTPUT_DIR}/prefix-pack-f32.data
+         ${OUTPUT_DIR}/prefix-pack-i8.data
+         ${OUTPUT_DIR}/step-pack-f32.data
+         ${OUTPUT_DIR}/step-pack-i8.data
+  COMMAND ${PYTHON} buddy-pytorch-importer.py ${OUTPUT_DIR} ${DESIGN_PB}
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
           ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-importer.py
-          ${OUTPUT_DIR}/calibration.json
+          ${CALIBRATION}
+          ${DESIGN_PB}
           ${MODEL_DIR}/smolvla-base/model.py
           ${MODEL_DIR}/smolvla-base/observation.py
           ${MODEL_DIR}/smolvla-base/output/smolvla-base/config.json
@@ -88,8 +62,45 @@ add_custom_command(
 add_custom_target(smolvla-base-import DEPENDS ${OUTPUT_DIR}/program.mlir)
 
 # ===----------------------------------------------------------------------===
-# The device program of smolvla-base: its launches placed on the cores,
-# transfers between them, lowered to the device runtime; on the control core.
+# The golden data of the baremetal runners: the inputs of the program (one
+# SO100 observation) and the actions of the quantized program in PyTorch;
+# the inputs of the first denoising step alone and its velocity.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/actions.data
+         ${OUTPUT_DIR}/step_velocity.data
+         ${OUTPUT_DIR}/images.data
+         ${OUTPUT_DIR}/lang_tokens.data
+         ${OUTPUT_DIR}/lang_masks.data
+         ${OUTPUT_DIR}/state.data
+         ${OUTPUT_DIR}/noise.data
+         ${OUTPUT_DIR}/step_time.data
+         ${OUTPUT_DIR}/step_masks.data
+         ${OUTPUT_DIR}/step_angles.data
+         ${OUTPUT_DIR}/step_cache.data
+         ${OUTPUT_DIR}/observation.data
+  COMMAND ${PYTHON} buddy-pytorch-golden.py ${TOOLCHAIN}/lib/libnewlib-reference.so ${OUTPUT_DIR}
+  DEPENDS ${STACK_ROOT}/compiler/frontend/quant.py
+          ${STACK_ROOT}/flake.lock
+          ${STACK_ROOT}/scripts/nix/riscv.nix
+          ${TOOLCHAIN}/lib/libnewlib-reference.so
+          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/graphs.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/program.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/quant/graph.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/quant/reference.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-golden.py
+          ${MODEL_DIR}/smolvla-base/model.py
+          ${MODEL_DIR}/smolvla-base/observation.py
+          ${MODEL_DIR}/smolvla-base/output/smolvla-base/config.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Computing the smolvla-base golden actions for piplus"
+  VERBATIM
+)
+add_custom_target(smolvla-base-golden DEPENDS ${OUTPUT_DIR}/actions.data)
+
+# ===----------------------------------------------------------------------===
+# The device program of smolvla-base: its launches placed on the harts,
+# transfers between them, lowered to the device runtime; on the control hart.
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT program.o
@@ -98,15 +109,15 @@ add_custom_command(
              ${OUTPUT_DIR}/program_lowered.mlir
              ${OUTPUT_DIR}/program_llvm.mlir
              ${OUTPUT_DIR}/program.ll
-  COMMAND ${OPT} ${OUTPUT_DIR}/program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/program_placed.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -o ${OUTPUT_DIR}/program_bufferized.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_bufferized.mlir -canonicalize -cse -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/program_lowered.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/program_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/program_llvm.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/program_placed.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -canonicalize -cse -o ${OUTPUT_DIR}/program_bufferized.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/program_bufferized.mlir -lower-device -o ${OUTPUT_DIR}/program_lowered.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/program_lowered.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/program_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/program_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/program.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/program.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o program.o
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/program.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o program.o
   DEPENDS ${OUTPUT_DIR}/program.mlir
-          ${DEVICE_COMPILER}
+          ${DESIGN_DEVICE_PLUGIN}
           ${DESIGN_PB}
   COMMENT "Building the smolvla-base program for piplus"
   VERBATIM
@@ -122,35 +133,29 @@ add_custom_command(
              ${OUTPUT_DIR}/step_program_lowered.mlir
              ${OUTPUT_DIR}/step_program_llvm.mlir
              ${OUTPUT_DIR}/step_program.ll
-  COMMAND ${OPT} ${OUTPUT_DIR}/step_program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/step_program_placed.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/step_program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -o ${OUTPUT_DIR}/step_program_bufferized.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/step_program_bufferized.mlir -canonicalize -cse -lower-device -o ${OUTPUT_DIR}/step_program_lowered.mlir
-  COMMAND ${OPT} ${OUTPUT_DIR}/step_program_lowered.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/step_program_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/step_program_llvm.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/step_program.mlir -convert-linalg-to-device=design=${DESIGN_PB} -o ${OUTPUT_DIR}/step_program_placed.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/step_program_placed.mlir -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs hoist-dynamic-allocs" -canonicalize -cse -o ${OUTPUT_DIR}/step_program_bufferized.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/step_program_bufferized.mlir -lower-device -o ${OUTPUT_DIR}/step_program_lowered.mlir
+  COMMAND ${DESIGN_DEVICE_OPT} ${OUTPUT_DIR}/step_program_lowered.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-func-to-llvm -reconcile-unrealized-casts -o ${OUTPUT_DIR}/step_program_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/step_program_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/step_program.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/step_program.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o step-program.o
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/step_program.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o step-program.o
   DEPENDS ${OUTPUT_DIR}/step_program.mlir
-          ${DEVICE_COMPILER}
+          ${DESIGN_DEVICE_PLUGIN}
           ${DESIGN_PB}
   COMMENT "Building the smolvla-base step program for piplus"
   VERBATIM
 )
 
 # ===----------------------------------------------------------------------===
-# The graphs of smolvla-base on their cores (vision and prefix on the
-# dense cores, the step on the action core), common subexpressions merged
-# with the conversion to linalg: convert-linalg-to-core puts the MXINT8
-# quantization and products on the core's hardware thread as subgraphs
-# launched as early as their inputs allow (<graph>_core.mlir),
-# convert-linalg-to-acc maps MXINT8 products and quantization to bank loops;
-# bank assignment and lower-acc emit Ball instructions. lower-core records
-# their affine loops for the engine, retaining staging memory until completion.
+# The vision encoder on the dense harts, a camera a hart.
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT vision.o
   BYPRODUCTS ${OUTPUT_DIR}/vision_linalg.mlir
-             ${OUTPUT_DIR}/vision_core.mlir
+             ${OUTPUT_DIR}/vision_hart.mlir
              ${OUTPUT_DIR}/vision_acc.mlir
+             ${OUTPUT_DIR}/vision_host.mlir
              ${OUTPUT_DIR}/vision_banks.mlir
              ${OUTPUT_DIR}/vision_instructions.mlir
              ${OUTPUT_DIR}/vision_addresses.mlir
@@ -160,19 +165,26 @@ add_custom_command(
              ${OUTPUT_DIR}/vision_copies.mlir
              ${OUTPUT_DIR}/vision_llvm.mlir
              ${OUTPUT_DIR}/vision.ll
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/graph-vision.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))" -o ${OUTPUT_DIR}/vision_linalg.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/vision_linalg.mlir "-convert-linalg-to-core=design=${DESIGN_PB} core=dense" -o ${OUTPUT_DIR}/vision_core.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_core.mlir
+             ${OUTPUT_DIR}/vision_opt.ll
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/graph-vision.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))"
+            -o ${OUTPUT_DIR}/vision_linalg.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_linalg.mlir "-convert-linalg-to-hart=design=${DESIGN_PB} hart=dense"
+            -o ${OUTPUT_DIR}/vision_hart.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_hart.mlir
             -convert-linalg-to-acc
             -o ${OUTPUT_DIR}/vision_acc.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_acc.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_acc.mlir "-symbol-privatize=exclude=vision_graph,vision,_binary_operators_image_start"
+            -symbol-dce
+            -o ${OUTPUT_DIR}/vision_host.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_host.mlir
             -lower-frontend-fake-op
             -o ${OUTPUT_DIR}/vision_frontend.mlir
   COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_frontend.mlir
             -inline
             -eliminate-empty-tensors
             -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map"
-            -drop-equivalent-buffer-results "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs"
+            -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs"
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
@@ -184,134 +196,371 @@ add_custom_command(
   COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_banks.mlir
             -lower-acc
             -o ${OUTPUT_DIR}/vision_instructions.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/vision_instructions.mlir -expand-strided-metadata -lower-affine -canonicalize -o ${OUTPUT_DIR}/vision_addresses.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/vision_addresses.mlir "-lower-core=design=${DESIGN_PB} core=dense" -o ${OUTPUT_DIR}/vision_memref.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/vision_memref.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/vision_copies.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/vision_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -ensure-debug-info-scope-on-llvm-func -o ${OUTPUT_DIR}/vision_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/vision_llvm.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_instructions.mlir
+            -expand-strided-metadata
+            -lower-affine
+            -canonicalize
+            -o ${OUTPUT_DIR}/vision_addresses.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_addresses.mlir "-lower-hart=design=${DESIGN_PB} hart=dense"
+            -o ${OUTPUT_DIR}/vision_memref.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_memref.mlir
+            -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))"
+            -o ${OUTPUT_DIR}/vision_copies.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_copies.mlir
+            -convert-linalg-to-loops
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -finalize-memref-to-llvm
+            -convert-cf-to-llvm
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/vision_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/vision_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/vision.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/vision.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o vision.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/vision.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/vision_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/vision_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -max-store-memcpy=16 -o vision.o
+  COMMAND ${ELF_OBJCOPY}
+            --redefine-sym _binary_operators_image_start=_binary_vision_operators_image_start vision.o
   DEPENDS ${OUTPUT_DIR}/graph-vision.mlir
-          ${DESIGN_COMPILER}/bin/buddy-opt
-          ${DESIGN_THREAD_BUILD_dense}/libdense-compiler.so
-          ${CORE_COMPILER}
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${DESIGN_TARGET_PLUGIN_dense}
           ${DESIGN_PB}
   COMMENT "Building the smolvla-base vision graph for piplus"
   VERBATIM
 )
 
+math(EXPR VISION_OPERATOR_TEXT_BYTES "${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_I_BUF_WORDS} * 4")
 add_custom_command(
-  OUTPUT prefix.o
-  BYPRODUCTS ${OUTPUT_DIR}/prefix_linalg.mlir
-             ${OUTPUT_DIR}/prefix_core.mlir
-             ${OUTPUT_DIR}/prefix_acc.mlir
-             ${OUTPUT_DIR}/prefix_banks.mlir
-             ${OUTPUT_DIR}/prefix_instructions.mlir
-             ${OUTPUT_DIR}/prefix_addresses.mlir
-             ${OUTPUT_DIR}/prefix_frontend.mlir
-             ${OUTPUT_DIR}/prefix_bufferized.mlir
-             ${OUTPUT_DIR}/prefix_memref.mlir
-             ${OUTPUT_DIR}/prefix_copies.mlir
-             ${OUTPUT_DIR}/prefix_llvm.mlir
-             ${OUTPUT_DIR}/prefix.ll
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/graph-prefix.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))" -o ${OUTPUT_DIR}/prefix_linalg.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/prefix_linalg.mlir "-convert-linalg-to-core=design=${DESIGN_PB} core=dense" -o ${OUTPUT_DIR}/prefix_core.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_core.mlir
-            -convert-linalg-to-acc
-            -o ${OUTPUT_DIR}/prefix_acc.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_acc.mlir
-            -lower-frontend-fake-op
-            -o ${OUTPUT_DIR}/prefix_frontend.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_frontend.mlir
-            -inline
-            -eliminate-empty-tensors
-            -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map"
-            -drop-equivalent-buffer-results "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs"
-            -ownership-based-buffer-deallocation
-            -buffer-deallocation-simplification
-            -bufferization-lower-deallocations
-            -canonicalize
-            -o ${OUTPUT_DIR}/prefix_bufferized.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_bufferized.mlir
-            -assign-physical-banks
-            -o ${OUTPUT_DIR}/prefix_banks.mlir
-  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_banks.mlir
-            -lower-acc
-            -o ${OUTPUT_DIR}/prefix_instructions.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/prefix_instructions.mlir -expand-strided-metadata -lower-affine -canonicalize -o ${OUTPUT_DIR}/prefix_addresses.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/prefix_addresses.mlir "-lower-core=design=${DESIGN_PB} core=dense" -o ${OUTPUT_DIR}/prefix_memref.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/prefix_memref.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/prefix_copies.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/prefix_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -ensure-debug-info-scope-on-llvm-func -o ${OUTPUT_DIR}/prefix_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/prefix_llvm.mlir
-            --buddy-to-llvmir -o ${OUTPUT_DIR}/prefix.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/prefix.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o prefix.o
-  DEPENDS ${OUTPUT_DIR}/graph-prefix.mlir
-          ${DESIGN_COMPILER}/bin/buddy-opt
-          ${DESIGN_THREAD_BUILD_dense}/libdense-compiler.so
-          ${CORE_COMPILER}
-          ${DESIGN_PB}
-  COMMENT "Building the smolvla-base prefix graph for piplus"
+  OUTPUT vision_operators.o
+  BYPRODUCTS ${OUTPUT_DIR}/vision_operators.mlir
+             ${OUTPUT_DIR}/vision_operators_llvm.mlir
+             ${OUTPUT_DIR}/vision_operators.ll
+             ${OUTPUT_DIR}/vision_operators_opt.ll
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/vision_acc.mlir "-symbol-privatize=exclude=operator,gp_space"
+            -symbol-dce
+            -o ${OUTPUT_DIR}/vision_operators.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/vision_operators.mlir
+            -convert-vector-to-scf
+            -convert-vector-to-llvm
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/vision_operators_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/vision_operators_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/vision_operators.ll
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/vision_operators.ll -mtriple=riscv64 -mattr=+m,+f,+d,+zve${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_E_LEN}f,+zvl128b "-passes=default<O2>" -S -o ${OUTPUT_DIR}/vision_operators_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/vision_operators_opt.ll -filetype=obj -mtriple=riscv64 -O2 -mattr=+m,+f,+d,+zve${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_E_LEN}f,+zvl128b -riscv-v-vector-bits-min=${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_V_LEN} -riscv-v-vector-bits-max=${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_V_LEN} -target-abi=lp64f -o vision_operators_code.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-ld -m elf64lriscv
+            --defsym=operator_text_bytes=${VISION_OPERATOR_TEXT_BYTES} -T ${DENSE_OPERATOR_LINKER} vision_operators_code.o -o vision_operators.elf
+  COMMAND ${ELF_OBJCOPY} -O binary -j .header -j .text -j .rodata vision_operators.elf vision_operators.image
+  COMMAND ${ELF_OBJCOPY} -I binary -O elf64-littleriscv -B riscv
+            --rename-section .data=.rodata,alloc,load,readonly,data,contents
+            --set-section-alignment .data=16 vision_operators.image vision_operators.o
+  DEPENDS vision.o
+          ${DENSE_OPERATOR_LINKER}
+          ${LLVM_OPT}
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+  COMMENT "Building the GP operator image of the smolvla-base vision graph"
   VERBATIM
 )
 
+# ===----------------------------------------------------------------------===
+# The graphs of smolvla-base on their harts, common subexpressions merged with the conversion to linalg:
+# convert-linalg-to-hart gives each row softmax to SoftmaxBall, compiles the
+# other FP32 row regions into operators of the GP domain of the thread and puts
+# them and the MXINT8 quantization and products on the hart's hardware thread
+# as subgraphs launched as early as their inputs allow (<graph>_hart.mlir),
+# convert-linalg-to-acc maps MXINT8 products and quantization to bank loops and
+# row operators to GP launches; the operators leave the host graph
+# (<graph>_host.mlir) for the operator image of the graph, embedded as
+# _binary_<graph>_operators_image_start; bank assignment and lower-acc emit
+# Ball instructions. lower-hart records their affine loops for the kernel,
+# retaining staging memory until completion.
+# ===----------------------------------------------------------------------===
+
+# ===----------------------------------------------------------------------===
+# The step partitioned across the harts (frontend/partition): its graphs on
+# the action hart (the reduce hart and the first rank) and on the dense harts
+# (the other ranks), each class of hart with its own image of GP operators.
+# The graphs of each class are named here, the symbols the step program
+# calls: a change of the partition shows at the link.
+# ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT step.o
-  BYPRODUCTS ${OUTPUT_DIR}/step_linalg.mlir
-             ${OUTPUT_DIR}/step_core.mlir
-             ${OUTPUT_DIR}/step_acc.mlir
-             ${OUTPUT_DIR}/step_banks.mlir
-             ${OUTPUT_DIR}/step_instructions.mlir
-             ${OUTPUT_DIR}/step_addresses.mlir
-             ${OUTPUT_DIR}/step_frontend.mlir
-             ${OUTPUT_DIR}/step_bufferized.mlir
-             ${OUTPUT_DIR}/step_memref.mlir
-             ${OUTPUT_DIR}/step_copies.mlir
-             ${OUTPUT_DIR}/step_llvm.mlir
-             ${OUTPUT_DIR}/step.ll
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/graph-step.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))" -o ${OUTPUT_DIR}/step_linalg.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/step_linalg.mlir "-convert-linalg-to-core=design=${DESIGN_PB} core=action" -o ${OUTPUT_DIR}/step_core.mlir
-  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_core.mlir
+  OUTPUT step_action.o
+  BYPRODUCTS ${OUTPUT_DIR}/step_action_linalg.mlir
+             ${OUTPUT_DIR}/step_action_hart.mlir
+             ${OUTPUT_DIR}/step_action_acc.mlir
+             ${OUTPUT_DIR}/step_action_host.mlir
+             ${OUTPUT_DIR}/step_action_banks.mlir
+             ${OUTPUT_DIR}/step_action_instructions.mlir
+             ${OUTPUT_DIR}/step_action_addresses.mlir
+             ${OUTPUT_DIR}/step_action_frontend.mlir
+             ${OUTPUT_DIR}/step_action_bufferized.mlir
+             ${OUTPUT_DIR}/step_action_memref.mlir
+             ${OUTPUT_DIR}/step_action_copies.mlir
+             ${OUTPUT_DIR}/step_action_llvm.mlir
+             ${OUTPUT_DIR}/step_action.ll
+             ${OUTPUT_DIR}/step_action_opt.ll
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/graph-step-action.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))"
+            -o ${OUTPUT_DIR}/step_action_linalg.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_linalg.mlir "-convert-linalg-to-hart=design=${DESIGN_PB} hart=action"
+            -o ${OUTPUT_DIR}/step_action_hart.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_hart.mlir
             -convert-linalg-to-acc
-            -o ${OUTPUT_DIR}/step_acc.mlir
-  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_acc.mlir
+            -o ${OUTPUT_DIR}/step_action_acc.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_acc.mlir "-symbol-privatize=exclude=step_attention_action,step_attention_action_1,step_attention_action_2,step_attention_action_3,step_mlp_action,step_mlp_action_1,step_mlp_action_2,step_mlp_action_3,step_mlp_action_4,step_reduce_action,step_reduce_action_1,step_reduce_action_2,step_reduce_action_3,step_reduce_action_4,step_reduce_action_5,step_reduce_action_6,step_reduce_action_7,_binary_operators_image_start"
+            -symbol-dce
+            -o ${OUTPUT_DIR}/step_action_host.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_host.mlir
             -lower-frontend-fake-op
-            -o ${OUTPUT_DIR}/step_frontend.mlir
-  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_frontend.mlir
+            -o ${OUTPUT_DIR}/step_action_frontend.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_frontend.mlir
             -inline
             -eliminate-empty-tensors
             -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map"
-            -drop-equivalent-buffer-results "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs"
+            -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs"
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -canonicalize
-            -o ${OUTPUT_DIR}/step_bufferized.mlir
-  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_bufferized.mlir
+            -o ${OUTPUT_DIR}/step_action_bufferized.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_bufferized.mlir
             -assign-physical-banks
-            -o ${OUTPUT_DIR}/step_banks.mlir
-  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_banks.mlir
+            -o ${OUTPUT_DIR}/step_action_banks.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_banks.mlir
             -lower-acc
-            -o ${OUTPUT_DIR}/step_instructions.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/step_instructions.mlir -expand-strided-metadata -lower-affine -canonicalize -o ${OUTPUT_DIR}/step_addresses.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/step_addresses.mlir "-lower-core=design=${DESIGN_PB} core=action" -o ${OUTPUT_DIR}/step_memref.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/step_memref.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/step_copies.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/step_copies.mlir -convert-linalg-to-loops -expand-strided-metadata -lower-affine -convert-scf-to-cf -finalize-memref-to-llvm -convert-cf-to-llvm -convert-arith-to-llvm -convert-math-to-llvm -convert-math-to-libm -convert-func-to-llvm -reconcile-unrealized-casts -ensure-debug-info-scope-on-llvm-func -o ${OUTPUT_DIR}/step_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/step_llvm.mlir
-            --buddy-to-llvmir -o ${OUTPUT_DIR}/step.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/step.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -o step.o
-  DEPENDS ${OUTPUT_DIR}/graph-step.mlir
-          ${DESIGN_COMPILER}/bin/buddy-opt
-          ${DESIGN_THREAD_BUILD_action}/libaction-compiler.so
-          ${CORE_COMPILER}
+            -o ${OUTPUT_DIR}/step_action_instructions.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_instructions.mlir
+            -expand-strided-metadata
+            -lower-affine
+            -canonicalize
+            -o ${OUTPUT_DIR}/step_action_addresses.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_addresses.mlir "-lower-hart=design=${DESIGN_PB} hart=action"
+            -o ${OUTPUT_DIR}/step_action_memref.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_memref.mlir
+            -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))"
+            -o ${OUTPUT_DIR}/step_action_copies.mlir
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_copies.mlir
+            -convert-linalg-to-loops
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -finalize-memref-to-llvm
+            -convert-cf-to-llvm
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/step_action_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/step_action_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/step_action.ll
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/step_action.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/step_action_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/step_action_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -max-store-memcpy=16 -o step_action.o
+  COMMAND ${ELF_OBJCOPY}
+            --redefine-sym _binary_operators_image_start=_binary_step_action_operators_image_start step_action.o
+  DEPENDS ${OUTPUT_DIR}/graph-step-action.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${DESIGN_TARGET_PLUGIN_action}
           ${DESIGN_PB}
-  COMMENT "Building the smolvla-base step graph for piplus"
+  COMMENT "Building the smolvla-base step graphs of the action harts for piplus"
+  VERBATIM
+)
+
+math(EXPR STEP_ACTION_OPERATOR_TEXT_BYTES "${DESIGN_PROFILES_action_THREAD_GPDOMAIN_I_BUF_WORDS} * 4")
+add_custom_command(
+  OUTPUT step_action_operators.o
+  BYPRODUCTS ${OUTPUT_DIR}/step_action_operators.mlir
+             ${OUTPUT_DIR}/step_action_operators_llvm.mlir
+             ${OUTPUT_DIR}/step_action_operators.ll
+             ${OUTPUT_DIR}/step_action_operators_opt.ll
+  COMMAND ${DESIGN_TARGET_OPT_action} ${OUTPUT_DIR}/step_action_acc.mlir "-symbol-privatize=exclude=operator,gp_space"
+            -symbol-dce
+            -o ${OUTPUT_DIR}/step_action_operators.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/step_action_operators.mlir
+            -convert-vector-to-scf
+            -convert-vector-to-llvm
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/step_action_operators_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/step_action_operators_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/step_action_operators.ll
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/step_action_operators.ll -mtriple=riscv64 -mattr=+m,+f,+d,+zve${DESIGN_PROFILES_action_THREAD_GPDOMAIN_E_LEN}f,+zvl128b "-passes=default<O2>" -S -o ${OUTPUT_DIR}/step_action_operators_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/step_action_operators_opt.ll -filetype=obj -mtriple=riscv64 -O2 -mattr=+m,+f,+d,+zve${DESIGN_PROFILES_action_THREAD_GPDOMAIN_E_LEN}f,+zvl128b -riscv-v-vector-bits-min=${DESIGN_PROFILES_action_THREAD_GPDOMAIN_V_LEN} -riscv-v-vector-bits-max=${DESIGN_PROFILES_action_THREAD_GPDOMAIN_V_LEN} -target-abi=lp64f -o step_action_operators_code.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-ld -m elf64lriscv
+            --defsym=operator_text_bytes=${STEP_ACTION_OPERATOR_TEXT_BYTES} -T ${ACTION_OPERATOR_LINKER} step_action_operators_code.o -o step_action_operators.elf
+  COMMAND ${ELF_OBJCOPY} -O binary -j .header -j .text -j .rodata step_action_operators.elf step_action_operators.image
+  COMMAND ${ELF_OBJCOPY} -I binary -O elf64-littleriscv -B riscv
+            --rename-section .data=.rodata,alloc,load,readonly,data,contents
+            --set-section-alignment .data=16 step_action_operators.image step_action_operators.o
+  DEPENDS step_action.o
+          ${ACTION_OPERATOR_LINKER}
+          ${LLVM_OPT}
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+  COMMENT "Building the GP operator image of the smolvla-base step graphs of the action harts"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# The prefix partitioned across the dense harts (frontend/partition), the
+# denoising step across the action harts: each stage on the harts of its own
+# class, each class of hart with its own image of GP operators. The graphs of
+# each class are named here, the symbols the program calls: a change of the
+# partition shows at the link.
+# ===----------------------------------------------------------------------===
+
+add_custom_command(
+  OUTPUT prefix_dense.o
+  BYPRODUCTS ${OUTPUT_DIR}/prefix_dense_linalg.mlir
+             ${OUTPUT_DIR}/prefix_dense_hart.mlir
+             ${OUTPUT_DIR}/prefix_dense_acc.mlir
+             ${OUTPUT_DIR}/prefix_dense_host.mlir
+             ${OUTPUT_DIR}/prefix_dense_banks.mlir
+             ${OUTPUT_DIR}/prefix_dense_instructions.mlir
+             ${OUTPUT_DIR}/prefix_dense_addresses.mlir
+             ${OUTPUT_DIR}/prefix_dense_frontend.mlir
+             ${OUTPUT_DIR}/prefix_dense_bufferized.mlir
+             ${OUTPUT_DIR}/prefix_dense_memref.mlir
+             ${OUTPUT_DIR}/prefix_dense_copies.mlir
+             ${OUTPUT_DIR}/prefix_dense_llvm.mlir
+             ${OUTPUT_DIR}/prefix_dense.ll
+             ${OUTPUT_DIR}/prefix_dense_opt.ll
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/graph-prefix-dense.mlir
+            -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith,cse))"
+            -o ${OUTPUT_DIR}/prefix_dense_linalg.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_linalg.mlir "-convert-linalg-to-hart=design=${DESIGN_PB} hart=dense"
+            -o ${OUTPUT_DIR}/prefix_dense_hart.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_hart.mlir
+            -convert-linalg-to-acc
+            -o ${OUTPUT_DIR}/prefix_dense_acc.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_acc.mlir "-symbol-privatize=exclude=prefix_attention_dense,prefix_attention_dense_1,prefix_attention_dense_2,prefix_attention_dense_3,prefix_attention_dense_4,prefix_attention_dense_5,prefix_attention_dense_6,prefix_join_dense,prefix_mlp_dense,prefix_mlp_dense_1,prefix_mlp_dense_2,prefix_mlp_dense_3,prefix_mlp_dense_4,prefix_mlp_dense_5,prefix_reduce_dense,prefix_reduce_dense_1,prefix_reduce_dense_2,prefix_reduce_dense_3,prefix_reduce_dense_4,prefix_reduce_dense_5,_binary_operators_image_start"
+            -symbol-dce
+            -o ${OUTPUT_DIR}/prefix_dense_host.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_host.mlir
+            -lower-frontend-fake-op
+            -o ${OUTPUT_DIR}/prefix_dense_frontend.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_frontend.mlir
+            -inline
+            -eliminate-empty-tensors
+            -convert-elementwise-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map"
+            -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -canonicalize
+            -o ${OUTPUT_DIR}/prefix_dense_bufferized.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_bufferized.mlir
+            -assign-physical-banks
+            -o ${OUTPUT_DIR}/prefix_dense_banks.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_banks.mlir
+            -lower-acc
+            -o ${OUTPUT_DIR}/prefix_dense_instructions.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_instructions.mlir
+            -expand-strided-metadata
+            -lower-affine
+            -canonicalize
+            -o ${OUTPUT_DIR}/prefix_dense_addresses.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_addresses.mlir "-lower-hart=design=${DESIGN_PB} hart=dense"
+            -o ${OUTPUT_DIR}/prefix_dense_memref.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_memref.mlir
+            -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))"
+            -o ${OUTPUT_DIR}/prefix_dense_copies.mlir
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_copies.mlir
+            -convert-linalg-to-loops
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -finalize-memref-to-llvm
+            -convert-cf-to-llvm
+            -convert-arith-to-llvm
+            -convert-math-to-llvm
+            -convert-math-to-libm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/prefix_dense_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/prefix_dense_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/prefix_dense.ll
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/prefix_dense.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/prefix_dense_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/prefix_dense_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -code-model=medium -O2 -max-store-memcpy=16 -o prefix_dense.o
+  COMMAND ${ELF_OBJCOPY}
+            --redefine-sym _binary_operators_image_start=_binary_prefix_dense_operators_image_start prefix_dense.o
+  DEPENDS ${OUTPUT_DIR}/graph-prefix-dense.mlir
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${DESIGN_TARGET_PLUGIN_dense}
+          ${DESIGN_PB}
+  COMMENT "Building the smolvla-base prefix graphs of the dense harts for piplus"
+  VERBATIM
+)
+
+math(EXPR PREFIX_DENSE_OPERATOR_TEXT_BYTES "${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_I_BUF_WORDS} * 4")
+add_custom_command(
+  OUTPUT prefix_dense_operators.o
+  BYPRODUCTS ${OUTPUT_DIR}/prefix_dense_operators.mlir
+             ${OUTPUT_DIR}/prefix_dense_operators_llvm.mlir
+             ${OUTPUT_DIR}/prefix_dense_operators.ll
+             ${OUTPUT_DIR}/prefix_dense_operators_opt.ll
+  COMMAND ${DESIGN_TARGET_OPT_dense} ${OUTPUT_DIR}/prefix_dense_acc.mlir "-symbol-privatize=exclude=operator,gp_space"
+            -symbol-dce
+            -o ${OUTPUT_DIR}/prefix_dense_operators.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/prefix_dense_operators.mlir
+            -convert-vector-to-scf
+            -convert-vector-to-llvm
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/prefix_dense_operators_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/prefix_dense_operators_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/prefix_dense_operators.ll
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/prefix_dense_operators.ll -mtriple=riscv64 -mattr=+m,+f,+d,+zve${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_E_LEN}f,+zvl128b "-passes=default<O2>" -S -o ${OUTPUT_DIR}/prefix_dense_operators_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/prefix_dense_operators_opt.ll -filetype=obj -mtriple=riscv64 -O2 -mattr=+m,+f,+d,+zve${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_E_LEN}f,+zvl128b -riscv-v-vector-bits-min=${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_V_LEN} -riscv-v-vector-bits-max=${DESIGN_PROFILES_dense_THREAD_GPDOMAIN_V_LEN} -target-abi=lp64f -o prefix_dense_operators_code.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-ld -m elf64lriscv
+            --defsym=operator_text_bytes=${PREFIX_DENSE_OPERATOR_TEXT_BYTES} -T ${DENSE_OPERATOR_LINKER} prefix_dense_operators_code.o -o prefix_dense_operators.elf
+  COMMAND ${ELF_OBJCOPY} -O binary -j .header -j .text -j .rodata prefix_dense_operators.elf prefix_dense_operators.image
+  COMMAND ${ELF_OBJCOPY} -I binary -O elf64-littleriscv -B riscv
+            --rename-section .data=.rodata,alloc,load,readonly,data,contents
+            --set-section-alignment .data=16 prefix_dense_operators.image prefix_dense_operators.o
+  DEPENDS prefix_dense.o
+          ${DENSE_OPERATOR_LINKER}
+          ${LLVM_OPT}
+          ${COMPILER_BUILD}/bin/buddy-opt
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+  COMMENT "Building the GP operator image of the smolvla-base prefix graphs of the dense harts"
   VERBATIM
 )
 
 # ===----------------------------------------------------------------------===
 # The baremetal image of smolvla-base: the runner (every hart enters it),
-# the program and the graphs, the device runtime, the bindings of the cores
-# and the loaders of their threads (a core with threads starts its engine for
+# the program and the graphs, the device runtime, the bindings of the harts
+# and the loaders of their threads (a hart with threads starts its kernel for
 # every job); the parameters, inputs and reference actions embedded. It goes with
 # the workloads of the device, where BEMU finds it.
 # ===----------------------------------------------------------------------===
@@ -326,7 +575,7 @@ add_custom_command(
   OUTPUT ${ELF}
   COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -fno-exceptions -fno-rtti ${DESIGN_DEFINES} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -DMODEL_IMAGE=${MODEL_IMAGE}ULL -DACTION_ELEMENTS=${ACTION_ELEMENTS} -I${LIB_DIR} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
-  COMMAND ${ELF_CC} -g -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c baremetal.o program.o vision.o prefix.o step.o ${DESIGN_CORE_BUILD_control}/execute.o ${DESIGN_CORE_BUILD_dense}/execute.o ${DESIGN_CORE_BUILD_action}/execute.o ${DESIGN_THREAD_BUILD_dense}/loader.o ${DESIGN_THREAD_BUILD_action}/loader.o $<TARGET_FILE:piplus-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:engine> -lm -lgcc -o ${ELF}
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c baremetal.o program.o vision.o prefix_dense.o step_action.o vision_operators.o prefix_dense_operators.o step_action_operators.o ${DESIGN_HART_BUILD_control}/execute.o ${DESIGN_HART_BUILD_dense}/execute.o ${DESIGN_HART_BUILD_action}/execute.o ${DESIGN_THREAD_BUILD_dense}/loader.o ${DESIGN_THREAD_BUILD_action}/loader.o $<TARGET_FILE:piplus-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:kernel> -lm -lgcc -o ${ELF}
   DEPENDS ${BOOT_DIR}/start.S
           ${BOOT_DIR}/syscalls.c
           ${BOOT_DIR}/device.ld
@@ -336,23 +585,26 @@ add_custom_command(
           ${LIB_DIR}/testutils.h
           program.o
           vision.o
-          prefix.o
-          step.o
+          prefix_dense.o
+          step_action.o
+          vision_operators.o
+          prefix_dense_operators.o
+          step_action_operators.o
           ${OUTPUT_DIR}/actions.data
           ${DESIGN_DEVICE_STACK}/runtime/device.h
           piplus-runtime
           runtime-program
           runtime-baremetal
           runtime
-          engine
+          kernel
   COMMENT "Linking smolvla-base for the piplus device"
   VERBATIM
 )
 
 # ===----------------------------------------------------------------------===
 # The baremetal image of the first denoising step of smolvla-base alone: the
-# runner (baremetal-step.cpp), the step program and the step graph, as the image
-# of the policy; the parameters of the step, its inputs (from the quantized
+# runner (baremetal-step.cpp), the step program and the step graphs of the
+# action and dense harts (partitioned), as the image of the policy; the parameters of the step, its inputs (from the quantized
 # program on the observation) and its reference velocity embedded.
 # ===----------------------------------------------------------------------===
 set(STEP_ELF "${DESIGN_OUTPUT}/workloads/models/piplus-smolvla-base-step-baremetal")
@@ -361,27 +613,37 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -fno-exceptions -fno-rtti ${DESIGN_DEFINES} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -I${LIB_DIR} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program
             --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal-step.cpp -o baremetal-step.o
-  COMMAND ${ELF_CC} -g -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program
-            --embed-dir=${OUTPUT_DIR} ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c baremetal-step.o step-program.o step.o ${DESIGN_CORE_BUILD_control}/execute.o ${DESIGN_CORE_BUILD_dense}/execute.o ${DESIGN_CORE_BUILD_action}/execute.o ${DESIGN_THREAD_BUILD_dense}/loader.o ${DESIGN_THREAD_BUILD_action}/loader.o $<TARGET_FILE:piplus-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:engine> -lm -lgcc -o ${STEP_ELF}
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program
+            --embed-dir=${OUTPUT_DIR} ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c baremetal-step.o step-program.o step_action.o step_action_operators.o ${DESIGN_HART_BUILD_control}/execute.o ${DESIGN_HART_BUILD_dense}/execute.o ${DESIGN_HART_BUILD_action}/execute.o ${DESIGN_THREAD_BUILD_dense}/loader.o ${DESIGN_THREAD_BUILD_action}/loader.o $<TARGET_FILE:piplus-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:kernel> -lm -lgcc -o ${STEP_ELF}
   DEPENDS ${BOOT_DIR}/start.S
           ${BOOT_DIR}/syscalls.c
           ${BOOT_DIR}/device.ld
           ${CMAKE_CURRENT_SOURCE_DIR}/baremetal-step.cpp
           ${LIB_DIR}/testutils.h
           step-program.o
-          step.o
+          step_action.o
+          step_action_operators.o
+          ${OUTPUT_DIR}/step-pack-f32.data
+          ${OUTPUT_DIR}/step-pack-i8.data
+          ${OUTPUT_DIR}/noise.data
+          ${OUTPUT_DIR}/step_time.data
+          ${OUTPUT_DIR}/step_masks.data
+          ${OUTPUT_DIR}/step_angles.data
+          ${OUTPUT_DIR}/step_cache.data
           ${OUTPUT_DIR}/step_velocity.data
           ${DESIGN_DEVICE_STACK}/runtime/device.h
           piplus-runtime
           runtime-program
           runtime-baremetal
           runtime
-          engine
+          kernel
   COMMENT "Linking the first smolvla-base step for the piplus device"
   VERBATIM
 )
 
-add_library(smolvla-base-buckyball-piplus-model SHARED EXCLUDE_FROM_ALL entry.cpp program.o vision.o prefix.o step.o)
+add_library(smolvla-base-buckyball-piplus-model SHARED EXCLUDE_FROM_ALL entry.cpp program.o vision.o prefix_dense.o
+  step_action.o vision_operators.o prefix_dense_operators.o step_action_operators.o
+)
 target_link_libraries(smolvla-base-buckyball-piplus-model
   PRIVATE piplus-runtime-linux
 )
@@ -416,44 +678,48 @@ set_target_properties(smolvla-base-buckyball-piplus-runner
 configure_file(smolvla-base.rhal.mlir.in ${OUTPUT_DIR}/smolvla-base.rhal.mlir @ONLY)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/smolvla-base.rax
-  COMMAND ${DESIGN_COMPILER}/bin/rax-pack ${OUTPUT_DIR}/smolvla-base.rhal.mlir
+  COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/smolvla-base.rhal.mlir
           --embed-payload
           -o ${OUTPUT_DIR}/smolvla-base.rax
   DEPENDS ${OUTPUT_DIR}/smolvla-base.rhal.mlir
-          ${DESIGN_COMPILER}/bin/rax-pack
+          ${COMPILER_BUILD}/bin/rax-pack
           smolvla-base-buckyball-piplus-model
           smolvla-base-buckyball-piplus-runner
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   VERBATIM
 )
-file(WRITE ${OUTPUT_DIR}/run.args "--model\nsmolvla-base.rax\n--input\nobservation.data\n--output\nactions.f32\n")
+# Linux runs the RAX entry on the observation of the baremetal program and
+# reports it against the same reference.
+file(WRITE ${OUTPUT_DIR}/run.args
+  "--model\nsmolvla-base.rax\n--input\nobservation.data\n--reference\nactions.data\n--output\nactions.f32\n"
+)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/model.img
   COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}/ddr
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/vision-arg0.data ${OUTPUT_DIR}/ddr/vision-arg0.data
   COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/vision-arg1.data ${OUTPUT_DIR}/ddr/vision-arg1.data
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/prefix-arg0.data ${OUTPUT_DIR}/ddr/prefix-arg0.data
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/prefix-arg1.data ${OUTPUT_DIR}/ddr/prefix-arg1.data
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/step-arg0.data ${OUTPUT_DIR}/ddr/step-arg0.data
-  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/step-arg1.data ${OUTPUT_DIR}/ddr/step-arg1.data
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/prefix-pack-f32.data ${OUTPUT_DIR}/ddr/prefix-pack-f32.data
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/prefix-pack-i8.data ${OUTPUT_DIR}/ddr/prefix-pack-i8.data
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/step-pack-f32.data ${OUTPUT_DIR}/ddr/step-pack-f32.data
+  COMMAND ${CMAKE_COMMAND} -E create_symlink ${OUTPUT_DIR}/step-pack-i8.data ${OUTPUT_DIR}/ddr/step-pack-i8.data
   COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} smolvla-base.rax
             --mapped run.args observation.data actions.data
             --mapped ddr/vision-arg0.data
             --mapped ddr/vision-arg1.data
-            --mapped ddr/prefix-arg0.data
-            --mapped ddr/prefix-arg1.data
-            --mapped ddr/step-arg0.data
-            --mapped ddr/step-arg1.data
+            --mapped ddr/prefix-pack-f32.data
+            --mapped ddr/prefix-pack-i8.data
+            --mapped ddr/step-pack-f32.data
+            --mapped ddr/step-pack-i8.data
   DEPENDS ${OUTPUT_DIR}/smolvla-base.rax
           ${OUTPUT_DIR}/run.args
           ${OUTPUT_DIR}/observation.data
           ${OUTPUT_DIR}/actions.data
           ${OUTPUT_DIR}/vision-arg0.data
           ${OUTPUT_DIR}/vision-arg1.data
-          ${OUTPUT_DIR}/prefix-arg0.data
-          ${OUTPUT_DIR}/prefix-arg1.data
-          ${OUTPUT_DIR}/step-arg0.data
-          ${OUTPUT_DIR}/step-arg1.data
+          ${OUTPUT_DIR}/prefix-pack-f32.data
+          ${OUTPUT_DIR}/prefix-pack-i8.data
+          ${OUTPUT_DIR}/step-pack-f32.data
+          ${OUTPUT_DIR}/step-pack-i8.data
           model-pack-tool
   VERBATIM
 )
@@ -464,4 +730,74 @@ add_custom_command(
   DEPENDS ${OUTPUT_DIR}/model.img
   VERBATIM
 )
-add_custom_target(smolvla-base-model-build DEPENDS ${ELF} ${ELF}-ddr.bin ${STEP_ELF} ${OUTPUT_DIR}/model.img)
+
+# ===----------------------------------------------------------------------===
+# The dataset of the accuracy runs: an SO100 frame of every episode, the
+# actions of the FP32 program on it and the recorded actions.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/dataset/observations.data
+         ${OUTPUT_DIR}/dataset/reference.data
+         ${OUTPUT_DIR}/dataset/truth.data
+         ${OUTPUT_DIR}/dataset/labels.data
+  COMMAND ${PYTHON} buddy-pytorch-dataset.py ${OUTPUT_DIR}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/frontend/graphs.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/frontend/program.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-dataset.py
+          ${MODEL_DIR}/smolvla-base/model.py
+          ${MODEL_DIR}/smolvla-base/observation.py
+          ${MODEL_DIR}/smolvla-base/output/smolvla-base/config.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Preparing the SO100 frames of smolvla-base"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
+# The accuracy run (dataset.cpp): the frames of the model region, a shard of
+# dataset/ that bench-device --bemu-accuracy packs into each run's DDR image.
+# ===----------------------------------------------------------------------===
+set(DATASET_ELF "${DESIGN_OUTPUT}/workloads/models/piplus-smolvla-base-dataset")
+add_custom_command(
+  OUTPUT ${DATASET_ELF}
+  BYPRODUCTS dataset.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -fno-exceptions -fno-rtti ${DESIGN_DEFINES} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -DMODEL_IMAGE=${MODEL_IMAGE}ULL -DACTION_ELEMENTS=${ACTION_ELEMENTS} -DACTION_DIM=${ACTION_DIM} -I${LIB_DIR} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program -c ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp -o dataset.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c dataset.o program.o vision.o prefix_dense.o step_action.o vision_operators.o prefix_dense_operators.o step_action_operators.o ${DESIGN_HART_BUILD_control}/execute.o ${DESIGN_HART_BUILD_dense}/execute.o ${DESIGN_HART_BUILD_action}/execute.o ${DESIGN_THREAD_BUILD_dense}/loader.o ${DESIGN_THREAD_BUILD_action}/loader.o $<TARGET_FILE:piplus-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:kernel> -lm -lgcc -o ${DATASET_ELF}
+  DEPENDS ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp
+          model.h
+          ${LIB_DIR}/ModelImage.h
+          ${LIB_DIR}/testutils.h
+          program.o
+          vision.o
+          prefix_dense.o
+          step_action.o
+          vision_operators.o
+          prefix_dense_operators.o
+          step_action_operators.o
+          ${DESIGN_DEVICE_STACK}/runtime/device.h
+          piplus-runtime
+          runtime-program
+          runtime-baremetal
+          runtime
+          kernel
+  COMMENT "Linking the smolvla-base accuracy run for the piplus device"
+  VERBATIM
+)
+add_custom_target(
+  smolvla-base-model-build
+  DEPENDS
+    ${ELF}
+    ${ELF}-ddr.bin
+    ${STEP_ELF}
+    ${OUTPUT_DIR}/model.img
+    ${DATASET_ELF}
+    ${OUTPUT_DIR}/dataset/observations.data
+    ${OUTPUT_DIR}/dataset/reference.data
+    ${OUTPUT_DIR}/dataset/truth.data
+    ${OUTPUT_DIR}/dataset/labels.data
+)
+# The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
+add_subdirectory(gvn)

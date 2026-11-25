@@ -1,3 +1,4 @@
+#include "resources.h"
 #include "testutils.h"
 #include <algorithm>
 #include <buddy/Core/Container.h>
@@ -15,6 +16,9 @@ _mlir_ciface_forward(MemRef<float, 2> *output, MemRef<float, 1> *parameters,
                      MemRef<int8_t, 1> *quantizedWeights,
                      MemRef<long long, 2> *ids, MemRef<long long, 2> *positions,
                      MemRef<long long, 2> *types, MemRef<long long, 2> *mask);
+void check_mapped_bert(const std::vector<std::string> &paths,
+                       const int64_t *input, const float *gold);
+
 namespace {
 template <typename T> MemRef<T, 1> load(const std::string &path) {
   std::ifstream file;
@@ -33,6 +37,17 @@ public:
   void run(const buddy::runtime::RunConfig &config) override {
     const auto manifest =
         buddy::runtime::ModelManifest::loadFromRax(config.raxPath);
+    if (!config.referencePath.empty()) {
+      resources::configure(
+          std::stoull(manifest.moduleAttrs.at("image_base"), nullptr, 0));
+      auto input = load<int64_t>(config.inputPath);
+      auto reference = load<float>(config.referencePath);
+      if (input.getSize() != 128 || reference.getSize() != 6)
+        throw std::runtime_error("Invalid BERT input or reference size");
+      check_mapped_bert(manifest.weightPaths, input.getData(),
+                        reference.getData());
+      return;
+    }
     auto parameters = load<float>(manifest.weightPaths.at(0));
     auto quantizedBias = load<int32_t>(manifest.weightPaths.at(1));
     auto quantizedWeights = load<int8_t>(manifest.weightPaths.at(2));

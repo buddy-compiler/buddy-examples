@@ -111,8 +111,10 @@ def quantize(graph, params):
     axis K: a Linear its [N, K] weight, packed offline, and its activation,
     quantized online; an attention product both activations. The key of the
     score product q k^T is read as two MXINT8 terms. A product whose K is not
-    a multiple of 32 (the outer product of the rotary angles) stays FP32."""
+    a multiple of 32 (the outer product of the rotary angles) stays FP32.
+    Linears that read the same activation share its quantization."""
     values = dict(zip((node.name for node in graph.params), params, strict=True))
+    activations = {}
     for op in list(graph.body):
         if isinstance(op, TransposeMatmulFusedOp):
             weight = graph.node_table[op.args[1]]
@@ -142,8 +144,24 @@ def quantize(graph, params):
                 TensorDType.Float32,
             )
             replace_argument(graph, op, 1, restored)
-            rank = len(graph.node_table[op.args[0]].tensor_meta["shape"])
+            # Linears that read one activation (q, k and v; gate and up) read
+            # one quantization of it: their views of it are the same.
+            source = graph.node_table[op.args[0]]
+            key = (
+                (source.args[0], repr(source.args[1]))
+                if isinstance(source, ViewOp)
+                else source.name
+            )
+            if key in activations:
+                replace_argument(graph, op, 0, activations[key])
+                if not source.children:
+                    graph.delete_node(
+                        source, [graph.node_table[name] for name in source.parents]
+                    )
+                continue
+            rank = len(source.tensor_meta["shape"])
             convert(graph, op, 0, rank - 1)
+            activations[key] = graph.node_table[op.args[0]]
         elif isinstance(op, BatchMatmulOp):
             k = graph.node_table[op.args[0]].tensor_meta["shape"][-1]
             if isinstance(k, int) and k % 32:

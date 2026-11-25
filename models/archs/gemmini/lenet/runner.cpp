@@ -146,6 +146,27 @@ public:
     auto weights = load<int8_t>(manifest.weightPaths.at(2));
     Parameters parameters{values, bias, weights};
 
+    if (!config.referencePath.empty()) {
+      auto pixels = load<float>(config.inputPath);
+      auto reference = load<float>(config.referencePath);
+      if (pixels.getSize() != 4 * 28 * 28 || reference.getSize() != 40)
+        throw std::runtime_error("Invalid LeNet input or reference size");
+      float logits[40];
+      uint64_t cycles = 0;
+      for (int image = 0; image < 4; ++image) {
+        MemRef<float, 4> input(pixels.getData() + image * 784,
+                               std::vector<size_t>{1, 1, 28, 28});
+        MemRef<float, 2> output(std::vector<size_t>{1, 10}, false, 0);
+        const auto start = read_counter();
+        forward(&output, parameters, &input);
+        cycles += read_counter() - start;
+        std::copy_n(output.getData(), 10, logits + image * 10);
+      }
+      printf("Inference cycles: %lu\n", (unsigned long)(cycles / 4));
+      if (check_output(logits, reference.getData(), 40, 1e-5f))
+        throw std::runtime_error("LeNet logits differ from the reference");
+      return;
+    }
     if (!config.datasetPath.empty())
       evaluateMnist(config, parameters);
     else

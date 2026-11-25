@@ -2,11 +2,14 @@
 
 A weight packed along K ([N, K + K / 32]: the K codes, then the K / 32
 exponent bytes) is stored by K blocks of kc values, kc the largest multiple of
-32 dividing K up to 128: [blocks][N][S], a row of a block the kc codes, the
-kc / 32 exponent bytes and zero padding to S = kc + 16 bytes, the packed row
+32 dividing K up to 1024: [blocks][N][S], a row of a block the kc codes, the
+kc / 32 exponent bytes and zero padding to S = kc + 16 * ceil(kc / 512) bytes,
+the packed row
 of kc values on 128-bit bank rows. The rows of a block are contiguous, so the
-thread moves a tile of them into a bank as they are. 128 keeps a 32-row tile
-of packed rows (9 bank rows each) in the 512-row banks of the piplus threads.
+thread moves a tile of them into a bank as they are. 1024 keeps a whole K of
+768 or 960 in one block, a 32-row tile of its packed rows within the 2048-row
+banks of the piplus threads: one product instruction per tile, no partial C
+carried between K blocks.
 
 The graph reads the logical weight back with ordinary operations: a slice
 drops the padding, mxint8_to_fp32 decodes along axis 2 ([blocks, N, kc]), a
@@ -27,11 +30,24 @@ from frontend.quant.graph import operation, replace_uses
 
 
 def block(k):
-    """The K block: the largest multiple of 32 dividing K up to 128."""
-    kc = 128
+    """The K block: the largest multiple of 32 dividing K up to 1024."""
+    kc = 1024
     while k % kc:
         kc -= 32
     return kc
+
+
+def stored(packed):
+    """A packed weight [N, K + K / 32] in the layout: [blocks][N][S]."""
+    n = packed.shape[0]
+    k = packed.shape[1] * 32 // 33
+    kc = block(k)
+    blocks = k // kc
+    codes = packed[:, :k].reshape(n, blocks, kc)
+    exponents = packed[:, k:].reshape(n, blocks, kc // 32)
+    row = kc + 16 * ((kc + 511) // 512)
+    padding = torch.zeros(n, blocks, row - kc - kc // 32, dtype=packed.dtype)
+    return torch.cat([codes, exponents, padding], 2).permute(1, 0, 2).contiguous()
 
 
 def lay_out(graph, params):
@@ -51,13 +67,8 @@ def lay_out(graph, params):
         k = packed.shape[1] * 32 // 33
         kc = block(k)
         blocks = k // kc
-        codes = packed[:, :k].reshape(n, blocks, kc)
-        exponents = packed[:, k:].reshape(n, blocks, kc // 32)
-        padding = torch.zeros(n, blocks, 16 - kc // 32, dtype=packed.dtype)
-        values[weight.name] = (
-            torch.cat([codes, exponents, padding], 2).permute(1, 0, 2).contiguous()
-        )
-        weight.tensor_meta["shape"] = [blocks, n, kc + 16]
+        values[weight.name] = stored(packed)
+        weight.tensor_meta["shape"] = list(values[weight.name].shape)
         i8, f32 = TensorDType.Int8, TensorDType.Float32
         # The slice reads the parameter; the decode reads the slice.
         weight.children.remove(decode.name)

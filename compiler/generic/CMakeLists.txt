@@ -31,6 +31,8 @@ add_public_tablegen_target(FrontendIncGen)
 
 add_library(generic-compiler MODULE "${CMAKE_CURRENT_SOURCE_DIR}/Plugin.cpp"
   "${MIDEND}/Dialect/Frontend/IR/FrontendDialect.cpp" "${MIDEND}/Conversion/LowerFrontendFakeOp.cpp"
+  "${MIDEND}/Conversion/FixedPoint.cpp" "${MIDEND}/Conversion/Nonlinear.cpp"
+  "${MIDEND}/Conversion/DataMovement.cpp" "${MIDEND}/Conversion/Mxint8Activation.cpp"
 )
 add_dependencies(generic-compiler FrontendIncGen)
 # RTTI and exceptions as the LLVM build: off.

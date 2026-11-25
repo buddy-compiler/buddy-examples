@@ -15,7 +15,7 @@ rhal.module @lenet attributes {
     id = 3 : i32, storage = "external",
     type = tensor<?xi8>, uri = "file:arg2.data"
   }
-  rhal.codeobj @model_kernels {
+  rhal.codeobj @model_operators {
     id = 1 : i32, kind = "host_shared_lib", backend = "cpu",
     uri = "file:liblenet-buckyball-toy-model.so", entry_symbol = "_mlir_ciface_forward"
   }

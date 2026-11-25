@@ -338,33 +338,40 @@ LogicalResult contraction(OpBuilder &b, linalg::GenericOp op) {
   int64_t staticR =
       staticProduct(pick(reduction, ArrayRef<int64_t>(staticSizes)));
   Tiles tiles = choose(staticM, staticN, staticBatch);
-  int64_t bm = tiles.ty * tiles.tm, bn = tiles.tx * tiles.tn, bk = tiles.bk;
+  int64_t bm = tiles.ty * tiles.tm, bn = tiles.tx * tiles.tn;
   if (!ShapedType::isDynamic(staticBatch) && staticBatch > 65535)
     return op->emitOpError("has more batches than a grid holds");
   if (!ShapedType::isDynamic(staticM) && llvm::divideCeil(staticM, bm) > 65535)
     return op->emitOpError("has more row tiles than a grid holds");
 
   // Workgroup memory: BK rows of BM (BN) values, padded by one against bank
-  // conflicts.
+  // conflicts. BK halves until the rows fit (wide staged values); the chunks
+  // keep the reduction order.
   auto workgroup =
       gpu::AddressSpaceAttr::get(context, gpu::AddressSpace::Workgroup);
-  SmallVector<Type> buffers;
-  int64_t bytes = 0;
-  auto buffer = [&](Value value, int64_t columns) {
+  int64_t row = 0;
+  auto rowBytes = [&](Value value, int64_t columns) {
     Type type = value.getType();
-    buffers.push_back(MemRefType::get({bk, columns}, type,
-                                      MemRefLayoutAttrInterface{}, workgroup));
-    bytes +=
-        bk * columns *
-        (type.isIndex() ? 8
-                        : llvm::divideCeil(type.getIntOrFloatBitWidth(), 8));
+    row += columns * (type.isIndex()
+                          ? 8
+                          : llvm::divideCeil(type.getIntOrFloatBitWidth(), 8));
   };
   for (Value value : stagedA)
-    buffer(value, bm + 1);
+    rowBytes(value, bm + 1);
   for (Value value : stagedB)
-    buffer(value, bn + 1);
-  if (bytes > workgroupBytes)
+    rowBytes(value, bn + 1);
+  if (row > workgroupBytes)
     return op->emitOpError("stages more than the workgroup memory of a block");
+  int64_t bk = tiles.bk;
+  while (bk * row > workgroupBytes)
+    bk /= 2;
+  SmallVector<Type> buffers;
+  for (Value value : stagedA)
+    buffers.push_back(MemRefType::get({bk, bm + 1}, value.getType(),
+                                      MemRefLayoutAttrInterface{}, workgroup));
+  for (Value value : stagedB)
+    buffers.push_back(MemRefType::get({bk, bn + 1}, value.getType(),
+                                      MemRefLayoutAttrInterface{}, workgroup));
 
   Value one = index(b, loc, 1);
   auto launch = gpu::LaunchOp::create(

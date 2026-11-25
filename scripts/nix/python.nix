@@ -95,11 +95,6 @@ in
     pytest-cov
     colorlog
 
-    # firemarshal
-    gitpython
-    humanfriendly
-    doit
-
     # firesim
     argcomplete
     cryptography

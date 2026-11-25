@@ -1,6 +1,6 @@
 #include "runtime.h"
 
-/* Execution for a core without hardware threads: the job runs on the core
+/* Execution for a hart without hardware threads: the job runs on the hart
  * itself. */
 static int execute(void *context, int (*entry)(void *, void *),
                    void *argument) {
@@ -8,5 +8,5 @@ static int execute(void *context, int (*entry)(void *, void *),
 }
 
 static const struct runtime_binding binding
-    __attribute__((section("runtime_bindings"), used)) = {CORE_SIGNATURE,
+    __attribute__((section("runtime_bindings"), used)) = {HART_SIGNATURE,
                                                           execute};

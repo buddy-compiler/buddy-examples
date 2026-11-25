@@ -8,7 +8,7 @@ find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs HINTS "${TOOLCHAI
 # Shared MLIR runtime utilities and tracing for x86 models
 # ===----------------------------------------------------------------------===
 add_library(x86-runtime OBJECT EXCLUDE_FROM_ALL "${LIB_DIR}/CRunnerUtils.cpp" "${LIB_DIR}/native_trace.cpp"
-  "${RUNTIME_DIR}/trace/trace.cpp"
+  "${RUNTIME_DIR}/trace/trace.cpp" "${RUNTIME_DIR}/trace/cycle_file.cpp"
 )
 target_include_directories(x86-runtime
   PRIVATE "${RUNTIME_DIR}/trace"

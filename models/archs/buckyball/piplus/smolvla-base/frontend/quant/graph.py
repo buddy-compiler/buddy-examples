@@ -192,7 +192,7 @@ def residual(graph, values, op, index, weight, value):
 
 
 def patches(graph, convolution):
-    """The patch convolution, whose stride is its kernel, as the product of
+    """The patch convolution, whose stride is its operator, as the product of
     the [P, C * kh * kw] patches of the image with the [F, C * kh * kw]
     weight plus the bias, laid out as the convolution output [1, F, H, W]."""
     image, weight, bias = (graph.node_table[name] for name in convolution.args[:3])

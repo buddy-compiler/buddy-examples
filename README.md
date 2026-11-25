@@ -71,43 +71,21 @@ thirdparty/buddy-mlir/build/bin/buddy-cli --model models/archs/x86/lenet/origin/
 
 ### step 3. 使用buddy-mlir lower到特定的DSA后端（buckyball/Gemmini）
 
-模拟器入口分别使用带 Gemmini 扩展的 Spike 和 Bebop BEMU。在 Nix 环境中安装：
+模拟器入口使用 Bebop BEMU。在 Nix 环境中安装：
 
 ```bash
-./sims/spike/install.sh
 ./sims/bemu/install.sh
-```
-
-执行已经编译的 ELF；模型的 RAX 包需要由 RISC-V Linux 中的 buddy-cli 加载，不能直接作为裸机 ELF：
-
-```bash
-output/spike/bin/spike --extlib=output/spike/lib/libgemmini.so --extension=gemmini /absolute/path/to/gemmini-baremetal.elf
 ```
 
 BEMU 通过 bbdev 运行（在 Buckyball 仓库根目录）：
 
 ```bash
-nix develop -c bbdev bebop-bemu --sim "--design toy --device ToyVerilatorConfig --binary <workload>"
+nix develop -c bbdev bebop-bemu --sim "--device toy --device ToyDefaultConfig --binary <workload>"
 ```
 
-Spike 安装使用 Chipyard 固定版本的模拟器、Gemmini 扩展和 proxy kernel，产物位于 `output/spike`。
+Gemmini 的功能参考（Spike + libgemmini + pk）由 Gemmini core 自己安装，见 Buckyball 仓库的 `examples/prefab/cores/gemmini/README.md`。
 
 我们先使用buckyball在bemu模拟器上演示pebble设计的
-
-
-
-FireSim 的依赖安装和 FPGA RTL 生成不需要连接开发板：
-
-```bash
-./sims/firesim/install.sh
-make -C platforms/thirdparty/chipyard/sims/firesim/sim verilog \
-  FIRESIM_ENV_SOURCED=1 TARGET_PROJECT=firesim \
-  SBT="$JAVA_HOME/bin/java -Xmx8G -jar platforms/thirdparty/chipyard/scripts/sbt-launch.jar" \
-  TARGET_PROJECT_MAKEFRAG=$PWD/sims/firesim/makefrag/firesim PLATFORM_CONFIG_PACKAGE=firesim.configs \
-  TARGET_CONFIG=FireSimGemminiVCU118Config PLATFORM=xilinx_vcu118 PLATFORM_CONFIG=BaseXilinxVCU118Config
-```
-
-上板时另行提供目标机器、bitstream 和运行配置。
 
 
 ## 如何软硬件协同优化一个模型？

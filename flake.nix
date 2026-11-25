@@ -92,7 +92,7 @@
           hardeningDisable = [ "libcxxhardeningfast" ];
           shellHook = ''
             codesign_root=$(git rev-parse --show-toplevel)
-            export PATH="$codesign_root/thirdparty/buddy-mlir/build/bin:$codesign_root/platforms/thirdparty/chipyard/sims/firesim/deploy:$codesign_root/platforms/thirdparty/chipyard/software/firemarshal:$PATH"
+            export PATH="$codesign_root/thirdparty/buddy-mlir/build/bin:$PATH"
             export PYTHONPATH="$codesign_root:$codesign_root/thirdparty/buddy-mlir/llvm/build/tools/mlir/python_packages/mlir_core:$codesign_root/thirdparty/buddy-mlir/build/python_packages''${PYTHONPATH:+:$PYTHONPATH}"
             export RISCV="${environment}"
             export CC="${pkgs.clang}/bin/clang"

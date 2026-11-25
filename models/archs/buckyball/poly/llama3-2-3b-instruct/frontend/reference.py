@@ -6,14 +6,14 @@ the partitioned graphs, so that it checks them.
 Every Linear reads its weight and its input through MXINT8 along K. The
 Linears after the attention and in the FFN (o_proj, down_proj) read a value
 the ranks hold in pieces: each rank multiplies its pieces of K, the reduce
-core adds the partial sums in rank order. An attention product reads both
+hart adds the partial sums in rank order. An attention product reads both
 operands through MXINT8 along K, the key of the score product as two MXINT8
 terms.
 
 The operations whose rounding depends on how they are computed follow the
-compiled graphs on the core CPUs: a mean sums its values in order and
+compiled graphs on the hart CPUs: a mean sums its values in order and
 multiplies by the FP32 reciprocal of their count, cos and sin are those of
-the C library (the newlib routines of the cores are the glibc ones)."""
+the C library (the newlib routines of the harts are the glibc ones)."""
 
 import ctypes
 
@@ -33,7 +33,7 @@ def mxint8(values, axis):
 def two(values, axis):
     """Values as the two MXINT8 terms the graph reads the key with."""
     head = mxint8(values, axis)
-    return head + mxint8(values - head, axis)
+    return head, mxint8(values - head, axis)
 
 
 libm = ctypes.CDLL("libm.so.6")
@@ -132,7 +132,7 @@ class Program(TorchFunctionMode):
             if bias is not None:
                 raise ValueError("a Linear with a bias")
             row = any(weight is w for w in self.rows)
-            x, weight = mxint8(x, -1), mxint8(weight, 1)
+            x = mxint8(x, -1)
             if not row:
                 return linear(x, weight)
             total = None
@@ -141,23 +141,24 @@ class Program(TorchFunctionMode):
                 total = partial if total is None else total + partial
             return total
         if name == "matmul" and args[0].shape[-1] % 32 == 0:
-            key = mxint8(args[1], -2) if self.probabilities else two(args[1], -2)
+            keys = (mxint8(args[1], -2),) if self.probabilities else two(args[1], -2)
             query = mxint8(args[0], -1)
-            # MXINT8 accumulates 32-code blocks; FP32 accumulates in K order.
-            block = 32 if self.probabilities else 1
             self.probabilities = False
-            result = function(query[..., :block], key[..., :block, :])
-            for start in range(block, query.shape[-1], block):
-                result = result + function(
-                    query[..., start : start + block],
-                    key[..., start : start + block, :],
-                )
-            return result
+            partials = []
+            for key in keys:
+                result = function(query[..., :32], key[..., :32, :])
+                for start in range(32, query.shape[-1], 32):
+                    result = result + function(
+                        query[..., start : start + 32],
+                        key[..., start : start + 32, :],
+                    )
+                partials.append(result)
+            return partials[0] if len(partials) == 1 else partials[0] + partials[1]
         return function(*args, **kwargs)
 
 
 def run(decoder, tokens, start, keys, values, ranks):
-    """The outputs of the device program: the logits and the updated cache."""
+    """Run with the recipe's prequantized Linear weights; return logits and KV."""
     rows = []
     for layer in decoder.model.model.layers:
         rows += [layer.self_attn.o_proj.weight, layer.mlp.down_proj.weight]

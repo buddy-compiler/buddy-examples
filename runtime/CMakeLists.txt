@@ -1,23 +1,21 @@
 # ===----------------------------------------------------------------------===
-# The runtime: schedules jobs onto the cores of a device. Linked by the device.
+# The runtime: schedules jobs onto the harts of a device. Linked by the device.
 #
 # Statically linked programs use local-exec thread-local variables: baremetal
 # programs have no __tls_get_addr. Shared objects Linux loads at run time, such
 # as models, link the `-shared` variants, built with the default TLS model.
 #
 # Inputs, set by the device stack:
-#   bindings          target the device defines: how each of its cores runs jobs
+#   bindings          target the device defines: how each of its harts runs jobs
 #                     (`runtime_bindings`) and each hardware thread is loaded
-#                     (`engine_bindings`)
-#   RUNTIME_DEFS      compile definitions of the target that sizes the DMA
-#                     helpers; a device without banks has none and no DMA helpers
+#                     (`kernel_bindings`)
 # ===----------------------------------------------------------------------===
 set(RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(MLIR_EXECUTION_ENGINE "${RUNTIME_DIR}/../thirdparty/buddy-mlir/llvm/mlir/include/mlir/ExecutionEngine")
 
 # ===----------------------------------------------------------------------===
-# Job scheduling over cores on baremetal harts, with the baremetal engine. The
-# Linux runtimes below compile the same scheduler with the Linux engine.
+# Job scheduling over harts on baremetal harts, with the baremetal kernel. The
+# Linux runtimes below compile the same scheduler with the Linux kernel.
 # ===----------------------------------------------------------------------===
 add_library(runtime STATIC scheduler/runtime.c)
 target_include_directories(runtime
@@ -25,29 +23,19 @@ target_include_directories(runtime
 )
 target_compile_features(runtime PUBLIC c_std_11)
 target_compile_options(runtime PRIVATE -O2 -ffreestanding -fno-builtin -msmall-data-limit=0)
-# The bindings call into the engine, so it follows them on the link line.
+# The bindings call into the kernel, so it follows them on the link line.
 target_link_libraries(runtime
   INTERFACE bindings
-            engine
+            kernel
 )
 
 # ===----------------------------------------------------------------------===
-# One worker per core on baremetal harts.
+# One worker per hart on baremetal harts.
 # ===----------------------------------------------------------------------===
-add_library(runtime-baremetal STATIC scheduler/baremetal.c services/dma_memory.c)
-if(RUNTIME_DEFS)
-  find_program(ELF_CC riscv64-unknown-elf-gcc REQUIRED)
-  list(TRANSFORM RUNTIME_DEFS PREPEND "-D" OUTPUT_VARIABLE DMA_BAREMETAL_DEFINES)
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dma-baremetal.o
-    COMMAND ${ELF_CC} -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -ftls-model=local-exec -ffreestanding -fno-builtin -msmall-data-limit=0 ${DMA_BAREMETAL_DEFINES} -I${RUNTIME_DIR}/services -c ${RUNTIME_DIR}/services/dma.c -o ${CMAKE_CURRENT_BINARY_DIR}/dma-baremetal.o
-    DEPENDS services/dma.c
-            services/dma.h
-            services/dma_memory.h
-    VERBATIM
-  )
-  target_sources(runtime-baremetal PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/dma-baremetal.o)
-endif()
+add_library(runtime-baremetal STATIC scheduler/baremetal.c)
+target_compile_definitions(runtime-baremetal
+  PRIVATE RUNTIME_CLINT_BASE=${DESIGN_DEVICE_CLINT_BASE}
+)
 target_link_libraries(runtime-baremetal
   PUBLIC runtime
 )
@@ -55,7 +43,7 @@ target_compile_options(runtime-baremetal PRIVATE -O2 -ffreestanding -fno-builtin
 
 # ===----------------------------------------------------------------------===
 # The device program runtime on baremetal harts: the program on the control
-# hart submits the jobs of every core of design.pb. Built for a device that
+# hart submits the jobs of every hart of design.pb. Built for a device that
 # links it.
 # ===----------------------------------------------------------------------===
 list(TRANSFORM DESIGN_DEFS PREPEND "-D" OUTPUT_VARIABLE PROGRAM_DEFINES)
@@ -77,23 +65,20 @@ target_link_libraries(runtime-program
 )
 
 # ===----------------------------------------------------------------------===
-# One pinned pthread worker per core on Linux, plus the services compiled
-# programs call: DMA, MLIR runner utilities and traces. A core with threads
-# reaches them through the OS: its jobs link the Linux engine, whose
-# management instructions the engine driver issues.
+# One pinned pthread worker per hart on Linux, plus the services compiled
+# programs call: MLIR runner utilities and traces. A hart with threads
+# reaches them through the OS: its jobs link the Linux kernel, whose
+# management instructions the kernel driver issues.
 # ===----------------------------------------------------------------------===
 set(
   RUNTIME_LINUX_SOURCES
   scheduler/runtime.c
   scheduler/linux.c
   services/mlir.cpp
-  services/dma_memory.c
   trace/trace.cpp
+  trace/cycle_device.cpp
   trace/location.cpp
 )
-if(RUNTIME_DEFS)
-  list(APPEND RUNTIME_LINUX_SOURCES services/dma.c)
-endif()
 
 add_library(runtime-linux STATIC ${RUNTIME_LINUX_SOURCES})
 target_include_directories(runtime-linux
@@ -103,16 +88,12 @@ target_include_directories(runtime-linux
          "${RUNTIME_DIR}/trace"
          "${MLIR_EXECUTION_ENGINE}"
 )
-target_compile_definitions(runtime-linux
-  PRIVATE ${RUNTIME_DEFS}
-          BUCKYBALL_DEVICE_TRACE
-)
 target_compile_options(runtime-linux PRIVATE -O2 -ftls-model=local-exec)
 target_compile_features(runtime-linux PRIVATE c_std_11 cxx_std_17)
 # Traces name the hardware thread of the current instruction stream.
 target_link_libraries(runtime-linux
   PUBLIC bindings
-         engine-linux
+         kernel-linux
          pthread
 )
 
@@ -124,15 +105,11 @@ target_include_directories(runtime-linux-shared
          "${RUNTIME_DIR}/trace"
          "${MLIR_EXECUTION_ENGINE}"
 )
-target_compile_definitions(runtime-linux-shared
-  PRIVATE ${RUNTIME_DEFS}
-          BUCKYBALL_DEVICE_TRACE
-)
 target_compile_options(runtime-linux-shared PRIVATE -O2)
 target_compile_features(runtime-linux-shared PRIVATE c_std_11 cxx_std_17)
 target_link_libraries(runtime-linux-shared
   PUBLIC bindings
-         engine-shared
+         kernel-shared
          pthread
 )
 

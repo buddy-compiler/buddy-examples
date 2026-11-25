@@ -77,6 +77,80 @@ def BankMvoutOp : Acc_Op<"bank_mvout"> {
   let assemblyFormat = "$output `,` $bank prop-dict attr-dict `:` type($output)";
 }
 
+def BankMvinGroupOp : Acc_Op<"bank_mvin_group"> {
+  let summary = "Load `depth` rows from memory into group `group` of a bank";
+  let description = [{
+    Like bank_mvin, into the group `group` of a bank of several groups.
+  }];
+  let arguments = (ins AnyMemRef:$input, I64:$bank, I64Attr:$group,
+                       I64Attr:$depth, I64Attr:$stride);
+  let results = (outs I64:$bankOut);
+  let assemblyFormat = "$input `,` $bank prop-dict attr-dict `:` type($input)";
+}
+
+def BankMvinStridedOp : Acc_Op<"bank_mvin_strided"> {
+  let summary = "Strided byte rows between DDR and one bank group";
+  let arguments = (ins AnyMemRef:$memory, I64:$bank,
+                       Index:$first, Index:$depth, Index:$memory_stride,
+                       I64Attr:$group, I64Attr:$bank_stride, Index:$bytes, Index:$block_log2);
+  let results = (outs I64:$bankOut);
+  let assemblyFormat = "$memory `,` $bank `at` $first `rows` $depth "
+                       "`memory_stride` $memory_stride `bytes` $bytes `block_log2` $block_log2 prop-dict attr-dict `:` type($memory)";
+}
+
+def MvinStridedOp : Acc_Op<"mvin_strided"> {
+  let summary = "Strided byte rows between DDR and one bank group";
+  let arguments = (ins AnyMemRef:$memory, I64Attr:$bank,
+                       Index:$first, Index:$depth, Index:$memory_stride,
+                       I64Attr:$group, I64Attr:$bank_stride, Index:$bytes, Index:$block_log2);
+  let assemblyFormat = "$memory `,` $bank `at` $first `rows` $depth "
+                       "`memory_stride` $memory_stride `bytes` $bytes `block_log2` $block_log2 prop-dict attr-dict `:` type($memory)";
+}
+
+def BankMvoutStridedOp : Acc_Op<"bank_mvout_strided"> {
+  let summary = "Strided byte rows between DDR and one bank group";
+  let arguments = (ins AnyMemRef:$memory, I64:$bank,
+                       Index:$first, Index:$depth, Index:$memory_stride,
+                       I64Attr:$group, I64Attr:$bank_stride, Index:$bytes, Index:$block_log2);
+  let results = (outs I64:$bankOut);
+  let assemblyFormat = "$memory `,` $bank `at` $first `rows` $depth "
+                       "`memory_stride` $memory_stride `bytes` $bytes `block_log2` $block_log2 prop-dict attr-dict `:` type($memory)";
+}
+
+def MvoutStridedOp : Acc_Op<"mvout_strided"> {
+  let summary = "Strided byte rows between DDR and one bank group";
+  let arguments = (ins AnyMemRef:$memory, I64Attr:$bank,
+                       Index:$first, Index:$depth, Index:$memory_stride,
+                       I64Attr:$group, I64Attr:$bank_stride, Index:$bytes, Index:$block_log2);
+  let assemblyFormat = "$memory `,` $bank `at` $first `rows` $depth "
+                       "`memory_stride` $memory_stride `bytes` $bytes `block_log2` $block_log2 prop-dict attr-dict `:` type($memory)";
+}
+
+def BankClearOp : Acc_Op<"bank_clear"> {
+  let summary = "Zero the contents of an allocated bank";
+  let arguments = (ins I64:$bank, I64Attr:$row, I64Attr:$col);
+  let results = (outs I64:$bankOut);
+  let assemblyFormat = "$bank prop-dict attr-dict";
+}
+
+def ClearOp : Acc_Op<"clear"> {
+  let summary = "MSET clear on an allocated bank";
+  let arguments = (ins I64Attr:$bank, I64Attr:$row, I64Attr:$col);
+  let assemblyFormat = "prop-dict attr-dict";
+}
+
+def BankRunOperatorOp : Acc_Op<"bank_run_operator"> {
+  let summary = "Run the operator program in bank `program` on the GP domain";
+  let description = [{
+    The operator reads the groups of `input` and writes the groups of `output`;
+    the first group of `output` holds its launch descriptor (entry, code
+    bytes, stack, eight arguments) when it starts.
+  }];
+  let arguments = (ins I64:$input, I64:$output, I64Attr:$program);
+  let results = (outs I64:$outputOut);
+  let assemblyFormat = "$input `,` $output prop-dict attr-dict";
+}
+
 def BankTransferOp : Acc_Op<"bank_transfer"> {
   let summary = "Append the groups of a bank to another bank";
   let description = [{
@@ -117,6 +191,31 @@ def MsetTransferOp : Acc_Op<"mset_transfer"> {
   let summary = "Append the groups of bank `source` to bank `target`";
   let arguments = (ins I64Attr:$source, I64Attr:$target);
   let assemblyFormat = "prop-dict attr-dict";
+}
+
+def MvinGroupOp : Acc_Op<"mvin_group"> {
+  let summary = "Load `depth` rows from memory into group `group` of a bank";
+  let arguments = (ins AnyMemRef:$input, I64Attr:$bank, I64Attr:$group,
+                       I64Attr:$depth, I64Attr:$stride);
+  let assemblyFormat = "$input prop-dict attr-dict `:` type($input)";
+}
+
+def RunOperatorOp : Acc_Op<"run_operator"> {
+  let summary = "Run the operator program in bank `program` on the GP domain";
+  let arguments = (ins I64Attr:$input, I64Attr:$output, I64Attr:$program);
+  let assemblyFormat = "prop-dict attr-dict";
+}
+
+//===----------------------------------------------------------------------===//
+// Operator programs of the GP domain: an image (the 24-byte header, the code,
+// the constants) moved into the program bank `program`, which is released by
+// an mset. The program bank is outside the banks of assign-physical-banks.
+//===----------------------------------------------------------------------===//
+
+def MvinOperatorOp : Acc_Op<"mvin_operator"> {
+  let summary = "Load `bytes` bytes of an operator image into bank `program`";
+  let arguments = (ins AnyMemRef:$image, I64:$bytes, I64Attr:$program);
+  let assemblyFormat = "$image `,` $bytes prop-dict attr-dict `:` type($image)";
 }
 
 #endif // ACC_OPS

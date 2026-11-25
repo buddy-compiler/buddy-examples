@@ -1,21 +1,27 @@
 # ===----------------------------------------------------------------------===
-# The Buckyball compiler of one compiler target, as the object library
-# `buckyball-compiler`: the device, core, acc and frontend dialects, the bank
+# The Buckyball compiler of one simulation, the shared library
+# libbuckyball-midend.so: the device, hart, acc and frontend dialects, the bank
 # interfaces of the acc dialect, the framework passes (lower-device,
-# lower-core, the bank optimizations, lower-acc, lower-frontend-fake-op) and
-# the dialect of every Ball. The stack that owns the target adds the design's
-# passes, convert-linalg-to-device, -core or -acc, to its plugin.
+# lower-hart, the bank optimizations, lower-acc, lower-frontend-fake-op), the
+# dialect of every Ball of the device and the design.pb schema. It is the
+# buddy-opt plugin entry of every level: the plugins of the devices, harts and
+# threads (stack/compiler/plugin) hold only their design's passes and link it,
+# so one buddy-opt loads the plugins of several levels together.
 #
-# Inputs, set by the including stack from its generated design.cmake:
+# Built by the stack top of each simulation entry, configured with
+# DESIGN_CMAKE (generated from design.pb):
 #   DESIGN_MLIR             MLIR CMake package of the LLVM that buddy-mlir uses
 #   DESIGN_REPO             the repository: the design.pb schema and the Balls' messages
-#   BUCKYBALL_BALLS         stack/src directories of the target's Balls
-#   BUCKYBALL_SOURCES       compiler sources of the including stack itself
+#   DESIGN_BALL_STACKS      stack/src directories of the Balls of the device
 #
-# The plugin reads the banks, Balls and ISA of its target from design.pb when
-# it runs (--buckyball-design-pb, --buckyball-target), so it is built with the
-# design.pb schema and the parameter messages of its Balls.
+# The passes read the banks, Balls and ISA of their target from design.pb when
+# they run (--design-pb, --design-target).
 # ===----------------------------------------------------------------------===
+cmake_minimum_required(VERSION 3.20)
+project(buckyball-midend LANGUAGES C CXX)
+include("${DESIGN_CMAKE}")
+set(BUCKYBALL_BALLS ${DESIGN_BALL_STACKS})
+
 # Built with the flags of the LLVM that buddy-opt links, so the plugin matches it.
 find_package(MLIR REQUIRED CONFIG PATHS "${DESIGN_MLIR}" NO_DEFAULT_PATH)
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}" "${LLVM_CMAKE_DIR}")
@@ -43,12 +49,12 @@ mlir_tablegen(DeviceDialect.h.inc -gen-dialect-decls -dialect=device)
 mlir_tablegen(DeviceDialect.cpp.inc -gen-dialect-defs -dialect=device)
 add_public_tablegen_target(DeviceIncGen)
 
-set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Core/Core.td")
-mlir_tablegen(Core.h.inc -gen-op-decls)
-mlir_tablegen(Core.cpp.inc -gen-op-defs)
-mlir_tablegen(CoreDialect.h.inc -gen-dialect-decls -dialect=core)
-mlir_tablegen(CoreDialect.cpp.inc -gen-dialect-defs -dialect=core)
-add_public_tablegen_target(CoreIncGen)
+set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Hart/Hart.td")
+mlir_tablegen(Hart.h.inc -gen-op-decls)
+mlir_tablegen(Hart.cpp.inc -gen-op-defs)
+mlir_tablegen(HartDialect.h.inc -gen-dialect-decls -dialect=hart)
+mlir_tablegen(HartDialect.cpp.inc -gen-dialect-defs -dialect=hart)
+add_public_tablegen_target(HartIncGen)
 
 set(LLVM_TARGET_DEFINITIONS "${SOURCE}/Dialect/Frontend/Frontend.td")
 mlir_tablegen(Frontend.h.inc -gen-op-decls)
@@ -111,21 +117,23 @@ foreach(BALL IN LISTS BUCKYBALL_BALLS)
   list(APPEND PROTO_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${BALL_NAME}_params.pb.cc")
 endforeach()
 
-add_library(buckyball-compiler OBJECT ${FRAMEWORK_SOURCES} ${BALL_SOURCES} ${BUCKYBALL_SOURCES} ${PROTO_SOURCES})
+add_library(buckyball-midend SHARED ${FRAMEWORK_SOURCES} ${BALL_SOURCES} ${PROTO_SOURCES})
 add_dependencies(
-  buckyball-compiler
+  buckyball-midend
   AccIncGen
   DeviceIncGen
-  CoreIncGen
+  HartIncGen
   FrontendIncGen
   BankInterfacesIncGen
   ${BALL_INC_GENS}
 )
-set_target_properties(buckyball-compiler
-  PROPERTIES POSITION_INDEPENDENT_CODE ON
+set_target_properties(buckyball-midend
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 # RTTI and exceptions as the LLVM build: off.
-llvm_update_compile_flags(buckyball-compiler)
-target_link_libraries(buckyball-compiler
+llvm_update_compile_flags(buckyball-midend)
+# The MLIR symbols come from the buddy-opt that loads the plugins.
+string(REPLACE "-Wl,-z,defs" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
+target_link_libraries(buckyball-midend
   PUBLIC PkgConfig::PROTOBUF
 )

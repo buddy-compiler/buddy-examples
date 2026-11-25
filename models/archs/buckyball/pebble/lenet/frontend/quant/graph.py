@@ -5,7 +5,10 @@ from buddy.compiler.graph.operation import (
     Conv2dOp,
     MatmulOp,
     MulOp,
+    PermuteOp,
     PlaceholderOp,
+    SliceOp,
+    TensorConstantOp,
     ViewOp,
 )
 from buddy.compiler.graph.transform.quantization.quantize import sort_graph
@@ -19,12 +22,18 @@ from compiler.frontend.quant import (
 )
 
 
-def parameter(graph, values, name, value):
-    node = PlaceholderOp()
+def parameter(graph, values, name, value, constant):
+    node = TensorConstantOp() if constant else PlaceholderOp()
     node.name = name
     node.tensor_meta = {"shape": list(value.shape), "dtype": TensorDType.Float32}
-    graph.add_node(node, NodeType.FakeNode)
-    values[name] = value
+    if constant:
+        node.add_argument(
+            value.item() if value.numel() == 1 else value.detach().numpy()
+        )
+        graph.add_node(node)
+    else:
+        graph.add_node(node, NodeType.FakeNode)
+        values[name] = value
     return node
 
 
@@ -48,6 +57,51 @@ def replace_argument(graph, user, index, node):
     node.add_children(user.name)
 
 
+def conv_layout(graph, values, weight):
+    """The INT8 [F, C, H, W] convolution weight stored offline as the B
+    operand of the pebble matmul, which the compiler moves in place: S =
+    ceil(F / 16) slices of sixteen output channels, C zero-padded to B blocks
+    of sixteen and split in chunks of c blocks, c the most, at most eight,
+    that divide B (convChunk of the compiler); [S, B / c, H, W, 16 * c, 16]
+    stored as [S, rest], line (y, x, i) of a chunk the sixteen output
+    channels of input channel i at operator position (y, x). Returns the node
+    of the [F, C, H, W] weight the graph reads: the stored parameter viewed
+    back, a transpose and zero-offset slices."""
+    f, c, h, w = weight.tensor_meta["shape"]
+    slices, blocks = (f + 15) // 16, (c + 15) // 16
+    chunk = max(d for d in range(1, 9) if blocks % d == 0)
+    chunks = blocks // chunk
+    value = torch.nn.functional.pad(
+        values[weight.name], (0, 0, 0, 0, 0, blocks * 16 - c, 0, slices * 16 - f)
+    )
+    values[weight.name] = (
+        value.reshape(slices, 16, chunks, chunk * 16, h, w)
+        .permute(0, 2, 4, 5, 3, 1)
+        .contiguous()
+        .reshape(slices, -1)
+    )
+    weight.tensor_meta["shape"] = list(values[weight.name].shape)
+    int8 = TensorDType.Int8
+    name = weight.name
+    shape = [slices, chunks, h, w, chunk * 16, 16]
+    node = operation(graph, ViewOp, name + "_chunks", [weight], shape, int8)
+    node.add_argument(shape)
+    shape = [slices, 16, chunks, chunk * 16, h, w]
+    node = operation(graph, PermuteOp, name + "_lines", [node], shape, int8)
+    node.add_argument([0, 5, 1, 4, 2, 3])
+    shape = [slices * 16, blocks * 16, h, w]
+    node = operation(graph, ViewOp, name + "_padded", [node], shape, int8)
+    node.add_argument(shape)
+    for dim, size, full in ((0, f, slices * 16), (1, c, blocks * 16)):
+        if size == full:
+            continue
+        shape = [f, blocks * 16, h, w] if dim == 0 else [f, c, h, w]
+        node = operation(graph, SliceOp, f"{name}_slice{dim}", [node], shape, int8)
+        for argument in (dim, 0, size):
+            node.add_argument(argument)
+    return node
+
+
 def quantize(graph, params, parameter_names, maxima):
     """Every convolution and Linear reads INT8 values: its weight with one
     scale per output channel, its input with one calibrated scale."""
@@ -68,13 +122,46 @@ def quantize(graph, params, parameter_names, maxima):
         step = torch.where(maximum == 0, 1.0, maximum / 127)
         values[weight.name] = quantize_values(value, 1 / step)
         weight.tensor_meta["dtype"] = TensorDType.Int8
-        weight_step = parameter(graph, values, weight.name + "_step", step)
+        weight_step = parameter(
+            graph, values, weight.name + "_step", step, isinstance(op, MatmulOp)
+        )
+        weight_shape = weight.tensor_meta["shape"]
+        weight_codes = weight
+        if isinstance(op, Conv2dOp) and op.args[-1] == 1:
+            weight_codes = conv_layout(graph, values, weight)
+        elif isinstance(op, MatmulOp) and weight_shape[1] > 16:
+            k, n = weight_shape
+            values[weight.name] = (
+                values[weight.name]
+                .reshape(k, n // 16, 16)
+                .permute(1, 0, 2)
+                .contiguous()
+            )
+            weight.tensor_meta["shape"] = [n // 16, k, 16]
+            columns = operation(
+                graph,
+                PermuteOp,
+                weight.name + "_columns",
+                [weight],
+                [k, n // 16, 16],
+                TensorDType.Int8,
+            )
+            columns.add_argument([1, 0, 2])
+            weight_codes = operation(
+                graph,
+                ViewOp,
+                weight.name + "_matrix",
+                [columns],
+                weight_shape,
+                TensorDType.Int8,
+            )
+            weight_codes.add_argument(weight_shape)
         weight_values = operation(
             graph,
             Int8ToFP32DequantOp,
             weight.name + "_dequantized",
-            [weight, weight_step],
-            weight.tensor_meta["shape"],
+            [weight_codes, weight_step],
+            weight_shape,
             TensorDType.Float32,
         )
         replace_argument(graph, op, 1, weight_values)
@@ -83,8 +170,12 @@ def quantize(graph, params, parameter_names, maxima):
         source = graph.node_table[op.args[0]]
         shape = source.tensor_meta["shape"]
         scale = torch.full([1] * len(shape), maxima[module] / 127)
-        multiplier = parameter(graph, values, op.name + "_multiplier", 1 / scale)
-        input_step = parameter(graph, values, op.name + "_step", scale)
+        multiplier = parameter(
+            graph, values, op.name + "_multiplier", 1 / scale, isinstance(op, MatmulOp)
+        )
+        input_step = parameter(
+            graph, values, op.name + "_step", scale, isinstance(op, MatmulOp)
+        )
         codes = operation(
             graph,
             FP32ToInt8QuantOp,

@@ -6,6 +6,7 @@ import torch
 
 from compiler.frontend.quant import quantize, quantize_bias
 from frontend.quant.graph import smooth_classifier
+from models.archs.buckyball.pebble.fixed_reference import FixedGraph
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
@@ -155,40 +156,18 @@ def accuracy(model):
 
 
 fp32 = accuracy(model)
-quantized = alexnet.load()
-smooth_classifier(quantized, classifier_smoothing)
-for name, module in quantized.named_modules():
-    if isinstance(module, torch.nn.Conv2d):
-        scale = torch.tensor(clips[name] / 127)
-        weight = module.weight.detach() * smooth[name].reshape(1, -1, 1, 1)
-        step = weight.abs().amax([1, 2, 3], keepdim=True) / 127
-        module.weight.data = quantize(weight, 1 / step) * step
-        module.register_forward_pre_hook(
-            lambda module, inputs, name=name, scale=scale: quantize(
-                inputs[0] / smooth[name].reshape(1, -1, 1, 1), 1 / scale
-            )
-            * scale
-        )
-    elif isinstance(module, torch.nn.Linear):
-        scale = torch.tensor(maxima[name] / 127)
-        step = module.weight.detach().abs().amax(1, keepdim=True) / 127
-        module.weight.data = quantize(module.weight.detach(), 1 / step) * step
-        module.register_forward_pre_hook(
-            lambda module, inputs, scale=scale: quantize(inputs[0], 1 / scale) * scale
-        )
-    else:
-        continue
-    bias_step = step.reshape(-1) * scale
-    module.bias.data = quantize_bias(module.bias.detach(), bias_step) * bias_step
-int8 = accuracy(quantized)
-print(f"FP32 accuracy {fp32:.2f}%, INT8 accuracy {int8:.2f}% on {len(labels)} images")
-if fp32 - int8 > 0.5:
-    raise RuntimeError(
-        f"INT8 accuracy {int8:.2f}% is more than 0.5 below FP32 {fp32:.2f}%"
-    )
 calibration = {
     name: {"smooth": smooth[name].tolist(), "clip": clips[name]} for name in clips
 }
 calibration.update(maxima)
 calibration["smooth_classifier"] = classifier_smoothing
+quantized = alexnet.load()
+smooth_classifier(quantized, classifier_smoothing)
+quantized = FixedGraph(quantized, calibration)
+int8 = accuracy(quantized.run)
+print(f"FP32 accuracy {fp32:.2f}%, INT8 accuracy {int8:.2f}% on {len(labels)} images")
+if fp32 - int8 > 0.5:
+    raise RuntimeError(
+        f"INT8 accuracy {int8:.2f}% is more than 0.5 below FP32 {fp32:.2f}%"
+    )
 (output / "calibration.json").write_text(json.dumps(calibration, indent=2) + "\n")

@@ -10,7 +10,7 @@ extern "C" void bert_run(bert::Output *output, bert::Parameters *parameters,
   bert::Arguments arguments{output, parameters, bias, weights,
                             ids,    types,      mask, positions};
   const int status = runtime_linux_job(
-      0, DEVICE_CORES_0_SIGNATURE,
+      0, DEVICE_HARTS_0_SIGNATURE,
       [](void *, void *opaque) {
         auto &args = *static_cast<bert::Arguments *>(opaque);
         _mlir_ciface_forward(args.output, args.parameters, args.bias,

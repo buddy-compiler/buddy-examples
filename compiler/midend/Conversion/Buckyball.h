@@ -1,8 +1,8 @@
 //===- Buckyball.h - Buckyball framework passes ---------------------------===//
 //
 // lower-device lowers a placed device program to the job runtime and the
-// device runtime of the design; lower-core lowers a placed graph to the core
-// CPU and the engine jobs of its hardware threads; assign-physical-banks maps
+// device runtime of the design; lower-hart lowers a placed graph to the hart
+// CPU and the kernel jobs of its hardware threads; assign-physical-banks maps
 // the virtual banks to the banks of the target; lower-acc lowers the physical
 // operations to Buckyball instructions, the operations of the Balls through
 // PhysicalBankAssignment; lower-frontend-fake-op computes the frontend
@@ -25,6 +25,7 @@ void registerBuckyballPasses();
 // A Ball adds its dialect to the dialects the compiler plugin registers; it
 // does so when the plugin library is loaded.
 void addBallDialect(void (*insert)(DialectRegistry &registry));
+void registerBallDialects(DialectRegistry &registry);
 
 // Emits one Buckyball instruction, rs1 and rs2 with the immediate funct7.
 void emitInstruction(OpBuilder &builder, Location loc, int32_t funct7,

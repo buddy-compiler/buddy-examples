@@ -1,8 +1,11 @@
 #include "SharedLibrary.h"
 #include "model.h"
 #include "testutils.h"
+#include <algorithm>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
+#include <cmath>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -41,9 +44,25 @@ public:
         std::stoull(manifest.moduleAttrs.at("action_elements")));
     arguments.push_back(actions.data());
     const auto begin = read_time_ns();
+    const uint64_t first = read_counter();
     if (forward(arguments.data()))
       throw std::runtime_error("Device program failed");
+    const uint64_t cycles = read_counter() - first;
     const double elapsed = (read_time_ns() - begin) * 1e-9;
+    printf("Inference cycles: %lu\n", static_cast<unsigned long>(cycles));
+    // The actions against the FP32 program of the graphs in PyTorch
+    // (actions.data), as baremetal.cpp checks them: the bound is the
+    // quantization error buddy-pytorch-calibrate.py accepts (0.06).
+    if (!config.referencePath.empty()) {
+      std::vector<float> expected(actions.size());
+      std::ifstream golden;
+      golden.exceptions(std::ios::failbit | std::ios::badbit);
+      golden.open(config.referencePath, std::ios::binary);
+      golden.read(reinterpret_cast<char *>(expected.data()),
+                  expected.size() * sizeof(float));
+      if (check_output(actions.data(), expected.data(), actions.size(), 0.06f))
+        throw std::runtime_error("Actions differ from the reference");
+    }
     std::cout << "Actions: " << actions.size()
               << "\nInference time: " << elapsed << "s\n";
     if (!config.outputPath.empty()) {

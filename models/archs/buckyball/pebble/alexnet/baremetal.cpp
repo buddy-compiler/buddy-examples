@@ -17,6 +17,11 @@ alignas(64) static const unsigned char pixels[] = {
 #embed "inputs.data"
 };
 static_assert(sizeof(pixels) == 224 * 224 * 3 * sizeof(float));
+// The logits of the fixed-point reference model on that image.
+alignas(64) static const unsigned char reference[] = {
+#embed "reference.data"
+};
+static_assert(sizeof(reference) == 1000 * sizeof(float));
 
 int main() {
   const auto *p = reinterpret_cast<const float *>(parameters);
@@ -32,12 +37,20 @@ int main() {
   _mlir_ciface_forward(&output, &f32, &i32, &i8, &input);
   const uint64_t elapsed = read_counter() - start;
   const float *values = output.data();
-  unsigned best = 0;
-  for (unsigned i = 1; i < 1000; ++i)
+  const auto *expected = reinterpret_cast<const float *>(reference);
+  unsigned best = 0, gold = 0;
+  for (unsigned i = 1; i < 1000; ++i) {
     if (values[i] > values[best])
       best = i;
-  printf("Classification Index: %u\nInference cycles: %lu\n", best,
-         static_cast<unsigned long>(elapsed));
+    if (expected[i] > expected[gold])
+      gold = i;
+  }
+  printf("Classification Index: %u, reference %u\nInference cycles: %lu\n",
+         best, gold, static_cast<unsigned long>(elapsed));
+  // The device computes the reference's integers; only the FP32 dequant of
+  // the logits may round differently.
+  const int failed =
+      check_output(values, expected, 1000, 1e-5f) || best != gold;
   free(output.allocated);
-  return 0;
+  return failed;
 }

@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 
 import torch
+
+torch.set_num_threads(8)
 from torch.nn.utils.fusion import fuse_conv_bn_eval
 
 from compiler.frontend.quant import quantize, quantize_bias
@@ -29,19 +31,19 @@ for block in model.modules():
 
 
 # ===----------------------------------------------------------------------===
-# Record the largest magnitude of every input channel of every convolution
+# Record the largest magnitude of every input channel of every convolution and Linear
 # over 1024 training images.
 # ===----------------------------------------------------------------------===
-convolutions = {
+layers = {
     name: module
     for name, module in model.named_modules()
-    if isinstance(module, torch.nn.Conv2d)
+    if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear))
 }
 channel_maxima = {}
 
 
 def record_channels(name, x):
-    maximum = x.abs().amax([0, 2, 3])
+    maximum = x.abs().amax([0, 2, 3] if x.ndim == 4 else [0])
     channel_maxima[name] = torch.maximum(channel_maxima.get(name, maximum), maximum)
 
 
@@ -49,7 +51,7 @@ hooks = [
     module.register_forward_pre_hook(
         lambda module, inputs, name=name: record_channels(name, inputs[0])
     )
-    for name, module in convolutions.items()
+    for name, module in layers.items()
 ]
 with torch.no_grad():
     for batch, _ in imagenet.shuffled("train", 1024):
@@ -65,9 +67,11 @@ for hook in hooks:
 # record the largest magnitude of every smoothed input.
 # ===----------------------------------------------------------------------===
 smooth = {}
-for name, module in convolutions.items():
+for name, module in layers.items():
     a = channel_maxima[name].clamp(min=1e-5)
-    if module.groups > 1:
+    if isinstance(module, torch.nn.Linear):
+        smooth[name] = torch.ones(1, device=a.device)
+    elif module.groups > 1:
         smooth[name] = a
     else:
         w = module.weight.detach().abs().amax([0, 2, 3]).clamp(min=1e-5)
@@ -77,15 +81,17 @@ samples = {}
 
 
 def sample(name, x):
-    x = (x / smooth[name].reshape(1, -1, 1, 1)).abs().flatten()
-    samples.setdefault(name, []).append(x[torch.randperm(x.numel())[:200000]])
+    x = (x / smooth[name].reshape([1, -1] + [1] * (x.ndim - 2))).abs().flatten()
+    samples.setdefault(name, []).append(
+        x[torch.randint(x.numel(), (min(200000, x.numel()),), device=x.device)]
+    )
 
 
 hooks = [
     module.register_forward_pre_hook(
         lambda module, inputs, name=name: sample(name, inputs[0])
     )
-    for name, module in convolutions.items()
+    for name, module in layers.items()
 ]
 with torch.no_grad():
     for batch, _ in imagenet.shuffled("train", 1024):
@@ -93,9 +99,19 @@ with torch.no_grad():
 for hook in hooks:
     hook.remove()
 clips = {
-    name: torch.quantile(torch.cat(values), 0.9999).item()
+    name: (
+        channel_maxima[name].max().item()
+        if isinstance(layers[name], torch.nn.Linear)
+        else torch.quantile(torch.cat(values), 0.9999).item()
+    )
     for name, values in samples.items()
 }
+calibration = {
+    name: {"smooth": smooth[name].tolist(), "clip": clips[name]} for name in clips
+}
+(output / "calibration-ranges.json").write_text(
+    json.dumps(calibration, indent=2) + "\n"
+)
 
 # ===----------------------------------------------------------------------===
 # Evaluate the quantization in software on 1024 validation images: the
@@ -114,27 +130,10 @@ def accuracy(model):
 
 
 fp32 = accuracy(model)
-for name, module in convolutions.items():
-    # All-zero inputs (an SE excitation): any positive step encodes them.
-    scale = torch.tensor(clips[name] / 127 if clips[name] else 1.0)
-    shape = (-1, 1, 1, 1) if module.groups > 1 else (1, -1, 1, 1)
-    weight = module.weight.detach() * smooth[name].reshape(shape)
-    # A channel whose folded weights almost vanish takes a coarser step, so
-    # that its bias code stays within 2^30.
-    maximum = weight.abs().amax([1, 2, 3], keepdim=True)
-    floor = module.bias.detach().abs().reshape(maximum.shape) / (scale * 2**30)
-    step = torch.maximum(maximum / 127, floor)
-    step = torch.where(step == 0, 1.0, step)
-    module.weight.data = quantize(weight, 1 / step) * step
-    bias_step = step.reshape(-1) * scale
-    module.bias.data = quantize_bias(module.bias.detach(), bias_step) * bias_step
-    module.register_forward_pre_hook(
-        lambda module, inputs, name=name, scale=scale: quantize(
-            inputs[0] / smooth[name].reshape(1, -1, 1, 1), 1 / scale
-        )
-        * scale
-    )
-quantized = accuracy(model)
+from frontend.fixed.reference import FixedGraph
+
+fixed = FixedGraph(model, calibration)
+quantized = accuracy(fixed.run)
 print(f"FP32 top-1 {fp32:.2f}%, INT8 top-1 {quantized:.2f}%")
 if fp32 - quantized > 1:
     raise RuntimeError(
@@ -142,5 +141,12 @@ if fp32 - quantized > 1:
     )
 calibration = {
     name: {"smooth": smooth[name].tolist(), "clip": clips[name]} for name in clips
+}
+calibration["validation"] = {
+    "samples": 1024,
+    "fp32_top1": fp32,
+    "int8_top1": quantized,
+    "fraction_bits": 24,
+    "clipped_values": fixed.clipped,
 }
 (output / "calibration.json").write_text(json.dumps(calibration, indent=2) + "\n")

@@ -1,25 +1,28 @@
 file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
-set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
-# The compiler of the goban core: the core dialect, its placement and
-# lowering, and lower-frontend-fake-op; built by the core stack. The graph is placed
+# What the recipe compiles for this device config; the calibration of the
+# model belongs to the recipe.
+set(OUTPUT_DIR "${DESIGN_OUTPUT}/models/bert-base-uncased-emotion")
+set(CALIBRATION "${CMAKE_CURRENT_SOURCE_DIR}/output/calibration.json")
+# The compiler of the goban hart: the hart dialect, its placement and
+# lowering, and lower-frontend-fake-op; built by the hart stack. The graph is placed
 # and bufferized with it, then lowered with the matmul thread's compiler.
-set(CORE_COMPILER "${DESIGN_CORE_BUILD_goban}/libcore-compiler.so")
-set(
-  CORE_OPT
-  ${DESIGN_COMPILER}/bin/buddy-opt
-  --load-dialect-plugin=${CORE_COMPILER}
-  --load-pass-plugin=${CORE_COMPILER}
-)
-set(ACC_OPT ${CORE_OPT} --buckyball-design-pb=${DESIGN_PB} --buckyball-target=matmul)
+# The graph is compiled with the plugins of the device and the goban hart
+# (DESIGN_HART_OPT_goban); its matmul thread work with the plugins its target
+# passes through (DESIGN_TARGET_OPT_matmul).
+# The operator image of the GP domain: the operators convert-linalg-to-acc leaves
+# in the graph and their entry `operator`, linked by the hart's operators.ld.
+set(OPERATOR_LINKER "${DESIGN_HART_STACK_goban}/operators.ld")
+math(EXPR OPERATOR_TEXT_BYTES "${DESIGN_PROFILES_matmul_THREAD_GPDOMAIN_I_BUF_WORDS} * 4")
 
 # ===----------------------------------------------------------------------===
 # Calibrate the Linear input and attention operand scales on emotion training
 # sentences; rejected when the validation accuracy drops more than 1 point.
 # ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/calibration.json
+  OUTPUT ${CALIBRATION}
   COMMAND ${PYTHON} buddy-pytorch-calibrate.py
   DEPENDS buddy-pytorch-calibrate.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/../exp.py
           ${STACK_ROOT}/compiler/frontend/quant.py
           ${MODEL_DIR}/bert-base-uncased-emotion/model.py
           ${MODEL_DIR}/bert-base-uncased-emotion/data.py
@@ -47,13 +50,18 @@ add_custom_command(
          ${OUTPUT_DIR}/vocab.txt
          ${OUTPUT_DIR}/input_ids.data
          ${OUTPUT_DIR}/attention_mask.data
-  COMMAND ${PYTHON} buddy-pytorch-importer.py
+         ${OUTPUT_DIR}/reference.data
+         ${OUTPUT_DIR}/dataset/ids.data
+         ${OUTPUT_DIR}/dataset/masks.data
+         ${OUTPUT_DIR}/dataset/reference.data
+         ${OUTPUT_DIR}/dataset/labels.data
+  COMMAND ${PYTHON} buddy-pytorch-importer.py ${OUTPUT_DIR}
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
           buddy-pytorch-importer.py
           ${MODEL_DIR}/bert-base-uncased-emotion/input.txt
           trace/trace.toml
-          ${OUTPUT_DIR}/calibration.json
+          ${CALIBRATION}
           ${MODEL_DIR}/bert-base-uncased-emotion/model.py
           ${MODEL_DIR}/bert-base-uncased-emotion/output/bert-base-uncased-emotion/config.json
           ${MODEL_DIR}/bert-base-uncased-emotion/output/bert-base-uncased-emotion/model.safetensors
@@ -68,6 +76,7 @@ add_custom_command(
 add_custom_command(
   OUTPUT forward.o
   BYPRODUCTS ${OUTPUT_DIR}/forward.ll
+             ${OUTPUT_DIR}/forward_opt.ll
              ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/forward.mlir
             -buffer-deallocation-simplification
@@ -79,8 +88,6 @@ add_custom_command(
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
-            -convert-math-to-llvm
-            -convert-math-to-libm
             -convert-arith-to-llvm
             -expand-strided-metadata
             -finalize-memref-to-llvm
@@ -89,8 +96,10 @@ add_custom_command(
             -o ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/forward.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/forward_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
   DEPENDS ${OUTPUT_DIR}/forward.mlir
+          ${LLVM_OPT}
           ${DESIGN_TARGET_PLUGIN_matmul}
           ${DESIGN_PB}
           ${DESIGN_COMPILER}/bin/buddy-translate
@@ -100,19 +109,22 @@ add_custom_command(
 )
 
 # ===----------------------------------------------------------------------===
-# Lower the compute graph and export each compiler stage. The core pass
+# Lower the compute graph and export each compiler stage. The hart pass
+# compiles the fused FP32 row regions into operators of the GP domain and
 # outlines thread subgraphs; the acc pass maps their INT8 products,
-# quantization and bias decoding to Balls. After bufferization, bank assignment
-# and lower-acc produce instructions, which lower-core records as asynchronous
-# engine jobs. Host packing finishes before submission and staging allocations
-# survive until completion. Request the graph's C interface before lower-core
-# so engine entry points keep their C names.
+# quantization, bias decoding and row operators to Balls and GP launches. The
+# operators leave the host graph (symbol-dce) and become the operator image below. After bufferization, bank assignment
+# and lower-acc produce instructions, which lower-hart records as asynchronous
+# kernel jobs. Host packing finishes before submission and staging allocations
+# survive until completion. Request the graph's C interface before lower-hart
+# so kernel entry points keep their C names.
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0.o
   BYPRODUCTS ${OUTPUT_DIR}/subgraph0.ll
+             ${OUTPUT_DIR}/subgraph0_opt.ll
              ${OUTPUT_DIR}/subgraph0_linalg.mlir
-             ${OUTPUT_DIR}/subgraph0_core.mlir
+             ${OUTPUT_DIR}/subgraph0_hart.mlir
              ${OUTPUT_DIR}/subgraph0_acc.mlir
              ${OUTPUT_DIR}/subgraph0_addresses.mlir
              ${OUTPUT_DIR}/subgraph0_copies.mlir
@@ -123,21 +135,27 @@ add_custom_command(
              ${OUTPUT_DIR}/subgraph0_physical.mlir
              ${OUTPUT_DIR}/subgraph0_lowered.mlir
              ${OUTPUT_DIR}/subgraph0_llvm.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_linalg.mlir -convert-linalg-to-core=design=${DESIGN_PB} -o ${OUTPUT_DIR}/subgraph0_core.mlir
-  COMMAND ${ACC_OPT} ${OUTPUT_DIR}/subgraph0_core.mlir -convert-linalg-to-acc -o ${OUTPUT_DIR}/subgraph0_acc.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_acc.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/subgraph0_frontend.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_frontend.mlir -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results -buffer-results-to-out-params=hoist-static-allocs -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_bufferized.mlir -llvm-request-c-wrappers -o ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
+             ${OUTPUT_DIR}/subgraph0_fused.mlir
+             ${OUTPUT_DIR}/subgraph0_host.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0.mlir -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))" -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_linalg.mlir -convert-elementwise-to-linalg -linalg-fuse-elementwise-ops -o ${OUTPUT_DIR}/subgraph0_fused.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_fused.mlir -convert-linalg-to-hart=design=${DESIGN_PB} -o ${OUTPUT_DIR}/subgraph0_hart.mlir
+  COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_hart.mlir
+            -convert-linalg-to-acc
+            -o ${OUTPUT_DIR}/subgraph0_acc.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_acc.mlir "-symbol-privatize=exclude=subgraph0,_binary_operators_image_start" -symbol-dce -o ${OUTPUT_DIR}/subgraph0_host.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_host.mlir -lower-frontend-fake-op -o ${OUTPUT_DIR}/subgraph0_frontend.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_frontend.mlir -eliminate-empty-tensors -convert-elementwise-to-linalg -convert-tensor-to-linalg "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=identity-layout-map" -drop-equivalent-buffer-results -buffer-results-to-out-params=hoist-static-allocs -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_bufferized.mlir -llvm-request-c-wrappers -o ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
   COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_cwrappers.mlir
             -assign-physical-banks
             -o ${OUTPUT_DIR}/subgraph0_physical.mlir
   COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_physical.mlir
             -lower-acc
             -o ${OUTPUT_DIR}/subgraph0_lowered.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_lowered.mlir -expand-strided-metadata -lower-affine -canonicalize -o ${OUTPUT_DIR}/subgraph0_addresses.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_addresses.mlir "-lower-core=design=${DESIGN_PB} core=goban" -o ${OUTPUT_DIR}/subgraph0_memref.mlir
-  COMMAND ${CORE_OPT} ${OUTPUT_DIR}/subgraph0_memref.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/subgraph0_copies.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_lowered.mlir -expand-strided-metadata -lower-affine -canonicalize -o ${OUTPUT_DIR}/subgraph0_addresses.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_addresses.mlir "-lower-hart=design=${DESIGN_PB} hart=goban" -o ${OUTPUT_DIR}/subgraph0_memref.mlir
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_memref.mlir -pass-pipeline "builtin.module(func.func(convert-strided-memref-copy-to-linalg))" -o ${OUTPUT_DIR}/subgraph0_copies.mlir
   COMMAND ${DESIGN_TARGET_OPT_matmul} ${OUTPUT_DIR}/subgraph0_copies.mlir
             -expand-strided-metadata
             -convert-linalg-to-loops
@@ -155,9 +173,11 @@ add_custom_command(
             -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/subgraph0.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
-          ${CORE_COMPILER}
+          ${LLVM_OPT}
+          ${DESIGN_HART_PLUGIN_goban}
           ${DESIGN_PB}
           ${DESIGN_TARGET_PLUGIN_matmul}
           ${DESIGN_COMPILER}/bin/buddy-translate
@@ -167,14 +187,61 @@ add_custom_command(
 )
 
 # ===----------------------------------------------------------------------===
+# Build the operator image of the GP domain from the operators in the graph and
+# embed it as _binary_operators_image_start.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT operators.embed.o
+  BYPRODUCTS ${OUTPUT_DIR}/operators.mlir
+             ${OUTPUT_DIR}/operators_llvm.mlir
+             ${OUTPUT_DIR}/operators.ll
+             ${OUTPUT_DIR}/operators_opt.ll
+  COMMAND ${DESIGN_HART_OPT_goban} ${OUTPUT_DIR}/subgraph0_acc.mlir "-symbol-privatize=exclude=operator,gp_space" -symbol-dce -o ${OUTPUT_DIR}/operators.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-opt ${OUTPUT_DIR}/operators.mlir
+            -convert-vector-to-scf
+            -convert-vector-to-llvm
+            -expand-strided-metadata
+            -lower-affine
+            -convert-scf-to-cf
+            -convert-cf-to-llvm
+            -convert-math-to-llvm
+            -convert-arith-to-llvm
+            -finalize-memref-to-llvm
+            -convert-func-to-llvm
+            -reconcile-unrealized-casts
+            -o ${OUTPUT_DIR}/operators_llvm.mlir
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/operators_llvm.mlir
+            --buddy-to-llvmir -o ${OUTPUT_DIR}/operators.ll
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/operators.ll -mtriple=riscv64 -mattr=+m,+f,+d,+zve64f,+zvl128b "-passes=default<O2>" -S -o ${OUTPUT_DIR}/operators_opt.ll
+  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/operators_opt.ll -filetype=obj -mtriple=riscv64 -O2 -mattr=+m,+f,+d,+zve64f,+zvl128b -riscv-v-vector-bits-min=${DESIGN_PROFILES_matmul_THREAD_GPDOMAIN_V_LEN} -riscv-v-vector-bits-max=${DESIGN_PROFILES_matmul_THREAD_GPDOMAIN_V_LEN} -target-abi=lp64f -o operators.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-ld -m elf64lriscv
+            --defsym=operator_text_bytes=${OPERATOR_TEXT_BYTES} -T ${OPERATOR_LINKER} operators.o -o operators.elf
+  COMMAND ${ELF_OBJCOPY} -O binary -j .header -j .text -j .rodata operators.elf operators.image
+  COMMAND ${ELF_OBJCOPY} -I binary -O elf64-littleriscv -B riscv
+            --rename-section .data=.rodata,alloc,load,readonly,data,contents
+            --set-section-alignment .data=16 operators.image operators.embed.o
+  DEPENDS ${OUTPUT_DIR}/subgraph0_acc.mlir
+          ${OPERATOR_LINKER}
+          ${DESIGN_HART_PLUGIN_goban}
+          ${LLVM_OPT}
+          ${DESIGN_COMPILER}/bin/buddy-opt
+          ${DESIGN_COMPILER}/bin/buddy-translate
+          ${DESIGN_COMPILER}/bin/buddy-llc
+  COMMENT "Building the GP operator image"
+  VERBATIM
+)
+
+# ===----------------------------------------------------------------------===
 # Link the model and runtime into a RISC-V shared library.
 # ===----------------------------------------------------------------------===
-add_library(bert-base-uncased-emotion-buckyball-goban-model SHARED EXCLUDE_FROM_ALL entry.cpp forward.o subgraph0.o)
+add_library(bert-base-uncased-emotion-buckyball-goban-model SHARED EXCLUDE_FROM_ALL entry.cpp forward.o subgraph0.o
+  operators.embed.o
+)
 target_include_directories(bert-base-uncased-emotion-buckyball-goban-model
   PRIVATE ${LIB_DIR}
 )
 target_compile_definitions(bert-base-uncased-emotion-buckyball-goban-model
-  PRIVATE DEVICE_CORES_0_SIGNATURE=${DESIGN_DEVICE_CORES_0_SIGNATURE}ULL
+  PRIVATE DEVICE_HARTS_0_SIGNATURE=${DESIGN_DEVICE_HARTS_0_SIGNATURE}ULL
 )
 set_target_properties(bert-base-uncased-emotion-buckyball-goban-model
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
@@ -254,56 +321,114 @@ add_custom_command(
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin ${DESIGN_DEFINES} -I${LIB_DIR} -I${RUNTIME_DIR}/scheduler
             --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
-  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${RUNTIME_DIR}/services/dma_memory.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o ${DESIGN_CORE_BUILD_goban}/execute.o ${DESIGN_THREAD_BUILD_matmul}/loader.o $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:engine> -lm -lgcc -o ${BAREMETAL_ELF}
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o operators.embed.o ${DESIGN_HART_BUILD_goban}/execute.o ${DESIGN_THREAD_BUILD_matmul}/loader.o $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:kernel> -lm -lgcc -o ${BAREMETAL_ELF}
   DEPENDS baremetal.cpp
           model.h
           ${LIB_DIR}/MemRef.h
           ${LIB_DIR}/testutils.h
           forward.o
           subgraph0.o
+          operators.embed.o
           ${BOOT_DIR}/start.S
           ${BOOT_DIR}/syscalls.c
           ${BOOT_DIR}/device.ld
-          ${RUNTIME_DIR}/services/dma.c
-          ${RUNTIME_DIR}/services/dma.h
-          ${RUNTIME_DIR}/services/dma_memory.c
-          ${RUNTIME_DIR}/services/dma_memory.h
           ${RUNTIME_DIR}/services/mlir.cpp
           ${RUNTIME_DIR}/trace/baremetal.c
           ${RUNTIME_DIR}/trace/event.h
-          ${STACK_ROOT}/engine/src/location.c
-          ${STACK_ROOT}/engine/include/stream.h
+          ${STACK_ROOT}/kernel/src/location.c
+          ${STACK_ROOT}/kernel/include/stream.h
           ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
           ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/Msan.h
-          ${DESIGN_CORE_BUILD_goban}/execute.o
+          ${DESIGN_HART_BUILD_goban}/execute.o
           ${DESIGN_THREAD_BUILD_matmul}/loader.o
           runtime-baremetal
           runtime
-          engine
+          kernel
           ${OUTPUT_DIR}/arg0.data
           ${OUTPUT_DIR}/arg1.data
           ${OUTPUT_DIR}/arg2.data
           ${OUTPUT_DIR}/input_ids.data
           ${OUTPUT_DIR}/attention_mask.data
+          ${OUTPUT_DIR}/reference.data
           ${DESIGN_PB}
   COMMAND_EXPAND_LISTS
   VERBATIM
 )
 
-file(READ ${MODEL_DIR}/bert-base-uncased-emotion/input.txt PROMPT)
-string(STRIP "${PROMPT}" PROMPT)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MODEL_DIR}/bert-base-uncased-emotion/input.txt)
-file(WRITE ${OUTPUT_DIR}/run.args "--model\nbert-base-uncased-emotion.rax\n--prompt\n${PROMPT}\n--output\nlogits.f32\n")
+# The accuracy run (dataset.cpp): the sentences of the model region, a shard
+# of dataset/ that bench-device --bemu-accuracy packs into each run's DDR
+# image.
+math(EXPR MODEL_OFFSET "${DESIGN_DEVICE_DDR_BYTES} - ${DESIGN_DEVICE_DDR_MODEL}")
+math(EXPR MODEL_IMAGE "${DESIGN_DEVICE_DDR_BASE} + ${MODEL_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+set(DATASET_ELF "${DESIGN_OUTPUT}/workloads/models/goban-bert-base-uncased-emotion-dataset")
+add_custom_command(
+  OUTPUT ${DATASET_ELF}
+  BYPRODUCTS dataset.o
+             mlir-dataset.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin ${DESIGN_DEFINES} -I${LIB_DIR} -I${RUNTIME_DIR}/scheduler -DMODEL_IMAGE=${MODEL_IMAGE}ULL
+            --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp -o dataset.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-dataset.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c dataset.o mlir-dataset.o forward.o subgraph0.o operators.embed.o ${DESIGN_HART_BUILD_goban}/execute.o ${DESIGN_THREAD_BUILD_matmul}/loader.o $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:kernel> -lm -lgcc -o ${DATASET_ELF}
+  DEPENDS dataset.cpp
+          model.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          operators.embed.o
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${RUNTIME_DIR}/trace/event.h
+          ${STACK_ROOT}/kernel/src/location.c
+          ${STACK_ROOT}/kernel/include/stream.h
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/Msan.h
+          ${DESIGN_HART_BUILD_goban}/execute.o
+          ${DESIGN_THREAD_BUILD_matmul}/loader.o
+          runtime-baremetal
+          runtime
+          kernel
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${LIB_DIR}/ModelImage.h
+          ${DESIGN_PB}
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+
+# Linux runs the RAX entry on the token ids of the baremetal program and
+# checks it against the same reference.
+file(WRITE ${OUTPUT_DIR}/run.args
+  "--model\nbert-base-uncased-emotion.rax\n--input\ninput_ids.data\n--reference\nreference.data\n"
+)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/model.img
-  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} bert-base-uncased-emotion.rax
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} bert-base-uncased-emotion.rax input_ids.data reference.data
             --mapped run.args
   DEPENDS model-pack-tool
           ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
           ${OUTPUT_DIR}/run.args
+          ${OUTPUT_DIR}/input_ids.data
+          ${OUTPUT_DIR}/reference.data
   VERBATIM
 )
 add_custom_target(
   bert-base-uncased-emotion-model-build
-  DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rax ${BAREMETAL_ELF} ${OUTPUT_DIR}/model.img
+  DEPENDS
+    ${OUTPUT_DIR}/bert-base-uncased-emotion.rax
+    ${BAREMETAL_ELF}
+    ${DATASET_ELF}
+    ${OUTPUT_DIR}/model.img
+    ${OUTPUT_DIR}/dataset/ids.data
+    ${OUTPUT_DIR}/dataset/masks.data
+    ${OUTPUT_DIR}/dataset/reference.data
+    ${OUTPUT_DIR}/dataset/labels.data
 )
+
+# The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
+add_subdirectory(gvn)

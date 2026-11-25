@@ -1,16 +1,17 @@
+from models.archs.buckyball.goban.exp import softmax
 from importlib import import_module
 from pathlib import Path
 import json
 import math
 
 import torch
+
+torch.set_num_threads(16)
 import torch.nn.functional as F
 from torch.overrides import TorchFunctionMode
 
 from compiler.frontend.quant import quantize, quantize_bias
 from frontend.quant.graph import smooth_inputs
-
-torch.set_num_threads(4)
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
@@ -40,6 +41,8 @@ class Products(TorchFunctionMode):
 
     def __torch_function__(self, function, types, args=(), kwargs=None):
         name = getattr(function, "__name__", None)
+        if name == "softmax":
+            return softmax(args[0], args[1] if len(args) > 1 else kwargs["dim"])
         if name == "linear":
             args = (self.linear(args[0], args[1]), *args[1:])
         elif name == "matmul" and args[0].shape[-1] > 1:
@@ -51,7 +54,7 @@ class Products(TorchFunctionMode):
             query, key = self.product(
                 self.index, (query * root, key.transpose(-2, -1) * root)
             )
-            weights = torch.softmax(query @ key + mask, -1)
+            weights = softmax(query @ key + mask, -1)
             weights, value = self.product(self.index + 1, (weights, value))
             self.index += 2
             return weights @ value

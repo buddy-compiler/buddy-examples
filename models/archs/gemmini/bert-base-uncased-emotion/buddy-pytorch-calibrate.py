@@ -3,6 +3,9 @@ from pathlib import Path
 import json
 
 import torch
+
+# Eight threads: many threads on one process are slower on a loaded host.
+torch.set_num_threads(8)
 from torch.overrides import TorchFunctionMode
 
 from compiler.frontend.quant import quantize, quantize_bias
@@ -164,3 +167,37 @@ calibration = {
     for name in maxima
 }
 (output / "calibration.json").write_text(json.dumps(calibration, indent=2) + "\n")
+
+# Save the calibrated model's six logits and its four inputs in compiled ABI order.
+sample = tuple(tensor[:1] for tensor in tests)
+with torch.no_grad(), Products(fake_product):
+    reference = quantized(*sample)
+ids, types, mask, positions = sample
+torch.stack((ids, positions, types, mask)).contiguous().numpy().tofile(
+    output / "inputs.data"
+)
+reference.contiguous().numpy().tofile(output / "reference.data")
+
+# ===----------------------------------------------------------------------===
+# The dataset of the accuracy runs (dataset.cpp, from the model region): the
+# 2000 validation sentences, one record per file (32 int64s each of ids,
+# positions, types and mask), the logits of the same calibrated model on
+# each and their labels.
+# ===----------------------------------------------------------------------===
+(output / "dataset").mkdir(exist_ok=True)
+ids, types, mask, positions = tests
+for name, value in (
+    ("ids", ids),
+    ("positions", positions),
+    ("types", types),
+    ("masks", mask),
+):
+    value.contiguous().numpy().astype("int64").tofile(output / f"dataset/{name}.data")
+# Products numbers the products of one run: a mode per batch.
+logits = []
+for batch in zip(*(value.split(100) for value in tests)):
+    with torch.no_grad(), Products(fake_product):
+        logits.append(quantized(*batch))
+logits = torch.cat(logits)
+logits.contiguous().numpy().astype("float32").tofile(output / "dataset/reference.data")
+labels.numpy().astype("int64").tofile(output / "dataset/labels.data")

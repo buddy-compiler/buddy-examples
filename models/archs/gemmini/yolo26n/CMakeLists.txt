@@ -83,7 +83,7 @@ add_custom_command(
             -reconcile-unrealized-casts |
           ${COMPILER_BUILD}/bin/buddy-translate
             --buddy-to-llvmir |
-          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+m,+d,+xgemmini -float-abi=hard -o forward.o
   DEPENDS ${OUTPUT_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM
@@ -106,6 +106,11 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
+            -canonicalize
+            -optimize-allocation-liveness
             -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_bufferized.mlir
             -convert-linalg-to-gemmini
@@ -120,9 +125,6 @@ add_custom_command(
             -lower-gemmini
             -o ${OUTPUT_DIR}/subgraph0_lowered.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_lowered.mlir
-            -ownership-based-buffer-deallocation
-            -buffer-deallocation-simplification
-            -bufferization-lower-deallocations
             -convert-math-to-llvm
             -convert-math-to-libm
             -convert-arith-to-llvm
@@ -132,7 +134,7 @@ add_custom_command(
             -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph0.o
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+m,+d,+xgemmini -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
   COMMENT "Building subgraph0.o"
   VERBATIM
@@ -200,3 +202,71 @@ add_custom_command(
   VERBATIM
 )
 add_custom_target(yolo26n-model-build DEPENDS ${OUTPUT_DIR}/yolo26n.rax)
+
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/inputs.data
+         ${OUTPUT_DIR}/reference.data
+  COMMAND ${PYTHON} prepare-reference.py
+  DEPENDS prepare-reference.py
+          ${OUTPUT_DIR}/calibration.json
+          ${MODEL_DIR}/yolo26n/model.py
+          ${MODEL_DIR}/yolo26n/data.py
+          ${MODEL_DIR}/yolo26n/output/yolo26n/yolo26n.pt
+          ${STACK_ROOT}/compiler/frontend/quant.py
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM
+)
+set(BAREMETAL_ELF "${DESIGN_OUTPUT}/workloads/models/gemmini-yolo26n-baremetal")
+add_custom_command(
+  OUTPUT ${BAREMETAL_ELF}
+  BYPRODUCTS baremetal.o
+             mlir-baremetal.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++26 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -I${LIB_DIR}
+            --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lstdc++ -lm -lgcc -o ${BAREMETAL_ELF}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp
+          model.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${STACK_ROOT}/kernel/src/location.c
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${DESIGN_PB}
+  COMMENT "Building yolo26n for the Gemmini device"
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+add_custom_target(yolo26n-model-baremetal DEPENDS ${BAREMETAL_ELF})
+add_dependencies(yolo26n-model-build yolo26n-model-baremetal)
+
+file(WRITE ${OUTPUT_DIR}/run.args "--model\nyolo26n.rax\n--input\ninputs.data\n--reference\nreference.data\n")
+set(MODEL_IMAGE "${DESIGN_OUTPUT}/models/yolo26n/model.img")
+add_custom_command(
+  OUTPUT ${MODEL_IMAGE}
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/models/yolo26n"
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${MODEL_IMAGE} ${OUTPUT_DIR} yolo26n.rax inputs.data reference.data
+            --mapped run.args
+  DEPENDS model-pack-tool
+          ${OUTPUT_DIR}/yolo26n.rax
+          ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
+          ${OUTPUT_DIR}/run.args
+  VERBATIM
+)
+add_custom_target(yolo26n-model-image DEPENDS ${MODEL_IMAGE})
+add_dependencies(yolo26n-model-build yolo26n-model-image)
+
+# The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
+add_subdirectory(gvn)

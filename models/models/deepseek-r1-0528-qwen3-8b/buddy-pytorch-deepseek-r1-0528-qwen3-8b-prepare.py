@@ -6,3 +6,13 @@ snapshot_download(
     "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
     local_dir=Path(__file__).resolve().parent / "output/deepseek-r1-0528-qwen3-8b",
 )
+
+# LAMBADA (OpenAI's English test set, 5153 passages): the zero-shot accuracy
+# of the last word.
+snapshot_download(
+    "EleutherAI/lambada_openai",
+    repo_type="dataset",
+    revision="900124bf3b8235c6daf21033af9948b3f07346c4",
+    allow_patterns=["en/test/en.parquet"],
+    local_dir=Path(__file__).resolve().parents[2] / "datasets/lambada",
+)

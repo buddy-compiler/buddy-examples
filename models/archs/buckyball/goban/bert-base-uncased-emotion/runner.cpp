@@ -60,6 +60,67 @@ public:
     auto bias = load<int32_t>(manifest.weightPaths.at(1));
     auto weights = load<int8_t>(manifest.weightPaths.at(2));
 
+    // The token ids of the baremetal program against its reference, as
+    // baremetal.cpp checks them: the same lines and bound, and a failure when
+    // the logits differ. The mask is the ids that are not [PAD] (0), as the
+    // tokenizer writes it.
+    if (!config.referencePath.empty()) {
+      auto tokens = load<int64_t>(config.inputPath);
+      auto reference = load<float>(config.referencePath);
+      if (tokens.getSize() != sequenceLength || reference.getSize() != classes)
+        throw std::runtime_error("Invalid token ids or reference size");
+      MemRef<int64_t, 2> types({1, sequenceLength}, 0),
+          mask({1, sequenceLength}, 0), positions({1, sequenceLength}, 0);
+      for (size_t i = 0; i < sequenceLength; ++i) {
+        positions.getData()[i] = i;
+        mask.getData()[i] = tokens.getData()[i] != 0;
+      }
+      bert::Parameters f32{parameters.getData(),
+                           parameters.getData(),
+                           0,
+                           {int64_t(parameters.getSize())},
+                           {1}};
+      bert::Bias i32{
+          bias.getData(), bias.getData(), 0, {int64_t(bias.getSize())}, {1}};
+      bert::Weights i8{weights.getData(),
+                       weights.getData(),
+                       0,
+                       {int64_t(weights.getSize())},
+                       {1}};
+      bert::Tokens inputIds{
+          tokens.getData(), tokens.getData(), 0, {1, 32}, {32, 1}};
+      bert::Tokens inputTypes{
+          types.getData(), types.getData(), 0, {1, 32}, {32, 1}};
+      bert::Tokens inputMask{
+          mask.getData(), mask.getData(), 0, {1, 32}, {32, 1}};
+      bert::Tokens inputPositions{
+          positions.getData(), positions.getData(), 0, {1, 32}, {32, 1}};
+      bert::Output output{};
+      const uint64_t first = read_counter();
+      forward(&output, &f32, &i32, &i8, &inputIds, &inputTypes, &inputMask,
+              &inputPositions);
+      const uint64_t cycles = read_counter() - first;
+      const float *values = output.data();
+      const float *expected = reference.getData();
+      unsigned best = 0, gold = 0;
+      for (unsigned i = 1; i < classes; ++i) {
+        if (values[i] > values[best])
+          best = i;
+        if (expected[i] > expected[gold])
+          gold = i;
+      }
+      constexpr const char *names[classes] = {"sadness", "joy",  "love",
+                                              "anger",   "fear", "surprise"};
+      printf("Classification: %s, reference %s\nInference cycles: %lu\n",
+             names[best], names[gold], static_cast<unsigned long>(cycles));
+      const int failed =
+          check_output(values, expected, classes, 2e-2f) || best != gold;
+      std::free(output.allocated);
+      if (failed)
+        throw std::runtime_error("Output differs from the reference");
+      return;
+    }
+
     // The prompt padded to the sequence length; the mask hides the padding.
     buddy::Text<int64_t, 2> ids(config.prompt);
     ids.tokenizeBert(manifest.vocabPath, sequenceLength, true, true);

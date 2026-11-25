@@ -13,7 +13,7 @@ _start:
 
     /* The generated target profile selects its test hart before boot. */
     csrr t0, mhartid
-    li t1, CORE_HART_ID
+    li t1, HART_HART_ID
     bne t0, t1, park_hart
 
     /* Enable FPU: set mstatus.FS and XS = 01 (Initial) */

@@ -1,4 +1,4 @@
-//===- DeviceDialect.cpp - Graphs on the cores of a device ----------------===//
+//===- DeviceDialect.cpp - Graphs on the harts of a device ----------------===//
 
 #include "Device/DeviceDialect.h"
 #include "Device/DeviceOps.h"
@@ -16,8 +16,8 @@ using namespace ::buddy::device;
 #include "Device.cpp.inc"
 
 LogicalResult LaunchOp::verify() {
-  if (getCoreClass().has_value() == getCore().has_value())
-    return emitOpError("names either the class of its core or its core");
+  if (getHartClass().has_value() == getHart().has_value())
+    return emitOpError("names either the class of its hart or its hart");
   return success();
 }
 

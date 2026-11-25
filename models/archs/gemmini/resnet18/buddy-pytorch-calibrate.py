@@ -156,3 +156,74 @@ calibration = {
     name: {"smooth": smooth[name].tolist(), "maximum": maxima[name]} for name in maxima
 }
 (output / "calibration.json").write_text(json.dumps(calibration, indent=2) + "\n")
+
+
+# ===----------------------------------------------------------------------===
+# The check of the compiled model (spike.cpp): the first test images, their
+# labels and the logits of the model computed the way the compiled graph
+# computes them, operation for operation. A value next to a rounding boundary
+# of a quantization lands on its other side with the last bit of an FP32
+# result, so every operation whose rounding depends on how it is computed
+# follows the graph:
+#   - a convolution or Linear reads round(x * multiplier), the multiplier the
+#     FP32 reciprocal of input scale times smoothing factor, adds its INT8
+#     products and its INT32 bias exactly (FP64 holds them) and returns the
+#     accumulator as FP32 times the FP32 accumulator step;
+#   - a batch normalization is ((x - mean) * (1 / sqrt(var + eps))) * weight
+#     + bias;
+#   - the mean of the pooling sums its values in order along each axis and
+#     multiplies by the FP32 reciprocal of their count.
+# ===----------------------------------------------------------------------===
+def mean(values, dims):
+    total = values
+    count = 1
+    for d in dims:
+        moved = total.movedim(d, 0)
+        accumulated = torch.zeros_like(moved[0])
+        for index in range(moved.shape[0]):
+            accumulated = accumulated + moved[index]
+        total = accumulated.unsqueeze(d)
+        count *= values.shape[d]
+    return total * torch.tensor(1.0 / count, dtype=torch.float32)
+
+
+reference = resnet18.load()
+for name, module in reference.named_modules():
+    if isinstance(module, torch.nn.BatchNorm2d):
+        module.register_forward_hook(
+            lambda module, args, output: (
+                (args[0] - module.running_mean.reshape(1, -1, 1, 1))
+                * (1 / torch.sqrt(module.running_var + module.eps)).reshape(1, -1, 1, 1)
+            )
+            * module.weight.reshape(1, -1, 1, 1)
+            + module.bias.reshape(1, -1, 1, 1)
+        )
+    if isinstance(module, torch.nn.AdaptiveAvgPool2d):
+        module.register_forward_hook(lambda module, args, output: mean(args[0], [2, 3]))
+    if not int8(module):
+        continue
+    weight = module.weight.detach() * smooth[name].reshape(channels(module))
+    axes = list(range(1, weight.ndim))
+    maximum = weight.abs().amax(axes, keepdim=True)
+    step = torch.where(maximum == 0, 1.0, maximum / 127)
+    scale = maxima[name] / 127 if maxima[name] else 1.0
+    accumulator_step = (step * scale).reshape(-1)
+    if module.bias is not None:
+        module.bias.data = quantize_bias(
+            module.bias.detach(), accumulator_step
+        ).double()
+    module.weight.data = quantize(weight, 1 / step).double()
+    module.register_forward_pre_hook(
+        lambda module, args, name=name, scale=scale: quantize(
+            args[0], 1 / (scale * smooth[name].reshape(inputs(args[0])))
+        ).double()
+    )
+    module.register_forward_hook(
+        lambda module, args, output, accumulator_step=accumulator_step: output.float()
+        * accumulator_step.reshape([1, -1, 1, 1] if output.ndim == 4 else [1, -1])
+    )
+with torch.no_grad():
+    expected = reference(tests[:100])
+tests[:100].numpy().astype("float32").tofile(output / "check-images.data")
+labels[:100].numpy().astype("int64").tofile(output / "check-labels.data")
+expected.numpy().astype("float32").tofile(output / "check-logits.data")

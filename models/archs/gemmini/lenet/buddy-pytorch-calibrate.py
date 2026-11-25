@@ -10,7 +10,7 @@ from compiler.frontend.quant import quantize, quantize_bias
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-mnist = model_dir.parents[2] / "models/lenet/output/datasets"
+mnist = Path(import_module("models.models.lenet").__file__).parent / "output/datasets"
 preprocess = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
 )
@@ -167,3 +167,54 @@ calibration = {
     name: {"smooth": smooth[name].tolist(), "maximum": maxima[name]} for name in maxima
 }
 (output / "calibration.json").write_text(json.dumps(calibration, indent=2) + "\n")
+
+# ===----------------------------------------------------------------------===
+# The check of the compiled model (spike.cpp): the first test images and the
+# logits of the model computed the way the compiled graph computes them,
+# operation for operation. A value next to a rounding boundary of a
+# quantization lands on its other side with the last bit of an FP32 result,
+# so a convolution or Linear follows the graph: it reads round(x *
+# multiplier), the multiplier the FP32 reciprocal of input scale times
+# smoothing factor, adds its INT8 products and its INT32 bias exactly (FP64
+# holds them) and returns the accumulator as FP32 times the FP32 accumulator
+# step.
+# ===----------------------------------------------------------------------===
+reference = lenet.load()
+for name, module in reference.named_modules():
+    if not int8(module):
+        continue
+    weight = module.weight.detach() * smooth[name].reshape(channels(module))
+    axes = list(range(1, weight.ndim))
+    maximum = weight.abs().amax(axes, keepdim=True)
+    step = torch.where(maximum == 0, 1.0, maximum / 127)
+    scale = maxima[name] / 127 if maxima[name] else 1.0
+    accumulator_step = (step * scale).reshape(-1)
+    if module.bias is not None:
+        module.bias.data = quantize_bias(
+            module.bias.detach(), accumulator_step
+        ).double()
+    module.weight.data = quantize(weight, 1 / step).double()
+    module.register_forward_pre_hook(
+        lambda module, args, name=name, scale=scale: quantize(
+            args[0], 1 / (scale * smooth[name].reshape(inputs(args[0])))
+        ).double()
+    )
+    module.register_forward_hook(
+        lambda module, args, output, accumulator_step=accumulator_step: output.float()
+        * accumulator_step.reshape([1, -1, 1, 1] if output.ndim == 4 else [1, -1])
+    )
+with torch.no_grad():
+    expected = reference(tests[:64])
+tests[:64].numpy().astype("float32").tofile(output / "check-images.data")
+expected.numpy().astype("float32").tofile(output / "check-logits.data")
+
+# ===----------------------------------------------------------------------===
+# The dataset of the accuracy runs (dataset.cpp, from the model region): the
+# MNIST test images, the logits of the same reference on each and their
+# labels.
+# ===----------------------------------------------------------------------===
+(output / "dataset").mkdir(exist_ok=True)
+tests.numpy().astype("float32").tofile(output / "dataset/inputs.data")
+with torch.no_grad():
+    reference(tests).numpy().astype("float32").tofile(output / "dataset/reference.data")
+labels.numpy().astype("int64").tofile(output / "dataset/labels.data")

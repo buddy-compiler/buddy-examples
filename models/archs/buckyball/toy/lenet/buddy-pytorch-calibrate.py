@@ -10,7 +10,7 @@ from compiler.frontend.quant import quantize, quantize_bias
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-model_source = model_dir.parents[3] / "models/lenet"
+model_source = Path(import_module("models.models.lenet").__file__).parent
 
 # ===----------------------------------------------------------------------===
 # Record the largest input magnitude of every convolution and Linear of the

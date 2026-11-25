@@ -5,6 +5,7 @@ import torch
 from torch.overrides import TorchFunctionMode
 
 from compiler.frontend.quant import dequantize_mxint8, quantize_mxint8
+from frontend.integer_activations import IntegerActivations
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
@@ -18,15 +19,9 @@ def mxint8(values, axis):
     return dequantize_mxint8(quantize_mxint8(values, axis), axis)
 
 
-def split(values, axis):
-    """Values as the two MXINT8 terms the graph reads the key with."""
-    head = mxint8(values, axis)
-    return head + mxint8(values - head, axis)
-
-
 class Products(TorchFunctionMode):
     """Reads both operands of every matrix product through MXINT8 along its
-    reduction axis, the key of the score product q k^T as two MXINT8 terms;
+    reduction axis, q k^T as the sum of two MXINT8 products;
     a product whose K is not a multiple of 32 stays FP32."""
 
     probabilities = False
@@ -38,8 +33,14 @@ class Products(TorchFunctionMode):
             self.probabilities = True
         if getattr(function, "__name__", None) == "matmul":
             if args[0].shape[-1] % 32 == 0:
-                key = mxint8(args[1], -2) if self.probabilities else split(args[1], -2)
-                args = (mxint8(args[0], -1), key)
+                left = mxint8(args[0], -1)
+                head = mxint8(args[1], -2)
+                if not self.probabilities:
+                    tail = mxint8(args[1] - head, -2)
+                    return function(left, head, **(kwargs or {})) + function(
+                        left, tail, **(kwargs or {})
+                    )
+                args = (left, head)
             self.probabilities = False
         return function(*args, **(kwargs or {}))
 
@@ -55,7 +56,8 @@ def perplexity(model, products):
     with torch.no_grad():
         for window in windows.split(8):
             if products:
-                with Products():
+                activations = IntegerActivations()
+                with Products(), activations:
                     loss = model(input_ids=window, labels=window).loss
             else:
                 loss = model(input_ids=window, labels=window).loss

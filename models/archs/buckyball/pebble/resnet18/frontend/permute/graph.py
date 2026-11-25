@@ -1,3 +1,5 @@
+import torch
+
 from buddy.compiler.graph.operation import (
     AddMMOp,
     AddOp,
@@ -7,6 +9,7 @@ from buddy.compiler.graph.operation import (
     MeanOp,
     PermuteOp,
     ReluOp,
+    SliceOp,
     TOp,
 )
 from buddy.compiler.graph.transform.fuse_ops import decompose_addmm_to_mm_add
@@ -15,6 +18,24 @@ from buddy.compiler.graph.transform.fuse_ops import decompose_addmm_to_mm_add
 def nhwc(shape):
     batch, channels, height, width = shape
     return [batch, height, width, channels]
+
+
+def insert_after(graph, node, new):
+    """`new` reads `node` and takes over its users."""
+    users = [user for user in node.children]
+    graph.replace_as_parent(node, users, new)
+    for user in users:
+        new.add_children(user)
+    new.add_parent(node.name)
+    node.children.clear()
+    node.add_children(new.name)
+    graph.add_node(new)
+    graph.body.remove(new)
+    index = graph.body.index(node) + 1
+    graph.body.insert(index, new)
+    # The inputs and parameters at or after `index` move one place down.
+    graph._inputs = [i + (i >= index) for i in graph._inputs]
+    graph._fake_params = [i + (i >= index) for i in graph._fake_params]
 
 
 def permute(graph, params):
@@ -61,4 +82,35 @@ def permute(graph, params):
         graph.replace_as_parent(transpose, [matmul.name], weight)
         weight.add_children(matmul.name)
         graph.delete_node(transpose, [weight])
+
+        # The pebble compiler reads the weight in place, sixteen output
+        # columns a line: N is padded with zeros to a multiple of 16, and so
+        # is the bias. A slice after the bias drops the padded outputs.
+        inputs, outputs = values[weight.name].shape
+        padded = (outputs + 15) // 16 * 16
+        if padded == outputs:
+            continue
+        values[weight.name] = torch.nn.functional.pad(
+            values[weight.name], (0, padded - outputs)
+        )
+        weight.tensor_meta["shape"] = [inputs, padded]
+        add = graph.node_table[matmul.children[0]]
+        bias = graph.node_table[add.args[0]]
+        values[bias.name] = torch.nn.functional.pad(
+            values[bias.name], (0, padded - outputs)
+        )
+        bias.tensor_meta["shape"] = [padded]
+        matmul.tensor_meta["shape"] = [1, padded]
+        add.tensor_meta["shape"] = [1, padded]
+        unpadded = SliceOp()
+        unpadded.name = add.name + "_unpadded"
+        unpadded.add_argument(add.name)
+        unpadded.add_argument(1)
+        unpadded.add_argument(0)
+        unpadded.add_argument(outputs)
+        unpadded.tensor_meta = {
+            "shape": [1, outputs],
+            "dtype": add.tensor_meta["dtype"],
+        }
+        insert_after(graph, add, unpadded)
     return [values[node.name] for node in graph.params]

@@ -1,4 +1,4 @@
-//===- Stream.cpp - Record thread instructions and affine DMA loops ------===//
+//===- Stream.cpp - Record thread instructions and affine operand loops --===//
 
 #include "mlir/Conversion/LLVMCommon/MemRefBuilder.h"
 #include "mlir/Conversion/LLVMCommon/TypeConverter.h"
@@ -14,8 +14,8 @@
 using namespace mlir;
 
 namespace {
-// An address's byte increment for one iteration. Only affine addresses are
-// admitted; bit operations here are the address/stride fields of DMA rs2.
+// An instruction operand's increment for one iteration. The lowering packs
+// disjoint fields; shifts retain the affine increment within each field.
 FailureOr<Value> increment(OpBuilder &b, Location loc, Value value, Value iv) {
   auto constant = [&](int64_t n) -> Value {
     return arith::ConstantIntOp::create(b, loc, n, 64);
@@ -41,6 +41,8 @@ FailureOr<Value> increment(OpBuilder &b, Location loc, Value value, Value iv) {
     return b.createOrFold<arith::AddIOp>(loc, terms[0], terms[1]);
   if (isa<arith::SubIOp>(op))
     return b.createOrFold<arith::SubIOp>(loc, terms[0], terms[1]);
+  if (isa<arith::ShLIOp>(op) && matchPattern(terms[1], m_Zero()))
+    return b.createOrFold<arith::ShLIOp>(loc, terms[0], op->getOperand(1));
   if (isa<arith::MulIOp>(op)) {
     for (unsigned side = 0; side < 2; ++side)
       if (matchPattern(terms[side], m_Zero())) {
@@ -81,11 +83,12 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
     return callee;
   };
   auto emit = declare("stream_emit", {i32, i64, i64});
-  auto offset = declare("stream_offset", {i64, i64});
+  auto offset = declare("stream_offset", {i64, i64, i64});
   auto begin = declare("stream_loop", {i64});
   auto end = declare("stream_end", {});
   auto release = declare("stream_release", {ptr});
-  auto touch = declare("dma_touch", {ptr, i64});
+  auto allocate = declare("stream_allocate", {i64, i64});
+  allocate.setFunctionType(b.getFunctionType({i64, i64}, {ptr}));
   SmallVector<memref::AllocOp> allocations;
   SmallVector<LLVM::CallIntrinsicOp> instructions;
   SmallVector<memref::DeallocOp> deallocations;
@@ -98,12 +101,12 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
       if (intrinsic.getIntrin() == "llvm.riscv.buckyball.custom")
         instructions.push_back(intrinsic);
     if (auto copy = dyn_cast<memref::CopyOp>(op);
-        copy && copy->hasAttr("core.after"))
+        copy && copy->hasAttr("hart.after"))
       copies.push_back(copy);
     if (auto dealloc = dyn_cast<memref::DeallocOp>(op))
       deallocations.push_back(dealloc);
     if (auto loop = dyn_cast<scf::ForOp>(op);
-        loop && loop->hasAttr("core.stream"))
+        loop && loop->hasAttr("hart.stream"))
       loops.push_back(loop);
   });
   // Recording evaluates host packing immediately. Its input buffers must
@@ -111,7 +114,7 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
   SmallVector<int64_t> hostInputs, hostWrites;
   function.walk([&](Operation *op) {
     auto effects = dyn_cast<MemoryEffectOpInterface>(op);
-    if (!effects || op->hasAttr("core.after"))
+    if (!effects || op->hasAttr("hart.after"))
       return;
     for (Value value : op->getOperands()) {
       if (!isa<MemRefType>(value.getType()))
@@ -141,32 +144,13 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
   llvm::sort(hostInputs);
   hostInputs.erase(std::unique(hostInputs.begin(), hostInputs.end()),
                    hostInputs.end());
-  function->setAttr("core.host_inputs", b.getDenseI64ArrayAttr(hostInputs));
+  function->setAttr("hart.host_inputs", b.getDenseI64ArrayAttr(hostInputs));
   llvm::sort(hostWrites);
   hostWrites.erase(std::unique(hostWrites.begin(), hostWrites.end()),
                    hostWrites.end());
-  function->setAttr("core.host_writes", b.getDenseI64ArrayAttr(hostWrites));
+  function->setAttr("hart.host_writes", b.getDenseI64ArrayAttr(hostWrites));
   if (!copies.empty())
-    function->setAttr("core.host_completion", b.getUnitAttr());
-  // Recording runs on the core CPU. Make staging pages writable before the
-  // recorded DMA runs on an OS-invisible hardware thread.
-  for (auto allocation : allocations) {
-    b.setInsertionPointAfter(allocation);
-    Location loc = allocation.getLoc();
-    auto type = allocation.getType();
-    Value bytes = arith::ConstantIntOp::create(
-        b, loc, type.getElementTypeBitWidth() / 8, 64);
-    for (int64_t axis = 0; axis < type.getRank(); ++axis) {
-      Value size = arith::IndexCastOp::create(
-          b, loc, i64, memref::DimOp::create(b, loc, allocation, axis));
-      bytes = arith::MulIOp::create(b, loc, bytes, size);
-    }
-    Value address =
-        memref::ExtractAlignedPointerAsIndexOp::create(b, loc, allocation);
-    address = arith::IndexCastOp::create(b, loc, i64, address);
-    address = LLVM::IntToPtrOp::create(b, loc, ptr, address);
-    func::CallOp::create(b, loc, touch, ValueRange{address, bytes});
-  }
+    function->setAttr("hart.host_completion", b.getUnitAttr());
   for (auto instruction : instructions) {
     b.setInsertionPoint(instruction);
     Location loc = instruction.getLoc();
@@ -174,7 +158,11 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
     for (Operation *parent = instruction->getParentOp(); parent != function;
          parent = parent->getParentOp()) {
       if (auto loop = dyn_cast<scf::ForOp>(parent)) {
-        if (!loop->hasAttr("core.stream"))
+        // Explicit recording loops run on the host and emit each chosen
+        // stream, including its constant instruction fields and tail branch.
+        if (loop->hasAttr("hart.record"))
+          continue;
+        if (!loop->hasAttr("hart.stream"))
           return loop.emitError(
               "Ball instructions need a recorded stream loop");
         indices.push_back(loop.getInductionVar());
@@ -186,13 +174,16 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
     for (auto [depth, iv] : llvm::enumerate(llvm::reverse(indices))) {
       auto rs1 = increment(b, loc, instruction.getArgs()[0], iv);
       auto rs2 = increment(b, loc, instruction.getArgs()[1], iv);
-      if (failed(rs1) || !matchPattern(*rs1, m_Zero()) || failed(rs2))
-        return instruction.emitError("stream loop requires constant command "
-                                     "fields and affine DMA addresses");
-      if (!matchPattern(*rs2, m_Zero()))
-        func::CallOp::create(
-            b, loc, offset,
-            ValueRange{arith::ConstantIntOp::create(b, loc, depth, 64), *rs2});
+      if (failed(rs1) || failed(rs2))
+        return instruction.emitError(
+            "stream loop requires affine instruction operands");
+      for (auto [operand, delta] : llvm::enumerate(ArrayRef<Value>{*rs1, *rs2}))
+        if (!matchPattern(delta, m_Zero()))
+          func::CallOp::create(
+              b, loc, offset,
+              ValueRange{arith::ConstantIntOp::create(b, loc, depth, 64),
+                         arith::ConstantIntOp::create(b, loc, operand, 64),
+                         delta});
     }
     func::CallOp::create(b, loc, emit,
                          ValueRange{instruction.getArgs()[2],
@@ -201,7 +192,7 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
     instruction.erase();
   }
   // walk is post-order: flatten the inner loops first. Scalar address
-  // computations run once on the core; the thread adds iteration offsets.
+  // computations run once on the hart; the thread adds iteration offsets.
   for (auto loop : loops) {
     APInt lower, step;
     if (loop.getNumResults() ||
@@ -275,6 +266,64 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
     copy.erase();
   }
   LLVMTypeConverter converter(b.getContext());
+  // The recorded job returns before its DMA runs. Keep its staging buffers
+  // with the batch, including their lifetime metadata in the same allocation.
+  llvm::erase_if(deallocations, [&](memref::DeallocOp dealloc) {
+    Value source = dealloc.getMemref();
+    while (auto view =
+               dyn_cast_or_null<ViewLikeOpInterface>(source.getDefiningOp()))
+      source = view.getViewSource();
+    if (!source.getDefiningOp<memref::AllocOp>())
+      return false;
+    dealloc.erase();
+    return true;
+  });
+  for (auto allocation : allocations) {
+    b.setInsertionPoint(allocation);
+    Location loc = allocation.getLoc();
+    MemRefType type = allocation.getType();
+    if (!type.getLayout().isIdentity() || type.getMemorySpace())
+      return allocation.emitError(
+          "stream staging needs an identity DDR buffer");
+    SmallVector<Value> sizes;
+    unsigned dynamic = 0;
+    Value elements = arith::ConstantIntOp::create(b, loc, 1, 64);
+    for (int64_t dim : type.getShape()) {
+      Value size =
+          ShapedType::isDynamic(dim)
+              ? arith::IndexCastOp::create(
+                    b, loc, i64, allocation.getDynamicSizes()[dynamic++])
+                    .getResult()
+              : arith::ConstantIntOp::create(b, loc, dim, 64).getResult();
+      sizes.push_back(size);
+      elements = arith::MulIOp::create(b, loc, elements, size);
+    }
+    Value bytes = arith::MulIOp::create(
+        b, loc, elements,
+        arith::ConstantIntOp::create(
+            b, loc, (type.getElementTypeBitWidth() + 7) / 8, 64));
+    Value alignment = arith::ConstantIntOp::create(
+        b, loc, allocation.getAlignment().value_or(8), 64);
+    Value address =
+        func::CallOp::create(b, loc, allocate, ValueRange{bytes, alignment})
+            .getResult(0);
+    MemRefDescriptor descriptor =
+        MemRefDescriptor::poison(b, loc, converter.convertType(type));
+    descriptor.setAllocatedPtr(b, loc, address);
+    descriptor.setAlignedPtr(b, loc, address);
+    descriptor.setConstantOffset(b, loc, 0);
+    Value stride = arith::ConstantIntOp::create(b, loc, 1, 64);
+    for (int64_t axis = type.getRank() - 1; axis >= 0; --axis) {
+      descriptor.setSize(b, loc, axis, sizes[axis]);
+      descriptor.setStride(b, loc, axis, stride);
+      stride = arith::MulIOp::create(b, loc, stride, sizes[axis]);
+    }
+    Value buffer =
+        UnrealizedConversionCastOp::create(b, loc, type, Value(descriptor))
+            .getResult(0);
+    allocation.replaceAllUsesWith(buffer);
+    allocation.erase();
+  }
   for (auto dealloc : deallocations) {
     b.setInsertionPoint(dealloc);
     Location loc = dealloc.getLoc();
@@ -286,6 +335,64 @@ LogicalResult lowerThreadStream(func::FuncOp function) {
     Value pointer = MemRefDescriptor(descriptor).allocatedPtr(b, loc);
     func::CallOp::create(b, loc, release, ValueRange{pointer});
     dealloc.erase();
+  }
+  // Reserve consecutive recorded instructions once, then store their fields
+  // directly. Loop delimiters retain their runtime bookkeeping.
+  SmallVector<SmallVector<func::CallOp>> groups;
+  function.walk([&](Block *block) {
+    SmallVector<func::CallOp> group;
+    for (Operation &op : *block) {
+      auto call = dyn_cast<func::CallOp>(op);
+      if (call && (call.getCallee() == "stream_emit" ||
+                   call.getCallee() == "stream_offset")) {
+        group.push_back(call);
+      } else if (call || op.getNumRegions()) {
+        if (group.size() > 1)
+          groups.push_back(group);
+        group.clear();
+      }
+    }
+    if (group.size() > 1)
+      groups.push_back(group);
+  });
+  if (!groups.empty()) {
+    auto reserve = module.lookupSymbol<func::FuncOp>("stream_reserve");
+    if (!reserve) {
+      b.setInsertionPointToEnd(module.getBody());
+      reserve = func::FuncOp::create(b, function.getLoc(), "stream_reserve",
+                                     b.getFunctionType({i64}, {ptr}));
+      reserve.setPrivate();
+    }
+    for (auto group : groups) {
+      b.setInsertionPoint(group.front());
+      Location loc = group.front().getLoc();
+      Value target =
+          func::CallOp::create(b, loc, reserve,
+                               ValueRange{arith::ConstantIntOp::create(
+                                   b, loc, group.size(), 64)})
+              .getResult(0);
+      for (auto [index, call] : llvm::enumerate(group)) {
+        b.setInsertionPoint(call);
+        loc = call.getLoc();
+        SmallVector<Value> fields;
+        if (call.getCallee() == "stream_emit")
+          fields = {
+              b.createOrFold<arith::ExtUIOp>(loc, i64, call.getOperand(0)),
+              call.getOperand(1), call.getOperand(2)};
+        else
+          fields = {b.createOrFold<arith::AddIOp>(
+                        loc, call.getOperand(1),
+                        arith::ConstantIntOp::create(b, loc, 130, 64)),
+                    call.getOperand(0), call.getOperand(2)};
+        for (auto [field, value] : llvm::enumerate(fields)) {
+          Value at = LLVM::GEPOp::create(
+              b, loc, ptr, i64, target,
+              ArrayRef<LLVM::GEPArg>{int32_t(index * 3 + field)});
+          LLVM::StoreOp::create(b, loc, value, at);
+        }
+        call.erase();
+      }
+    }
   }
   return success();
 }

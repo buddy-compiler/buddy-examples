@@ -24,6 +24,20 @@ alignas(64) static const unsigned char mask_data[] = {
 };
 static_assert(sizeof(tokens) == 32 * sizeof(int64_t));
 static_assert(sizeof(mask_data) == 32 * sizeof(int64_t));
+// The logits of the INT8 reference model of the recipe on that sentence.
+alignas(64) static const unsigned char golden[] = {
+#embed "reference.data"
+};
+static_assert(sizeof(golden) == 6 * sizeof(float));
+
+// Stream the final CPU-visible scores for external simulation checks.
+static const uint32_t reference[6]
+    __attribute__((section(".bbsim.reference"), used)) = {};
+static const struct {
+  const void *actual, *expected;
+  uint64_t bytes;
+} capture __attribute__((section(".bbsim.capture_output"), used, retain)) = {
+    nullptr, reference, sizeof(reference)};
 
 int main() {
   const auto *p = reinterpret_cast<const float *>(parameters);
@@ -44,10 +58,10 @@ int main() {
   bert::Output output{};
   bert::Arguments arguments{&output, &f32,   &i32,  &i8,
                             &ids,    &types, &mask, &positions};
-  struct runtime_core core = runtime_core(0, DEVICE_CORES_0_SIGNATURE, nullptr);
+  struct runtime_hart hart = runtime_hart(0, DEVICE_HARTS_0_SIGNATURE, nullptr);
   struct runtime_job job{};
-  job.signature = core.signature;
-  job.core = 0;
+  job.signature = hart.signature;
+  job.hart = 0;
   job.argument = &arguments;
   job.entry = [](void *, void *opaque) {
     auto &args = *static_cast<bert::Arguments *>(opaque);
@@ -57,21 +71,39 @@ int main() {
   };
   struct runtime_result result;
   struct runtime runtime;
-  runtime_init(&runtime, &core, 1, &job, 1, &result);
+  runtime_init(&runtime, &hart, 1, &job, 1, &result);
   const uint64_t start = read_counter();
   runtime_baremetal_run(&runtime, 0);
   const uint64_t elapsed = read_counter() - start;
   if (result.state != RUNTIME_SUCCEEDED || result.status)
     return 1;
   const float *values = output.data();
-  unsigned best = 0;
-  for (unsigned i = 1; i < 6; ++i)
+  const auto *expected = reinterpret_cast<const float *>(golden);
+  unsigned best = 0, gold = 0;
+  for (unsigned i = 1; i < 6; ++i) {
     if (values[i] > values[best])
       best = i;
+    if (expected[i] > expected[gold])
+      gold = i;
+  }
   const char *labels[] = {"sadness", "joy",  "love",
                           "anger",   "fear", "surprise"};
-  printf("Classification: %s\nInference cycles: %lu\n", labels[best],
-         static_cast<unsigned long>(elapsed));
+  printf("Classification: %s, reference %s\nInference cycles: %lu\n",
+         labels[best], labels[gold], static_cast<unsigned long>(elapsed));
+  // The reference computes the device's INT8 model; FP32 orders of norms and
+  // softmax may still flip a code. The tolerance is 2.5 INT8 steps (1/127) of
+  // the largest reference score.
+  const int failed = check_output(values, expected, 6, 2e-2f) || best != gold;
+  uintptr_t owner;
+  asm volatile("csrr %0, mhartid" : "=r"(owner));
+  auto stream =
+      reinterpret_cast<volatile uint32_t *>(0x60000000ULL + owner * 0x40000);
+  *stream = 0x42424f55;
+  for (unsigned i = 0; i < 6; ++i) {
+    uint32_t word;
+    __builtin_memcpy(&word, values + i, sizeof(word));
+    *stream = word;
+  }
   free(output.allocated);
-  return 0;
+  return failed;
 }

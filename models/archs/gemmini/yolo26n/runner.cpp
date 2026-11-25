@@ -179,6 +179,28 @@ public:
         buddy::runtime::ModelManifest::loadFromRax(config.raxPath);
 
     const std::string imagePath = config.imagePath;
+    if (!config.referencePath.empty()) {
+      auto pixels = loadBinary<float>(config.inputPath);
+      auto reference = loadBinary<float>(config.referencePath);
+      if (pixels.getSize() != 3 * InputSize * InputSize ||
+          reference.getSize() != MaxDetections * 6)
+        throw std::runtime_error("Invalid YOLO input or reference size");
+      MemRef<float, 4> input(pixels.getData(),
+                             std::vector<size_t>{1, 3, InputSize, InputSize});
+      MemRef<float, 3> output(std::vector<size_t>{1, MaxDetections, 6}, false,
+                              0);
+      auto parameters = loadBinary<float>(manifest.weightPaths.at(0));
+      auto bias = loadBinary<int32_t>(manifest.weightPaths.at(1));
+      auto weights = loadBinary<int8_t>(manifest.weightPaths.at(2));
+      const auto start = read_counter();
+      _mlir_ciface_forward(&output, &parameters, &bias, &weights, &input);
+      printf("Inference cycles: %lu\n",
+             (unsigned long)(read_counter() - start));
+      if (check_output(output.getData(), reference.getData(), MaxDetections * 6,
+                       1e-5f))
+        throw std::runtime_error("YOLO detections differ from the reference");
+      return;
+    }
     const std::vector<std::string> labels = loadLabels(manifest.vocabPath);
     std::string imageExt =
         std::filesystem::path(imagePath).extension().string();

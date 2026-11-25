@@ -5,12 +5,12 @@ import json
 import torch
 from torchvision import datasets, transforms
 
-from compiler.frontend.quant import quantize, quantize_bias
+from models.archs.buckyball.pebble.fixed_reference import FixedGraph
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-model_source = model_dir.parents[3] / "models/lenet"
+model_source = Path(import_module("models.models.lenet").__file__).parent
 
 # ===----------------------------------------------------------------------===
 # Record the largest input magnitude of every convolution and Linear of the
@@ -69,20 +69,8 @@ def accuracy(model):
 
 
 fp32 = accuracy(model)
-quantized = lenet.load()
-for name, module in quantized.named_modules():
-    if not isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
-        continue
-    axes = list(range(1, module.weight.ndim))
-    step = module.weight.detach().abs().amax(axes, keepdim=True) / 127
-    module.weight.data = quantize(module.weight.detach(), 1 / step) * step
-    scale = torch.tensor(maxima[name] / 127, dtype=torch.float32)
-    bias_step = step.reshape(-1) * scale
-    module.bias.data = quantize_bias(module.bias.detach(), bias_step) * bias_step
-    module.register_forward_pre_hook(
-        lambda module, inputs, scale=scale: quantize(inputs[0], 1 / scale) * scale
-    )
-int8 = accuracy(quantized)
+quantized = FixedGraph(lenet.load(), maxima)
+int8 = accuracy(quantized.run)
 print(f"FP32 accuracy {fp32:.2f}%, INT8 accuracy {int8:.2f}%")
 if fp32 - int8 > 0.5:
     raise RuntimeError(

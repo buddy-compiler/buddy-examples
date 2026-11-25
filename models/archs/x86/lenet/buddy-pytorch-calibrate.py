@@ -10,7 +10,7 @@ from compiler.frontend.quant import quantize, quantize_bias
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
 output.mkdir(parents=True, exist_ok=True)
-mnist = model_dir.parents[2] / "models/lenet/output/datasets"
+mnist = Path(import_module("models.models.lenet").__file__).parent / "output/datasets"
 preprocess = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
 )

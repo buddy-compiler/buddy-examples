@@ -18,18 +18,10 @@ def mxint8(values, axis):
     return dequantize_mxint8(quantize_mxint8(values, axis), axis)
 
 
-def split(values, axis):
-    """Values as the two MXINT8 terms the graph reads the key and the
-    probabilities with."""
-    head = mxint8(values, axis)
-    return head + mxint8(values - head, axis)
-
-
 class Products(TorchFunctionMode):
     """Reads both operands of every matrix product through MXINT8 along its
-    reduction axis, the key of the score product q k^T and the probabilities
-    of the product P v as two MXINT8 terms; a product whose K is not a
-    multiple of 32 stays FP32."""
+    reduction axis, q k^T as the sum of two MXINT8 products;
+    a product whose K is not a multiple of 32 stays FP32."""
 
     probabilities = False
 
@@ -40,10 +32,18 @@ class Products(TorchFunctionMode):
             self.probabilities = True
         if getattr(function, "__name__", None) == "matmul":
             if args[0].shape[-1] % 32 == 0:
-                if self.probabilities:
-                    args = (split(args[0], -1), mxint8(args[1], -2))
-                else:
-                    args = (mxint8(args[0], -1), split(args[1], -2))
+                left = mxint8(args[0], -1)
+                head = mxint8(args[1], -2)
+                if not self.probabilities:
+                    tail = mxint8(args[1] - head, -2)
+                    return function(left, head, **(kwargs or {})) + function(
+                        left, tail, **(kwargs or {})
+                    )
+                tail = mxint8(args[0] - left, -1)
+                self.probabilities = False
+                return function(left, head, **(kwargs or {})) + function(
+                    tail, head, **(kwargs or {})
+                )
             self.probabilities = False
         return function(*args, **(kwargs or {}))
 

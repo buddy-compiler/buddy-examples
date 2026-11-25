@@ -13,11 +13,12 @@
 #include <vector>
 
 namespace {
-constexpr size_t layers = 28, capacity = 256, vocabulary = 128256;
+constexpr size_t layers = 28, capacity = 256;
 
 class LlamaRunner final : public buddy::runtime::InferenceRunner {
 public:
   void run(const buddy::runtime::RunConfig &config) override {
+    std::cerr << "Loading model: " << config.raxPath << std::endl;
     const auto manifest =
         buddy::runtime::ModelManifest::loadFromRax(config.raxPath);
     auto library = model::openLibrary(manifest.soPath);
@@ -29,10 +30,15 @@ public:
         std::stoull(manifest.moduleAttrs.at("image_base"), nullptr, 0));
     const auto &parametersPath = manifest.weightPaths.at(0);
     const auto &weightsPath = manifest.weightPaths.at(1);
+    std::cerr << "Mapping weights from DDR" << std::endl;
     resources::Mapping parameters(
         parametersPath, resources::image.files.at(parametersPath).bytes, 64);
     resources::Mapping weights(
         weightsPath, resources::image.files.at(weightsPath).bytes, 64);
+    std::cerr << "Weights ready: "
+              << resources::image.files.at(parametersPath).bytes +
+                     resources::image.files.at(weightsPath).bytes
+              << " bytes mapped" << std::endl;
     std::ifstream orderFile(manifest.constants.at(2).path);
     std::vector<size_t> order;
     for (size_t index; orderFile >> index;)
@@ -40,14 +46,31 @@ public:
     if (order.size() != 2 + 2 * layers || order.at(0) != 0)
       throw std::runtime_error("Invalid program input order");
 
+    // The prompt: its token ids, of the baremetal program (prompt/ids.data)
+    // for the check against the reference, else of the given text. The check
+    // decodes the eight steps of baremetal.cpp.
+    const bool check = !config.referencePath.empty();
     buddy::Text<long long, 2> prompt(config.prompt);
-    const auto raw = prompt.byteTokenIds(manifest.vocabPath);
-    std::vector<long long> ids{128000};
-    ids.insert(ids.end(), raw.begin(), raw.end());
+    std::vector<long long> ids;
+    if (check) {
+      std::ifstream file;
+      file.exceptions(std::ios::failbit | std::ios::badbit);
+      file.open(config.inputPath, std::ios::binary | std::ios::ate);
+      ids.resize(static_cast<size_t>(file.tellg()) / sizeof(long long));
+      file.seekg(0);
+      file.read(reinterpret_cast<char *>(ids.data()),
+                ids.size() * sizeof(long long));
+    } else {
+      // The text after the BOS (128000) the tokenizer of the checkpoint adds.
+      const auto raw = prompt.byteTokenIds(manifest.vocabPath);
+      ids.assign(1, 128000);
+      ids.insert(ids.end(), raw.begin(), raw.end());
+    }
     const size_t used = ids.size();
-    if (!used || used >= capacity || config.maxNewTokens < 1)
+    const size_t generate = check ? 8 : config.maxNewTokens;
+    if (!used || used >= capacity || generate < 1)
       throw std::runtime_error("Invalid prompt or generation length");
-    const size_t requested = used + config.maxNewTokens;
+    const size_t requested = used + generate;
     if (requested > capacity)
       throw std::runtime_error("Request exceeds KV cache capacity");
     size_t cacheCapacity = (used + 31) / 32 * 32;
@@ -57,7 +80,25 @@ public:
       cache[index].resize(cacheSize);
       updated[index].resize(cacheSize);
     }
-    std::vector<float> logits;
+    // The candidates of the next token the program returns: the largest
+    // logits of the last position on each rank's piece of the vocabulary
+    // and their indices, the ranks in order. They hold the `candidates`
+    // largest logits of the vocabulary: the sampler reads no other. Greedy
+    // decoding picks the first largest, the first maximum of the logits.
+    // candidates.txt: the candidates of a rank, then their number.
+    std::ifstream candidatesFile(manifest.constants.at(3).path);
+    size_t candidates = 0, total = 0;
+    if (!(candidatesFile >> candidates >> total))
+      throw std::runtime_error("Invalid candidate counts");
+    const auto &sampling = config.samplerConfig;
+    if (!check && sampling.temperature != 0.0f &&
+        (sampling.topK < 1 || static_cast<size_t>(sampling.topK) > candidates))
+      throw std::runtime_error("Sampling needs a top-k of at most " +
+                               std::to_string(candidates));
+    if (!check && sampling.repeatPenalty != 1.0f)
+      throw std::runtime_error("No repetition penalty over the candidates");
+    std::vector<float> values(total);
+    std::vector<int64_t> indices(total);
     auto step = [&](const long long *ids, size_t count, int64_t position) {
       const size_t needed =
           (static_cast<size_t>(position) + count + 31) / 32 * 32;
@@ -73,7 +114,6 @@ public:
         }
         cacheCapacity = needed;
       }
-      logits.resize(count * vocabulary);
       std::array<void *, 2 + 2 * layers> inputs;
       inputs[0] = const_cast<long long *>(ids);
       inputs[1] = &position;
@@ -87,8 +127,8 @@ public:
         else if (index >= 2)
           words.push_back(reinterpret_cast<void *>(cacheCapacity));
       }
-      words.push_back(logits.data());
-      words.push_back(reinterpret_cast<void *>(count));
+      words.push_back(values.data());
+      words.push_back(indices.data());
       for (auto &buffer : updated) {
         words.push_back(buffer.data());
         words.push_back(reinterpret_cast<void *>(cacheCapacity));
@@ -98,24 +138,77 @@ public:
       cache.swap(updated);
     };
 
-    buddy::Sampler sampler(config.samplerConfig);
+    // The eight greedy steps of baremetal.cpp against the reference of
+    // buddy-pytorch-golden.py (prompt/reference.data: the candidates of every
+    // step, then the token it picks): the same lines and bounds, and a
+    // failure when the candidates or a token differ.
+    if (check) {
+      std::vector<float> expected(8 * total);
+      std::vector<int64_t> goldTokens(8);
+      std::ifstream golden;
+      golden.exceptions(std::ios::failbit | std::ios::badbit);
+      golden.open(config.referencePath, std::ios::binary);
+      golden.read(reinterpret_cast<char *>(expected.data()),
+                  expected.size() * sizeof(float));
+      golden.read(reinterpret_cast<char *>(goldTokens.data()),
+                  goldTokens.size() * sizeof(int64_t));
+      std::vector<float> stepCandidates(8 * total);
+      unsigned different = 0;
+      long long position = 0, next = 0;
+      const uint64_t first = read_counter();
+      for (unsigned index = 0; index < 8; ++index) {
+        if (index == 0)
+          step(ids.data(), used, 0);
+        else
+          step(&next, 1, position);
+        position += index == 0 ? used : 1;
+        size_t best = 0;
+        for (size_t i = 1; i < total; ++i)
+          if (values[i] > values[best])
+            best = i;
+        next = indices[best];
+        std::copy_n(values.data(), total,
+                    stepCandidates.data() + index * total);
+        different += next != goldTokens[index];
+        printf("Token %u: %lld, reference %lld\n", index + 1, next,
+               static_cast<long long>(goldTokens[index]));
+      }
+      const uint64_t cycles = read_counter() - first;
+      printf("Generated tokens: 8, %u differ from the reference\n", different);
+      printf("Inference cycles: %lu\n", static_cast<unsigned long>(cycles));
+      if (check_output(stepCandidates.data(), expected.data(), 8 * total,
+                       1e-2f) ||
+          different)
+        throw std::runtime_error("Output differs from the reference");
+      return;
+    }
+
+    buddy::Sampler sampler(sampling);
     std::vector<int> tokens;
+    auto sample = [&] {
+      return static_cast<int>(
+          indices[sampler.sample(values.data(), values.size(), {})]);
+    };
+    std::cerr << "Prefill: " << used
+              << " tokens, generation limit: " << config.maxNewTokens
+              << std::endl;
     const auto begin = read_time_ns();
     step(ids.data(), used, 0);
-    int next = sampler.sample(logits.data() + (used - 1) * vocabulary,
-                              vocabulary, tokens);
+    int token = sample();
     for (size_t position = used; position < capacity; ++position) {
-      if (next == 128001 || next == 128008 || next == 128009)
+      if (token == 128001 || token == 128008 || token == 128009)
         break;
-      tokens.push_back(next);
+      tokens.push_back(token);
+      std::cerr << "Token " << tokens.size() << "/" << config.maxNewTokens
+                << ": " << token << std::endl;
       if (tokens.size() == static_cast<size_t>(config.maxNewTokens))
         break;
-      const long long id = next;
+      const long long id = token;
       step(&id, 1, position);
-      next = sampler.sample(logits.data(), vocabulary, tokens);
+      token = sample();
     }
     const double elapsed = (read_time_ns() - begin) * 1e-9;
-    std::cout << prompt.revertQwen3(tokens) << '\n';
+    std::cout << prompt.revertQwen3(tokens) << std::endl;
     if (!config.suppressStats)
       std::cout << "Generated tokens: " << tokens.size()
                 << ", inference time: " << elapsed << "s\n";
@@ -123,8 +216,10 @@ public:
       std::ofstream file;
       file.exceptions(std::ios::failbit | std::ios::badbit);
       file.open(config.outputPath, std::ios::binary);
-      file.write(reinterpret_cast<const char *>(logits.data()),
-                 logits.size() * sizeof(float));
+      file.write(reinterpret_cast<const char *>(values.data()),
+                 values.size() * sizeof(float));
+      file.write(reinterpret_cast<const char *>(indices.data()),
+                 indices.size() * sizeof(int64_t));
     }
   }
 };

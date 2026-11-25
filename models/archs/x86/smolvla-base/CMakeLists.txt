@@ -21,7 +21,6 @@ add_custom_command(
          ${OUTPUT_DIR}/arg1.data
          ${OUTPUT_DIR}/forward.mlir
          ${OUTPUT_DIR}/subgraph0.mlir
-         ${OUTPUT_DIR}/testcase/actions.data
   COMMAND ${CMAKE_COMMAND} -E make_directory ${OUTPUT_DIR}
   COMMAND ${PYTHON} buddy-pytorch-importer.py
   DEPENDS ${RECIPE_FRONTEND_SOURCES}
@@ -34,6 +33,22 @@ add_custom_command(
   COMMENT "Importing smolvla-base for x86"
   VERBATIM
 )
+
+# ===----------------------------------------------------------------------===
+# The test case of the runner: fixed random inputs and the actions PyTorch
+# samples from them.
+# ===----------------------------------------------------------------------===
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/testcase/actions.data
+  COMMAND ${PYTHON} buddy-pytorch-golden.py
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-golden.py
+          ${MODEL_DIR}/smolvla-base/model.py
+          ${MODEL_DIR}/smolvla-base/output/smolvla-base/config.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Computing the smolvla-base test case for x86"
+  VERBATIM
+)
+add_custom_target(smolvla-base-golden DEPENDS ${OUTPUT_DIR}/testcase/actions.data)
 
 # ===----------------------------------------------------------------------===
 # Compile the host entry point to native x86 code.
@@ -223,6 +238,9 @@ add_custom_command(
   COMMENT "Packaging x86 smolvla-base as RAX"
   VERBATIM
 )
-add_custom_target(buddy-x86-smolvla-base-rax-custom-build DEPENDS ${OUTPUT_DIR}/smolvla-base.rax)
+add_custom_target(
+  buddy-x86-smolvla-base-rax-custom-build
+  DEPENDS ${OUTPUT_DIR}/smolvla-base.rax ${OUTPUT_DIR}/testcase/actions.data
+)
 
 add_subdirectory(origin)

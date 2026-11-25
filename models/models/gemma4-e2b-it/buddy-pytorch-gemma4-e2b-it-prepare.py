@@ -42,3 +42,13 @@ snapshot_download(
     allow_patterns=["wikitext-2-raw-v1/*.parquet"],
     local_dir=Path(__file__).resolve().parents[2] / "datasets/wikitext",
 )
+
+# LAMBADA (OpenAI's English test set, 5153 passages): the zero-shot accuracy
+# of the last word.
+snapshot_download(
+    "EleutherAI/lambada_openai",
+    repo_type="dataset",
+    revision="900124bf3b8235c6daf21033af9948b3f07346c4",
+    allow_patterns=["en/test/en.parquet"],
+    local_dir=Path(__file__).resolve().parents[2] / "datasets/lambada",
+)

@@ -28,8 +28,8 @@ model = whisper.load()
 model.model.config._attn_implementation = "eager"
 features = WhisperFeatureExtractor.from_pretrained(whisper.checkpoint)
 tokenizer = WhisperTokenizer.from_pretrained(whisper.checkpoint)
-# The audio of the Buddy Whisper example, the one the runner transcribes.
-example = model_dir.parents[3] / "thirdparty/buddy-mlir/examples/BuddyWhisper/audio.wav"
+# The example audio of the model, the one the runner transcribes.
+example = Path(whisper.__file__).parent / "audio/audio.wav"
 
 
 def mxint8(values, axis):

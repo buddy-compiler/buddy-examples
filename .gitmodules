@@ -1,6 +1,3 @@
-[submodule "platforms/thirdparty/chipyard"]
-	path = platforms/thirdparty/chipyard
-	url = https://github.com/ucb-bar/chipyard.git
 [submodule "buddy-mlir"]
 	path = thirdparty/buddy-mlir
 	url = https://github.com/buddy-compiler/buddy-mlir.git

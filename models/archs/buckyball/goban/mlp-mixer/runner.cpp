@@ -60,7 +60,7 @@ public:
     auto bias = load<int32_t>(manifest.weightPaths.at(1));
     auto weights = load<int8_t>(manifest.weightPaths.at(2));
     // The input is the prepared [196, 768] FP32 patches (output/input.f32).
-    auto values = load<float>(config.imagePath);
+    auto values = load<float>(config.inputPath);
     if (values.getSize() != patches * patchSize)
       throw std::runtime_error("Mixer requires 196x768 patches");
     MemRef<float, 2> input(std::vector<size_t>{patches, patchSize});
@@ -86,9 +86,34 @@ public:
                               {patchSize, 1}};
     mixer::Output output{};
     const auto start = read_time_ns();
+    const uint64_t first = read_counter();
     forward(&output, &f32, &i32, &i8, &patchesInput);
+    const uint64_t cycles = read_counter() - first;
     const double elapsed = (read_time_ns() - start) * 1e-9;
     const float *logits = output.data();
+    // Against the reference of the recipe, as baremetal.cpp checks it: the
+    // same lines and bound, and a failure when the logits differ.
+    if (!config.referencePath.empty()) {
+      auto reference = load<float>(config.referencePath);
+      if (reference.getSize() != classes)
+        throw std::runtime_error("Invalid reference size");
+      const float *expected = reference.getData();
+      unsigned best = 0, gold = 0;
+      for (unsigned i = 1; i < classes; ++i) {
+        if (logits[i] > logits[best])
+          best = i;
+        if (expected[i] > expected[gold])
+          gold = i;
+      }
+      printf("Classification Index: %u, reference %u\nInference cycles: %lu\n",
+             best, gold, static_cast<unsigned long>(cycles));
+      const int failed =
+          check_output(logits, expected, classes, 0.15f) || best != gold;
+      std::free(output.allocated);
+      if (failed)
+        throw std::runtime_error("Output differs from the reference");
+      return;
+    }
     const auto prediction = std::max_element(logits, logits + classes) - logits;
     double sum = 0.0;
     for (size_t i = 0; i < classes; ++i)

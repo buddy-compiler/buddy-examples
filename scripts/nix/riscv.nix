@@ -1,11 +1,11 @@
 { pkgs }:
 
 let
-  # Build newlib-nano with size optimization flags
+  # Keep compact I/O and use full malloc bins for model allocations.
   newlib-nano = pkgs.pkgsCross.riscv64-embedded.newlib.overrideAttrs (oldAttrs: {
     pname = "newlib-nano";
     configureFlags = oldAttrs.configureFlags or [] ++ [
-      "--enable-newlib-nano-malloc"
+      "--disable-newlib-nano-malloc"
       "--enable-newlib-nano-formatted-io"
       "--enable-newlib-reent-small"
       "--disable-newlib-fvwrite-in-streamio"
@@ -15,7 +15,7 @@ let
       "--enable-lite-exit"
       "--enable-newlib-global-atexit"
     ];
-    CFLAGS_FOR_TARGET = "-Os -ffunction-sections -fdata-sections -mcmodel=medany";
+    CFLAGS_FOR_TARGET = "-O2 -ffunction-sections -fdata-sections -mcmodel=medany -mstrict-align";
   });
 
   # Create a custom cross system with newlib-nano
@@ -36,7 +36,8 @@ let
 in
 
 {
-  # Host reference for the target's scalar tanhf, including its fused rounding.
+  # Host reference for the target's scalar tanhf, sinf and cosf, including
+  # their fused rounding.
   newlib-reference-math = pkgs.stdenv.mkDerivation {
     pname = "newlib-reference-math";
     version = newlib-nano.version;
@@ -44,9 +45,12 @@ in
     dontConfigure = true;
     buildPhase = ''
       gcc -Os -mfma -ffp-contract=fast -fno-builtin -fPIC -shared \
+        -D__OBSOLETE_MATH=0 \
         -Wl,--no-undefined -Wl,-Bsymbolic \
         -Inewlib/libm/common -idirafter newlib/libc/include \
         newlib/libm/math/sf_tanh.c newlib/libm/common/sf_expm1.c \
+        newlib/libm/common/sinf.c newlib/libm/common/cosf.c \
+        newlib/libm/common/sincosf_data.c \
         newlib/libm/common/math_errf.c -lm -o libnewlib-reference.so
     '';
     installPhase = ''

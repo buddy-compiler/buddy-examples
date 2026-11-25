@@ -1,14 +1,8 @@
 from buddy.compiler.graph.operation import (
-    AddOp,
     BatchMatmulOp,
-    CloneOp,
-    DivOp,
-    ExpandOp,
+    ConstantPadNdOp,
     PlaceholderOp,
-    SubOp,
     TransposeMatmulFusedOp,
-    ViewOp,
-    WhereOp,
 )
 from buddy.compiler.graph.transform.quantization.quantize import sort_graph
 from buddy.compiler.graph import NodeType
@@ -62,6 +56,19 @@ def mxint8(graph, source, name, axis):
     """`source` read through MXINT8: quantized online along `axis` and
     restored to FP32."""
     shape = source.tensor_meta["shape"]
+    if not is_symbolic(shape[axis]) and shape[axis] % 32:
+        aligned = padded(shape, axis)
+        widths = [0, 0] * (len(shape) - axis - 1) + [0, aligned[axis] - shape[axis]]
+        source = operation(
+            graph,
+            ConstantPadNdOp,
+            f"{name}_padded",
+            [source],
+            [widths, 0.0],
+            aligned,
+            TensorDType.Float32,
+        )
+        shape = aligned
     codes = operation(
         graph,
         FP32ToMXINT8QuantOp,
@@ -90,48 +97,17 @@ def convert(graph, op, index, axis):
     )
 
 
-def split(graph, op, index, axis):
-    """Argument `index` of `op` read as two MXINT8 terms along `axis`: its
-    MXINT8 value plus the MXINT8 value of what that leaves out."""
-    source = graph.node_table[op.args[index]]
-    shape = source.tensor_meta["shape"]
-    name = f"{op.name}_{index}"
-    head = mxint8(graph, source, f"{name}_head", axis)
-    residual = operation(
-        graph, SubOp, f"{name}_residual", [source, head], [], shape, TensorDType.Float32
-    )
-    tail = mxint8(graph, residual, f"{name}_tail", axis)
-    values = operation(
-        graph, AddOp, f"{name}_split", [head, tail], [], shape, TensorDType.Float32
-    )
-    replace_argument(graph, op, index, values)
-
-
-def probabilities(graph, op):
-    """Whether operand 0 of the attention product `op` is the softmax output:
-    the division that normalizes it, behind views, expands and clones. The
-    math attention of the head zeroes the rows that see no key: the softmax
-    is the last operand of that where."""
-    source = graph.node_table[op.args[0]]
-    while isinstance(source, (ViewOp, ExpandOp, CloneOp, WhereOp)):
-        source = graph.node_table[source.args[2 if isinstance(source, WhereOp) else 0]]
-    return isinstance(source, DivOp)
-
-
 def quantize(graph, params):
     """Every matrix product reads MXINT8 operands, blocked along its reduction
     axis K: a Linear its [N, K] weight, packed offline, and its activation,
-    quantized online; an attention product both activations. The key of the
-    score product q k^T is read as two MXINT8 terms. A product whose K is not
-    a multiple of 32 (the first Linear of the act head, over the hidden state
-    and the four decision features) stays FP32."""
+    quantized online; an attention product both activations. Reduction axes
+    are zero-padded to complete blocks, including the action head's 1028
+    input features."""
     values = dict(zip((node.name for node in graph.params), params, strict=True))
     for op in list(graph.body):
         if isinstance(op, TransposeMatmulFusedOp):
             weight = graph.node_table[op.args[1]]
             shape = weight.tensor_meta["shape"]
-            if shape[1] % 32:
-                continue
             if weight.children != [op.name]:
                 # A weight the embedding shares: the Linear reads its own
                 # packed copy.
@@ -153,7 +129,7 @@ def quantize(graph, params):
                 weight.name + "_values",
                 [weight],
                 [1],
-                shape,
+                padded(shape, 1),
                 TensorDType.Float32,
             )
             replace_argument(graph, op, 1, restored)
@@ -165,10 +141,7 @@ def quantize(graph, params):
             # P V is zero-padded to whole blocks.
             if not is_symbolic(k) and k % 32:
                 continue
-            if probabilities(graph, op):
-                convert(graph, op, 1, 1)
-            else:
-                split(graph, op, 1, 1)
+            convert(graph, op, 1, 1)
             convert(graph, op, 0, 2)
     sort_graph(graph)
     return [values[node.name] for node in graph.params]

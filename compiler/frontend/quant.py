@@ -29,6 +29,7 @@ from buddy_mlir.dialects import tosa
 
 from buddy.compiler.graph.operation import Op, OpType
 from buddy.compiler.graph.sizes import mlir_shape
+from buddy.compiler.graph.type import TensorDType
 
 
 class FP32ToInt8QuantOp(Op):
@@ -49,6 +50,84 @@ class Int32ToFP32DequantOp(Op):
         self._op_type = OpType.ElementwiseType
 
 
+class Int32ToInt8QuantOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class FP32ToInt32QuantOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class ScaledAddI8Op(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class LookupI8Op(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class LookupI32Op(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class SoftmaxI8Op(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ReduceType
+
+
+class RowMaxU32Op(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ReduceType
+
+
+class GatherRowsOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ReshapeType
+
+
+class ConcatColumnsOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ConcatType
+
+
+class FixedRequantOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class FixedUnaryOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class FixedBinaryOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class FixedMeanOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ReduceType
+
+
 class FP32ToMXINT8QuantOp(Op):
     def __init__(self):
         super().__init__()
@@ -59,6 +138,34 @@ class MXINT8ToFP32DequantOp(Op):
     def __init__(self):
         super().__init__()
         self._op_type = OpType.ElementwiseType
+
+
+class MXINT5ToFP32DequantOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+class MXINT8ActivationOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+def mxint8_activation_op(node, symbol_table):
+    return ir.Operation.create(
+        "frontend.mxint8_activation",
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.IntegerType.get_signless(8)
+            )
+        ],
+        operands=[symbol_table[(name, 0)] for name in node.args[:3]],
+        attributes={
+            "axis": ir.IntegerAttr.get(ir.IntegerType.get_signless(64), node.args[3]),
+            "gated": ir.BoolAttr.get(node.args[4]),
+        },
+    ).result
 
 
 def quantize(values, multiplier):
@@ -94,6 +201,28 @@ def dequantize_mxint8(packed, axis):
     exponent = p[..., k:].view(torch.uint8).long() - 127
     value = torch.ldexp(p[..., :k].double(), exponent.repeat_interleave(32, -1))
     return value.float().movedim(-1, axis)
+
+
+def dequantize_mxint5(packed, axis):
+    """Decode native signed INT5 blocks without intermediate INT8 rounding."""
+    p = packed.movedim(axis, -1).contiguous().view(torch.uint8)
+    if p.shape[-1] % 22:
+        raise ValueError("INT5 weights require complete 32-value blocks")
+    blocks = p.shape[-1] // 22
+    words = p[..., : blocks * 20].long().reshape(*p.shape[:-1], blocks, 4, 5)
+    word = sum(words[..., i] << (8 * i) for i in range(5))
+    codes = torch.stack([((word >> (5 * i)) & 31) for i in range(8)], -1)
+    codes = ((codes ^ 16) - 16).reshape(*p.shape[:-1], blocks, 32)
+    factors = p[..., blocks * 20 : blocks * 21].long()[..., None]
+    exponents = p[..., blocks * 21 :].long()[..., None]
+    if (
+        torch.any(codes == -16)
+        or torch.any((factors < 1) | (factors > 137))
+        or torch.any(exponents == 255)
+    ):
+        raise ValueError("Invalid native INT5 weight encoding")
+    value = torch.ldexp((codes * factors).double(), exponents - 131)
+    return value.flatten(-2).float().movedim(-1, axis)
 
 
 def shift():
@@ -148,6 +277,18 @@ def fp32_to_int8_quant_op(node, symbol_table):
     ).result
 
 
+def fp32_to_int32_quant_op(node, symbol_table):
+    return ir.Operation.create(
+        "frontend.fp32_to_int32",
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.IntegerType.get_signless(32)
+            )
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args],
+    ).result
+
+
 def int8_to_fp32_dequant_op(node, symbol_table):
     f32 = ir.F32Type.get()
     return ir.Operation.create(
@@ -190,12 +331,158 @@ def mxint8_to_fp32_dequant_op(node, symbol_table):
     ).result
 
 
+def mxint5_to_fp32_dequant_op(node, symbol_table):
+    return ir.Operation.create(
+        "frontend.mxint5_to_fp32",
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.F32Type.get()
+            )
+        ],
+        operands=[symbol_table[(str(node.args[0]), 0)]],
+        attributes={
+            "axis": ir.IntegerAttr.get(ir.IntegerType.get_signless(64), node.args[1])
+        },
+    ).result
+
+
+def int32_to_int8_quant_op(node, symbol_table):
+    return ir.Operation.create(
+        "frontend.int32_to_int8",
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.IntegerType.get_signless(8)
+            )
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args],
+    ).result
+
+
+def scaled_add_i8_op(node, symbol_table):
+    return ir.Operation.create(
+        "frontend.scaled_add_i8",
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.IntegerType.get_signless(8)
+            )
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args[:2]],
+        attributes={
+            "lhs_ratio": ir.FloatAttr.get(ir.F32Type.get(), node.args[2]),
+            "rhs_ratio": ir.FloatAttr.get(ir.F32Type.get(), node.args[3]),
+        },
+    ).result
+
+
+def lookup_i8_op(node, symbol_table):
+    return ir.Operation.create(
+        "frontend.lookup_i8",
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.IntegerType.get_signless(8)
+            )
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args],
+    ).result
+
+
+def nonlinear_op(node, symbol_table):
+    softmax = isinstance(node, SoftmaxI8Op)
+    return ir.Operation.create(
+        (
+            "frontend.row_max_u32"
+            if isinstance(node, RowMaxU32Op)
+            else "frontend.softmax_i8" if softmax else "frontend.lookup_i32"
+        ),
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]),
+                ir.IntegerType.get_signless(8 if softmax else 32),
+            )
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args[:2]],
+        attributes=(
+            {
+                "multiplier": ir.IntegerAttr.get(
+                    ir.IntegerType.get_signless(64), node.args[2]
+                )
+            }
+            if softmax
+            else {}
+        ),
+    ).result
+
+
+def gather_rows_op(node, symbol_table):
+    element = {
+        TensorDType.Float32: ir.F32Type.get(),
+        TensorDType.Int32: ir.IntegerType.get_signless(32),
+        TensorDType.Int8: ir.IntegerType.get_signless(8),
+    }[node.tensor_meta["dtype"]]
+    return ir.Operation.create(
+        (
+            "frontend.concat_columns"
+            if isinstance(node, ConcatColumnsOp)
+            else "frontend.gather_rows"
+        ),
+        results=[
+            ir.RankedTensorType.get(mlir_shape(node.tensor_meta["shape"]), element)
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args],
+    ).result
+
+
+def fixed_op(node, symbol_table):
+    i64 = ir.IntegerType.get_signless(64)
+    attributes = {}
+    if isinstance(node, FixedRequantOp):
+        name, count = "fixed_requant", 3
+        attributes["fraction"] = ir.IntegerAttr.get(i64, node.args[3])
+    elif isinstance(node, FixedUnaryOp):
+        name, count = "fixed_unary", 1
+        attributes["kind"] = ir.StringAttr.get(node.args[1])
+        attributes["fraction"] = ir.IntegerAttr.get(i64, node.args[2])
+    elif isinstance(node, FixedBinaryOp):
+        name, count = "fixed_binary", 2
+        attributes["kind"] = ir.StringAttr.get(node.args[2])
+        attributes["fraction"] = ir.IntegerAttr.get(i64, node.args[3])
+    elif isinstance(node, FixedMeanOp):
+        name, count = "fixed_mean", 1
+    else:
+        raise TypeError(type(node))
+    return ir.Operation.create(
+        "frontend." + name,
+        results=[
+            ir.RankedTensorType.get(
+                mlir_shape(node.tensor_meta["shape"]), ir.IntegerType.get_signless(32)
+            )
+        ],
+        operands=[symbol_table[(str(argument), 0)] for argument in node.args[:count]],
+        attributes=attributes,
+    ).result
+
+
 ops_registry = {
+    "MXINT8ActivationOp": mxint8_activation_op,
+    "ScaledAddI8Op": scaled_add_i8_op,
+    "FP32ToInt32QuantOp": fp32_to_int32_quant_op,
+    "LookupI32Op": nonlinear_op,
+    "SoftmaxI8Op": nonlinear_op,
+    "RowMaxU32Op": nonlinear_op,
+    "GatherRowsOp": gather_rows_op,
+    "ConcatColumnsOp": gather_rows_op,
+    "LookupI8Op": lookup_i8_op,
+    "Int32ToInt8QuantOp": int32_to_int8_quant_op,
+    "FixedRequantOp": fixed_op,
+    "FixedUnaryOp": fixed_op,
+    "FixedBinaryOp": fixed_op,
+    "FixedMeanOp": fixed_op,
     "FP32ToInt8QuantOp": fp32_to_int8_quant_op,
     "Int8ToFP32DequantOp": int8_to_fp32_dequant_op,
     "Int32ToFP32DequantOp": int32_to_fp32_dequant_op,
     "FP32ToMXINT8QuantOp": fp32_to_mxint8_quant_op,
     "MXINT8ToFP32DequantOp": mxint8_to_fp32_dequant_op,
+    "MXINT5ToFP32DequantOp": mxint5_to_fp32_dequant_op,
 }
 
 ref_registry = {

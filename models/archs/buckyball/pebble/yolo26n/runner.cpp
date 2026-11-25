@@ -72,6 +72,56 @@ public:
     auto quantizedWeights = loadParameters<int8_t>(manifest.weightPaths.at(2));
     const auto labels = loadLabels(manifest.vocabPath);
 
+    // The prepared image of the recipe against its reference, as
+    // baremetal.cpp checks it: the same lines, and a failure when the boxes
+    // differ.
+    if (!config.referencePath.empty()) {
+      auto prepared = loadParameters<float>(config.inputPath);
+      auto reference = loadParameters<float>(config.referencePath);
+      if (prepared.getSize() != 640 * 640 * 3 ||
+          reference.getSize() != Detections * 6)
+        throw std::runtime_error("Invalid prepared image or reference size");
+      yolo::Parameters f32{parameters.getData(),
+                           parameters.getData(),
+                           0,
+                           {int64_t(parameters.getSize())},
+                           {1}};
+      yolo::Bias i32{quantizedBias.getData(),
+                     quantizedBias.getData(),
+                     0,
+                     {int64_t(quantizedBias.getSize())},
+                     {1}};
+      yolo::Weights i8{quantizedWeights.getData(),
+                       quantizedWeights.getData(),
+                       0,
+                       {int64_t(quantizedWeights.getSize())},
+                       {1}};
+      yolo::Input imageInput{prepared.getData(),
+                             prepared.getData(),
+                             0,
+                             {1, 640, 640, 3},
+                             {1228800, 1920, 3, 1}};
+      yolo::Output output{};
+      const uint64_t start = read_counter();
+      forward(&output, &f32, &i32, &i8, &imageInput);
+      const uint64_t elapsed = read_counter() - start;
+      const float *expected = reference.getData();
+      unsigned count = 0, gold = 0;
+      for (unsigned i = 0; i < Detections; ++i) {
+        count += output.data()[i * 6 + 4] >= 0.25f;
+        gold += expected[i * 6 + 4] >= 0.25f;
+      }
+      printf("Detections: %u, reference %u\nInference cycles: %lu\n", count,
+             gold, static_cast<unsigned long>(elapsed));
+      const int failed =
+          check_output(output.data(), expected, Detections * 6, 1e-5f) ||
+          count != gold;
+      std::free(output.allocated);
+      if (failed)
+        throw std::runtime_error("Output differs from the reference");
+      return;
+    }
+
     // Letterbox: scale the image into 640x640 and pad it with gray.
     dip::Image<float, 4> image(config.imagePath, dip::DIP_RGB, true /* norm */);
     const size_t height = image.getSizes()[2], width = image.getSizes()[3];
@@ -83,13 +133,12 @@ public:
     MemRef<float, 4> resized = dip::Resize4D_NCHW(
         &image, dip::INTERPOLATION_TYPE::BILINEAR_INTERPOLATION,
         {1, 3, uint(rows), uint(columns)});
-    MemRef<float, 4> input({1, 3, InputSize, InputSize}, 114.0f / 255.0f);
-    for (size_t c = 0; c < 3; ++c)
-      for (size_t y = 0; y < rows; ++y)
-        std::memcpy(input.getData() + (c * InputSize + top + y) * InputSize +
-                        left,
-                    resized.getData() + (c * rows + y) * columns,
-                    sizeof(float) * columns);
+    MemRef<float, 4> input({1, InputSize, InputSize, 3}, 114.0f / 255.0f);
+    for (size_t y = 0; y < rows; ++y)
+      for (size_t x = 0; x < columns; ++x)
+        for (size_t c = 0; c < 3; ++c)
+          input.getData()[((top + y) * InputSize + left + x) * 3 + c] =
+              resized.getData()[(c * rows + y) * columns + x];
 
     // The compiled function returns an owned memref descriptor of the 300
     // best boxes, [x1, y1, x2, y2, score, class] in input pixels.
@@ -111,8 +160,8 @@ public:
     yolo::Input imageInput{input.getData(),
                            input.getData(),
                            0,
-                           {1, 3, 640, 640},
-                           {1228800, 409600, 640, 1}};
+                           {1, 640, 640, 3},
+                           {1228800, 1920, 3, 1}};
     yolo::Output output{};
     const auto start = read_time_ns();
     forward(&output, &f32, &i32, &i8, &imageInput);

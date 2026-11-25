@@ -47,9 +47,43 @@ public:
     laya::Type type{input.type, input.type, 0, {1}, {1}};
     laya::Output output{};
     const auto begin = read_time_ns();
+    const uint64_t first = read_counter();
     forward(&output, &parameters, &bias, &weights, &tokens, &mask, &positions,
             &valid, &type);
+    const uint64_t cycles = read_counter() - first;
     const double elapsed = (read_time_ns() - begin) * 1e-9;
+    // Against the reference of the recipe (expected.data), as baremetal.cpp
+    // checks it: the same lines and bound, and a failure when they differ.
+    if (!config.referencePath.empty()) {
+      float expected[18];
+      std::ifstream golden;
+      golden.exceptions(std::ios::failbit | std::ios::badbit);
+      golden.open(config.referencePath, std::ios::binary);
+      golden.read(reinterpret_cast<char *>(expected), sizeof(expected));
+      float scores[18];
+      std::copy_n(output.choice.data(), 16, scores);
+      std::copy_n(output.action.data(), 2, scores + 16);
+      unsigned choice = 0, gold_choice = 0;
+      for (unsigned i = 1; i < 16; ++i) {
+        if (scores[i] > scores[choice])
+          choice = i;
+        if (expected[i] > expected[gold_choice])
+          gold_choice = i;
+      }
+      const unsigned action = scores[17] > scores[16];
+      const unsigned gold_action = expected[17] > expected[16];
+      printf("Choice: %u, reference %u\nAction: %u, reference %u\n"
+             "Inference cycles: %lu\n",
+             choice, gold_choice, action, gold_action,
+             static_cast<unsigned long>(cycles));
+      const int failed = check_output(scores, expected, 18, 2e-2f) ||
+                         choice != gold_choice || action != gold_action;
+      free(output.choice.allocated);
+      free(output.action.allocated);
+      if (failed)
+        throw std::runtime_error("Output differs from the reference");
+      return;
+    }
     const auto choice =
         std::max_element(output.choice.data(), output.choice.data() + 16) -
         output.choice.data();

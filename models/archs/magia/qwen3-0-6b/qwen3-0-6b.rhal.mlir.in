@@ -1,0 +1,13 @@
+rhal.module @qwen3_0_6b attributes {
+  version = "0.1.0",
+  model_name = "qwen3-0-6b_magia",
+  runner_library = "file:libqwen3-0-6b-magia-runner.so",
+  image_base = "@MODEL_IMAGE@"
+} {
+  rhal.constant @weights {id = 1 : i32, storage = "external",
+    type = tensor<?xi16>, uri = "arg0.data"}
+  rhal.constant @params {id = 2 : i32, storage = "external",
+    type = tensor<?xf32>, uri = "arg1.data"}
+  rhal.codeobj @model {id = 1 : i32, kind = "host_shared_lib",
+    backend = "cpu", uri = "file:libqwen3-0-6b-magia-runner.so"}
+}

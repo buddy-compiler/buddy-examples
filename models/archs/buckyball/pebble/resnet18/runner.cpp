@@ -66,6 +66,57 @@ public:
     auto quantizedBias = load<int32_t>(manifest.weightPaths.at(1));
     auto quantizedWeights = load<int8_t>(manifest.weightPaths.at(2));
 
+    // The prepared image of the recipe against its reference, as
+    // baremetal.cpp checks it: the same lines, and a failure when the logits
+    // differ.
+    if (!config.referencePath.empty()) {
+      auto prepared = load<float>(config.inputPath);
+      auto reference = load<float>(config.referencePath);
+      if (prepared.getSize() != 224 * 224 * 3 || reference.getSize() != 1000)
+        throw std::runtime_error("Invalid prepared image or reference size");
+      model::Parameters f32{parameters.getData(),
+                            parameters.getData(),
+                            0,
+                            {int64_t(parameters.getSize())},
+                            {1}};
+      model::Bias i32{quantizedBias.getData(),
+                      quantizedBias.getData(),
+                      0,
+                      {int64_t(quantizedBias.getSize())},
+                      {1}};
+      model::Weights i8{quantizedWeights.getData(),
+                        quantizedWeights.getData(),
+                        0,
+                        {int64_t(quantizedWeights.getSize())},
+                        {1}};
+      model::Image imageInput{prepared.getData(),
+                              prepared.getData(),
+                              0,
+                              {1, 224, 224, 3},
+                              {150528, 672, 3, 1}};
+      model::Scores output{};
+      const uint64_t start = read_counter();
+      forward(&output, &f32, &i32, &i8, &imageInput);
+      const uint64_t elapsed = read_counter() - start;
+      const float *values = output.data();
+      const float *expected = reference.getData();
+      unsigned best = 0, gold = 0;
+      for (unsigned i = 1; i < 1000; ++i) {
+        if (values[i] > values[best])
+          best = i;
+        if (expected[i] > expected[gold])
+          gold = i;
+      }
+      printf("Classification Index: %u, reference %u\nInference cycles: %lu\n",
+             best, gold, static_cast<unsigned long>(elapsed));
+      const int failed =
+          check_output(values, expected, 1000, 1e-5f) || best != gold;
+      std::free(output.allocated);
+      if (failed)
+        throw std::runtime_error("Output differs from the reference");
+      return;
+    }
+
     // The model reads NHWC images normalized with the ImageNet statistics.
     dip::Image<float, 4> image(config.imagePath, dip::DIP_RGB, true);
     if (image.getWidth() != 224 || image.getHeight() != 224)

@@ -8,7 +8,7 @@ Every value of design.pb reaches CMake and C by one rule, by protobuf reflection
   - a repeated message (or map) is the list of its keys, and each element
     continues the path with its key: DESIGN_PROFILES_pebble_THREAD_MEM_BANK_WIDTH.
     The key is the element's field marked [(key) = true] in design.proto
-    (profiles by name, cores by hart id, balls by component, instructions by
+    (profiles by name, harts by hart id, balls by component, instructions by
     mnemonic), else its position. google.protobuf.Any is opaque and skipped.
 C sees the same paths without DESIGN_: numbers (64-bit ones with a ULL/LL
 suffix), strings as bare tokens, a repeated scalar as a comma list and a
@@ -16,9 +16,9 @@ repeated message as the X-list X(key)X(key)...
   DESIGN_TARGET_DEFS_<t>  a program of compiler target t: the sub-messages of
                           its profile by their path from the profile
                           (thread.mem.bank.width is THREAD_MEM_BANK_WIDTH,
-                          core.hart_id is CORE_HART_ID)
+                          hart.hart_id is HART_HART_ID)
   DESIGN_DEFS             every program: WORKLOAD_<PATH>, and the profiles and
-                          cores without their sub-messages (PROFILES, DEVICE_CORES)
+                          harts without their sub-messages (PROFILES, DEVICE_HARTS)
 The rest of design.cmake is the build layout: where the stacks of each level
 are and are built, the compiler plugins and command of each target.
 """
@@ -43,39 +43,62 @@ def stack_build(design) -> Path:
     return REPO / design.simulation.output / "stack"
 
 
-def core_component(design, core) -> str:
-    """Cores are named by their component; one component has one configuration per design."""
-    same = {c.signature for c in design.device.cores if c.component == core.component}
+def hart_component(design, hart) -> str:
+    """Harts are named by their component; one component has one configuration per design."""
+    same = {c.signature for c in design.device.harts if c.component == hart.component}
     if len(same) != 1:
         raise ValueError(
-            f"{design.name}: core {core.component} has {len(same)} configurations"
+            f"{design.name}: hart {hart.component} has {len(same)} configurations"
         )
-    return core.component
+    return hart.component
 
 
-def opt(design, design_pb: Path, name: str) -> list:
-    """buddy-opt with the plugin of compiler target `name`, which reads its
-    target from design.pb."""
+def level_opt(libraries: list, design_pb: Path) -> list:
+    """buddy-opt with `libraries`, reading the design from design.pb."""
+    loads = []
+    for library in libraries:
+        loads += [f"--load-dialect-plugin={library}", f"--load-pass-plugin={library}"]
     return [
         str(REPO / "stack/thirdparty/buddy-mlir/build/bin/buddy-opt"),
-        f"--load-dialect-plugin={plugin(design, name)}",
-        f"--load-pass-plugin={plugin(design, name)}",
-        f"--buckyball-design-pb={design_pb}",
-        f"--buckyball-target={name}",
+        *loads,
+        f"--design-pb={design_pb}",
     ]
 
 
+def device_plugins(design) -> list:
+    """The buddy-opt plugin of the device, or the framework alone."""
+    if has_passes(device_stack(design)):
+        return [
+            stack_build(design)
+            / "device/convert-linalg-to-device/libdevice-compiler.so"
+        ]
+    return [stack_build(design) / "midend/libbuckyball-midend.so"]
+
+
+def hart_plugins(design, hart) -> list:
+    """The buddy-opt plugins of the device and of `hart`."""
+    result = device_plugins(design)
+    if has_passes(REPO / hart.stack_path):
+        result.append(
+            stack_build(design)
+            / "hart"
+            / hart_component(design, hart)
+            / "libhart-compiler.so"
+        )
+    return result
+
+
 def device_stack(design) -> Path:
-    """The device level: the design's SoC in its stack/device, or for a core
-    entry the single-core system of the framework, which sees no SoC."""
-    if design.simulation.selection.startswith("core/"):
-        return REPO / "stack/sims/core"
-    return REPO / Path(design.path).parent.parent / "stack/device"
+    """The device level: the stack of the design's device, or for a hart entry
+    the single-hart system of the framework, which sees no SoC."""
+    if design.simulation.selection.startswith("hart/"):
+        return REPO / "stack/sims/hart"
+    return REPO / Path(design.path).parent.parent / "stack"
 
 
 def stacks(design) -> list:
     """(level, name, source, build) of every stack of `design`, in build order:
-    threads and cores first, the device last."""
+    threads and harts first, the device last."""
     result = []
     for name in dict.fromkeys(thread.profile for thread in design.threads):
         thread = next(thread for thread in design.threads if thread.profile == name)
@@ -87,16 +110,16 @@ def stacks(design) -> list:
                 stack_build(design) / "thread" / name,
             )
         )
-    for core in {
-        core_component(design, core): core for core in design.device.cores
+    for hart in {
+        hart_component(design, hart): hart for hart in design.device.harts
     }.values():
-        name = core_component(design, core)
+        name = hart_component(design, hart)
         result.append(
             (
-                "core",
+                "hart",
                 name,
-                REPO / core.stack_path,
-                stack_build(design) / "core" / name,
+                REPO / hart.stack_path,
+                stack_build(design) / "hart" / name,
             )
         )
     result.append(
@@ -110,17 +133,24 @@ def stacks(design) -> list:
     return result
 
 
-def plugin(design, name: str) -> Path:
-    """The buddy-opt plugin of compiler target `name`, built by the stack that owns it."""
-    if any(thread.profile == name for thread in design.threads):
-        return stack_build(design) / "thread" / name / f"lib{name}-compiler.so"
-    core = next(core for core in design.device.cores if core.profile == name)
-    return (
-        stack_build(design)
-        / "core"
-        / core_component(design, core)
-        / f"lib{name}-compiler.so"
+def has_passes(stack: Path) -> bool:
+    """A stack builds a buddy-opt plugin when it holds a pass of its design."""
+    return any(stack.glob("convert-linalg-to-*"))
+
+
+def plugins(design, name: str) -> list:
+    """The buddy-opt plugins compiler target `name` passes through: the
+    device's, its hart's and, for a thread, its thread's."""
+    threads = [i for i, thread in enumerate(design.threads) if thread.profile == name]
+    hart = next(
+        hart
+        for hart in design.device.harts
+        if hart.profile == name or set(hart.thread_indices) & set(threads)
     )
+    result = hart_plugins(design, hart)
+    if threads and has_passes(REPO / design.threads[threads[0]].source_path / "stack"):
+        result.append(stack_build(design) / "thread" / name / "libthread-compiler.so")
+    return result
 
 
 def write(path: Path, text: str) -> None:
@@ -212,20 +242,20 @@ def cmake(design, design_pb: Path) -> str:
         put(name, *(value if isinstance(value, list) else [value]))
 
     profiles = design.DESCRIPTOR.fields_by_name["profiles"]
-    cores = design.device.DESCRIPTOR.fields_by_name["cores"]
+    harts = design.device.DESCRIPTOR.fields_by_name["harts"]
     boot_defs = []
     if design.HasField("device"):
         ddr = design.device.ddr
         stack_top = ddr.base + ddr.bytes - ddr.model
         heap_limit = stack_top - 4096 * (
-            1 + max(core.hart_id for core in design.device.cores)
+            1 + max(hart.hart_id for hart in design.device.harts)
         )
         boot_defs = [f"DEVICE_STACK_TOP={stack_top}", f"DEVICE_HEAP_LIMIT={heap_limit}"]
     put(
         "DESIGN_DEFS",
         *c_defs(flatten(design.workload, "WORKLOAD")),
         *c_defs(listing(profiles, design.profiles, "PROFILES", deep=False)),
-        *c_defs(listing(cores, design.device.cores, "DEVICE_CORES", deep=False)),
+        *c_defs(listing(harts, design.device.harts, "DEVICE_HARTS", deep=False)),
         *boot_defs,
     )
     for profile in design.profiles:
@@ -241,6 +271,16 @@ def cmake(design, design_pb: Path) -> str:
             ),
         )
 
+    # A thread alone: its program sees the thread as a target program sees
+    # its profile's (THREAD_...), and the host the environment gives it (HOST_...).
+    if design.HasField("thread"):
+        (thread,) = design.threads
+        put(
+            "DESIGN_THREAD_DEFS",
+            *c_defs(flatten(thread, "THREAD")),
+            *c_defs(flatten(design.thread.host, "HOST")),
+        )
+
     # The build layout.
     put("DESIGN_PB", design_pb)
     put("DESIGN_REPO", REPO)
@@ -250,7 +290,7 @@ def cmake(design, design_pb: Path) -> str:
     put("DESIGN_MLIR", REPO / "stack/thirdparty/buddy-mlir/llvm/build/lib/cmake/mlir")
     put(
         "DESIGN_CPU_TARGETS",
-        *dict.fromkeys(core.profile for core in design.device.cores if core.profile),
+        *dict.fromkeys(hart.profile for hart in design.device.harts if hart.profile),
     )
     put(
         "DESIGN_RUNTIME_TARGETS",
@@ -271,6 +311,15 @@ def cmake(design, design_pb: Path) -> str:
     )
     for profile in design.profiles:
         thread = profile.thread
+        if thread.gpdomain.enable:
+            if not thread.gpdomain.HasField("fp64"):
+                raise ValueError(f"GP target {profile.name} is missing fp64")
+            put(
+                f"DESIGN_PROFILES_{profile.name}_THREAD_GPDOMAIN_LLVM_MATTR",
+                "+m,+f,"
+                + ("+d" if thread.gpdomain.fp64 else "-d")
+                + ",+zve32f,+zvl128b",
+            )
         put(
             f"DESIGN_TARGET_WORKLOADS_{profile.name}",
             REPO / thread.source_path / "workloads",
@@ -283,8 +332,34 @@ def cmake(design, design_pb: Path) -> str:
                 if (src := REPO / ball.source_path / "stack/src").is_dir()
             ),
         )
-        put(f"DESIGN_TARGET_PLUGIN_{profile.name}", plugin(design, profile.name))
-        put(f"DESIGN_TARGET_OPT_{profile.name}", *opt(design, design_pb, profile.name))
+        put(
+            f"DESIGN_TARGET_PLUGIN_{profile.name}",
+            stack_build(design) / "midend/libbuckyball-midend.so",
+            *plugins(design, profile.name),
+        )
+        put(
+            f"DESIGN_TARGET_OPT_{profile.name}",
+            *level_opt(plugins(design, profile.name), design_pb),
+            f"--design-target={profile.name}",
+        )
+
+    put(
+        "DESIGN_DEVICE_PLUGIN",
+        stack_build(design) / "midend/libbuckyball-midend.so",
+        *device_plugins(design),
+    )
+    put("DESIGN_DEVICE_OPT", *level_opt(device_plugins(design), design_pb))
+    # The Balls of the device, all in libbuckyball-midend.so.
+    put(
+        "DESIGN_BALL_STACKS",
+        *dict.fromkeys(
+            src
+            for profile in design.profiles
+            for ball in profile.thread.balldomain.balls
+            if (src := REPO / ball.source_path / "stack/src").is_dir()
+        ),
+    )
+    put("DESIGN_MIDEND_BUILD", stack_build(design) / "midend")
 
     levels = stacks(design)
     put("DESIGN_DEVICE_STACK", levels[-1][2])
@@ -306,14 +381,22 @@ def cmake(design, design_pb: Path) -> str:
                 for ball in thread.balldomain.balls
             ),
         )
-    put("DESIGN_CORES", *(name for level, name, _, _ in levels if level == "core"))
+    put("DESIGN_HARTS", *(name for level, name, _, _ in levels if level == "hart"))
     for level, name, source, build in levels:
-        if level != "core":
+        if level != "hart":
             continue
-        core = next(core for core in design.device.cores if core.component == name)
-        put(f"DESIGN_CORE_HART_{name}", core.hart_id)
-        put(f"DESIGN_CORE_STACK_{name}", source)
-        put(f"DESIGN_CORE_BUILD_{name}", build)
+        hart = next(hart for hart in design.device.harts if hart.component == name)
+        put(f"DESIGN_HART_HART_{name}", hart.hart_id)
+        put(f"DESIGN_HART_STACK_{name}", source)
+        put(f"DESIGN_HART_BUILD_{name}", build)
+        put(
+            f"DESIGN_HART_PLUGIN_{name}",
+            stack_build(design) / "midend/libbuckyball-midend.so",
+            *hart_plugins(design, hart),
+        )
+        put(
+            f"DESIGN_HART_OPT_{name}", *level_opt(hart_plugins(design, hart), design_pb)
+        )
 
     lines = ["# Generated from design.pb. Do not edit."]
     for name, items in values.items():

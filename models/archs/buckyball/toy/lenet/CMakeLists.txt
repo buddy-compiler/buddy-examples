@@ -1,11 +1,14 @@
 file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
-set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
+# What the recipe compiles for this device config; the calibration of the
+# model belongs to the recipe.
+set(OUTPUT_DIR "${DESIGN_OUTPUT}/models/lenet")
+set(CALIBRATION "${CMAKE_CURRENT_SOURCE_DIR}/output/calibration.json")
 
 # ===----------------------------------------------------------------------===
 # Calibrate the activation scales on training images.
 # ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/calibration.json
+  OUTPUT ${CALIBRATION}
   COMMAND ${PYTHON} buddy-pytorch-calibrate.py
   DEPENDS buddy-pytorch-calibrate.py
           ${STACK_ROOT}/compiler/frontend/quant.py
@@ -30,13 +33,17 @@ add_custom_command(
          ${OUTPUT_DIR}/arg1.data
          ${OUTPUT_DIR}/arg2.data
          ${OUTPUT_DIR}/inputs.data
-  COMMAND ${PYTHON} buddy-pytorch-importer.py
+         ${OUTPUT_DIR}/reference.data
+         ${OUTPUT_DIR}/dataset/inputs.data
+         ${OUTPUT_DIR}/dataset/reference.data
+         ${OUTPUT_DIR}/dataset/labels.data
+  COMMAND ${PYTHON} buddy-pytorch-importer.py ${OUTPUT_DIR}
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
           buddy-pytorch-importer.py
           ${MODEL_DIR}/lenet/images/8.bmp
           trace/trace.toml
-          ${OUTPUT_DIR}/calibration.json
+          ${CALIBRATION}
           ${MODEL_DIR}/lenet/model.py
           ${MODEL_DIR}/lenet/output/lenet/model.pth
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -50,6 +57,7 @@ add_custom_command(
 add_custom_command(
   OUTPUT forward.o
   BYPRODUCTS ${OUTPUT_DIR}/forward.ll
+             ${OUTPUT_DIR}/forward_opt.ll
              ${OUTPUT_DIR}/forward_llvm.mlir
   COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/forward.mlir
             -buffer-deallocation-simplification
@@ -61,21 +69,21 @@ add_custom_command(
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
-            -convert-math-to-llvm
-            -convert-math-to-libm
             -convert-arith-to-llvm
             -expand-strided-metadata
             -finalize-memref-to-llvm
             -convert-func-to-llvm
             -reconcile-unrealized-casts
             -o ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/forward.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/forward_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/forward_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
   DEPENDS ${OUTPUT_DIR}/forward.mlir
           ${DESIGN_TARGET_PLUGIN_toy}
-          ${DESIGN_COMPILER}/bin/buddy-translate
-          ${DESIGN_COMPILER}/bin/buddy-llc
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+          ${LLVM_OPT}
   COMMENT "Building forward.o"
   VERBATIM
 )
@@ -83,13 +91,14 @@ add_custom_command(
 # ===----------------------------------------------------------------------===
 # Lower the compute graph and export intermediate MLIR.
 #
-# The toy core recognizes no operation yet: the whole FP32 graph takes the
-# software path, without -convert-linalg-to-acc.
+# convert-linalg-to-acc puts the INT8 convolutions and Linears on VecBall.
 # ===----------------------------------------------------------------------===
 add_custom_command(
   OUTPUT subgraph0.o
   BYPRODUCTS ${OUTPUT_DIR}/subgraph0.ll
+             ${OUTPUT_DIR}/subgraph0_opt.ll
              ${OUTPUT_DIR}/subgraph0_linalg.mlir
+             ${OUTPUT_DIR}/subgraph0_acc.mlir
              ${OUTPUT_DIR}/subgraph0_frontend.mlir
              ${OUTPUT_DIR}/subgraph0_bufferized.mlir
              ${OUTPUT_DIR}/subgraph0_physical.mlir
@@ -100,6 +109,9 @@ add_custom_command(
             -pass-pipeline "builtin.module(func.func(tosa-to-linalg-named,tosa-to-linalg,tosa-to-tensor,tosa-to-arith))"
             -o ${OUTPUT_DIR}/subgraph0_linalg.mlir
   COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_linalg.mlir
+            -convert-linalg-to-acc
+            -o ${OUTPUT_DIR}/subgraph0_acc.mlir
+  COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_acc.mlir
             -lower-frontend-fake-op
             -o ${OUTPUT_DIR}/subgraph0_frontend.mlir
   COMMAND ${DESIGN_TARGET_OPT_toy} ${OUTPUT_DIR}/subgraph0_frontend.mlir
@@ -136,13 +148,15 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts
             -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/subgraph0.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${DESIGN_TARGET_PLUGIN_toy}
-          ${DESIGN_COMPILER}/bin/buddy-translate
-          ${DESIGN_COMPILER}/bin/buddy-llc
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+          ${LLVM_OPT}
   COMMENT "Building subgraph0.o"
   VERBATIM
 )
@@ -198,11 +212,11 @@ target_link_libraries(lenet-buckyball-toy-runner
 configure_file(lenet.rhal.mlir.in ${OUTPUT_DIR}/lenet.rhal.mlir @ONLY)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/lenet.rax
-  COMMAND ${DESIGN_COMPILER}/bin/rax-pack ${OUTPUT_DIR}/lenet.rhal.mlir
+  COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/lenet.rhal.mlir
           --embed-payload
           -o ${OUTPUT_DIR}/lenet.rax
   DEPENDS ${OUTPUT_DIR}/lenet.rhal.mlir
-          ${DESIGN_COMPILER}/bin/rax-pack
+          ${COMPILER_BUILD}/bin/rax-pack
           lenet-buckyball-toy-model
           lenet-buckyball-toy-runner
           ${OUTPUT_DIR}/arg0.data
@@ -229,13 +243,11 @@ add_custom_command(
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${LIB_DIR}
             --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
-  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${RUNTIME_DIR}/services/dma_memory.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
   DEPENDS baremetal.cpp
-          ${RUNTIME_DIR}/services/dma_memory.c
-          ${RUNTIME_DIR}/services/dma_memory.h
-          ${STACK_ROOT}/engine/src/location.c
-          ${STACK_ROOT}/engine/include/stream.h
-          ${STACK_ROOT}/engine/include/engine.h
+          ${STACK_ROOT}/kernel/src/location.c
+          ${STACK_ROOT}/kernel/include/stream.h
+          ${STACK_ROOT}/kernel/include/kernel.h
           ${RUNTIME_DIR}/trace/event.h
           model.h
           ${LIB_DIR}/MemRef.h
@@ -245,8 +257,6 @@ add_custom_command(
           ${BOOT_DIR}/start.S
           ${BOOT_DIR}/syscalls.c
           ${BOOT_DIR}/device.ld
-          ${RUNTIME_DIR}/services/dma.c
-          ${RUNTIME_DIR}/services/dma.h
           ${RUNTIME_DIR}/services/mlir.cpp
           ${RUNTIME_DIR}/trace/baremetal.c
           ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
@@ -255,21 +265,77 @@ add_custom_command(
           ${OUTPUT_DIR}/arg1.data
           ${OUTPUT_DIR}/arg2.data
           ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
           ${DESIGN_PB}
   COMMAND_EXPAND_LISTS
   VERBATIM
 )
 
-file(WRITE ${OUTPUT_DIR}/run.args "--model\nlenet.rax\n--image\ninput.bmp\n--output\nlogits.f32\n")
+# The accuracy run (dataset.cpp): the samples of the model region, a shard
+# of dataset/ that bench-device --bemu-accuracy packs into each run's DDR
+# image.
+math(EXPR MODEL_OFFSET "${DESIGN_DEVICE_DDR_BYTES} - ${DESIGN_DEVICE_DDR_MODEL}")
+math(EXPR MODEL_IMAGE "${DESIGN_DEVICE_DDR_BASE} + ${MODEL_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+set(DATASET_ELF "${DESIGN_OUTPUT}/workloads/models/toy-lenet-dataset")
+add_custom_command(
+  OUTPUT ${DATASET_ELF}
+  BYPRODUCTS dataset.o
+             mlir-dataset.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${LIB_DIR}
+            --embed-dir=${OUTPUT_DIR} -c -DMODEL_IMAGE=${MODEL_IMAGE}ULL ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp -o dataset.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-dataset.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c dataset.o mlir-dataset.o forward.o subgraph0.o -lm -lgcc -o ${DATASET_ELF}
+  DEPENDS dataset.cpp
+          ${LIB_DIR}/ModelImage.h
+          ${STACK_ROOT}/kernel/src/location.c
+          ${STACK_ROOT}/kernel/include/stream.h
+          ${STACK_ROOT}/kernel/include/kernel.h
+          ${RUNTIME_DIR}/trace/event.h
+          model.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
+          ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/Msan.h
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${DESIGN_PB}
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+
+# Linux runs the RAX entry on the prepared image of the baremetal program and
+# checks it against the same reference.
+file(WRITE ${OUTPUT_DIR}/run.args "--model\nlenet.rax\n--input\ninputs.data\n--reference\nreference.data\n")
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/model.img
-  COMMAND ${CMAKE_COMMAND} -E copy ${MODEL_DIR}/lenet/images/8.bmp ${OUTPUT_DIR}/input.bmp
-  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} lenet.rax input.bmp
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} lenet.rax inputs.data reference.data
             --mapped run.args
   DEPENDS model-pack-tool
           ${OUTPUT_DIR}/lenet.rax
           ${OUTPUT_DIR}/run.args
-          ${MODEL_DIR}/lenet/images/8.bmp
+          ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
   VERBATIM
 )
-add_custom_target(lenet-model-build DEPENDS ${OUTPUT_DIR}/lenet.rax ${BAREMETAL_ELF} ${OUTPUT_DIR}/model.img)
+add_custom_target(
+  lenet-model-build
+  DEPENDS
+    ${OUTPUT_DIR}/lenet.rax
+    ${BAREMETAL_ELF}
+    ${OUTPUT_DIR}/model.img
+    ${DATASET_ELF}
+    ${OUTPUT_DIR}/dataset/inputs.data
+    ${OUTPUT_DIR}/dataset/reference.data
+    ${OUTPUT_DIR}/dataset/labels.data
+)
+
+add_subdirectory(gvn)

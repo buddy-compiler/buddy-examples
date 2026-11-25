@@ -22,6 +22,7 @@ from buddy.compiler.graph.operation import (
     SplitWithSizesOp,
     SubOp,
     TOp,
+    UnsafeIndexOp,
 )
 from buddy.compiler.graph.transform.fuse_ops import (
     decompose_addmm_to_mm_add,
@@ -121,7 +122,9 @@ def permute(graph):
 
     # The region: convolutions, and the layers whose 4-D inputs all are in
     # the region and whose channel axis can move last.
-    region = set()
+    # The recipe supplies the RGB image directly in NHWC storage.
+    (image,) = graph.inputs
+    region = {image.name}
     for node in graph.body:
         inputs = tensor_args(graph, node)
         inside = bool(inputs) and all(name in region for name in inputs)
@@ -149,6 +152,15 @@ def permute(graph):
         elif isinstance(node, CatOp):
             if inside and node.args[1] % 4 == 1:
                 region.add(node.name)
+        elif isinstance(node, UnsafeIndexOp):
+            indices = node.args[1]
+            if (
+                node.args[0] in region
+                and len(indices) == 4
+                and indices[0] is None
+                and indices[1] is None
+            ):
+                region.add(node.name)
         elif isinstance(node, (SplitOp, SplitWithSizesOp)):
             if inside and node.args[2] % 4 == 1:
                 region.add(node.name)
@@ -164,6 +176,7 @@ def permute(graph):
             ]
         else:
             node.tensor_meta["shape"] = nhwc(shape)
+        node._layout = "NHWC"
         if isinstance(node, Conv2dOp):
             node._layout = "NHWC_FCHW"
         elif isinstance(
@@ -174,6 +187,9 @@ def permute(graph):
             node._arguments[1] = [1, 2]
         elif isinstance(node, CatOp):
             node._arguments[1] = 3
+        elif isinstance(node, UnsafeIndexOp):
+            indices = node.args[1]
+            node._arguments[1] = [indices[0], indices[2], indices[3], indices[1]]
         elif isinstance(node, (SplitOp, SplitWithSizesOp)):
             node._arguments[2] = 3
 

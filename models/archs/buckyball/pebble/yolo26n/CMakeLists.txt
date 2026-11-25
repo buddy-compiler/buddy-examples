@@ -1,20 +1,26 @@
 file(GLOB_RECURSE RECIPE_FRONTEND_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/frontend/*.py")
 
-set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
+# What the recipe compiles for this device config; the calibration of the
+# model belongs to the recipe.
+set(OUTPUT_DIR "${DESIGN_OUTPUT}/models/yolo26n")
+set(CALIBRATION "${CMAKE_CURRENT_SOURCE_DIR}/output/calibration.json")
 set(PAYLOAD_DIR "${OUTPUT_DIR}/yolo26n.payload")
 
 # ===----------------------------------------------------------------------===
 # Calibrate the activation scales on COCO128 images.
 # ===----------------------------------------------------------------------===
 add_custom_command(
-  OUTPUT ${OUTPUT_DIR}/calibration.json
+  OUTPUT ${CALIBRATION}
+         ${CMAKE_CURRENT_SOURCE_DIR}/output/reference.data
   COMMAND ${PYTHON} buddy-pytorch-calibrate.py
   DEPENDS buddy-pytorch-calibrate.py
-          frontend/quant/graph.py
+          frontend/nonlinear_reference.py
+          frontend/residual_reference.py
           ${STACK_ROOT}/compiler/frontend/quant.py
           ${MODEL_DIR}/yolo26n/output/yolo26n/yolo26n.pt
           ${MODEL_DIR}/yolo26n/model.py
           ${MODEL_DIR}/yolo26n/data.py
+          ${MODEL_DIR}/yolo26n/images/bus_32bit.bmp
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Calibrating YOLO26n activations"
   VERBATIM
@@ -35,13 +41,15 @@ add_custom_command(
          ${OUTPUT_DIR}/arg2.data
          ${OUTPUT_DIR}/inputs.data
          ${OUTPUT_DIR}/input.bmp
-  COMMAND ${PYTHON} buddy-pytorch-importer.py
+         ${OUTPUT_DIR}/reference.data
+  COMMAND ${PYTHON} buddy-pytorch-importer.py ${OUTPUT_DIR}
   DEPENDS ${COMPILER_FRONTEND_SOURCES}
           ${RECIPE_FRONTEND_SOURCES}
+          ${CMAKE_CURRENT_SOURCE_DIR}/../fixed.py
           buddy-pytorch-importer.py
           ${MODEL_DIR}/yolo26n/images/bus_32bit.bmp
           trace/trace.toml
-          ${OUTPUT_DIR}/calibration.json
+          ${CALIBRATION}
           ${MODEL_DIR}/yolo26n/output/yolo26n/yolo26n.pt
           ${MODEL_DIR}/yolo26n/model.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -67,23 +75,21 @@ add_custom_command(
             -lower-affine
             -convert-scf-to-cf
             -convert-cf-to-llvm
-            -convert-math-to-llvm
-            -convert-math-to-libm
             -convert-arith-to-llvm
             -expand-strided-metadata
             -finalize-memref-to-llvm
             -convert-func-to-llvm
             -reconcile-unrealized-casts
             -o ${OUTPUT_DIR}/forward_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/forward.ll
-  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/forward.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/forward_opt.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/forward_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/forward.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/forward_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/forward_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o forward.o
   DEPENDS ${OUTPUT_DIR}/forward.mlir
           ${DESIGN_TARGET_PLUGIN_pebble}
-          ${DESIGN_COMPILER}/bin/buddy-translate
-          ${DESIGN_COMPILER}/bin/buddy-llc
-          ${BUDDY_SOURCE}/llvm/build/bin/opt
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+          ${LLVM_OPT}
   COMMENT "Building forward.o"
   VERBATIM
 )
@@ -115,12 +121,17 @@ add_custom_command(
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_frontend.mlir
             -eliminate-empty-tensors
             -convert-elementwise-to-linalg
+            -linalg-fuse-elementwise-ops
+            -canonicalize
+            -cse
             -one-shot-bufferize=bufferize-function-boundaries
             -ownership-based-buffer-deallocation
             -buffer-deallocation-simplification
             -bufferization-lower-deallocations
             -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_bufferized.mlir
+            -cse
+            -canonicalize
             -assign-physical-banks
             -o ${OUTPUT_DIR}/subgraph0_physical.mlir
   COMMAND ${DESIGN_TARGET_OPT_pebble} ${OUTPUT_DIR}/subgraph0_physical.mlir
@@ -135,7 +146,7 @@ add_custom_command(
             -canonicalize
             -cse
             -lower-affine
-            -convert-scf-to-cf=allow-pattern-rollback=false
+            -convert-scf-to-cf
             -convert-cf-to-llvm
             -convert-math-to-llvm
             -convert-math-to-libm
@@ -144,15 +155,15 @@ add_custom_command(
             -finalize-memref-to-llvm
             -reconcile-unrealized-casts
             -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
+  COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${BUDDY_SOURCE}/llvm/build/bin/opt ${OUTPUT_DIR}/subgraph0.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_opt.ll
-  COMMAND ${DESIGN_COMPILER}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/subgraph0.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xbuckyball,+m,+D -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
           ${DESIGN_TARGET_PLUGIN_pebble}
-          ${DESIGN_COMPILER}/bin/buddy-translate
-          ${DESIGN_COMPILER}/bin/buddy-llc
-          ${BUDDY_SOURCE}/llvm/build/bin/opt
+          ${COMPILER_BUILD}/bin/buddy-translate
+          ${COMPILER_BUILD}/bin/buddy-llc
+          ${LLVM_OPT}
   COMMENT "Building subgraph0.o"
   VERBATIM
 )
@@ -211,11 +222,11 @@ configure_file(yolo26n.rhal.mlir.in ${OUTPUT_DIR}/yolo26n.rhal.mlir @ONLY)
 configure_file(${MODEL_DIR}/yolo26n/labels.txt ${OUTPUT_DIR}/labels.txt COPYONLY)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/yolo26n.rax
-  COMMAND ${DESIGN_COMPILER}/bin/rax-pack ${OUTPUT_DIR}/yolo26n.rhal.mlir
+  COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/yolo26n.rhal.mlir
           --embed-payload
           -o ${OUTPUT_DIR}/yolo26n.rax
   DEPENDS ${OUTPUT_DIR}/yolo26n.rhal.mlir
-          ${DESIGN_COMPILER}/bin/rax-pack
+          ${COMPILER_BUILD}/bin/rax-pack
           yolo26n-buckyball-pebble-model
           yolo26n-buckyball-pebble-runner
           ${OUTPUT_DIR}/arg0.data
@@ -243,13 +254,11 @@ add_custom_command(
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${LIB_DIR}
             --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
   COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
-  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/engine/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${RUNTIME_DIR}/services/dma.c ${RUNTIME_DIR}/services/dma_memory.c ${STACK_ROOT}/engine/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lm -lgcc -o ${BAREMETAL_ELF}
   DEPENDS baremetal.cpp
-          ${RUNTIME_DIR}/services/dma_memory.c
-          ${RUNTIME_DIR}/services/dma_memory.h
-          ${STACK_ROOT}/engine/src/location.c
-          ${STACK_ROOT}/engine/include/stream.h
-          ${STACK_ROOT}/engine/include/engine.h
+          ${STACK_ROOT}/kernel/src/location.c
+          ${STACK_ROOT}/kernel/include/stream.h
+          ${STACK_ROOT}/kernel/include/kernel.h
           ${RUNTIME_DIR}/trace/event.h
           ${RUNTIME_DIR}/services/mlir.cpp
           ${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine/CRunnerUtils.h
@@ -262,27 +271,32 @@ add_custom_command(
           ${BOOT_DIR}/start.S
           ${BOOT_DIR}/syscalls.c
           ${BOOT_DIR}/device.ld
-          ${RUNTIME_DIR}/services/dma.c
-          ${RUNTIME_DIR}/services/dma.h
           ${RUNTIME_DIR}/trace/baremetal.c
           ${OUTPUT_DIR}/arg0.data
           ${OUTPUT_DIR}/arg1.data
           ${OUTPUT_DIR}/arg2.data
           ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
           ${DESIGN_PB}
   COMMAND_EXPAND_LISTS
   VERBATIM
 )
 
-file(WRITE ${OUTPUT_DIR}/run.args "--model\nyolo26n.rax\n--image\ninput.bmp\n--output\nboxes.f32\n")
+# Linux runs the RAX entry on the prepared image of the baremetal program and
+# checks it against the same reference.
+file(WRITE ${OUTPUT_DIR}/run.args "--model\nyolo26n.rax\n--input\ninputs.data\n--reference\nreference.data\n")
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/model.img
-  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} yolo26n.rax input.bmp
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${OUTPUT_DIR}/model.img ${OUTPUT_DIR} yolo26n.rax inputs.data reference.data
             --mapped run.args
   DEPENDS model-pack-tool
           ${OUTPUT_DIR}/yolo26n.rax
           ${OUTPUT_DIR}/run.args
-          ${OUTPUT_DIR}/input.bmp
+          ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
   VERBATIM
 )
 add_custom_target(yolo26n-model-build DEPENDS ${OUTPUT_DIR}/yolo26n.rax ${BAREMETAL_ELF} ${OUTPUT_DIR}/model.img)
+
+# The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
+add_subdirectory(gvn)

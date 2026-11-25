@@ -2,8 +2,8 @@
 #include <cstddef>
 #include <cstdint>
 
-/* Where a trace event happened: the core and the hardware thread executing its
- * current instruction stream (0 on the core itself). */
+/* Where a trace event happened: the hart and the hardware thread executing its
+ * current instruction stream (0 on the hart itself). */
 typedef struct {
   uint32_t controller;
   size_t thread;

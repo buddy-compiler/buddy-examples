@@ -1,5 +1,7 @@
+import shutil
 from importlib import import_module
 from pathlib import Path
+import sys
 import json
 
 import numpy as np
@@ -16,14 +18,19 @@ from buddy.compiler.trace import TraceConfig, load_trace_config
 from compiler.frontend import quant
 from frontend.permute.graph import permute
 from frontend.quant.graph import quantize
+from frontend.topk import topk_op
+from frontend.postprocess import postprocess
+from frontend.nonlinear import nonlinear
+from frontend.data_movement import data_movement
 
 model_dir = Path(__file__).resolve().parent
-output = model_dir / "output"
+output = Path(sys.argv[1])
 output.mkdir(parents=True, exist_ok=True)
 
 # Package one letterboxed image for both execution paths.
 image = Image.open(
-    model_dir.parents[3] / "models/yolo26n/images/bus_32bit.bmp"
+    Path(import_module("models.models.yolo26n").__file__).parent
+    / "images/bus_32bit.bmp"
 ).convert("RGB")
 scale = min(640 / image.width, 640 / image.height)
 width, height = int(image.width * scale + 0.5), int(image.height * scale + 0.5)
@@ -34,7 +41,7 @@ prepared.paste(
 )
 prepared.save(output / "input.bmp")
 pixels = np.asarray(prepared, dtype=np.float32) / np.float32(255.0)
-pixels.transpose(2, 0, 1).copy().tofile(output / "inputs.data")
+pixels.tofile(output / "inputs.data")
 
 # ===----------------------------------------------------------------------===
 # Step 1: Import the graph of the checkpoint, every batch normalization
@@ -48,7 +55,7 @@ model.fuse()
 head = model.model[-1]
 # The traced nodes are named as in the imported graph.
 compiler = DynamoCompiler(
-    primary_registry={**tosa.ops_registry, **quant.ops_registry},
+    primary_registry={**tosa.ops_registry, **quant.ops_registry, "TopkOp": topk_op},
     aot_autograd_decomposition=get_decompositions(
         [torch.ops.aten.detach.default, torch.ops.aten.fill.Tensor]
     ),
@@ -74,7 +81,6 @@ for node, value in zip(graph.inputs[1:], (head.anchors, head.strides), strict=Tr
 # Step 2.1: Export the original graph and FP32 parameters.
 # ===----------------------------------------------------------------------===
 graph.dump(output / "01-import.txt")
-# graph.dump_parameters(output / "01-import-parameters")
 
 # ===----------------------------------------------------------------------===
 # Step 2.2: Run the convolutions in NHWC.
@@ -86,12 +92,15 @@ graph.dump(output / "02-permuted.txt")
 # Step 2.3: Quantize the convolutions to INT8.
 # ===----------------------------------------------------------------------===
 # The activation scales come from buddy-pytorch-calibrate.py.
-calibration = json.loads((output / "calibration.json").read_text())
+calibration = json.loads((model_dir / "output/calibration.json").read_text())
 params = quantize(graph, params, parameter_names, calibration)
+data_movement(graph)
+params = postprocess(graph, params)
+params = nonlinear(graph, params)
 graph.dump(output / "03-quanted.txt")
 
 # ===----------------------------------------------------------------------===
-# Step 3: Partition the graph: one pebble core runs all of it.
+# Step 3: Partition the graph: one pebble hart runs all of it.
 # ===----------------------------------------------------------------------===
 graph.fuse_ops([simply_fuse])
 graph.dump(output / "04-partitioned.txt")
@@ -104,3 +113,6 @@ for index, dtype in enumerate((torch.float32, torch.int32, torch.int8)):
     np.concatenate(
         [p.detach().numpy().reshape(-1) for p in params if p.dtype == dtype]
     ).tofile(output / f"arg{index}.data")
+
+# The reference of the baremetal check, from buddy-pytorch-calibrate.py.
+shutil.copyfile(model_dir / "output/reference.data", output / "reference.data")

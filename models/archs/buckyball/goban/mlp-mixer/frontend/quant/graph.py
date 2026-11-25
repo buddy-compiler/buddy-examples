@@ -1,10 +1,12 @@
 import torch
+import buddy_mlir.ir as ir
+from buddy_mlir.dialects import arith
 
-from buddy.compiler.graph.graph import NodeType
 from buddy.compiler.graph.operation import (
     MulOp,
     PermuteOp,
-    PlaceholderOp,
+    Op,
+    OpType,
     SliceOp,
     TransposeMatmulFusedOp,
     ViewOp,
@@ -20,11 +22,26 @@ from compiler.frontend.quant import (
 )
 
 
+class ParameterOp(Op):
+    def __init__(self):
+        super().__init__()
+        self._op_type = OpType.ElementwiseType
+
+
+def parameter_op(node, symbol_table):
+    value = ir.DenseElementsAttr.get(node.value)
+    return arith.ConstantOp(value.type, value).result
+
+
+ops_registry = {"ParameterOp": parameter_op}
+
+
 def parameter(graph, values, name, value):
-    node = PlaceholderOp()
+    node = ParameterOp()
     node.name = name
+    node.value = value.detach().numpy()
     node.tensor_meta = {"shape": list(value.shape), "dtype": TensorDType.Float32}
-    graph.add_node(node, NodeType.FakeNode)
+    graph.add_node(node)
     values[name] = value
     return node
 

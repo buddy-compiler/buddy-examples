@@ -3,6 +3,14 @@ set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/output")
 
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/calibration.json
+         ${OUTPUT_DIR}/inputs.data
+         ${OUTPUT_DIR}/reference.data
+         ${OUTPUT_DIR}/dataset/ids.data
+         ${OUTPUT_DIR}/dataset/positions.data
+         ${OUTPUT_DIR}/dataset/types.data
+         ${OUTPUT_DIR}/dataset/masks.data
+         ${OUTPUT_DIR}/dataset/reference.data
+         ${OUTPUT_DIR}/dataset/labels.data
   COMMAND ${PYTHON} buddy-pytorch-calibrate.py
   DEPENDS ${STACK_ROOT}/compiler/frontend/quant.py
           ${CMAKE_CURRENT_SOURCE_DIR}/buddy-pytorch-calibrate.py
@@ -71,7 +79,7 @@ add_custom_command(
             -reconcile-unrealized-casts |
           ${COMPILER_BUILD}/bin/buddy-translate
             --buddy-to-llvmir |
-          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o forward.o
+          ${COMPILER_BUILD}/bin/buddy-llc -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+m,+d,+xgemmini -float-abi=hard -o forward.o
   DEPENDS ${OUTPUT_DIR}/forward.mlir
   COMMENT "Building forward.o"
   VERBATIM
@@ -95,6 +103,9 @@ add_custom_command(
             -convert-elementwise-to-linalg
             -convert-tensor-to-linalg
             -one-shot-bufferize="bufferize-function-boundaries"
+            -ownership-based-buffer-deallocation
+            -buffer-deallocation-simplification
+            -bufferization-lower-deallocations
             -o ${OUTPUT_DIR}/subgraph0_bufferized.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_bufferized.mlir
             -convert-linalg-to-gemmini
@@ -112,9 +123,6 @@ add_custom_command(
             -lower-gemmini
             -o ${OUTPUT_DIR}/subgraph0_lowered.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-opt ${OUTPUT_DIR}/subgraph0_lowered.mlir
-            -ownership-based-buffer-deallocation
-            -buffer-deallocation-simplification
-            -bufferization-lower-deallocations
             -convert-math-to-llvm
             -convert-math-to-libm
             -convert-arith-to-llvm
@@ -124,7 +132,7 @@ add_custom_command(
             -o ${OUTPUT_DIR}/subgraph0_llvm.mlir
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir
             --buddy-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+xgemmini,+D -float-abi=hard -o subgraph0.o
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -O2 -mattr=+m,+d,+xgemmini -float-abi=hard -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/subgraph0.mlir
   COMMENT "Building subgraph0.o"
   VERBATIM
@@ -136,7 +144,9 @@ set_target_properties(bert-base-uncased-emotion-gemmini-model
              LINKER_LANGUAGE CXX
 )
 
-add_library(bert-base-uncased-emotion-gemmini-runner SHARED EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/runner.cpp)
+add_library(bert-base-uncased-emotion-gemmini-runner SHARED EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/runner.cpp
+  checked.cpp
+)
 set_target_properties(bert-base-uncased-emotion-gemmini-runner
   PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIR}"
 )
@@ -191,3 +201,134 @@ add_custom_command(
   VERBATIM
 )
 add_custom_target(bert-base-uncased-emotion-model-build DEPENDS ${OUTPUT_DIR}/bert-base-uncased-emotion.rax)
+
+set(BAREMETAL_ELF "${DESIGN_OUTPUT}/workloads/models/gemmini-bert-base-uncased-emotion-baremetal")
+add_custom_command(
+  OUTPUT ${BAREMETAL_ELF}
+  BYPRODUCTS baremetal.o
+             mlir-baremetal.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++26 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -I${LIB_DIR}
+            --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp -o baremetal.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-baremetal.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c baremetal.o mlir-baremetal.o forward.o subgraph0.o -lstdc++ -lm -lgcc -o ${BAREMETAL_ELF}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/baremetal.cpp
+          model.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${STACK_ROOT}/kernel/src/location.c
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${DESIGN_PB}
+  COMMENT "Building bert-base-uncased-emotion for the Gemmini device"
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+add_custom_target(bert-base-uncased-emotion-model-baremetal DEPENDS ${BAREMETAL_ELF})
+add_dependencies(bert-base-uncased-emotion-model-build bert-base-uncased-emotion-model-baremetal)
+
+math(
+  EXPR
+  MODEL_BASE
+  "${DESIGN_DEVICE_DDR_BASE} + ${DESIGN_DEVICE_DDR_BYTES} - ${DESIGN_DEVICE_DDR_MODEL}"
+  OUTPUT_FORMAT HEXADECIMAL
+)
+configure_file(linux.rhal.mlir.in ${OUTPUT_DIR}/linux.rhal.mlir @ONLY)
+add_custom_command(
+  OUTPUT ${OUTPUT_DIR}/linux.rax
+  COMMAND ${COMPILER_BUILD}/bin/rax-pack ${OUTPUT_DIR}/linux.rhal.mlir
+          --embed-payload
+          -o ${OUTPUT_DIR}/linux.rax
+  DEPENDS ${OUTPUT_DIR}/linux.rhal.mlir
+          ${COMPILER_BUILD}/bin/rax-pack
+          bert-base-uncased-emotion-gemmini-runner
+          ${MODEL_DIR}/bert-base-uncased-emotion/vocab.txt
+  VERBATIM
+)
+file(WRITE ${OUTPUT_DIR}/run.args "--model\nlinux.rax\n--input\ninputs.data\n--reference\nreference.data\n")
+set(MODEL_IMAGE "${DESIGN_OUTPUT}/models/bert-base-uncased-emotion/model.img")
+add_custom_command(
+  OUTPUT ${MODEL_IMAGE}
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/models/bert-base-uncased-emotion"
+  COMMAND ${CMAKE_BINARY_DIR}/model-pack ${MODEL_IMAGE} ${OUTPUT_DIR} linux.rax inputs.data reference.data
+            --mapped run.args
+            --mapped arg0.data
+            --mapped arg1.data
+            --mapped arg2.data
+  DEPENDS ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          model-pack-tool
+          ${OUTPUT_DIR}/linux.rax
+          ${OUTPUT_DIR}/inputs.data
+          ${OUTPUT_DIR}/reference.data
+          ${OUTPUT_DIR}/run.args
+  VERBATIM
+)
+add_custom_target(bert-base-uncased-emotion-model-image DEPENDS ${MODEL_IMAGE})
+add_dependencies(bert-base-uncased-emotion-model-build bert-base-uncased-emotion-model-image)
+
+# The accuracy run (dataset.cpp): the validation sentences of
+# buddy-pytorch-calibrate.py, copied to models/bert-base-uncased-emotion/dataset
+# of the design, where bench-device --bemu-accuracy
+# cuts it into the shards of the model region of each run's DDR image.
+add_custom_command(
+  OUTPUT ${DESIGN_OUTPUT}/models/bert-base-uncased-emotion/dataset/labels.data
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${OUTPUT_DIR}/dataset ${DESIGN_OUTPUT}/models/bert-base-uncased-emotion/dataset
+  DEPENDS ${OUTPUT_DIR}/dataset/ids.data
+          ${OUTPUT_DIR}/dataset/positions.data
+          ${OUTPUT_DIR}/dataset/types.data
+          ${OUTPUT_DIR}/dataset/masks.data
+          ${OUTPUT_DIR}/dataset/reference.data
+          ${OUTPUT_DIR}/dataset/labels.data
+  VERBATIM
+)
+math(EXPR MODEL_OFFSET "${DESIGN_DEVICE_DDR_BYTES} - ${DESIGN_DEVICE_DDR_MODEL}")
+math(EXPR MODEL_REGION "${DESIGN_DEVICE_DDR_BASE} + ${MODEL_OFFSET}" OUTPUT_FORMAT HEXADECIMAL)
+set(DATASET_ELF "${DESIGN_OUTPUT}/workloads/models/gemmini-bert-base-uncased-emotion-dataset")
+add_custom_command(
+  OUTPUT ${DATASET_ELF}
+  BYPRODUCTS dataset.o
+             mlir-dataset.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++26 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -I${LIB_DIR}
+            --embed-dir=${OUTPUT_DIR} -DMODEL_REGION=${MODEL_REGION}ULL -c ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp -o dataset.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-dataset.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c dataset.o mlir-dataset.o forward.o subgraph0.o -lstdc++ -lm -lgcc -o ${DATASET_ELF}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp
+          ${LIB_DIR}/ModelImage.h
+          ${CMAKE_CURRENT_SOURCE_DIR}/model.h
+          forward.o
+          subgraph0.o
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${STACK_ROOT}/kernel/src/location.c
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${DESIGN_PB}
+  COMMENT "Building the bert-base-uncased-emotion accuracy run for the Gemmini device"
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+add_custom_target(
+  bert-base-uncased-emotion-model-dataset
+  DEPENDS ${DATASET_ELF} ${DESIGN_OUTPUT}/models/bert-base-uncased-emotion/dataset/labels.data
+)
+add_dependencies(bert-base-uncased-emotion-model-build bert-base-uncased-emotion-model-dataset)
+
+# The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
+add_subdirectory(gvn)

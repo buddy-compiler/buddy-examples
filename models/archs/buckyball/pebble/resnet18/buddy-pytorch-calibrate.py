@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 
 import torch
+
+torch.set_num_threads(8)
 from torch.nn.utils.fusion import fuse_conv_bn_eval
 
 from compiler.frontend.quant import quantize, quantize_bias
@@ -171,4 +173,20 @@ calibration = {
     name: {"smooth": smooth[name].tolist(), "clip": clips[name]} for name in clips
 }
 calibration["fc"] = maxima["fc"]
+from models.archs.buckyball.pebble.fixed_reference import FixedGraph
+
+fixed = FixedGraph(load_folded(), calibration)
+fixed_accuracy = accuracy(fixed.run)
+print(f"Fixed-point accuracy {fixed_accuracy:.2f}% on {len(labels)} images")
+if fp32 - fixed_accuracy > 0.5:
+    raise RuntimeError(
+        f"Fixed-point accuracy {fixed_accuracy:.2f}% is more than 0.5 below FP32 {fp32:.2f}%"
+    )
+calibration["validation"] = {
+    "images": len(labels),
+    "fp32_top1": fp32,
+    "int8_top1": int8,
+    "fixed_top1": fixed_accuracy,
+    "clipped_values": fixed.clipped,
+}
 (output / "calibration.json").write_text(json.dumps(calibration, indent=2) + "\n")

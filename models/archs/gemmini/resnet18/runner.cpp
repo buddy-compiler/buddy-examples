@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <buddy/runtime/core/InferenceRunner.h>
 #include <buddy/runtime/core/ModelManifest.h>
 //===- buddy-resnet-main.cpp ----------------------------------------------===//
@@ -96,6 +97,28 @@ public:
   void run(const buddy::runtime::RunConfig &config) override {
     const auto manifest =
         buddy::runtime::ModelManifest::loadFromRax(config.raxPath);
+    if (!config.referencePath.empty()) {
+      auto pixels = loadBinary<float>(config.inputPath);
+      auto reference = loadBinary<float>(config.referencePath);
+      if (pixels.getSize() != 3 * 224 * 224 || reference.getSize() != 1000)
+        throw std::runtime_error("Invalid resnet18 input or reference size");
+      MemRef<float, 4> input(pixels.getData(),
+                             std::vector<size_t>{1, 3, 224, 224});
+      MemRef<float, 2> output(std::vector<size_t>{1, 1000}, false, 0);
+      auto parameters = loadBinary<float>(manifest.weightPaths.at(0));
+      auto biases = loadBinary<int32_t>(manifest.weightPaths.at(1));
+      auto weights = loadBinary<int8_t>(manifest.weightPaths.at(2));
+      const auto start = read_counter();
+      _mlir_ciface_forward(&output, &parameters, &biases, &weights, &input);
+      printf("Inference cycles: %lu\n",
+             (unsigned long)(read_counter() - start));
+      const float *values = output.getData(), *gold = reference.getData();
+      const auto best = std::max_element(values, values + 1000) - values;
+      const auto expected = std::max_element(gold, gold + 1000) - gold;
+      if (check_output(values, gold, 1000, 1e-5f) || best != expected)
+        throw std::runtime_error("resnet18 logits differ from the reference");
+      return;
+    }
     // Print the title of this example.
 
     // Define the sizes of the input and output tensors.

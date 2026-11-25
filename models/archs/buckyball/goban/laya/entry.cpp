@@ -10,7 +10,7 @@ extern "C" void laya_run(laya::Output *output, laya::Parameters *parameters,
   laya::Arguments arguments{output, parameters, bias,  weights, tokens,
                             mask,   positions,  valid, type};
   if (runtime_linux_job(
-          0, DEVICE_CORES_0_SIGNATURE,
+          0, DEVICE_HARTS_0_SIGNATURE,
           [](void *, void *opaque) {
             auto &a = *static_cast<laya::Arguments *>(opaque);
             _mlir_ciface_forward(a.output, a.parameters, a.bias, a.weights,

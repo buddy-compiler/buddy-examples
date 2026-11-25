@@ -6,17 +6,22 @@ the partitioned graphs, so that it checks them.
 Every Linear reads its weight and its input through MXINT8 along K. The
 Linears after the attention and in the FFN (o_proj, down_proj) read a value
 the ranks hold in pieces: each rank multiplies its pieces of K, the reduce
-core adds the partial sums in rank order. An attention product reads both
+hart adds the partial sums in rank order. An attention product reads both
 operands through MXINT8 along K, the key of the score product as two MXINT8
 terms.
 
 The operations whose rounding depends on how they are computed follow the
-compiled graphs on the core CPUs: a mean sums its values in order and
-multiplies by the FP32 reciprocal of their count, cos and sin are those of
-the C library (the newlib routines of the cores are the glibc ones)."""
+compiled graphs: a mean sums its values in order and multiplies by the FP32
+reciprocal of their count, cos, sin and powf are those of the C library on
+the hart CPUs (the newlib routines of the harts are the glibc ones). The
+exponential of the softmax and the hyperbolic tangent of GELU and of the
+logit cap run in the operators of the threads, where the poly hart's
+OutlineOperators expands them into MLIR's polynomial approximations with
+fused multiply-adds: `exp` and `tanh` here are those operators, operation
+by operation."""
 
 import ctypes
-from pathlib import Path
+import math
 
 import numpy
 import torch
@@ -34,27 +39,84 @@ def mxint8(values, axis):
 def two(values, axis):
     """Values as the two MXINT8 terms the graph reads the key with."""
     head = mxint8(values, axis)
-    return head + mxint8(values - head, axis)
+    return head, mxint8(values - head, axis)
 
 
 libm = ctypes.CDLL("libm.so.6")
-newlib = ctypes.CDLL(
-    str(Path(__file__).resolve().parents[6] / "result/lib/libnewlib-reference.so")
-)
-for function in (libm.cosf, libm.sinf, libm.expf, newlib.tanhf):
+for function in (libm.cosf, libm.sinf):
     function.restype = ctypes.c_float
     function.argtypes = [ctypes.c_float]
 libm.powf.restype = ctypes.c_float
 libm.powf.argtypes = [ctypes.c_float, ctypes.c_float]
 
 
-def libc(name, values, *arguments):
-    """`name` of the C library on every FP32 value."""
-    function = newlib.tanhf if name == "tanhf" else getattr(libm, name)
+def libc(function, values, *arguments):
+    """`function` of the C library on every FP32 value."""
     flat = values.detach().reshape(-1).tolist()
     return torch.tensor(
         numpy.array([function(v, *arguments) for v in flat], dtype=numpy.float32)
     ).reshape(values.shape)
+
+
+def fma(a, b, c):
+    """a * b + c rounded once to FP32, as math.fma: the product of two FP32
+    values is exact in FP64, and their sum with c, rounded to odd in FP64,
+    rounds to FP32 as the exact sum does."""
+    a, b, c = (torch.as_tensor(v, dtype=torch.float32) for v in (a, b, c))
+    product = a.double() * b.double()
+    addend = c.double().expand_as(product)
+    total = product + addend
+    part = total - product
+    error = (product - (total - part)) + (addend - part)
+    even = (total.contiguous().view(torch.int64) & 1) == 0
+    toward = torch.where(error > 0, torch.inf, -torch.inf).to(torch.float64)
+    return torch.where(
+        (error != 0) & even, torch.nextafter(total, toward), total
+    ).float()
+
+
+def f32(value):
+    return torch.tensor(value, dtype=torch.float32)
+
+
+def tanh(x):
+    """math.tanh of the operators: x clamped to +-7.99881172; itself below
+    0.0004, else an odd polynomial of degree 13 over an even one of degree 6,
+    both in fused multiply-adds."""
+    clamped = torch.where(x < f32(7.99881172), x, f32(7.99881172))
+    clamped = torch.where(clamped > f32(-7.99881172), clamped, f32(-7.99881172))
+    square = clamped * clamped
+    p = fma(square, f32(-2.76076837e-16), f32(2.00018794e-13))
+    for alpha in (
+        -8.60467184e-11,
+        5.12229725e-8,
+        1.48572235e-5,
+        6.37261954e-4,
+        0.00489352457,
+    ):
+        p = fma(square, p, f32(alpha))
+    q = fma(square, f32(1.19825836e-6), f32(1.18534706e-4))
+    for beta in (0.00226843474, 0.00489352504):
+        q = fma(square, q, f32(beta))
+    return torch.where(x.abs() < f32(4.0e-04), clamped, (clamped * p) / q)
+
+
+def exp(x):
+    """math.exp of the operators: x clamped to [-87.8, 88.8], k the floor of
+    x log2(e) + 0.5 within +-127, a polynomial of x - k ln 2 (ln 2 in two
+    terms) in fused multiply-adds, times 2^k (zero at -127)."""
+    x = torch.where(x >= f32(-87.8), x, f32(-87.8))
+    x = torch.where(x <= f32(88.8), x, f32(88.8))
+    k = torch.floor(fma(x, f32(1.44269502), f32(0.5)))
+    k = torch.where(k >= f32(-127.0), k, f32(-127.0))
+    k = torch.where(k <= f32(127.0), k, f32(127.0))
+    r = fma(f32(-0.693359375), k, x)
+    r = fma(f32(2.12194442e-4), k, r)
+    p = fma(r, f32(1.98756912e-4), f32(0.00139819994))
+    for coefficient in (0.00833345205, 0.0416657962, 0.166666657, 0.5):
+        p = fma(p, r, f32(coefficient))
+    y = fma(p, r * r, r) + f32(1.0)
+    return y * ((k.to(torch.int32) + 127) << 23).view(torch.float32)
 
 
 def mean(values, dims, keepdim=False):
@@ -114,19 +176,27 @@ class Program(TorchFunctionMode):
         if function is F.softmax:
             self.probabilities = True
         name = getattr(function, "__name__", None)
-        if name in ("cos", "sin", "tanh"):
-            return libc(f"{name}f", args[0])
+        if name in ("cos", "sin"):
+            return libc(getattr(libm, f"{name}f"), args[0])
+        if name == "tanh":
+            return tanh(args[0])
+        if name == "gelu":
+            if kwargs["approximate"] != "tanh":
+                raise ValueError("Gemma requires tanh GELU")
+            # The exported scalar expression rounds each FP32 operation;
+            # PyTorch's fused GELU can change subsequent MXINT8 quantization.
+            x = args[0]
+            inner = (x + ((x * x) * x) * 0.044715) * math.sqrt(2 / math.pi)
+            return (x * 0.5) * (1 + tanh(inner))
         if name == "pow" and isinstance(args[1], float) and args[1] == -0.5:
-            return libc("powf", args[0], -0.5)
+            return libc(libm.powf, args[0], -0.5)
         if name == "rsqrt":
             return torch.ones_like(args[0]) / torch.sqrt(args[0])
-        if name == "silu":
-            return args[0] / (1 + libc("expf", -args[0]))
         if name == "softmax":
             self.probabilities = True
             dim = args[1] if len(args) > 1 else kwargs["dim"]
             values = args[0]
-            exponentials = libc("expf", values - values.amax(dim, keepdim=True))
+            exponentials = exp(values - values.amax(dim, keepdim=True))
             parts = exponentials.movedim(dim, 0)
             total = torch.zeros_like(parts[0])
             for part in parts:
@@ -140,7 +210,7 @@ class Program(TorchFunctionMode):
             if bias is not None:
                 raise ValueError("a Linear with a bias")
             row = any(weight is w for w in self.rows)
-            x, weight = mxint8(x, -1), mxint8(weight, 1)
+            x = mxint8(x, -1)
             if not row:
                 return linear(x, weight)
             total = None
@@ -149,23 +219,25 @@ class Program(TorchFunctionMode):
                 total = partial if total is None else total + partial
             return total
         if name == "matmul" and args[0].shape[-1] % 32 == 0:
-            key = mxint8(args[1], -2) if self.probabilities else two(args[1], -2)
+            keys = (mxint8(args[1], -2),) if self.probabilities else two(args[1], -2)
             query = mxint8(args[0], -1)
-            # MXINT8 accumulates 32-code blocks; FP32 accumulates in K order.
-            block = 32 if self.probabilities else 1
             self.probabilities = False
-            result = function(query[..., :block], key[..., :block, :])
-            for start in range(block, query.shape[-1], block):
-                result = result + function(
-                    query[..., start : start + block],
-                    key[..., start : start + block, :],
-                )
-            return result
+            partials = []
+            for key in keys:
+                result = function(query[..., :32], key[..., :32, :])
+                for start in range(32, query.shape[-1], 32):
+                    result = result + function(
+                        query[..., start : start + 32],
+                        key[..., start : start + 32, :],
+                    )
+                partials.append(result)
+            return partials[0] if len(partials) == 1 else partials[0] + partials[1]
         return function(*args, **kwargs)
 
 
 def run(decoder, tokens, start, keys, values, ranks):
-    """The outputs of the device program: the logits and the updated cache."""
+    """Run with the recipe's prequantized Linear weights; return logits and
+    KV."""
     rows = []
     for layer in decoder.model.model.layers:
         rows += [layer.self_attn.o_proj.weight, layer.mlp.down_proj.weight]
