@@ -30,9 +30,13 @@
 // a segment not selected is skipped by an scf.if. A batch never splits a
 // tile iteration: no bank holds live data across its bounds. The tensors of
 // CPU computations (linalg, frontend) the iteration reads come from gvn_in
-// instead of being computed. The iteration writes its part of the value of
-// check k; the harness initializes unwritten bytes and captures the BEMU
-// result.
+// instead of being computed, also in a span without tile loops, which keeps
+// the computation of check k itself. The iteration writes its part of the
+// value of check k; the harness initializes unwritten bytes and captures the
+// BEMU result. With rows=r, a stream loop from 0 to a size of the output
+// buffer (the tokens) is the unit when it is the only one: an iteration runs
+// r of its rows, and the layout gives the dimension of the output (rows)
+// whose size, known when the slice runs, counts the iterations.
 //
 // When f is a subgraph launched on a hardware thread (hart.launch), its
 // graph keeps that launch only (the first, when the layers launch it): the
@@ -281,6 +285,12 @@ public:
       *this, "batch",
       llvm::cl::desc("The tile iterations of the batch axis an iteration "
                      "runs (iterate)")};
+  Option<int64_t> rows{
+      *this, "rows",
+      llvm::cl::desc("The rows an iteration runs of a stream loop over the "
+                     "rows of the output, its trips dynamic (iterate; 0: such "
+                     "a loop is no unit)"),
+      llvm::cl::init(0)};
 
   ModuleOp module;
   OpBuilder *builder = nullptr;
@@ -301,7 +311,62 @@ public:
     Operation *first = nullptr, *last = nullptr;
     std::vector<Unit> units;
     int64_t size = 1, tiles = 1;
+    // A loop over the rows of the output, dimension `rows` of it: its trips
+    // are the size of that dimension, known when the slice runs.
+    int64_t rows = -1;
+    // An scf.if (first = last) whose branches are each one unit of the same
+    // iterations, the code for some sizes and the code for others: an
+    // iteration selects the same one in each.
+    std::vector<Unit> branches;
   };
+
+  // The units of the branches of an scf.if, one each of the same
+  // iterations; none when they are not.
+  std::vector<Unit> branchUnits(Operation *op, ArrayRef<Operation *> writes,
+                                bool top) {
+    auto branch = dyn_cast<scf::IfOp>(op);
+    if (!branch || branch.getNumResults() || branch.getElseRegion().empty())
+      return {};
+    std::vector<Unit> result;
+    for (Region *region : {&branch.getThenRegion(), &branch.getElseRegion()}) {
+      Block &block = region->front();
+      if (&block.front() == block.getTerminator())
+        return {};
+      std::vector<Unit> found = units(
+          &block.front(), block.getTerminator()->getPrevNode(), writes, top);
+      if (found.size() != 1 || found[0].size < 1 ||
+          (!result.empty() && found[0].size != result[0].size))
+        return {};
+      result.push_back(std::move(found[0]));
+    }
+    return result;
+  }
+
+  // The dimension of the output whose rows `op` runs through: a loop from 0
+  // with a constant step up to that size of the output (its buffer, or the
+  // tensor the buffer is of); -1 when none.
+  int64_t outputRows(Operation *op) {
+    auto loop = dyn_cast<scf::ForOp>(op);
+    if (rows == 0 || !loop || loop.getNumResults() ||
+        !isConstantIntValue(loop.getLowerBound(), 0) ||
+        !getConstantIntValue(loop.getStep()))
+      return -1;
+    Value source;
+    std::optional<int64_t> dim;
+    if (auto size = loop.getUpperBound().getDefiningOp<memref::DimOp>()) {
+      source = size.getSource();
+      dim = size.getConstantIndex();
+    } else if (auto size =
+                   loop.getUpperBound().getDefiningOp<tensor::DimOp>()) {
+      for (Operation *user : size.getSource().getUsers())
+        if (auto buffer = dyn_cast<bufferization::ToBufferOp>(user))
+          source = buffer.getResult();
+      dim = size.getConstantIndex();
+    }
+    if (!source || rootBuffer(source) != outputBuffer || !dim)
+      return -1;
+    return *dim;
+  }
 
   static bool staticLoop(Operation *op) {
     auto loop = dyn_cast<scf::ForOp>(op);
@@ -328,7 +393,7 @@ public:
   // (the first column of a held A group) recomputes its writes there.
   // None when no static loop holds writes or the range is one segment.
   std::vector<Unit> units(Operation *first, Operation *last,
-                          ArrayRef<Operation *> writes) {
+                          ArrayRef<Operation *> writes, bool top) {
     Block &block = *first->getBlock();
     SmallVector<Operation *> ops;
     DenseMap<Operation *, int64_t> at;
@@ -345,7 +410,9 @@ public:
           top && at.count(top))
         writer[at[top]] = true;
     if (!llvm::any_of(llvm::seq<int64_t>(0, count), [&](int64_t i) {
-          return writer[i] && staticLoop(ops[i]);
+          return writer[i] &&
+                 (staticLoop(ops[i]) || (top && outputRows(ops[i]) >= 0) ||
+                  !branchUnits(ops[i], writes, top).empty());
         }))
       return {};
     int64_t firstWriter = llvm::find(writer, true) - writer.begin();
@@ -395,21 +462,39 @@ public:
       int64_t end = begin;
       for (int64_t i = begin; i <= end; ++i)
         end = std::max(end, reach[i]);
-      if (begin == 0 && end == count - 1 && !(count == 1 && staticLoop(ops[0])))
+      if (begin == 0 && end == count - 1 &&
+          !(count == 1 &&
+            (staticLoop(ops[0]) || (top && outputRows(ops[0]) >= 0) ||
+             !branchUnits(ops[0], writes, top).empty())))
         return {};
       if (llvm::any_of(llvm::seq<int64_t>(begin, end + 1),
                        [&](int64_t i) { return writer[i]; }) &&
           closed(begin, end)) {
         Unit unit;
-        if (begin == end && staticLoop(ops[begin])) {
+        std::vector<Unit> branches;
+        if (begin == end &&
+            !(branches = branchUnits(ops[begin], writes, top)).empty()) {
+          unit.first = unit.last = ops[begin];
+          unit.size = branches[0].size;
+          unit.tiles = branches[0].tiles;
+          unit.branches = std::move(branches);
+        } else if (begin == end && top && outputRows(ops[begin]) >= 0) {
+          unit.loop = cast<scf::ForOp>(ops[begin]);
+          unit.rows = outputRows(ops[begin]);
+          unit.size = unit.tiles = -1;
+        } else if (begin == end && staticLoop(ops[begin])) {
           unit.loop = cast<scf::ForOp>(ops[begin]);
           Block *loopBody = unit.loop.getBody();
-          if (&loopBody->front() != loopBody->getTerminator())
-            unit.units =
-                units(&loopBody->front(),
-                      loopBody->getTerminator()->getPrevNode(), writes);
           int64_t trips = tripCount(unit.loop);
-          if (unit.units.empty()) {
+          // A loop of one trip leaves its body at the level it is at.
+          if (&loopBody->front() != loopBody->getTerminator())
+            unit.units = units(&loopBody->front(),
+                               loopBody->getTerminator()->getPrevNode(), writes,
+                               top && trips == 1);
+          if (unit.units.size() == 1 && unit.units[0].rows >= 0) {
+            Unit inner = std::move(unit.units[0]);
+            unit = std::move(inner);
+          } else if (unit.units.empty()) {
             int64_t trip = std::min<int64_t>(batch, trips);
             batchUsed = std::max(batchUsed, trip);
             unit.size = (trips + trip - 1) / trip;
@@ -424,7 +509,7 @@ public:
         } else {
           unit.first = ops[begin];
           unit.last = ops[end];
-          unit.units = units(unit.first, unit.last, writes);
+          unit.units = units(unit.first, unit.last, writes, false);
           if (!unit.units.empty()) {
             unit.size = unit.tiles = 0;
             for (const Unit &nested : unit.units) {
@@ -437,6 +522,11 @@ public:
       }
       begin = end + 1;
     }
+    // A loop over the output's rows is the only unit: its iterations are
+    // counted when the slice runs.
+    if (result.size() > 1 &&
+        llvm::any_of(result, [](const Unit &unit) { return unit.rows >= 0; }))
+      return {};
     return result;
   }
 
@@ -596,7 +686,7 @@ public:
         });
       }
       tiles = units(index ? checks[index - 1]->getNextNode() : &body.front(),
-                    checks[index], outputWrites);
+                    checks[index], outputWrites, true);
     }
     if (!tiles.empty()) {
       for (Operation &op : body.without_terminator())
@@ -612,6 +702,16 @@ public:
           if (op == unit.last)
             break;
         }
+    } else if (iterate) {
+      // No tile loops: the span but its CPU computations, which the slice
+      // reads from gvn_in, and the computation of the check itself.
+      Operation *result =
+          body.findAncestorOpInBlock(*checks[index].getValue().getDefiningOp());
+      for (Operation &op : body.without_terminator())
+        if (position[&op] > begin && position[&op] <= end &&
+            !isa<::gvn::CheckOp>(op) &&
+            (&op == result || !computed(&op) || generated(op.getLoc())))
+          keep(&op);
     } else
       for (Operation &op : body.without_terminator())
         if (position[&op] > begin && position[&op] <= end &&
@@ -643,8 +743,9 @@ public:
           Operation *top = body.findAncestorOpInBlock(*producer);
           if (top == op)
             continue;
-          if (!tiles.empty() && top == producer &&
-              isa<RankedTensorType>(operand.getType()) && computed(producer)) {
+          if (iterate && top == producer &&
+              isa<RankedTensorType>(operand.getType()) && computed(producer) &&
+              !generated(producer->getLoc())) {
             cpuValues.insert(operand);
             continue;
           }
@@ -731,7 +832,7 @@ public:
     // One iteration of the tile loops: its index in the slot of gvn_table,
     // in row-major order of the loops, which have static trip counts.
     int64_t iterations = 1, iterationSlot = -1, tileIterations = 1,
-            iterationBatch = 1;
+            iterationBatch = 1, outputRowsDim = -1;
     auto selectIterations = [&](scf::ForOp loop, Value lower, Value upper) {
       if (!loop->hasAttr("hart.stream")) {
         loop.setLowerBound(lower);
@@ -812,6 +913,25 @@ public:
             loop.getUpperBound());
         selectIterations(loop, lower, upper);
       }
+    } else if (tiles.size() == 1 && tiles[0].rows >= 0) {
+      // A batch of rows an iteration; the iterations, a size of the output,
+      // are counted by the driver (-1 here).
+      scf::ForOp loop = tiles[0].loop;
+      outputRowsDim = tiles[0].rows;
+      tileIterations = iterations = -1;
+      iterationBatch = rows;
+      iterationSlot = slots++;
+      builder->setInsertionPointToStart(&body);
+      Value iteration = tableWord(iterationSlot);
+      builder->setInsertionPoint(loop);
+      Value span = arith::MulIOp::create(
+          *builder, loc, loop.getStep(),
+          arith::ConstantIndexOp::create(*builder, loc, rows));
+      Value lower = arith::MulIOp::create(*builder, loc, iteration, span);
+      Value upper = arith::MinSIOp::create(
+          *builder, loc, arith::AddIOp::create(*builder, loc, lower, span),
+          loop.getUpperBound());
+      selectIterations(loop, lower, upper);
     } else if (!tiles.empty()) {
       tileIterations = 0;
       for (const Unit &unit : tiles)
@@ -885,6 +1005,8 @@ public:
               } else {
                 if (!unit.units.empty())
                   select(unit.units, at, selected);
+                for (const Unit &alternative : unit.branches)
+                  select(ArrayRef<Unit>(alternative), at, selected);
                 if (units.size() > 1) {
                   SmallVector<Operation *> guarded;
                   for (Operation *op = unit.first;; op = op->getNextNode()) {
@@ -1044,6 +1166,7 @@ public:
         {"tile_iterations", tileIterations},
         {"iteration_batch", iterationBatch},
         {"iteration_slot", iterationSlot},
+        {"rows", outputRowsDim},
         {"output", llvm::json::Object{
                        {"id", checks[index].getId().str()},
                        {"type", typeName(outputType)},

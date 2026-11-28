@@ -32,7 +32,9 @@ if(EXISTS ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice0/parts)
   math(EXPR last "${count} - 1")
   foreach(index RANGE ${last})
     list(APPEND slices ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index})
-    # The tiles of its operation, which the driver writes (1: the whole).
+    # The tiles of its operation, which the driver writes (1: the whole),
+    # its rows (or its batch) cut first: Loom converts the FP32 rows of a
+    # tile, the mesh reads the weight in place.
     file(READ ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index}/parts parts)
     string(STRIP "${parts}" parts)
     add_custom_command(
@@ -41,7 +43,7 @@ if(EXISTS ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice0/parts)
       COMMAND ${CMAKE_COMMAND} -E make_directory ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index}
       COMMAND ${COMPILER_BUILD}/bin/buddy-opt
                 --load-dialect-plugin=${STACK_ROOT}/gvn/build/gvn-compiler/libgvn-compiler.so
-                --load-pass-plugin=${STACK_ROOT}/gvn/build/gvn-compiler/libgvn-compiler.so ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/npu/checks.mlir "-gvn-slice-op=index=${index} parts=${parts} layout=${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index}/layout.json"
+                --load-pass-plugin=${STACK_ROOT}/gvn/build/gvn-compiler/libgvn-compiler.so ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/npu/checks.mlir "-gvn-slice-op=index=${index} parts=${parts} first=0 layout=${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index}/layout.json"
                 -o ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index}/slice.mlir
       DEPENDS ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/npu/checks.mlir
               ${DESIGN_OUTPUT}/gvn/bert-base-uncased-emotion/slice${index}/parts
@@ -87,7 +89,8 @@ foreach(slice ${slices})
               -reconcile-unrealized-casts
               -o ${slice}/slice_llvm.mlir
     COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${slice}/slice_llvm.mlir -mlir-to-llvmir -o ${slice}/slice.ll
-    COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${slice}/slice.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh -target-abi=lp64d -code-model=medium -O2 -o ${slice}/slice.o
+    COMMAND ${LLVM_OPT} ${slice}/slice.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh "-passes=default<O2>" -S -o ${slice}/slice_opt.ll
+    COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${slice}/slice_opt.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh -target-abi=lp64d -code-model=medium -O2 -o ${slice}/slice.o
     DEPENDS ${slice}/slice.mlir
     VERBATIM
   )

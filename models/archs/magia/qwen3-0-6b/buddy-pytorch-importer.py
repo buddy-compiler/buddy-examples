@@ -72,7 +72,7 @@ for index, dtype in enumerate((torch.float16, torch.float32)):
 # ===----------------------------------------------------------------------===
 reference = ctypes.CDLL(sys.argv[1])
 reference.magia_gemm.restype = None
-reference.magia_gemm.argtypes = [ctypes.c_uint64] * 6
+reference.magia_gemm.argtypes = [ctypes.c_uint64] * 7
 
 
 sliced = []
@@ -84,7 +84,7 @@ def gemm(x, w):
     ws = np.ascontiguousarray(w.to(torch.float16).numpy())
     zs = np.zeros((xs.shape[0], ws.shape[1]), dtype=np.float16)
     reference.magia_gemm(
-        xs.ctypes.data, ws.ctypes.data, zs.ctypes.data, *xs.shape, ws.shape[1]
+        xs.ctypes.data, ws.ctypes.data, zs.ctypes.data, 1, *xs.shape, ws.shape[1]
     )
     # The slice of the model an RTL simulation runs (slice.cpp): the first
     # product of the first decode step, the query projection of layer 0 for

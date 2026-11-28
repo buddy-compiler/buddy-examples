@@ -1,3 +1,4 @@
+.file "start.S"
 .section .text.init
 .global _start
 

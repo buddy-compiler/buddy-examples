@@ -16,7 +16,7 @@ from models.archs.buckyball.pebble.fixed import coefficients
 from models.archs.buckyball.pebble.fixed_reference import round_div
 from frontend.nonlinear_reference import IntegerNonlinear
 from frontend.residual_reference import ResidualAdds
-from ultralytics.nn.modules.block import Attention
+from ultralytics.nn.modules.block import Attention, SPPF
 
 model_dir = Path(__file__).resolve().parent
 output = model_dir / "output"
@@ -181,12 +181,14 @@ tests, labels = coco.load(coco.paths[64:])
 validator = DetectionValidator()
 
 
-def mean_ap(model):
+def mean_ap(model, predictions=None):
     """mAP50-95 of the end-to-end detections, matched as ultralytics does."""
     correct, scores, classes, targets = [], [], [], []
     with torch.no_grad():
         for image, label in zip(tests.split(1), labels):
             detections = model(image)[0]
+            if predictions is not None:
+                predictions.append(detections.float().cpu().numpy().copy())
             iou = box_iou(label[:, 1:], detections[:, :4])
             correct.append(
                 validator.match_predictions(detections[:, 5], label[:, 0], iou)
@@ -373,6 +375,18 @@ for name, module in list(integer_model.named_modules()):
             lambda module, inputs, output, step=step: quantize(output, 1 / step).float()
             * step
         )
+# The SPPF branches concatenate the identity and successive maxima of one
+# accumulator. Their positive per-channel scales commute with max pooling.
+# The importer folds each branch's two scales into a single ToInt8 multiplier.
+for block in integer_model.modules():
+    if isinstance(block, SPPF):
+        source, consumer = block.cv1.conv, block.cv2.conv
+        assert isinstance(block.cv1.act, torch.nn.Identity) and source.silu_step is None
+        consumer.multiplier = (
+            source.step.repeat(1, block.n + 1, 1, 1) * consumer.multiplier
+        )
+        source.step = torch.ones_like(source.step)
+
 with Products(integer_product, result=True):
     accumulator_map = mean_ap(integer_model)
 print(f"INT8 integer accumulators mAP50-95 {accumulator_map:.2f} on 64 images")
@@ -426,8 +440,10 @@ residual_reference = ResidualAdds(steps=residual_steps)
 hook = integer_model.register_forward_pre_hook(
     lambda module, inputs: setattr(residual_reference, "index", 0)
 )
+dataset_reference = []
 with residual_reference, IntegerNonlinear(calibration, attention_scales):
-    residual_map = mean_ap(integer_model)
+    residual_map = mean_ap(integer_model, dataset_reference)
+np.stack(dataset_reference).astype("<f4").tofile(output / "validation-detections.data")
 # The reference of the baremetal check: the detections of this integer model
 # on the image the importer letterboxes for the device.
 image = Image.open(

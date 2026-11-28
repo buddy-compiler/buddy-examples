@@ -444,6 +444,61 @@ add_custom_command(
   COMMENT "Linking Gemma4-E2B-IT for the poly device"
   VERBATIM
 )
+
+set(DATASET_ELF "${DESIGN_OUTPUT}/workloads/models/poly-gemma4-e2b-it-dataset")
+add_custom_command(
+  OUTPUT ${DATASET_ELF}
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -fno-exceptions -fno-rtti ${DESIGN_DEFINES} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -DMODEL_IMAGE=${MODEL_IMAGE}ULL -I${LIB_DIR} -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program -DDEVICE_CLINT_TICK_CYCLES=${DESIGN_DEVICE_CLINT_TICK_CYCLES} -c ${CMAKE_CURRENT_SOURCE_DIR}/../lambada.cpp -o lambada.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -DWORKLOAD_REPORT_HART=${DESIGN_WORKLOAD_REPORT_HART} -DDEVICE_CONTROL_HART=${DESIGN_WORKLOAD_CONTROL_HART} -DMODEL_IMAGE=${MODEL_IMAGE}ULL -I${DESIGN_DEVICE_STACK}/runtime -I${DESIGN_REPO}/stack/runtime/program ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c lambada.o program.o reduce.o poly.o operators.embed.o reduce_operators.embed.o ${DESIGN_HART_BUILD_${REDUCE_HART}}/execute.o ${DESIGN_HART_BUILD_poly}/execute.o ${DESIGN_THREAD_BUILD_attention}/loader.o ${DESIGN_THREAD_BUILD_ffn}/loader.o $<TARGET_FILE:poly-runtime> $<TARGET_FILE:runtime-program> $<TARGET_FILE:runtime-baremetal> $<TARGET_FILE:runtime> $<TARGET_FILE:kernel> -lm -lgcc -o ${DATASET_ELF}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../lambada.cpp
+          ${LIB_DIR}/testutils.h
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          program.o
+          reduce.o
+          poly.o
+          operators.embed.o
+          reduce_operators.embed.o
+          ${DESIGN_DEVICE_STACK}/runtime/device.h
+          poly-runtime
+          runtime-program
+          runtime-baremetal
+          runtime
+          kernel
+  COMMENT "Linking the LAMBADA accuracy workload for gemma4-e2b-it"
+  VERBATIM
+)
+
+set(
+  LAMBADA_DATA
+  ${OUTPUT_DIR}/dataset/contexts.data
+  ${OUTPUT_DIR}/dataset/targets.data
+  ${OUTPUT_DIR}/dataset/lengths.data
+  ${OUTPUT_DIR}/dataset/reference.data
+  ${OUTPUT_DIR}/dataset/labels.data
+  ${OUTPUT_DIR}/dataset/model/cache-layout.data
+  ${OUTPUT_DIR}/dataset/model/cache-seed.data
+  ${OUTPUT_DIR}/dataset/model/pack-f32.data
+  ${OUTPUT_DIR}/dataset/model/pack-i8.data
+)
+add_custom_command(
+  OUTPUT ${LAMBADA_DATA}
+  COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/../lambada.py ${OUTPUT_DIR} pack-f32.data pack-i8.data
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../lambada.py
+          ${MODEL_DIR}/gemma4-e2b-it/model.py
+          ${MODEL_DIR}/../datasets/lambada/en/test/en.parquet
+          ${OUTPUT_DIR}/prompt/sizes.txt
+          ${OUTPUT_DIR}/prompt/inputs.data
+          ${OUTPUT_DIR}/prompt/input-order.txt
+          ${OUTPUT_DIR}/prompt/pack-f32.data
+          ${OUTPUT_DIR}/prompt/pack-i8.data
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Preparing LAMBADA predictions and cache layout for gemma4-e2b-it"
+  VERBATIM
+)
+add_custom_target(gemma4-e2b-it-dataset DEPENDS ${DATASET_ELF} ${LAMBADA_DATA})
 add_custom_command(
   OUTPUT ${ELF}-ddr.bin
   BYPRODUCTS model.img
@@ -537,7 +592,9 @@ add_custom_command(
           model-pack-tool
   VERBATIM
 )
-add_custom_target(gemma4-e2b-it-model-build DEPENDS ${ELF} ${ELF}-ddr.bin ${OUTPUT_DIR}/model.img)
+add_custom_target(gemma4-e2b-it-workload DEPENDS ${ELF} ${ELF}-ddr.bin ${OUTPUT_DIR}/model.img)
+add_custom_target(gemma4-e2b-it-model-build)
+add_dependencies(gemma4-e2b-it-model-build gemma4-e2b-it-workload gemma4-e2b-it-dataset)
 
 # The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
 add_subdirectory(gvn)

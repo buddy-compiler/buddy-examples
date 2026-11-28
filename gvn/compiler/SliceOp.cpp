@@ -11,20 +11,24 @@
 // offset in gvn_table.
 //
 // With parts=P > 1 (an operation too long for one simulation), the slice
-// computes the first tile of the operation only: its largest parallel loop
-// cut into P (TilingInterface), the operands extracted from their whole
-// values. The operation takes extent / size such tiles.
+// computes the first tile of the operation only: its parallel loops cut into
+// P (TilingInterface), the one cutting the most operand bytes (or the loop
+// first=l, its size possibly dynamic) first down to one iteration, then the
+// next; the operands extracted from their whole values.
 //
 // The layout file lists the operands read from gvn_in (their linalg value,
 // `line:column` in the linalg input or arg:<n> for an argument of the graph,
-// their slot and type), the output (the value of check k, or its first tile:
-// the dimension of the value cut and its size) and the tiles.
+// their slot and type), the output (the value of check k, or its first
+// tile) and the tiles: the parts
+// and the loops cut in order, by the dimension of the value each is and its
+// extent (-1 when dynamic).
 //
 //===----------------------------------------------------------------------===//
 
 #include "GvnOps.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Arith/Utils/Utils.h"
 #include "mlir/Dialect/Bufferization/IR/Bufferization.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
@@ -100,6 +104,11 @@ public:
                              llvm::cl::desc("The layout file to write")};
   Option<int64_t> parts{*this, "parts",
                         llvm::cl::desc("The tiles of the operation")};
+  Option<int64_t> first{
+      *this, "first",
+      llvm::cl::desc("The loop cut first (-1: the one that cuts the most "
+                     "operand bytes)"),
+      llvm::cl::init(-1)};
 
   void runOnOperation() override {
     ModuleOp module = getOperation();
@@ -173,48 +182,72 @@ public:
     Operation *computed = builder.clone(*op, mapping);
     Value result = computed->getResult(0);
     llvm::json::Object tiles{{"parts", parts.getValue()}};
-    if (parts > 1) {
-      auto structured = cast<linalg::LinalgOp>(computed);
-      SmallVector<int64_t> extents = structured.getStaticLoopRanges();
-      SmallVector<utils::IteratorType> iterators =
-          structured.getIteratorTypesArray();
-      // The parallel loop that cuts the most operand bytes (the columns of a
-      // weight, the rows of a long input): the tile moves and computes a
-      // part of the operation's work.
-      int64_t loop = -1, most = 0;
-      for (int64_t l = 0; l < int64_t(extents.size()); ++l) {
-        if (iterators[l] != utils::IteratorType::parallel || extents[l] < 2)
-          continue;
-        int64_t bytes = 0;
-        for (OpOperand &operand : computed->getOpOperands()) {
-          auto type = cast<RankedTensorType>(operand.get().getType());
-          if (type.hasStaticShape() &&
-              structured.getMatchingIndexingMap(&operand).isFunctionOfDim(l))
-            bytes += type.getNumElements() * type.getElementTypeBitWidth() / 8;
-        }
-        if (bytes > most)
-          loop = l, most = bytes;
+    auto structured = cast<linalg::LinalgOp>(computed);
+    SmallVector<int64_t> extents = structured.getStaticLoopRanges();
+    SmallVector<utils::IteratorType> iterators =
+        structured.getIteratorTypesArray();
+    // The parallel loops by the operand bytes each cuts, the most first
+    // (the columns of a weight, the rows of a long input): a tile moves
+    // and computes a part of the operation's work. A design whose cost is
+    // elsewhere names the loop to cut first, which may have a dynamic size
+    // (the tokens). The parts cut the first loop, down to one iteration,
+    // then the next: cut = min(left, extent), size = ceil(extent / cut),
+    // left = ceil(left / cut), at run time for a dynamic extent.
+    SmallVector<std::pair<int64_t, int64_t>> ranked;
+    for (int64_t l = 0; l < int64_t(extents.size()); ++l) {
+      if (iterators[l] != utils::IteratorType::parallel ||
+          (l != first && extents[l] < 2))
+        continue;
+      int64_t bytes = 0;
+      for (OpOperand &operand : computed->getOpOperands()) {
+        auto type = cast<RankedTensorType>(operand.get().getType());
+        if (type.hasStaticShape() &&
+            structured.getMatchingIndexingMap(&operand).isFunctionOfDim(l))
+          bytes += type.getNumElements() * type.getElementTypeBitWidth() / 8;
       }
-      if (parts > extents[loop])
-        llvm::report_fatal_error("gvn-slice-op: more tiles than iterations");
-      int64_t size = (extents[loop] + parts - 1) / parts;
+      ranked.push_back({bytes, l});
+    }
+    llvm::stable_sort(ranked, [&](auto a, auto b) {
+      return (a.second == first) != (b.second == first) ? a.second == first
+                                                        : a.first > b.first;
+    });
+    AffineMap map = structured.getIndexingMapMatchingResult(
+        cast<OpResult>(computed->getResult(0)));
+    // The loops cut, by the dimension of the value each is (its extent, -1
+    // when dynamic): the driver computes the tiles from them.
+    llvm::json::Array loops;
+    for (auto [bytes, l] : ranked) {
+      int64_t dim = -1;
+      for (unsigned r = 0; r < map.getNumResults(); ++r)
+        if (map.getResult(r) == builder.getAffineDimExpr(l))
+          dim = r;
+      loops.push_back(llvm::json::Object{
+          {"dim", dim},
+          {"extent", ShapedType::isDynamic(extents[l]) ? -1 : extents[l]}});
+    }
+    tiles["loops"] = std::move(loops);
+    if (parts > 1) {
       SmallVector<OpFoldResult> offsets(extents.size(),
                                         builder.getIndexAttr(0));
-      SmallVector<OpFoldResult> sizes;
-      for (int64_t l = 0; l < int64_t(extents.size()); ++l)
-        sizes.push_back(builder.getIndexAttr(l == loop ? size : extents[l]));
+      // The loops not cut keep their sizes, dynamic ones too.
+      SmallVector<OpFoldResult> sizes =
+          llvm::map_to_vector(structured.createLoopRanges(builder, loc),
+                              [](Range range) { return range.size; });
+      Value left = arith::ConstantIndexOp::create(builder, loc, parts);
+      for (auto [bytes, l] : ranked) {
+        Value extent = getValueOrCreateConstantIndexOp(builder, loc, sizes[l]);
+        Value cut = builder.createOrFold<arith::MinUIOp>(loc, left, extent);
+        sizes[l] = builder.createOrFold<arith::CeilDivUIOp>(loc, extent, cut);
+        left = builder.createOrFold<arith::CeilDivUIOp>(loc, left, cut);
+      }
+      for (OpFoldResult &size : sizes)
+        if (std::optional<int64_t> known = getConstantIntValue(size))
+          size = builder.getIndexAttr(*known);
       FailureOr<TilingResult> tiled =
           cast<TilingInterface>(computed).getTiledImplementation(
               builder, offsets, sizes);
       if (failed(tiled))
         llvm::report_fatal_error("gvn-slice-op: the operation does not tile");
-      // The dimension of the value the loop is.
-      AffineMap map = structured.getIndexingMapMatchingResult(
-          cast<OpResult>(computed->getResult(0)));
-      int64_t dim = -1;
-      for (unsigned r = 0; r < map.getNumResults(); ++r)
-        if (map.getResult(r) == builder.getAffineDimExpr(loop))
-          dim = r;
       // The tile's operands are views of the whole values; the accelerator
       // takes contiguous ones, as in the graph: each one cut is copied.
       Operation *tile = tiled->tiledOps[0];
@@ -226,9 +259,6 @@ public:
               builder, loc, view.getType(), ValueRange{}, view.getResult()));
       result = tiled->tiledValues[0];
       computed->erase();
-      tiles["extent"] = extents[loop];
-      tiles["size"] = size;
-      tiles["dim"] = dim;
       outputType = cast<RankedTensorType>(result.getType());
       builder.setInsertionPointToEnd(&slice.front());
     }

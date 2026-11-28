@@ -104,7 +104,7 @@ if(EXISTS ${DESIGN_OUTPUT}/gvn/qwen3-0-6b/npu/checks.mlir)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${slice}
         COMMAND ${DESIGN_HART_OPT_poly}
                   --load-dialect-plugin=${STACK_ROOT}/gvn/build/gvn-compiler/libgvn-compiler.so
-                  --load-pass-plugin=${STACK_ROOT}/gvn/build/gvn-compiler/libgvn-compiler.so -mlir-print-debuginfo ${DESIGN_OUTPUT}/gvn/qwen3-0-6b/npu/checks.mlir -canonicalize "-gvn-slice=function=${function} index=${index} iterate=true batch=1 layout=${slice}/layout.json" -o ${slice}/slice.mlir
+                  --load-pass-plugin=${STACK_ROOT}/gvn/build/gvn-compiler/libgvn-compiler.so -mlir-print-debuginfo ${DESIGN_OUTPUT}/gvn/qwen3-0-6b/npu/checks.mlir -canonicalize "-gvn-slice=function=${function} index=${index} iterate=true batch=1 rows=32 layout=${slice}/layout.json" -o ${slice}/slice.mlir
         COMMAND ${DESIGN_HART_OPT_poly} ${slice}/slice.mlir -prune-gp-operators -symbol-dce -lower-frontend-fake-op -o ${slice}/slice_lowered_frontend.mlir
         COMMAND ${DESIGN_HART_OPT_poly} ${slice}/slice_lowered_frontend.mlir -inline -eliminate-empty-tensors -o ${slice}/slice_frontend.mlir
         COMMAND ${DESIGN_HART_OPT_poly} ${slice}/slice_frontend.mlir -convert-elementwise-to-linalg -linalg-fuse-elementwise-ops -resolve-shaped-type-result-dims -canonicalize "-one-shot-bufferize=bufferize-function-boundaries function-boundary-type-conversion=infer-layout-map" -drop-equivalent-buffer-results=modify-public-functions "-buffer-results-to-out-params=modify-public-functions hoist-static-allocs" -ownership-based-buffer-deallocation -buffer-deallocation-simplification -bufferization-lower-deallocations -canonicalize -o ${slice}/slice_bufferized.mlir

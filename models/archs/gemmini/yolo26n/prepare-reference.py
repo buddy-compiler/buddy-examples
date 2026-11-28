@@ -10,7 +10,8 @@ output = Path(__file__).resolve().parent / "output"
 calibration = json.loads((output / "calibration.json").read_text())
 coco = import_module("models.models.yolo26n.data")
 model = import_module("models.models.yolo26n.model").load()
-pixels, _ = coco.load(coco.paths[64:65])
+tests, _ = coco.load(coco.paths[64:])
+pixels = tests[:1]
 
 
 class QuantizedAttention(TorchFunctionMode):
@@ -75,7 +76,13 @@ with torch.no_grad():
             lambda conv, args, out, step=acc_step: out.float()
             * step[None, :, None, None]
         )
-    with QuantizedAttention():
-        reference = model(pixels)
+    predictions = []
+    for image in tests.split(1):
+        with QuantizedAttention():
+            predictions.append(model(image).float())
+    reference = predictions[0]
+    torch.cat(predictions).contiguous().numpy().tofile(
+        output / "validation-detections.data"
+    )
 pixels.contiguous().numpy().tofile(output / "inputs.data")
 reference.contiguous().numpy().tofile(output / "reference.data")

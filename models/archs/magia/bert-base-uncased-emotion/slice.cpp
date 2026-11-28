@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
-extern "C" void magia_gemm(uint64_t x, uint64_t w, uint64_t z, uint64_t m,
-                           uint64_t n, uint64_t k);
+extern "C" void magia_gemm(uint64_t x, uint64_t w, uint64_t z, uint64_t batch,
+                           uint64_t m, uint64_t n, uint64_t k);
 
 constexpr unsigned rows = 4, terms = 768, columns = 64;
 
@@ -38,7 +38,7 @@ static uint64_t cycles() {
 
 int main() {
   const uint64_t start = cycles();
-  magia_gemm((uintptr_t)x_data, (uintptr_t)w_data, (uintptr_t)z, rows, terms,
+  magia_gemm((uintptr_t)x_data, (uintptr_t)w_data, (uintptr_t)z, 1, rows, terms,
              columns);
   const uint64_t elapsed = cycles() - start;
   const auto *expected = reinterpret_cast<const uint16_t *>(z_data);

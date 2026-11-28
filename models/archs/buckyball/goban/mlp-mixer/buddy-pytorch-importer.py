@@ -109,27 +109,48 @@ np.ascontiguousarray(patches).tofile(output / "input.f32")
 # weight with one scale per output channel and its input with the calibrated
 # scales; a token-mixing Linear keeps its bias in FP32.
 # ===----------------------------------------------------------------------===
+from functools import partial
+
 from compiler.frontend.quant import quantize as quantize_codes, quantize_bias
 from models.archs.buckyball.goban.exp import gelu
+
+
+def integer_linear(x, weight, scale, step, bias, token_mixing):
+    # All possible INT8 dot products here fit exactly in binary64. Convert to
+    # FP32 only after accumulation, as the device's integer matmul does.
+    x_codes = quantize_codes(x, 1 / scale).double()
+    acc = x_codes @ weight.T
+    if token_mixing:
+        return acc.float() * (scale * step) + bias
+    return (acc + bias).float() * (scale * step)
+
 
 reference = mixer.load()
 smooth_norms(reference, calibration["smooth"])
 for name, module in reference.named_modules():
-    # GELU as the goban operators compute it (exp.py).
     if isinstance(module, torch.nn.GELU):
         module.forward = gelu
     if not isinstance(module, torch.nn.Linear):
         continue
-    step = module.weight.detach().abs().amax(1, keepdim=True) / 127
-    module.weight.data = quantize_codes(module.weight.detach(), 1 / step) * step
-    if "mlp_tokens" in name:
+    weight = module.weight.detach()
+    step = weight.abs().amax(1, keepdim=True) / 127
+    codes = quantize_codes(weight, 1 / step).double()
+    token_mixing = "mlp_tokens" in name
+    if token_mixing:
         scale = torch.tensor(calibration[name]).reshape(-1, 1) / 127
+        bias = module.bias.detach()
     else:
         scale = torch.full([1, 1], calibration[name] / 127)
-        bias_step = step.reshape(-1) * scale.reshape(-1)
-        module.bias.data = quantize_bias(module.bias.detach(), bias_step) * bias_step
-    module.register_forward_pre_hook(
-        lambda module, args, scale=scale: quantize_codes(args[0], 1 / scale) * scale
+        bias = quantize_bias(
+            module.bias.detach(), step.reshape(-1) * scale.reshape(-1)
+        ).double()
+    module.forward = partial(
+        integer_linear,
+        weight=codes,
+        scale=scale,
+        step=step.reshape(-1),
+        bias=bias,
+        token_mixing=token_mixing,
     )
 with torch.no_grad():
     logits = reference(torch.from_numpy(np.ascontiguousarray(patches))[None])[:, 0]

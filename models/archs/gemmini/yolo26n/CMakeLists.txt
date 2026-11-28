@@ -206,6 +206,7 @@ add_custom_target(yolo26n-model-build DEPENDS ${OUTPUT_DIR}/yolo26n.rax)
 add_custom_command(
   OUTPUT ${OUTPUT_DIR}/inputs.data
          ${OUTPUT_DIR}/reference.data
+         ${OUTPUT_DIR}/validation-detections.data
   COMMAND ${PYTHON} prepare-reference.py
   DEPENDS prepare-reference.py
           ${OUTPUT_DIR}/calibration.json
@@ -270,3 +271,61 @@ add_dependencies(yolo26n-model-build yolo26n-model-image)
 
 # The GVN slices of this model, which `bbdev gvn-bemu --debug` builds.
 add_subdirectory(gvn)
+
+math(
+  EXPR
+  DATASET_BASE
+  "${DESIGN_DEVICE_DDR_BASE} + ${DESIGN_DEVICE_DDR_BYTES} - ${DESIGN_DEVICE_DDR_MODEL}"
+  OUTPUT_FORMAT HEXADECIMAL
+)
+set(DATASET_ELF "${DESIGN_OUTPUT}/workloads/models/gemmini-yolo26n-dataset")
+add_custom_command(
+  OUTPUT ${DATASET_ELF}
+  BYPRODUCTS dataset.o
+             mlir-dataset.o
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${DESIGN_OUTPUT}/workloads/models"
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++26 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -I${LIB_DIR} -DMODEL_IMAGE=${DATASET_BASE}ULL
+            --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp -o dataset.o
+  COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++17 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin -I${BUDDY_SOURCE}/llvm/mlir/include/mlir/ExecutionEngine -c ${RUNTIME_DIR}/services/mlir.cpp -o mlir-dataset.o
+  COMMAND ${ELF_CC} -O2 -static -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c dataset.o mlir-dataset.o forward.o subgraph0.o -lstdc++ -lm -lgcc -o ${DATASET_ELF}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dataset.cpp
+          model.h
+          ${LIB_DIR}/MemRef.h
+          ${LIB_DIR}/ModelImage.h
+          ${LIB_DIR}/testutils.h
+          forward.o
+          subgraph0.o
+          ${OUTPUT_DIR}/arg0.data
+          ${OUTPUT_DIR}/arg1.data
+          ${OUTPUT_DIR}/arg2.data
+          ${BOOT_DIR}/start.S
+          ${BOOT_DIR}/syscalls.c
+          ${BOOT_DIR}/device.ld
+          ${STACK_ROOT}/kernel/src/location.c
+          ${RUNTIME_DIR}/services/mlir.cpp
+          ${RUNTIME_DIR}/trace/baremetal.c
+          ${DESIGN_PB}
+  COMMENT "Building yolo26n for the Gemmini device"
+  COMMAND_EXPAND_LISTS
+  VERBATIM
+)
+set(DATASET_ROOT "${DESIGN_OUTPUT}/models/yolo26n")
+set(
+  DETECTION_DATA
+  ${DATASET_ROOT}/dataset/labels.data
+  ${DATASET_ROOT}/dataset/pixels.data
+  ${DATASET_ROOT}/dataset/reference.data
+  ${DATASET_ROOT}/detection/ground-truth.json
+  ${DATASET_ROOT}/detection/fp32.data
+)
+add_custom_command(
+  OUTPUT ${DETECTION_DATA}
+  COMMAND ${PYTHON} ${MODEL_DIR}/yolo26n/dataset.py ${DATASET_ROOT} ${OUTPUT_DIR}/validation-detections.data NCHW
+  DEPENDS ${MODEL_DIR}/yolo26n/dataset.py
+          ${MODEL_DIR}/yolo26n/model.py
+          ${MODEL_DIR}/yolo26n/data.py
+          ${OUTPUT_DIR}/validation-detections.data
+  VERBATIM
+)
+add_custom_target(yolo26n-dataset DEPENDS ${DATASET_ELF} ${DETECTION_DATA})
+add_dependencies(yolo26n-model-build yolo26n-dataset)

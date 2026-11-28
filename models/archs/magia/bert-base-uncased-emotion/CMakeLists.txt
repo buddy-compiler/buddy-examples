@@ -130,7 +130,8 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/forward.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -O2 -o ${OUTPUT_DIR}/check-forward.o
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -O2 -o ${OUTPUT_DIR}/check-subgraph0.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/subgraph0.ll "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_opt.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_opt.ll -filetype=obj -relocation-model=pic -O2 -o ${OUTPUT_DIR}/check-subgraph0.o
   COMMAND ${TOOLCHAIN}/bin/g++ -std=c++20 -O2 -I${BUDDY_SOURCE}/frontend/Interfaces ${CMAKE_CURRENT_SOURCE_DIR}/check.cpp ${OUTPUT_DIR}/check-forward.o ${OUTPUT_DIR}/check-subgraph0.o ${OUTPUT_DIR}/libmagia-gemm.so -Wl,-rpath,${OUTPUT_DIR} -L${BUDDY_SOURCE}/llvm/build/lib -Wl,-rpath,${BUDDY_SOURCE}/llvm/build/lib -lmlir_c_runner_utils -lmlir_runner_utils -lm -o ${OUTPUT_DIR}/bert-base-uncased-emotion-magia-check
   DEPENDS ${OUTPUT_DIR}/forward_llvm.mlir
           ${OUTPUT_DIR}/subgraph0_llvm.mlir
@@ -169,7 +170,8 @@ add_custom_command(
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/forward_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/forward.ll
   COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/forward.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh -target-abi=lp64d -code-model=medium -O2 -o forward.o
   COMMAND ${COMPILER_BUILD}/bin/buddy-translate ${OUTPUT_DIR}/subgraph0_llvm.mlir -mlir-to-llvmir -o ${OUTPUT_DIR}/subgraph0.ll
-  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh -target-abi=lp64d -code-model=medium -O2 -o subgraph0.o
+  COMMAND ${LLVM_OPT} ${OUTPUT_DIR}/subgraph0.ll -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh "-passes=default<O2>" -S -o ${OUTPUT_DIR}/subgraph0_riscv.ll
+  COMMAND ${COMPILER_BUILD}/bin/buddy-llc ${OUTPUT_DIR}/subgraph0_riscv.ll -filetype=obj -relocation-model=pic -mtriple=riscv64 -mattr=+m,+a,+f,+d,+c,+zfh -target-abi=lp64d -code-model=medium -O2 -o subgraph0.o
   DEPENDS ${OUTPUT_DIR}/forward_llvm.mlir
           ${OUTPUT_DIR}/subgraph0_llvm.mlir
           ${COMPILER_BUILD}/bin/buddy-translate

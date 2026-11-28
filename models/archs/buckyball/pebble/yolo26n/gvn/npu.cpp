@@ -25,10 +25,6 @@ alignas(64) unsigned char gvn_out[] = {
 };
 }
 
-alignas(64) static const unsigned char expected[] = {
-#embed "gvn_expect.bin"
-};
-
 alignas(64) static const unsigned char parameters[] = {
 #embed "arg0.data"
 };
@@ -43,12 +39,7 @@ alignas(64) static const unsigned char pixels[] = {
 };
 static_assert(sizeof(pixels) == 3 * 640 * 640 * sizeof(float));
 
-// BEMU captures the reference; the FPGA runner checks the streamed output.
-__attribute__((used, section(".bbsim.capture_output"),
-               aligned(8))) static const struct {
-  const void *actual, *expected;
-  uint64_t bytes;
-} check = {gvn_out, expected, sizeof(expected)};
+void read_output();
 extern "C" void _mlir_ciface_buddyTraceCycleStartPath(int64_t, int64_t, int64_t,
                                                       int64_t, int64_t,
                                                       int64_t);
@@ -69,15 +60,6 @@ int main() {
   _mlir_ciface_buddyTraceCycleStartPath(INT64_MAX, 1, INT64_MAX, 0, 0, 0);
   _mlir_ciface_forward(&output, &f32, &i32, &i8, &input);
   _mlir_ciface_buddyTraceCycleEndPath(INT64_MAX, 1, INT64_MAX, 0, 0, 0);
-  // Read through the hart after the timed interval, including dirty cache
-  // lines.
-  auto *stream = reinterpret_cast<volatile uint32_t *>(0x60000000UL);
-  *stream = 0x42424f55;
-  for (uintptr_t offset = 0; offset < sizeof(gvn_out); offset += 4) {
-    uint32_t word = 0;
-    const uintptr_t left = sizeof(gvn_out) - offset;
-    __builtin_memcpy(&word, gvn_out + offset, left < 4 ? left : 4);
-    *stream = word;
-  }
+  read_output();
   return 0;
 }

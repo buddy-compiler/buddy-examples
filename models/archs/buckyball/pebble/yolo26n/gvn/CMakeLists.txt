@@ -201,28 +201,65 @@ add_custom_command(
   VERBATIM
 )
 set(elfs)
+set(isa_include "${STACK_ROOT}/../bb-tests/workloads/lib")
+set(
+  harness_flags
+  -std=c++20
+  -O2
+  -march=rv64gc
+  -mabi=lp64d
+  -mcmodel=medany
+  -msmall-data-limit=0
+  -mno-relax
+  -fno-exceptions
+  -fno-rtti
+  -fno-builtin
+)
 foreach(slice ${slices})
   add_custom_command(
-    OUTPUT ${slice}/slice.elf
-    BYPRODUCTS ${slice}/npu.o
-    COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ -std=c++20 -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -fno-exceptions -fno-rtti -fno-builtin ${DESIGN_DEFINES} -I${LIB_DIR}
+    OUTPUT ${slice}/npu.o
+    COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ ${harness_flags} ${DESIGN_DEFINES} -I${LIB_DIR}
               --embed-dir=${slice}
               --embed-dir=${OUTPUT_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/npu.cpp -o ${slice}/npu.o
-    COMMAND ${ELF_CC} -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -static -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c ${slice}/npu.o ${DESIGN_OUTPUT}/gvn/yolo26n/npu/mlir-baremetal.o ${slice}/slice.o -lm -lgcc -o ${slice}/slice.elf
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/npu.cpp
+    DEPENDS npu.cpp
+            ${LIB_DIR}/MemRef.h
             ${slice}/gvn_in.bin
             ${slice}/gvn_table.bin
             ${slice}/gvn_expect.bin
-            ${slice}/slice.o
-            ${DESIGN_OUTPUT}/gvn/yolo26n/npu/mlir-baremetal.o
-            ${BOOT_DIR}/start.S
-            ${BOOT_DIR}/syscalls.c
-            ${BOOT_DIR}/device.ld
-            ${STACK_ROOT}/kernel/src/location.c
-            ${RUNTIME_DIR}/trace/baremetal.c
+            ${OUTPUT_DIR}/arg0.data
+            ${OUTPUT_DIR}/arg1.data
+            ${OUTPUT_DIR}/arg2.data
+            ${OUTPUT_DIR}/inputs.data
     COMMAND_EXPAND_LISTS
     VERBATIM
   )
-  list(APPEND elfs ${slice}/slice.elf)
+  foreach(output_reader IN ITEMS stream verilator)
+    if(output_reader STREQUAL "stream")
+      set(binary ${slice}/slice.elf)
+    else()
+      set(binary ${slice}/verilator.elf)
+    endif()
+    add_custom_command(
+      OUTPUT ${binary}
+      BYPRODUCTS ${slice}/${output_reader}.o
+      COMMAND ${TOOLCHAIN}/bin/riscv64-unknown-elf-g++ ${harness_flags} ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${isa_include} -I${isa_include}/bbhw/isa
+                --embed-dir=${slice} -MMD -MT ${binary} -MF ${slice}/${output_reader}.d -c ${CMAKE_CURRENT_SOURCE_DIR}/${output_reader}.cpp -o ${slice}/${output_reader}.o
+      COMMAND ${ELF_CC} -O2 -march=rv64gc -mabi=lp64d -mcmodel=medany -msmall-data-limit=0 -mno-relax -static -specs=nano.specs -specs=nosys.specs -nostartfiles -Wl,-T,${BOOT_DIR}/device.ld ${DESIGN_DEFINES} ${TARGET_DEFINES} -I${RUNTIME_DIR}/services -I${STACK_ROOT}/kernel/include ${BOOT_DIR}/start.S ${BOOT_DIR}/syscalls.c ${STACK_ROOT}/kernel/src/location.c ${RUNTIME_DIR}/trace/baremetal.c ${slice}/npu.o ${slice}/${output_reader}.o ${DESIGN_OUTPUT}/gvn/yolo26n/npu/mlir-baremetal.o ${slice}/slice.o -lm -lgcc -o ${binary}
+      DEPENDS ${output_reader}.cpp
+              ${slice}/gvn_expect.bin
+              ${slice}/npu.o
+              ${slice}/slice.o
+              ${DESIGN_OUTPUT}/gvn/yolo26n/npu/mlir-baremetal.o
+              ${BOOT_DIR}/start.S
+              ${BOOT_DIR}/syscalls.c
+              ${BOOT_DIR}/device.ld
+              ${STACK_ROOT}/kernel/src/location.c
+              ${RUNTIME_DIR}/trace/baremetal.c
+      DEPFILE ${slice}/${output_reader}.d
+      COMMAND_EXPAND_LISTS
+      VERBATIM
+    )
+    list(APPEND elfs ${binary})
+  endforeach()
 endforeach()
 add_custom_target(yolo26n-gvn-elf DEPENDS ${elfs})
